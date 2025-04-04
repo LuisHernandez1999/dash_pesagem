@@ -12,13 +12,6 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  AreaChart,
-  Area,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  Radar,
   Legend,
 } from "recharts"
 import {
@@ -28,10 +21,6 @@ import {
   Card,
   CardContent,
   CardHeader,
-  TextField,
-  Select,
-  MenuItem,
-  InputAdornment,
   Button,
   Tabs,
   Tab,
@@ -44,30 +33,23 @@ import {
   Paper,
   Chip,
   LinearProgress,
-  FormControl,
-  InputLabel,
-  Avatar,
   IconButton,
   Box,
   Fade,
   Zoom,
   Grow,
-  Badge,
-  Tooltip as MuiTooltip,
+  TextField,
+  InputAdornment,
+  Menu,
+  MenuItem,
 } from "@mui/material"
 import {
-  Search,
   TrendingUp,
   ArrowUpward,
   ArrowDownward,
   BarChart as BarChartIcon,
-  ShowChart as LineChartIcon,
   FilterList,
-  CalendarToday,
   ExpandMore,
-  Notifications,
-  Person,
-  Settings,
   LocalShipping as Truck,
   MoreVert,
   Refresh,
@@ -83,16 +65,18 @@ import {
   AirportShuttle,
   FireTruck,
   ElectricCar,
-  EnergySavingsLeaf as EcoIcon, // Changed this line
-  Radar as RadarIcon,
+  EnergySavingsLeaf as EcoIcon,
   DonutLarge,
+  Leaderboard,
+  Search,
+  DateRange,
 } from "@mui/icons-material"
 
 // CSS Styles
 const styles = `
 /* Base styles */
 :root {
-  --background: #f8fafc;
+  --background: #ffffff;
   --foreground: #0f172a;
   --card: #ffffff;
   --card-foreground: #0f172a;
@@ -188,11 +172,7 @@ body {
   flex-direction: column;
   min-height: 100vh;
   animation: fadeIn 0.5s ease-in-out;
-  background-image: 
-    radial-gradient(circle at 25% 25%, rgba(16, 185, 129, 0.05) 0%, transparent 50%),
-    radial-gradient(circle at 75% 75%, rgba(59, 130, 246, 0.05) 0%, transparent 50%),
-    radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.03) 0%, transparent 50%),
-    linear-gradient(to bottom, rgba(248, 250, 252, 0.8), rgba(248, 250, 252, 1));
+  background-color: #ffffff;
 }
 
 /* App bar */
@@ -220,7 +200,7 @@ body {
 
 .dashboard-title {
   font-weight: 700 !important;
-  font-size: 1.25rem !important;
+  font-size: 1.8rem !important;
   background: linear-gradient(90deg, #10b981, #3b82f6);
   background-clip: text;
   -webkit-background-clip: text;
@@ -228,12 +208,13 @@ body {
   letter-spacing: -0.5px;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.8rem;
 }
 
 .dashboard-title-icon {
   color: #10b981;
   animation: float 3s infinite ease-in-out;
+  font-size: 2.2rem !important;
 }
 
 .toolbar-actions {
@@ -241,58 +222,6 @@ body {
   display: flex;
   align-items: center;
   gap: 1rem;
-}
-
-.search-field {
-  width: 260px;
-  transition: width 0.3s ease, box-shadow 0.3s ease;
-}
-
-.search-field:focus-within {
-  width: 300px;
-  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
-}
-
-.search-field .MuiOutlinedInput-root {
-  border-radius: 20px;
-  transition: all 0.3s ease;
-}
-
-.search-field .MuiOutlinedInput-root:hover {
-  box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.2);
-}
-
-.search-field .MuiOutlinedInput-root.Mui-focused {
-  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
-}
-
-.period-select {
-  width: 180px;
-}
-
-.period-select .MuiOutlinedInput-root {
-  border-radius: 8px;
-  transition: all 0.3s ease;
-}
-
-.period-select .MuiOutlinedInput-root:hover {
-  box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.2);
-}
-
-.notification-badge .MuiBadge-badge {
-  background-color: #10b981;
-  transition: all 0.3s ease;
-}
-
-.user-avatar {
-  cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.3s ease;
-  background: linear-gradient(135deg, #10b981, #3b82f6) !important;
-}
-
-.user-avatar:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
 }
 
 /* Main content */
@@ -705,16 +634,20 @@ body {
 }
 
 .action-button {
-  height: 2rem !important;
+  height: 2.2rem !important;
   text-transform: none !important;
-  border-radius: 8px !important;
+  border-radius: 12px !important;
   transition: all 0.3s ease !important;
   font-weight: 500 !important;
+  padding: 0 1rem !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
 }
 
 .action-button:hover {
   background-color: rgba(139, 92, 246, 0.1) !important;
   border-color: rgba(139, 92, 246, 0.3) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
 }
 
 .drivers-tabs {
@@ -831,18 +764,12 @@ body {
 }
 
 .vehicle-grid {
-  display: grid;
+  display: flex;
   gap: 1.5rem;
-  grid-template-columns: 1fr;
 }
 
-@media (min-width: 768px) {
-  .vehicle-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-.vehicle-card, .trend-card {
+.vehicle-card, .trend-card, .cooperatives-ranking-card {
+  flex: 1;
   height: 100%;
   border-radius: 16px !important;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05) !important;
@@ -853,17 +780,19 @@ body {
   overflow: hidden;
 }
 
-.vehicle-card:hover, .trend-card:hover {
+.vehicle-card:hover, .trend-card:hover, .cooperatives-ranking-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1) !important;
 }
 
-.vehicle-header, .trend-header {
+.vehicle-header, .trend-header, .cooperatives-ranking-header {
   border-bottom: 1px solid rgba(226, 232, 240, 0.5) !important;
-  background: linear-gradient(to right, rgba(245, 158, 11, 0.05), rgba(236, 72, 153, 0.05));
+  background: linear-gradient(to right, rgba(16, 185, 129, 0.05), rgba(59, 130, 246, 0.05));
 }
 
-.vehicle-header .MuiCardHeader-title, .trend-header .MuiCardHeader-title {
+.vehicle-header .MuiCardHeader-title, 
+.trend-header .MuiCardHeader-title,
+.cooperatives-ranking-header .MuiCardHeader-title {
   font-weight: 600 !important;
   font-size: 1rem !important;
   color: #334155 !important;
@@ -872,7 +801,9 @@ body {
   gap: 0.5rem;
 }
 
-.vehicle-header .MuiCardHeader-subheader, .trend-header .MuiCardHeader-subheader {
+.vehicle-header .MuiCardHeader-subheader, 
+.trend-header .MuiCardHeader-subheader,
+.cooperatives-ranking-header .MuiCardHeader-subheader {
   font-size: 0.75rem !important;
 }
 
@@ -979,6 +910,136 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* Cooperatives ranking table */
+.cooperatives-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.cooperatives-table th {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  font-weight: 600;
+  text-align: left;
+  padding: 0.75rem;
+}
+
+.cooperatives-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.5);
+}
+
+.cooperatives-table tr:last-child td {
+  border-bottom: none;
+}
+
+.cooperatives-table tr:hover td {
+  background-color: rgba(241, 245, 249, 0.5);
+}
+
+.cooperatives-rank {
+  font-weight: 700;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  margin-right: 0.75rem;
+}
+
+.cooperatives-rank.second {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+}
+
+.cooperatives-rank.third {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.cooperatives-rank.fourth {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+}
+
+.cooperatives-rank.fifth {
+  background: linear-gradient(135deg, #ec4899, #be185d);
+}
+
+.tables-container {
+  display: flex;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.table-card {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  .tables-container {
+    flex-direction: column;
+  }
+}
+
+.search-filter {
+  margin-bottom: 1rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.driver-search {
+  margin-bottom: 1rem;
+  width: 100%;
+}
+
+.search-input {
+  border-radius: 12px !important;
+  background-color: rgba(241, 245, 249, 0.7) !important;
+  transition: all 0.3s ease !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03) !important;
+}
+
+.search-input:hover {
+  background-color: rgba(241, 245, 249, 0.9) !important;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05) !important;
+}
+
+.search-input.Mui-focused {
+  background-color: white !important;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2) !important;
+}
+
+.table-count-badge {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  margin-left: 0.5rem;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+}
+
+.period-menu-item {
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.period-menu-item:hover {
+  background-color: rgba(16, 185, 129, 0.1);
+}
+
+.period-menu-item.active {
+  background-color: rgba(16, 185, 129, 0.1);
+  font-weight: 600;
+}
 `
 
 export default function WeighingDashboard() {
@@ -991,6 +1052,21 @@ export default function WeighingDashboard() {
     lineChart: false,
     radarChart: false,
   })
+  const [vehicleFilter, setVehicleFilter] = useState("")
+  const [cooperativeFilter, setCooperativeFilter] = useState("")
+  const [driverFilter, setDriverFilter] = useState("")
+  const [periodMenuAnchor, setPeriodMenuAnchor] = useState(null)
+  const [vehicleData, setVehicleData] = useState([
+    { type: "Caminhão Compactador", count: 12, avgWeighings: 245, icon: <LocalShipping /> },
+    { type: "Caminhão Basculante", count: 8, avgWeighings: 210, icon: <FireTruck /> },
+    { type: "Caminhão Carroceria", count: 6, avgWeighings: 180, icon: <AirportShuttle /> },
+    { type: "Veículo Utilitário", count: 4, avgWeighings: 120, icon: <ElectricCar /> },
+    { type: "Caminhão Baú", count: 3, avgWeighings: 150, icon: <Truck /> },
+    { type: "Caminhão Tanque", count: 2, avgWeighings: 130, icon: <LocalShipping /> },
+    { type: "Caminhão Guincho", count: 2, avgWeighings: 110, icon: <Truck /> },
+    { type: "Caminhão Plataforma", count: 1, avgWeighings: 95, icon: <LocalShipping /> },
+    { type: "Caminhão Cegonha", count: 1, avgWeighings: 85, icon: <Truck /> },
+  ])
 
   useEffect(() => {
     // Simulate loading data
@@ -1032,11 +1108,16 @@ export default function WeighingDashboard() {
   ]
 
   const cooperativesData = [
-    { name: "Cooperativa Recicla Vida", weighings: 1250 },
-    { name: "Cooperativa EcoSol", weighings: 980 },
-    { name: "Cooperativa Reciclagem Verde", weighings: 850 },
-    { name: "Cooperativa Futuro Limpo", weighings: 720 },
-    { name: "Cooperativa Recicla Cidadão", weighings: 650 },
+    { rank: 1, name: "Cooperativa Recicla Vida", weighings: 1250, percentage: 28.1 },
+    { rank: 2, name: "Cooperativa EcoSol", weighings: 980, percentage: 22.0 },
+    { rank: 3, name: "Cooperativa Reciclagem Verde", weighings: 850, percentage: 19.1 },
+    { rank: 4, name: "Cooperativa Futuro Limpo", weighings: 720, percentage: 16.2 },
+    { rank: 5, name: "Cooperativa Recicla Cidadão", weighings: 650, percentage: 14.6 },
+    { rank: 6, name: "Cooperativa Mãos que Reciclam", weighings: 520, percentage: 11.7 },
+    { rank: 7, name: "Cooperativa Reciclando o Futuro", weighings: 480, percentage: 10.8 },
+    { rank: 8, name: "Cooperativa Amigos do Meio Ambiente", weighings: 420, percentage: 9.4 },
+    { rank: 9, name: "Cooperativa Recicla Já", weighings: 380, percentage: 8.5 },
+    { rank: 10, name: "Cooperativa Planeta Verde", weighings: 350, percentage: 7.9 },
   ]
 
   const monthlyData = [
@@ -1046,13 +1127,6 @@ export default function WeighingDashboard() {
     { month: "Abr", seletiva: 950, cataTreco: 420 },
     { month: "Mai", seletiva: 1020, cataTreco: 450 },
     { month: "Jun", seletiva: 980, cataTreco: 430 },
-  ]
-
-  const vehicleData = [
-    { type: "Caminhão Compactador", count: 12, avgWeighings: 245, icon: <LocalShipping /> },
-    { type: "Caminhão Basculante", count: 8, avgWeighings: 210, icon: <FireTruck /> },
-    { type: "Caminhão Carroceria", count: 6, avgWeighings: 180, icon: <AirportShuttle /> },
-    { type: "Veículo Utilitário", count: 4, avgWeighings: 120, icon: <ElectricCar /> },
   ]
 
   const vehiclePerformanceData = [
@@ -1066,6 +1140,19 @@ export default function WeighingDashboard() {
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue)
+  }
+
+  const handlePeriodMenuOpen = (event) => {
+    setPeriodMenuAnchor(event.currentTarget)
+  }
+
+  const handlePeriodMenuClose = () => {
+    setPeriodMenuAnchor(null)
+  }
+
+  const handlePeriodChange = (newPeriod) => {
+    setPeriod(newPeriod)
+    setPeriodMenuAnchor(null)
   }
 
   const CustomTooltip = ({ active, payload, label }) => {
@@ -1106,6 +1193,40 @@ export default function WeighingDashboard() {
       .toUpperCase()
   }
 
+  // Filter functions
+  const filteredVehicleData = vehicleData.filter((vehicle) =>
+    vehicle.type.toLowerCase().includes(vehicleFilter.toLowerCase()),
+  )
+
+  const filteredCooperativesData = cooperativesData.filter((coop) =>
+    coop.name.toLowerCase().includes(cooperativeFilter.toLowerCase()),
+  )
+
+  const filteredDriversData = driversData.filter((driver) =>
+    driver.name.toLowerCase().includes(driverFilter.toLowerCase()),
+  )
+
+  const filteredLowestDriversData = lowestDriversData.filter((driver) =>
+    driver.name.toLowerCase().includes(driverFilter.toLowerCase()),
+  )
+
+  const filteredAllDriversData = [...driversData, ...lowestDriversData].filter((driver) =>
+    driver.name.toLowerCase().includes(driverFilter.toLowerCase()),
+  )
+
+  // Get total counts for table headers
+  const totalDrivers = filteredAllDriversData.length
+  const totalVehicles = filteredVehicleData.length
+  const totalCooperatives = filteredCooperativesData.length
+
+  // Get current data based on selected tab
+  const currentDriversData =
+    tabValue === 0
+      ? filteredDriversData.slice(0, 5)
+      : tabValue === 1
+        ? filteredLowestDriversData
+        : filteredAllDriversData
+
   return (
     <>
       <style>{styles}</style>
@@ -1116,46 +1237,6 @@ export default function WeighingDashboard() {
               <EcoIcon className="dashboard-title-icon" />
               Dashboard de Pesagens
             </Typography>
-            <div className="toolbar-actions">
-              <TextField
-                size="small"
-                placeholder="Buscar..."
-                className="search-field"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Search fontSize="small" />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-              <FormControl size="small" className="period-select">
-                <InputLabel>Selecionar período</InputLabel>
-                <Select value={period} onChange={(e) => setPeriod(e.target.value)} label="Selecionar período">
-                  <MenuItem value="week">Última Semana</MenuItem>
-                  <MenuItem value="month">Último Mês</MenuItem>
-                  <MenuItem value="quarter">Último Trimestre</MenuItem>
-                  <MenuItem value="year">Último Ano</MenuItem>
-                </Select>
-              </FormControl>
-              <MuiTooltip title="Notificações">
-                <IconButton size="small" className="action-icon-button">
-                  <Badge badgeContent={3} color="error" className="notification-badge">
-                    <Notifications />
-                  </Badge>
-                </IconButton>
-              </MuiTooltip>
-              <MuiTooltip title="Configurações">
-                <IconButton size="small" className="action-icon-button">
-                  <Settings />
-                </IconButton>
-              </MuiTooltip>
-              <MuiTooltip title="Perfil">
-                <Avatar className="user-avatar">
-                  <Person />
-                </Avatar>
-              </MuiTooltip>
-            </div>
           </Toolbar>
         </AppBar>
 
@@ -1286,16 +1367,12 @@ export default function WeighingDashboard() {
                       subheader="Seletiva vs. Cata Treco"
                       action={
                         <Box>
-                          <MuiTooltip title="Atualizar">
-                            <IconButton size="small" className="action-icon-button">
-                              <Refresh />
-                            </IconButton>
-                          </MuiTooltip>
-                          <MuiTooltip title="Exportar">
-                            <IconButton size="small" className="action-icon-button">
-                              <Download />
-                            </IconButton>
-                          </MuiTooltip>
+                          <IconButton size="small" className="action-icon-button">
+                            <Refresh />
+                          </IconButton>
+                          <IconButton size="small" className="action-icon-button">
+                            <Download />
+                          </IconButton>
                         </Box>
                       }
                       className="chart-header"
@@ -1359,16 +1436,12 @@ export default function WeighingDashboard() {
                       subheader="Top 5 cooperativas por volume"
                       action={
                         <Box>
-                          <MuiTooltip title="Imprimir">
-                            <IconButton size="small" className="action-icon-button">
-                              <Print />
-                            </IconButton>
-                          </MuiTooltip>
-                          <MuiTooltip title="Compartilhar">
-                            <IconButton size="small" className="action-icon-button">
-                              <Share />
-                            </IconButton>
-                          </MuiTooltip>
+                          <IconButton size="small" className="action-icon-button">
+                            <Print />
+                          </IconButton>
+                          <IconButton size="small" className="action-icon-button">
+                            <Share />
+                          </IconButton>
                         </Box>
                       }
                       className="chart-header"
@@ -1385,7 +1458,7 @@ export default function WeighingDashboard() {
                             <ResponsiveContainer width="100%" height="100%">
                               <PieChart>
                                 <Pie
-                                  data={cooperativesData}
+                                  data={cooperativesData.slice(0, 5)}
                                   cx="50%"
                                   cy="50%"
                                   labelLine={false}
@@ -1396,7 +1469,7 @@ export default function WeighingDashboard() {
                                   label={({ name, percent }) => `${name.split(" ")[1]}: ${(percent * 100).toFixed(0)}%`}
                                   animationDuration={1500}
                                 >
-                                  {cooperativesData.map((entry, index) => (
+                                  {cooperativesData.slice(0, 5).map((entry, index) => (
                                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                   ))}
                                 </Pie>
@@ -1415,101 +1488,6 @@ export default function WeighingDashboard() {
               </div>
             </section>
 
-            {/* Vehicle Performance Chart */}
-            <section className="vehicle-performance-section" style={{ marginTop: "1.5rem" }}>
-              <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "600ms" : "0ms" }}>
-                <Card className="chart-card">
-                  <CardHeader
-                    title={
-                      <span>
-                        <RadarIcon style={{ verticalAlign: "middle", marginRight: "8px" }} />
-                        Desempenho de Veículos
-                      </span>
-                    }
-                    subheader="Análise comparativa por tipo de veículo"
-                    action={
-                      <Box>
-                        <MuiTooltip title="Atualizar">
-                          <IconButton size="small" className="action-icon-button">
-                            <Refresh />
-                          </IconButton>
-                        </MuiTooltip>
-                        <MuiTooltip title="Mais opções">
-                          <IconButton size="small" className="action-icon-button">
-                            <MoreVert />
-                          </IconButton>
-                        </MuiTooltip>
-                      </Box>
-                    }
-                    className="chart-header"
-                  />
-                  <CardContent>
-                    <div className="chart-container">
-                      {!chartsLoaded.radarChart && (
-                        <div className="chart-loading">
-                          <div className="chart-loading-indicator"></div>
-                        </div>
-                      )}
-                      <Fade in={chartsLoaded.radarChart} timeout={500}>
-                        <div style={{ width: "100%", height: "100%" }}>
-                          <ResponsiveContainer width="100%" height="100%">
-                            <RadarChart
-                              cx="50%"
-                              cy="50%"
-                              outerRadius="80%"
-                              data={vehiclePerformanceData}
-                              className="radar-chart-container"
-                            >
-                              <PolarGrid />
-                              <PolarAngleAxis dataKey="vehicle" />
-                              <PolarRadiusAxis angle={30} domain={[0, 100]} />
-                              <Radar
-                                name="Eficiência"
-                                dataKey="efficiency"
-                                stroke="#10b981"
-                                fill="#10b981"
-                                fillOpacity={0.5}
-                                animationDuration={1500}
-                              />
-                              <Radar
-                                name="Manutenção"
-                                dataKey="maintenance"
-                                stroke="#3b82f6"
-                                fill="#3b82f6"
-                                fillOpacity={0.5}
-                                animationDuration={1500}
-                                animationBegin={300}
-                              />
-                              <Radar
-                                name="Combustível"
-                                dataKey="fuel"
-                                stroke="#f59e0b"
-                                fill="#f59e0b"
-                                fillOpacity={0.5}
-                                animationDuration={1500}
-                                animationBegin={600}
-                              />
-                              <Radar
-                                name="Disponibilidade"
-                                dataKey="availability"
-                                stroke="#8b5cf6"
-                                fill="#8b5cf6"
-                                fillOpacity={0.5}
-                                animationDuration={1500}
-                                animationBegin={900}
-                              />
-                              <Legend />
-                              <Tooltip />
-                            </RadarChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </Fade>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Zoom>
-            </section>
-
             {/* Drivers Section */}
             <section className="drivers-section">
               <Grow in={!loading} timeout={800} style={{ transitionDelay: !loading ? "700ms" : "0ms" }}>
@@ -1519,6 +1497,7 @@ export default function WeighingDashboard() {
                       <span>
                         <EmojiEvents style={{ verticalAlign: "middle", marginRight: "8px" }} />
                         Motoristas e Pesagens
+                        <span className="table-count-badge">{totalDrivers}</span>
                       </span>
                     }
                     action={
@@ -1529,17 +1508,59 @@ export default function WeighingDashboard() {
                         <Button
                           variant="outlined"
                           size="small"
-                          startIcon={<CalendarToday />}
+                          startIcon={<DateRange />}
                           endIcon={<ExpandMore />}
                           className="action-button"
+                          onClick={handlePeriodMenuOpen}
                         >
-                          Período
+                          {period === "week" ? "Semana" : period === "month" ? "Mês" : "Ano"}
                         </Button>
+                        <Menu
+                          anchorEl={periodMenuAnchor}
+                          open={Boolean(periodMenuAnchor)}
+                          onClose={handlePeriodMenuClose}
+                        >
+                          <MenuItem
+                            onClick={() => handlePeriodChange("week")}
+                            className={`period-menu-item ${period === "week" ? "active" : ""}`}
+                          >
+                            Semana
+                          </MenuItem>
+                          <MenuItem
+                            onClick={() => handlePeriodChange("month")}
+                            className={`period-menu-item ${period === "month" ? "active" : ""}`}
+                          >
+                            Mês
+                          </MenuItem>
+                          <MenuItem
+                            onClick={() => handlePeriodChange("year")}
+                            className={`period-menu-item ${period === "year" ? "active" : ""}`}
+                          >
+                            Ano
+                          </MenuItem>
+                        </Menu>
                       </div>
                     }
                     className="drivers-header"
                   />
                   <CardContent>
+                    <TextField
+                      size="small"
+                      placeholder="Buscar motoristas..."
+                      fullWidth
+                      value={driverFilter}
+                      onChange={(e) => setDriverFilter(e.target.value)}
+                      className="driver-search"
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Search fontSize="small" />
+                          </InputAdornment>
+                        ),
+                        className: "search-input",
+                      }}
+                    />
+
                     <Tabs value={tabValue} onChange={handleTabChange} className="drivers-tabs" variant="fullWidth">
                       <Tab label="Top Motoristas" />
                       <Tab label="Menor Desempenho" />
@@ -1547,132 +1568,84 @@ export default function WeighingDashboard() {
                     </Tabs>
 
                     <div className="tab-content">
-                      {tabValue === 0 && (
-                        <Fade in={true} timeout={500}>
-                          <TableContainer component={Paper} className="drivers-table">
-                            <Table>
-                              <TableHead>
-                                <TableRow>
-                                  <TableCell>Motorista</TableCell>
-                                  <TableCell align="right">Pesagens</TableCell>
-                                  <TableCell align="right">Eficiência</TableCell>
-                                  <TableCell align="right">Status</TableCell>
+                      <Fade in={true} timeout={500}>
+                        <TableContainer component={Paper} className="drivers-table">
+                          <Table>
+                            <TableHead>
+                              <TableRow>
+                                <TableCell>Motorista</TableCell>
+                                <TableCell align="right">Pesagens</TableCell>
+                                <TableCell align="right">Eficiência</TableCell>
+                                <TableCell align="right">Status</TableCell>
+                              </TableRow>
+                            </TableHead>
+                            <TableBody>
+                              {currentDriversData.map((driver) => (
+                                <TableRow key={driver.id}>
+                                  <TableCell className="driver-name">{driver.name}</TableCell>
+                                  <TableCell align="right">{driver.weighings}</TableCell>
+                                  <TableCell align="right">{driver.efficiency}%</TableCell>
+                                  <TableCell align="right">{getStatusChip(driver.efficiency)}</TableCell>
                                 </TableRow>
-                              </TableHead>
-                              <TableBody>
-                                {driversData.slice(0, 5).map((driver) => (
-                                  <TableRow key={driver.id}>
-                                    <TableCell className="driver-name">
-                                      <Avatar className="driver-avatar">{driver.avatar}</Avatar>
-                                      {driver.name}
-                                    </TableCell>
-                                    <TableCell align="right">{driver.weighings}</TableCell>
-                                    <TableCell align="right">{driver.efficiency}%</TableCell>
-                                    <TableCell align="right">{getStatusChip(driver.efficiency)}</TableCell>
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
-                          </TableContainer>
-                        </Fade>
-                      )}
-
-                      {tabValue === 1 && (
-                        <Fade in={true} timeout={500}>
-                          <TableContainer component={Paper} className="drivers-table">
-                            <Table>
-                              <TableHead>
-                                <TableRow>
-                                  <TableCell>Motorista</TableCell>
-                                  <TableCell align="right">Pesagens</TableCell>
-                                  <TableCell align="right">Eficiência</TableCell>
-                                  <TableCell align="right">Status</TableCell>
-                                </TableRow>
-                              </TableHead>
-                              <TableBody>
-                                {lowestDriversData.map((driver) => (
-                                  <TableRow key={driver.id}>
-                                    <TableCell className="driver-name">
-                                      <Avatar className="driver-avatar">{driver.avatar}</Avatar>
-                                      {driver.name}
-                                    </TableCell>
-                                    <TableCell align="right">{driver.weighings}</TableCell>
-                                    <TableCell align="right">{driver.efficiency}%</TableCell>
-                                    <TableCell align="right">{getStatusChip(driver.efficiency)}</TableCell>
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
-                          </TableContainer>
-                        </Fade>
-                      )}
-
-                      {tabValue === 2 && (
-                        <Fade in={true} timeout={500}>
-                          <TableContainer component={Paper} className="drivers-table">
-                            <Table>
-                              <TableHead>
-                                <TableRow>
-                                  <TableCell>Motorista</TableCell>
-                                  <TableCell align="right">Pesagens</TableCell>
-                                  <TableCell align="right">Eficiência</TableCell>
-                                  <TableCell align="right">Status</TableCell>
-                                </TableRow>
-                              </TableHead>
-                              <TableBody>
-                                {[...driversData, ...lowestDriversData].map((driver) => (
-                                  <TableRow key={driver.id}>
-                                    <TableCell className="driver-name">
-                                      <Avatar className="driver-avatar">{driver.avatar}</Avatar>
-                                      {driver.name}
-                                    </TableCell>
-                                    <TableCell align="right">{driver.weighings}</TableCell>
-                                    <TableCell align="right">{driver.efficiency}%</TableCell>
-                                    <TableCell align="right">{getStatusChip(driver.efficiency)}</TableCell>
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
-                          </TableContainer>
-                        </Fade>
-                      )}
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </TableContainer>
+                      </Fade>
                     </div>
                   </CardContent>
                 </Card>
               </Grow>
             </section>
 
-            {/* Vehicle Section */}
+            {/* Vehicle and Cooperatives Section */}
             <section className="vehicle-section">
-              <div className="vehicle-grid">
+              <div className="tables-container">
                 <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "800ms" : "0ms" }}>
-                  <Card className="vehicle-card">
+                  <Card className="vehicle-card table-card">
                     <CardHeader
                       title={
                         <span>
                           <Truck style={{ verticalAlign: "middle", marginRight: "8px" }} />
                           Veículos e Média de Pesagens
+                          <span className="table-count-badge">{totalVehicles}</span>
                         </span>
                       }
                       subheader="Por tipo de veículo"
                       action={
                         <Box>
-                          <MuiTooltip title="Imprimir">
-                            <IconButton size="small" className="action-icon-button">
-                              <Print />
-                            </IconButton>
-                          </MuiTooltip>
-                          <MuiTooltip title="Mais opções">
-                            <IconButton size="small" className="action-icon-button">
-                              <MoreVert />
-                            </IconButton>
-                          </MuiTooltip>
+                          <IconButton size="small" className="action-icon-button">
+                            <Print />
+                          </IconButton>
+                          <IconButton size="small" className="action-icon-button">
+                            <MoreVert />
+                          </IconButton>
                         </Box>
                       }
                       className="vehicle-header"
                     />
                     <CardContent>
-                      <TableContainer component={Paper} className="drivers-table">
+                      <TextField
+                        size="small"
+                        placeholder="Filtrar veículos..."
+                        fullWidth
+                        value={vehicleFilter}
+                        onChange={(e) => setVehicleFilter(e.target.value)}
+                        className="search-filter"
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <Search fontSize="small" />
+                            </InputAdornment>
+                          ),
+                          className: "search-input",
+                        }}
+                      />
+                      <TableContainer
+                        component={Paper}
+                        className="drivers-table"
+                        style={{ maxHeight: "500px", overflowY: "auto" }}
+                      >
                         <Table>
                           <TableHead>
                             <TableRow>
@@ -1682,7 +1655,7 @@ export default function WeighingDashboard() {
                             </TableRow>
                           </TableHead>
                           <TableBody>
-                            {vehicleData.map((vehicle) => (
+                            {filteredVehicleData.map((vehicle) => (
                               <TableRow key={vehicle.type}>
                                 <TableCell className="vehicle-type">
                                   <div className="vehicle-icon">{vehicle.icon}</div>
@@ -1700,102 +1673,82 @@ export default function WeighingDashboard() {
                 </Zoom>
 
                 <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "900ms" : "0ms" }}>
-                  <Card className="trend-card">
+                  <Card className="cooperatives-ranking-card table-card">
                     <CardHeader
                       title={
                         <span>
-                          <LineChartIcon style={{ verticalAlign: "middle", marginRight: "8px" }} />
-                          Tendência de Pesagens
+                          <Leaderboard style={{ verticalAlign: "middle", marginRight: "8px" }} />
+                          Ranking de Cooperativas
+                          <span className="table-count-badge">{totalCooperatives}</span>
                         </span>
                       }
-                      subheader="Últimos 6 meses"
+                      subheader="Top cooperativas por volume de pesagens"
                       action={
                         <Box>
-                          <MuiTooltip title="Compartilhar">
-                            <IconButton size="small" className="action-icon-button">
-                              <Share />
-                            </IconButton>
-                          </MuiTooltip>
-                          <MuiTooltip title="Mais opções">
-                            <IconButton size="small" className="action-icon-button">
-                              <MoreVert />
-                            </IconButton>
-                          </MuiTooltip>
+                          <IconButton size="small" className="action-icon-button">
+                            <Download />
+                          </IconButton>
+                          <IconButton size="small" className="action-icon-button">
+                            <MoreVert />
+                          </IconButton>
                         </Box>
                       }
-                      className="trend-header"
+                      className="cooperatives-ranking-header"
                     />
                     <CardContent>
-                      <div className="chart-container">
-                        {!chartsLoaded.lineChart && (
-                          <div className="chart-loading">
-                            <div className="chart-loading-indicator"></div>
-                          </div>
-                        )}
-                        <Fade in={chartsLoaded.lineChart} timeout={500}>
-                          <div style={{ width: "100%", height: "100%" }}>
-                            <ResponsiveContainer width="100%" height="100%">
-                              <AreaChart
-                                data={monthlyData.map((item) => ({
-                                  month: item.month,
-                                  total: item.seletiva + item.cataTreco,
-                                  seletiva: item.seletiva,
-                                  cataTreco: item.cataTreco,
-                                }))}
-                                margin={{ top: 20, right: 30, left: 20, bottom: 24 }}
-                              >
-                                <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#e2e8f0" />
-                                <XAxis
-                                  dataKey="month"
-                                  tickLine={false}
-                                  axisLine={false}
-                                  tick={{ fill: "#64748b", fontSize: 12 }}
-                                />
-                                <YAxis tickLine={false} axisLine={false} tick={{ fill: "#64748b", fontSize: 12 }} />
-                                <Tooltip content={<CustomTooltip />} />
-                                <Legend />
-                                <Area
-                                  type="monotone"
-                                  dataKey="total"
-                                  stroke="#3b82f6"
-                                  fill="#3b82f6"
-                                  fillOpacity={0.2}
-                                  strokeWidth={3}
-                                  dot={{ r: 6, fill: "#3b82f6", strokeWidth: 2, stroke: "#fff" }}
-                                  activeDot={{ r: 8, fill: "#3b82f6", strokeWidth: 2, stroke: "#fff" }}
-                                  name="Total de Pesagens"
-                                  animationDuration={1500}
-                                />
-                                <Area
-                                  type="monotone"
-                                  dataKey="seletiva"
-                                  stroke="#10b981"
-                                  fill="#10b981"
-                                  fillOpacity={0.1}
-                                  strokeWidth={2}
-                                  dot={{ r: 4, fill: "#10b981", strokeWidth: 2, stroke: "#fff" }}
-                                  activeDot={{ r: 6, fill: "#10b981", strokeWidth: 2, stroke: "#fff" }}
-                                  name="Seletiva"
-                                  animationDuration={1500}
-                                  animationBegin={300}
-                                />
-                                <Area
-                                  type="monotone"
-                                  dataKey="cataTreco"
-                                  stroke="#f59e0b"
-                                  fill="#f59e0b"
-                                  fillOpacity={0.1}
-                                  strokeWidth={2}
-                                  dot={{ r: 4, fill: "#f59e0b", strokeWidth: 2, stroke: "#fff" }}
-                                  activeDot={{ r: 6, fill: "#f59e0b", strokeWidth: 2, stroke: "#fff" }}
-                                  name="Cata Treco"
-                                  animationDuration={1500}
-                                  animationBegin={600}
-                                />
-                              </AreaChart>
-                            </ResponsiveContainer>
-                          </div>
-                        </Fade>
+                      <TextField
+                        size="small"
+                        placeholder="Filtrar cooperativas..."
+                        fullWidth
+                        value={cooperativeFilter}
+                        onChange={(e) => setCooperativeFilter(e.target.value)}
+                        className="search-filter"
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <Search fontSize="small" />
+                            </InputAdornment>
+                          ),
+                          className: "search-input",
+                        }}
+                      />
+                      <div style={{ maxHeight: "500px", overflowY: "auto" }}>
+                        <table className="cooperatives-table">
+                          <thead>
+                            <tr>
+                              <th>Rank</th>
+                              <th>Cooperativa</th>
+                              <th>Pesagens</th>
+                              <th>%</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {filteredCooperativesData.map((coop) => (
+                              <tr key={coop.rank}>
+                                <td>
+                                  <div
+                                    className={`cooperatives-rank ${
+                                      coop.rank === 2
+                                        ? "second"
+                                        : coop.rank === 3
+                                          ? "third"
+                                          : coop.rank === 4
+                                            ? "fourth"
+                                            : coop.rank === 5
+                                              ? "fifth"
+                                              : ""
+                                    }`}
+                                  >
+                                    {coop.rank}
+                                  </div>
+                                </td>
+                                <td>{coop.name}</td>
+                                <td>{coop.weighings}</td>
+                                <td>{coop.percentage}%</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
                       </div>
                     </CardContent>
                   </Card>
