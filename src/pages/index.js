@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import {
   BarChart,
   Bar,
@@ -13,6 +13,9 @@ import {
   Tooltip,
   ResponsiveContainer,
   Legend,
+  Sector,
+  LabelList,
+  ReferenceLine,
 } from "recharts"
 import {
   AppBar,
@@ -32,7 +35,6 @@ import {
   TableRow,
   Paper,
   Chip,
-  LinearProgress,
   IconButton,
   Box,
   Fade,
@@ -42,25 +44,24 @@ import {
   InputAdornment,
   Menu,
   MenuItem,
+  Container,
+  LinearProgress,
+  Avatar,
+  Divider,
 } from "@mui/material"
 import {
   TrendingUp,
-  ArrowUpward,
-  ArrowDownward,
   BarChart as BarChartIcon,
   FilterList,
   ExpandMore,
   LocalShipping as Truck,
   MoreVert,
-  Refresh,
   Download,
   Print,
   Share,
   RecyclingOutlined,
   Speed,
   EmojiEvents,
-  Groups,
-  DirectionsCar,
   LocalShipping,
   AirportShuttle,
   FireTruck,
@@ -70,977 +71,126 @@ import {
   Leaderboard,
   Search,
   DateRange,
+  InfoOutlined,
+  EmojiTransportation,
+  Star,
 } from "@mui/icons-material"
-
-// CSS Styles
-const styles = `
-/* Base styles */
-:root {
-  --background: #ffffff;
-  --foreground: #0f172a;
-  --card: #ffffff;
-  --card-foreground: #0f172a;
-  --primary: #0f172a;
-  --primary-foreground: #f8fafc;
-  --secondary: #f1f5f9;
-  --secondary-foreground: #0f172a;
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
-  --accent: #f1f5f9;
-  --accent-foreground: #0f172a;
-  --destructive: #ef4444;
-  --destructive-foreground: #f8fafc;
-  --border: #e2e8f0;
-  --input: #e2e8f0;
-  --ring: #0f172a;
-  --radius: 0.5rem;
-  --chart-1: #10b981;
-  --chart-2: #f59e0b;
-  --chart-3: #3b82f6;
-  --chart-4: #8b5cf6;
-  --chart-5: #ec4899;
-  --chart-6: #06b6d4;
-}
-
-/* Animations */
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes slideInUp {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-@keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
-}
-
-@keyframes shimmer {
-  0% { background-position: -1000px 0; }
-  100% { background-position: 1000px 0; }
-}
-
-@keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-5px); }
-  100% { transform: translateY(0px); }
-}
-
-@keyframes progressAnimation {
-  0% { width: 0%; }
-  100% { width: var(--progress-width); }
-}
-
-@keyframes gradientShift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-@keyframes rotate {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-@keyframes bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
-}
-
-body {
-  margin: 0;
-  padding: 0;
-  font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
-  background-color: var(--background);
-  color: var(--foreground);
-  transition: background-color 0.3s ease;
-}
-
-/* Dashboard container */
-.dashboard-container {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  animation: fadeIn 0.5s ease-in-out;
-  background-color: #ffffff;
-}
-
-/* App bar */
-.app-bar {
-  background-color: var(--card) !important;
-  color: var(--card-foreground) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
-  position: relative;
-  z-index: 10;
-  transition: all 0.3s ease;
-}
-
-.app-bar:after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #10b981, #3b82f6, #8b5cf6);
-  background-size: 200% 200%;
-  animation: gradientShift 5s ease infinite;
-  z-index: 1;
-}
-
-.dashboard-title {
-  font-weight: 700 !important;
-  font-size: 1.8rem !important;
-  background: linear-gradient(90deg, #10b981, #3b82f6);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  letter-spacing: -0.5px;
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-}
-
-.dashboard-title-icon {
-  color: #10b981;
-  animation: float 3s infinite ease-in-out;
-  font-size: 2.2rem !important;
-}
-
-.toolbar-actions {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-/* Main content */
-.dashboard-main {
-  flex: 1;
-  padding: 1.5rem;
-}
-
-.dashboard-grid {
-  display: grid;
-  gap: 1.5rem;
-}
-
-/* Metrics section */
-.metrics-grid {
-  display: grid;
-  gap: 1.5rem;
-  grid-template-columns: repeat(1, 1fr);
-}
-
-@media (min-width: 768px) {
-  .metrics-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (min-width: 1024px) {
-  .metrics-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
-
-.metric-card {
-  position: relative;
-  overflow: hidden;
-  border-radius: 16px !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05) !important;
-  transition: all 0.3s ease !important;
-  animation: slideInUp 0.5s ease-out forwards;
-  opacity: 0;
-  animation-delay: calc(var(--index) * 0.1s);
-}
-
-.metric-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1) !important;
-}
-
-.metric-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%);
-  pointer-events: none;
-}
-
-.efficiency-card {
-  border-left: 4px solid #10b981 !important;
-  --index: 0;
-}
-
-.total-card {
-  border-left: 4px solid #3b82f6 !important;
-  --index: 1;
-}
-
-.average-card {
-  border-left: 4px solid #f59e0b !important;
-  --index: 2;
-}
-
-.drivers-card {
-  border-left: 4px solid #8b5cf6 !important;
-  --index: 3;
-}
-
-.card-title {
-  font-size: 0.875rem !important;
-  font-weight: 600 !important;
-  margin-bottom: 0.25rem !important;
-  color: #334155 !important;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.card-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  background-color: rgba(16, 185, 129, 0.1);
-  color: #10b981;
-}
-
-.total-card .card-icon {
-  background-color: rgba(59, 130, 246, 0.1);
-  color: #3b82f6;
-}
-
-.average-card .card-icon {
-  background-color: rgba(245, 158, 11, 0.1);
-  color: #f59e0b;
-}
-
-.drivers-card .card-icon {
-  background-color: rgba(139, 92, 246, 0.1);
-  color: #8b5cf6;
-}
-
-.card-description {
-  color: var(--muted-foreground) !important;
-  font-size: 0.75rem !important;
-}
-
-.metric-content {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 0.75rem;
-  margin-bottom: 0.75rem;
-}
-
-.metric-value {
-  font-weight: 700 !important;
-  font-size: 1.75rem !important;
-  line-height: 1.2 !important;
-  margin-bottom: 0.25rem !important;
-  background: linear-gradient(90deg, #0f172a, #334155);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  letter-spacing: -0.5px;
-}
-
-.efficiency-card .metric-value {
-  background: linear-gradient(90deg, #059669, #10b981);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.total-card .metric-value {
-  background: linear-gradient(90deg, #1d4ed8, #3b82f6);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.average-card .metric-value {
-  background: linear-gradient(90deg, #d97706, #f59e0b);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.drivers-card .metric-value {
-  background: linear-gradient(90deg, #7c3aed, #8b5cf6);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.metric-target {
-  color: var(--muted-foreground) !important;
-  font-size: 0.75rem !important;
-}
-
-.percentage-chip {
-  background-color: rgba(16, 185, 129, 0.1) !important;
-  color: #10b981 !important;
-  font-weight: 600 !important;
-  border-radius: 20px !important;
-  transition: all 0.3s ease !important;
-  animation: pulse 2s infinite ease-in-out;
-  box-shadow: 0 2px 10px rgba(16, 185, 129, 0.2);
-}
-
-.percentage-chip:hover {
-  background-color: rgba(16, 185, 129, 0.2) !important;
-  box-shadow: 0 2px 15px rgba(16, 185, 129, 0.3);
-}
-
-.progress-bar {
-  margin-top: 1rem;
-  height: 8px !important;
-  border-radius: 9999px;
-  background-color: rgba(241, 245, 249, 0.7) !important;
-  overflow: hidden;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
-}
-
-.progress-bar .MuiLinearProgress-bar {
-  background: linear-gradient(90deg, #059669, #10b981) !important;
-  --progress-width: 94.2%;
-  animation: progressAnimation 1.5s ease-out forwards;
-}
-
-.trend-indicator {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 0.75rem;
-  margin-top: 0.5rem;
-  font-weight: 500;
-}
-
-.trend-indicator.positive {
-  color: #10b981;
-}
-
-.trend-indicator.negative {
-  color: #ef4444;
-}
-
-.trend-indicator svg {
-  font-size: 0.75rem !important;
-  animation: float 2s infinite ease-in-out;
-}
-
-/* Charts section */
-.charts-section {
-  margin-top: 1.5rem;
-}
-
-.charts-grid {
-  display: grid;
-  gap: 1.5rem;
-  grid-template-columns: 1fr;
-}
-
-@media (min-width: 768px) {
-  .charts-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-.chart-card {
-  height: 100%;
-  border-radius: 16px !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05) !important;
-  transition: all 0.3s ease !important;
-  animation: slideInUp 0.6s ease-out forwards;
-  opacity: 0;
-  animation-delay: 0.4s;
-  overflow: hidden;
-}
-
-.chart-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1) !important;
-}
-
-.chart-header {
-  padding-bottom: 0.5rem !important;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.5) !important;
-  background: linear-gradient(to right, rgba(16, 185, 129, 0.05), rgba(59, 130, 246, 0.05));
-}
-
-.chart-header .MuiCardHeader-title {
-  font-weight: 600 !important;
-  font-size: 1rem !important;
-  color: #334155 !important;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.chart-header .MuiCardHeader-subheader {
-  font-size: 0.75rem !important;
-}
-
-.chart-header .MuiCardHeader-action {
-  margin: 0 !important;
-}
-
-.chart-header .MuiCardHeader-action svg {
-  color: #64748b !important;
-  transition: color 0.3s ease !important;
-}
-
-.chart-header .MuiCardHeader-action svg:hover {
-  color: #334155 !important;
-}
-
-.chart-container {
-  aspect-ratio: 4/3;
-  width: 100%;
-  padding: 0.5rem;
-  position: relative;
-}
-
-.chart-container .recharts-responsive-container {
-  transition: opacity 0.5s ease;
-}
-
-.chart-loading {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(255, 255, 255, 0.7);
-  z-index: 10;
-}
-
-.chart-loading-indicator {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: conic-gradient(transparent, #10b981);
-  animation: rotate 1s linear infinite;
-}
-
-.chart-loading-indicator::before {
-  content: '';
-  position: absolute;
-  top: 5px;
-  left: 5px;
-  right: 5px;
-  bottom: 5px;
-  background: white;
-  border-radius: 50%;
-}
-
-/* Custom tooltip */
-.custom-tooltip {
-  background-color: rgba(255, 255, 255, 0.95) !important;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 0.75rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  animation: fadeIn 0.2s ease-out;
-  max-width: 250px;
-  transition: all 0.2s ease;
-}
-
-.tooltip-label {
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-  margin-top: 0;
-  color: #334155;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.5);
-  padding-bottom: 0.25rem;
-}
-
-.tooltip-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.25rem;
-  font-size: 0.875rem;
-}
-
-.tooltip-color {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  margin-right: 0.5rem;
-}
-
-/* Drivers section */
-.drivers-section {
-  margin-top: 1.5rem;
-}
-
-.drivers-card {
-  border-radius: 16px !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05) !important;
-  transition: all 0.3s ease !important;
-  animation: slideInUp 0.7s ease-out forwards;
-  opacity: 0;
-  animation-delay: 0.6s;
-  overflow: hidden;
-}
-
-.drivers-card:hover {
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1) !important;
-}
-
-.drivers-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.5) !important;
-  background: linear-gradient(to right, rgba(139, 92, 246, 0.05), rgba(236, 72, 153, 0.05));
-}
-
-.drivers-header .MuiCardHeader-title {
-  font-weight: 600 !important;
-  font-size: 1.125rem !important;
-  color: #334155 !important;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.card-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.action-button {
-  height: 2.2rem !important;
-  text-transform: none !important;
-  border-radius: 12px !important;
-  transition: all 0.3s ease !important;
-  font-weight: 500 !important;
-  padding: 0 1rem !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
-}
-
-.action-button:hover {
-  background-color: rgba(139, 92, 246, 0.1) !important;
-  border-color: rgba(139, 92, 246, 0.3) !important;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
-}
-
-.drivers-tabs {
-  margin-bottom: 1rem;
-}
-
-.drivers-tabs .MuiTabs-indicator {
-  background: linear-gradient(90deg, #7c3aed, #8b5cf6) !important;
-  height: 3px !important;
-  border-radius: 3px !important;
-}
-
-.drivers-tabs .MuiTab-root {
-  text-transform: none !important;
-  font-weight: 500 !important;
-  transition: all 0.3s ease !important;
-  min-width: 120px !important;
-}
-
-.drivers-tabs .MuiTab-root.Mui-selected {
-  color: #8b5cf6 !important;
-  font-weight: 600 !important;
-}
-
-.drivers-table {
-  box-shadow: none !important;
-  border-radius: 8px !important;
-  overflow: hidden !important;
-}
-
-.drivers-table .MuiTableHead-root {
-  background-color: rgba(241, 245, 249, 0.5) !important;
-}
-
-.drivers-table .MuiTableHead-root .MuiTableCell-root {
-  font-weight: 600 !important;
-  color: #64748b !important;
-  font-size: 0.75rem !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.5px !important;
-}
-
-.drivers-table .MuiTableBody-root .MuiTableRow-root {
-  transition: background-color 0.3s ease !important;
-}
-
-.drivers-table .MuiTableBody-root .MuiTableRow-root:hover {
-  background-color: rgba(241, 245, 249, 0.5) !important;
-}
-
-.driver-name {
-  font-weight: 500 !important;
-  color: #334155 !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 0.75rem !important;
-}
-
-.driver-avatar {
-  width: 32px !important;
-  height: 32px !important;
-  background: linear-gradient(135deg, #7c3aed, #8b5cf6) !important;
-  color: white !important;
-  font-size: 0.875rem !important;
-  font-weight: 600 !important;
-  box-shadow: 0 2px 10px rgba(139, 92, 246, 0.2);
-}
-
-.status-chip {
-  font-weight: 600 !important;
-  font-size: 0.75rem !important;
-  border-radius: 20px !important;
-  padding: 0 0.75rem !important;
-  height: 24px !important;
-  transition: all 0.3s ease !important;
-}
-
-.status-chip.success {
-  background-color: rgba(16, 185, 129, 0.1) !important;
-  color: #10b981 !important;
-  box-shadow: 0 2px 10px rgba(16, 185, 129, 0.1);
-}
-
-.status-chip.success:hover {
-  background-color: rgba(16, 185, 129, 0.2) !important;
-  box-shadow: 0 2px 15px rgba(16, 185, 129, 0.2);
-}
-
-.status-chip.warning {
-  background-color: rgba(245, 158, 11, 0.1) !important;
-  color: #f59e0b !important;
-  box-shadow: 0 2px 10px rgba(245, 158, 11, 0.1);
-}
-
-.status-chip.warning:hover {
-  background-color: rgba(245, 158, 11, 0.2) !important;
-  box-shadow: 0 2px 15px rgba(245, 158, 11, 0.2);
-}
-
-.status-chip.destructive {
-  background-color: rgba(239, 68, 68, 0.1) !important;
-  color: #ef4444 !important;
-  box-shadow: 0 2px 10px rgba(239, 68, 68, 0.1);
-}
-
-.status-chip.destructive:hover {
-  background-color: rgba(239, 68, 68, 0.2) !important;
-  box-shadow: 0 2px 15px rgba(239, 68, 68, 0.2);
-}
-
-/* Vehicle section */
-.vehicle-section {
-  margin-top: 1.5rem;
-}
-
-.vehicle-grid {
-  display: flex;
-  gap: 1.5rem;
-}
-
-.vehicle-card, .trend-card, .cooperatives-ranking-card {
-  flex: 1;
-  height: 100%;
-  border-radius: 16px !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05) !important;
-  transition: all 0.3s ease !important;
-  animation: slideInUp 0.8s ease-out forwards;
-  opacity: 0;
-  animation-delay: 0.8s;
-  overflow: hidden;
-}
-
-.vehicle-card:hover, .trend-card:hover, .cooperatives-ranking-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1) !important;
-}
-
-.vehicle-header, .trend-header, .cooperatives-ranking-header {
-  border-bottom: 1px solid rgba(226, 232, 240, 0.5) !important;
-  background: linear-gradient(to right, rgba(16, 185, 129, 0.05), rgba(59, 130, 246, 0.05));
-}
-
-.vehicle-header .MuiCardHeader-title, 
-.trend-header .MuiCardHeader-title,
-.cooperatives-ranking-header .MuiCardHeader-title {
-  font-weight: 600 !important;
-  font-size: 1rem !important;
-  color: #334155 !important;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.vehicle-header .MuiCardHeader-subheader, 
-.trend-header .MuiCardHeader-subheader,
-.cooperatives-ranking-header .MuiCardHeader-subheader {
-  font-size: 0.75rem !important;
-}
-
-.vehicle-type {
-  font-weight: 500 !important;
-  color: #334155 !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 0.75rem !important;
-}
-
-.vehicle-icon {
-  width: 32px !important;
-  height: 32px !important;
-  background: linear-gradient(135deg, #f59e0b, #d97706) !important;
-  color: white !important;
-  border-radius: 8px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  box-shadow: 0 2px 10px rgba(245, 158, 11, 0.2);
-}
-
-.vehicle-icon svg {
-  font-size: 1.25rem !important;
-}
-
-/* Action buttons */
-.action-icon-button {
-  color: #64748b !important;
-  transition: all 0.3s ease !important;
-}
-
-.action-icon-button:hover {
-  color: #334155 !important;
-  background-color: rgba(241, 245, 249, 0.8) !important;
-}
-
-/* Animations for elements */
-.animate-fade-in {
-  animation: fadeIn 0.5s ease-in-out forwards;
-}
-
-.animate-slide-up {
-  animation: slideInUp 0.5s ease-out forwards;
-}
-
-.animate-pulse {
-  animation: pulse 2s infinite ease-in-out;
-}
-
-.animate-float {
-  animation: float 3s infinite ease-in-out;
-}
-
-/* Loading shimmer effect */
-.loading-shimmer {
-  background: linear-gradient(90deg, #f1f5f9 0%, #e2e8f0 50%, #f1f5f9 100%);
-  background-size: 1000px 100%;
-  animation: shimmer 2s infinite linear;
-}
-
-/* Radar chart styles */
-.radar-chart-container {
-  margin: 0 auto;
-}
-
-.radar-chart-container .recharts-polar-grid-angle line,
-.radar-chart-container .recharts-polar-grid-concentric circle {
-  stroke: rgba(226, 232, 240, 0.5);
-}
-
-.radar-chart-container .recharts-polar-angle-axis-tick text {
-  font-size: 10px;
-  fill: #64748b;
-}
-
-/* Legend styles */
-.recharts-default-legend {
-  margin-top: 10px !important;
-}
-
-.recharts-legend-item-text {
-  color: #334155 !important;
-  font-size: 12px !important;
-}
-
-/* Scrollbar styling */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
-/* Cooperatives ranking table */
-.cooperatives-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.cooperatives-table th {
-  background-color: rgba(16, 185, 129, 0.1);
-  color: #10b981;
-  font-weight: 600;
-  text-align: left;
-  padding: 0.75rem;
-}
-
-.cooperatives-table td {
-  padding: 0.75rem;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.5);
-}
-
-.cooperatives-table tr:last-child td {
-  border-bottom: none;
-}
-
-.cooperatives-table tr:hover td {
-  background-color: rgba(241, 245, 249, 0.5);
-}
-
-.cooperatives-rank {
-  font-weight: 700;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #10b981, #059669);
-  color: white;
-  margin-right: 0.75rem;
-}
-
-.cooperatives-rank.second {
-  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-}
-
-.cooperatives-rank.third {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
-}
-
-.cooperatives-rank.fourth {
-  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-}
-
-.cooperatives-rank.fifth {
-  background: linear-gradient(135deg, #ec4899, #be185d);
-}
-
-.tables-container {
-  display: flex;
-  gap: 1.5rem;
-  width: 100%;
-}
-
-.table-card {
-  flex: 1;
-  min-width: 0;
-}
-
-@media (max-width: 768px) {
-  .tables-container {
-    flex-direction: column;
-  }
-}
-
-.search-filter {
-  margin-bottom: 1rem;
-  display: flex;
-  gap: 0.5rem;
-}
-
-.driver-search {
-  margin-bottom: 1rem;
-  width: 100%;
-}
-
-.search-input {
-  border-radius: 12px !important;
-  background-color: rgba(241, 245, 249, 0.7) !important;
-  transition: all 0.3s ease !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03) !important;
-}
-
-.search-input:hover {
-  background-color: rgba(241, 245, 249, 0.9) !important;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05) !important;
-}
-
-.search-input.Mui-focused {
-  background-color: white !important;
-  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2) !important;
-}
-
-.table-count-badge {
-  background: linear-gradient(135deg, #10b981, #059669);
-  color: white;
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding: 0.25rem 0.5rem;
-  border-radius: 12px;
-  margin-left: 0.5rem;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 1.5rem;
-}
-
-.period-menu-item {
-  font-size: 0.875rem;
-  transition: all 0.2s ease;
-}
-
-.period-menu-item:hover {
-  background-color: rgba(16, 185, 129, 0.1);
-}
-
-.period-menu-item.active {
-  background-color: rgba(16, 185, 129, 0.1);
-  font-weight: 600;
+import Sidebar from "../components/sidebar"
+
+// Theme colors - can be used in sx props
+const themeColors = {
+  background: "#ffffff",
+  foreground: "#0f172a",
+  card: "#ffffff",
+  cardForeground: "#0f172a",
+  primary: "#0f172a",
+  primaryForeground: "#f8fafc",
+  secondary: "#f1f5f9",
+  secondaryForeground: "#0f172a",
+  muted: "#f1f5f9",
+  mutedForeground: "#64748b",
+  accent: "#f1f5f9",
+  accentForeground: "#0f172a",
+  destructive: "#ef4444",
+  destructiveForeground: "#f8fafc",
+  border: "#e2e8f0",
+  input: "#e2e8f0",
+  ring: "#0f172a",
+  radius: "0.5rem",
+  chart1: "#10b981",
+  chart2: "#f59e0b",
+  chart3: "#3b82f6",
+  chart4: "#8b5cf6",
+  chart5: "#ec4899",
+  chart6: "#06b6d4",
+}
+
+// Keyframes for animations
+const keyframes = {
+  fadeIn: `
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+  `,
+  slideInUp: `
+    @keyframes slideInUp {
+      from {
+        transform: translateY(20px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+  `,
+  pulse: `
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+  `,
+  float: `
+    @keyframes float {
+      0% { transform: translateY(0px); }
+      50% { transform: translateY(-5px); }
+      100% { transform: translateY(0px); }
+    }
+  `,
+  progressAnimation: `
+    @keyframes progressAnimation {
+      0% { width: 0%; }
+      100% { width: var(--progress-width); }
+    }
+  `,
+  gradientShift: `
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+  `,
+  rotate: `
+    @keyframes rotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+  `,
+  pieAnimation: `
+    @keyframes pieAnimation {
+      0% { opacity: 0; transform: scale(0.8); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+  `,
+  shimmer: `
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+  `,
+  barAnimation: `
+    @keyframes barAnimation {
+      0% { height: 0; y: 300; }
+      100% { height: attr(height); y: attr(y); }
+    }
+  `,
+  glowPulse: `
+    @keyframes glowPulse {
+      0% { filter: drop-shadow(0px 0px 2px rgba(16, 185, 129, 0.3)); }
+      50% { filter: drop-shadow(0px 0px 8px rgba(16, 185, 129, 0.6)); }
+      100% { filter: drop-shadow(0px 0px 2px rgba(16, 185, 129, 0.3)); }
+    }
+  `,
+  truckDrive: `
+    @keyframes truckDrive {
+      0% { transform: translateX(-10px); }
+      50% { transform: translateX(10px); }
+      100% { transform: translateX(-10px); }
+    }
+  `,
 }
-`
 
 export default function WeighingDashboard() {
   const [period, setPeriod] = useState("month")
@@ -1056,17 +206,37 @@ export default function WeighingDashboard() {
   const [cooperativeFilter, setCooperativeFilter] = useState("")
   const [driverFilter, setDriverFilter] = useState("")
   const [periodMenuAnchor, setPeriodMenuAnchor] = useState(null)
+  const [activeIndex, setActiveIndex] = useState(0)
+  const [chartTooltip, setChartTooltip] = useState(null)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [vehicleData, setVehicleData] = useState([
-    { type: "Caminhão Compactador", count: 12, avgWeighings: 245, icon: <LocalShipping /> },
-    { type: "Caminhão Basculante", count: 8, avgWeighings: 210, icon: <FireTruck /> },
-    { type: "Caminhão Carroceria", count: 6, avgWeighings: 180, icon: <AirportShuttle /> },
-    { type: "Veículo Utilitário", count: 4, avgWeighings: 120, icon: <ElectricCar /> },
-    { type: "Caminhão Baú", count: 3, avgWeighings: 150, icon: <Truck /> },
-    { type: "Caminhão Tanque", count: 2, avgWeighings: 130, icon: <LocalShipping /> },
-    { type: "Caminhão Guincho", count: 2, avgWeighings: 110, icon: <Truck /> },
-    { type: "Caminhão Plataforma", count: 1, avgWeighings: 95, icon: <LocalShipping /> },
-    { type: "Caminhão Cegonha", count: 1, avgWeighings: 85, icon: <Truck /> },
+    { type: "Caminhão Compactador", prefix: "CMP-2023", count: 12, avgWeighings: 245, icon: <LocalShipping /> },
+    { type: "Caminhão Basculante", prefix: "BSC-2022", count: 8, avgWeighings: 210, icon: <FireTruck /> },
+    { type: "Caminhão Carroceria", prefix: "CRR-2021", count: 6, avgWeighings: 180, icon: <AirportShuttle /> },
+    { type: "Veículo Utilitário", prefix: "UTL-2023", count: 4, avgWeighings: 120, icon: <ElectricCar /> },
+    { type: "Caminhão Baú", prefix: "BAU-2022", count: 3, avgWeighings: 150, icon: <Truck /> },
+    { type: "Caminhão Tanque", prefix: "TNQ-2021", count: 2, avgWeighings: 130, icon: <LocalShipping /> },
+    { type: "Caminhão Guincho", prefix: "GCH-2023", count: 2, avgWeighings: 110, icon: <Truck /> },
+    { type: "Caminhão Plataforma", prefix: "PLT-2022", count: 1, avgWeighings: 95, icon: <LocalShipping /> },
+    { type: "Caminhão Cegonha", prefix: "CGN-2021", count: 1, avgWeighings: 85, icon: <Truck /> },
   ])
+
+  // Mock user data for sidebar
+  const mockUser = {
+    name: "Admin LimpaGyn",
+    email: "admin@limpagyn.com.br",
+    avatarUrl: "",
+  }
+
+  // Handle sidebar collapse
+  const handleSidebarCollapse = (collapsed) => {
+    setSidebarCollapsed(collapsed)
+  }
+
+  // Find the vehicle with the highest average weighings
+  const topVehicle = useMemo(() => {
+    return [...vehicleData].sort((a, b) => b.avgWeighings - a.avgWeighings)[0]
+  }, [vehicleData])
 
   useEffect(() => {
     // Simulate loading data
@@ -1120,20 +290,41 @@ export default function WeighingDashboard() {
     { rank: 10, name: "Cooperativa Planeta Verde", weighings: 350, percentage: 7.9 },
   ]
 
+  // Enhanced monthly data with additional metrics for all 12 months
   const monthlyData = [
-    { month: "Jan", seletiva: 850, cataTreco: 350 },
-    { month: "Fev", seletiva: 920, cataTreco: 380 },
-    { month: "Mar", seletiva: 880, cataTreco: 400 },
-    { month: "Abr", seletiva: 950, cataTreco: 420 },
-    { month: "Mai", seletiva: 1020, cataTreco: 450 },
-    { month: "Jun", seletiva: 980, cataTreco: 430 },
+    { month: "Jan", seletiva: 850, cataTreco: 350, total: 1200, meta: 1100, eficiencia: 109.1 },
+    { month: "Fev", seletiva: 920, cataTreco: 380, total: 1300, meta: 1150, eficiencia: 113.0 },
+    { month: "Mar", seletiva: 880, cataTreco: 400, total: 1280, meta: 1200, eficiencia: 106.7 },
+    { month: "Abr", seletiva: 950, cataTreco: 420, total: 1370, meta: 1250, eficiencia: 109.6 },
+    { month: "Mai", seletiva: 1020, cataTreco: 450, total: 1470, meta: 1300, eficiencia: 113.1 },
+    { month: "Jun", seletiva: 980, cataTreco: 430, total: 1410, meta: 1350, eficiencia: 104.4 },
+    { month: "Jul", seletiva: 1050, cataTreco: 460, total: 1510, meta: 1400, eficiencia: 107.9 },
+    { month: "Ago", seletiva: 1100, cataTreco: 480, total: 1580, meta: 1450, eficiencia: 109.0 },
+    { month: "Set", seletiva: 1030, cataTreco: 470, total: 1500, meta: 1500, eficiencia: 100.0 },
+    { month: "Out", seletiva: 1080, cataTreco: 490, total: 1570, meta: 1550, eficiencia: 101.3 },
+    { month: "Nov", seletiva: 1150, cataTreco: 510, total: 1660, meta: 1600, eficiencia: 103.8 },
+    { month: "Dez", seletiva: 1200, cataTreco: 550, total: 1750, meta: 1650, eficiencia: 106.1 },
   ]
+
+  // Calculate totals for Seletiva and Cata Treco
+  const totalSeletiva = monthlyData.reduce((sum, item) => sum + item.seletiva, 0)
+  const totalCataTreco = monthlyData.reduce((sum, item) => sum + item.cataTreco, 0)
+  const totalWeighings = totalSeletiva + totalCataTreco
 
   const vehiclePerformanceData = [
     { vehicle: "Compactador", efficiency: 92, maintenance: 85, fuel: 78, availability: 95, weighings: 245 },
     { vehicle: "Basculante", efficiency: 88, maintenance: 80, fuel: 82, availability: 90, weighings: 210 },
     { vehicle: "Carroceria", efficiency: 85, maintenance: 75, fuel: 90, availability: 88, weighings: 180 },
     { vehicle: "Utilitário", efficiency: 80, maintenance: 90, fuel: 95, availability: 85, weighings: 120 },
+  ]
+
+  // Enhanced colors with gradients for pie chart
+  const PIE_COLORS = [
+    { start: "#10b981", end: "#059669" }, // Green gradient
+    { start: "#3b82f6", end: "#1d4ed8" }, // Blue gradient
+    { start: "#f59e0b", end: "#d97706" }, // Amber gradient
+    { start: "#8b5cf6", end: "#7c3aed" }, // Purple gradient
+    { start: "#ec4899", end: "#be185d" }, // Pink gradient
   ]
 
   const COLORS = ["#10b981", "#f59e0b", "#3b82f6", "#8b5cf6", "#ec4899", "#06b6d4"]
@@ -1155,42 +346,512 @@ export default function WeighingDashboard() {
     setPeriodMenuAnchor(null)
   }
 
+  const onPieEnter = (_, index) => {
+    setActiveIndex(index)
+  }
+
+  const renderActiveShape = (props) => {
+    const RADIAN = Math.PI / 180
+    const { cx, cy, midAngle, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent, value } = props
+    const sin = Math.sin(-RADIAN * midAngle)
+    const cos = Math.cos(-RADIAN * midAngle)
+    const sx = cx + (outerRadius + 10) * cos
+    const sy = cy + (outerRadius + 10) * sin
+    const mx = cx + (outerRadius + 30) * cos
+    const my = cy + (outerRadius + 30) * sin
+    const ex = mx + (cos >= 0 ? 1 : -1) * 22
+    const ey = my
+    const textAnchor = cos >= 0 ? "start" : "end"
+
+    // Get the gradient for the active slice
+    const index = cooperativesData.findIndex((item) => item.name === payload.name)
+    const gradientStart = PIE_COLORS[index % PIE_COLORS.length].start
+    const gradientEnd = PIE_COLORS[index % PIE_COLORS.length].end
+
+    return (
+      <g>
+        <defs>
+          <linearGradient id={`colorActive${index}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={gradientStart} stopOpacity={1} />
+            <stop offset="100%" stopColor={gradientEnd} stopOpacity={1} />
+          </linearGradient>
+          <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="4" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
+        </defs>
+        <Sector
+          cx={cx}
+          cy={cy}
+          innerRadius={innerRadius}
+          outerRadius={outerRadius + 10}
+          startAngle={startAngle}
+          endAngle={endAngle}
+          fill={`url(#colorActive${index})`}
+          filter="url(#glow)"
+        />
+        <Sector
+          cx={cx}
+          cy={cy}
+          startAngle={startAngle}
+          endAngle={endAngle}
+          innerRadius={outerRadius + 8}
+          outerRadius={outerRadius + 14}
+          fill={gradientStart}
+        />
+        <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={gradientStart} fill="none" strokeWidth={2} />
+        <circle cx={ex} cy={ey} r={2} fill={gradientStart} stroke="none" />
+        <text
+          x={ex + (cos >= 0 ? 1 : -1) * 12}
+          y={ey}
+          textAnchor={textAnchor}
+          fill="#333333"
+          style={{ fontWeight: 600, fontSize: 16, textShadow: "0 1px 2px rgba(0,0,0,0.1)" }}
+        >
+          {payload.name.split(" ")[1]}
+        </text>
+        <text
+          x={ex + (cos >= 0 ? 1 : -1) * 12}
+          y={ey}
+          dy={20}
+          textAnchor={textAnchor}
+          fill="#666666"
+          style={{ fontSize: 14 }}
+        >
+          {`${value} pesagens (${(percent * 100).toFixed(1)}%)`}
+        </text>
+      </g>
+    )
+  }
+
+  // Enhanced tooltip for bar chart with better styling and more information
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
+      const data = monthlyData.find((item) => item.month === label)
+      const total = data.total
+      const meta = data.meta
+      const eficiencia = data.eficiencia
+
       return (
-        <div className="custom-tooltip">
-          <p className="tooltip-label">{`${label}`}</p>
+        <Box
+          sx={{
+            backgroundColor: "rgba(255, 255, 255, 0.98)",
+            border: "none",
+            borderRadius: "12px",
+            padding: "1rem",
+            boxShadow: "0 8px 30px rgba(0, 0, 0, 0.12)",
+            animation: "fadeIn 0.2s ease-out",
+            maxWidth: "280px",
+            transition: "all 0.2s ease",
+            position: "relative",
+            "&:before": {
+              content: "''",
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              height: "4px",
+              background: "linear-gradient(90deg, #10b981, #3b82f6)",
+              borderTopLeftRadius: "10px",
+              borderTopRightRadius: "10px",
+            },
+          }}
+        >
+          <Typography
+            sx={{
+              fontWeight: 700,
+              fontSize: "1.1rem",
+              marginBottom: "0.75rem",
+              color: "#1e293b",
+              borderBottom: "1px solid rgba(226, 232, 240, 0.5)",
+              paddingBottom: "0.5rem",
+            }}
+          >
+            {`${label} - ${total} Pesagens`}
+          </Typography>
+
           {payload.map((entry, index) => (
-            <div key={`item-${index}`} className="tooltip-item">
-              <div style={{ display: "flex", alignItems: "center" }}>
-                <span className="tooltip-color" style={{ backgroundColor: entry.color }}></span>
-                <span>{entry.name}:</span>
-              </div>
-              <strong>{entry.value}</strong>
-            </div>
+            <Box
+              key={`item-${index}`}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: "0.5rem",
+                fontSize: "0.875rem",
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <Box
+                  component="span"
+                  sx={{
+                    display: "inline-block",
+                    width: "12px",
+                    height: "12px",
+                    borderRadius: "4px",
+                    marginRight: "0.75rem",
+                    backgroundColor: entry.color,
+                    boxShadow: `0 0 6px ${entry.color}80`,
+                  }}
+                />
+                <Typography sx={{ color: "#475569", fontWeight: 500 }}>{entry.name}:</Typography>
+              </Box>
+              <Typography sx={{ fontWeight: 600, color: "#334155" }}>{entry.value}</Typography>
+            </Box>
           ))}
-        </div>
+
+          <Box sx={{ marginTop: "0.75rem", paddingTop: "0.75rem", borderTop: "1px dashed rgba(226, 232, 240, 0.8)" }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: "0.5rem",
+              }}
+            >
+              <Typography sx={{ color: "#475569", fontWeight: 500, fontSize: "0.875rem" }}>Meta:</Typography>
+              <Typography sx={{ fontWeight: 600, color: "#334155", fontSize: "0.875rem" }}>{meta}</Typography>
+            </Box>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <Typography sx={{ color: "#475569", fontWeight: 500, fontSize: "0.875rem" }}>Eficiência:</Typography>
+              <Typography
+                sx={{
+                  fontWeight: 700,
+                  fontSize: "0.875rem",
+                  color: eficiencia >= 100 ? "#10b981" : "#ef4444",
+                }}
+              >
+                {eficiencia}%
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
       )
     }
     return null
   }
 
-  const getStatusChip = (efficiency) => {
-    if (efficiency > 90) {
-      return <Chip label="Excelente" className="status-chip success" />
-    } else if (efficiency > 80) {
-      return <Chip label="Bom" className="status-chip warning" />
-    } else {
-      return <Chip label="Precisa Melhorar" className="status-chip destructive" />
+  // Enhanced tooltip for pie chart
+  const PieTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      const data = payload[0]
+      const color = data.payload.fill || "#10b981"
+
+      return (
+        <Box
+          sx={{
+            backgroundColor: "rgba(255, 255, 255, 0.98)",
+            border: `2px solid ${color}`,
+            borderRadius: "12px",
+            padding: "1rem",
+            boxShadow: "0 8px 30px rgba(0, 0, 0, 0.12)",
+            animation: "fadeIn 0.3s ease-out",
+            maxWidth: "280px",
+            transition: "all 0.3s ease",
+            position: "relative",
+            "&:before": {
+              content: "''",
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              height: "4px",
+              background: `linear-gradient(90deg, ${color}, ${color}80)`,
+              borderTopLeftRadius: "10px",
+              borderTopRightRadius: "10px",
+            },
+          }}
+        >
+          <Typography
+            sx={{
+              fontWeight: 700,
+              fontSize: "1rem",
+              marginBottom: "0.5rem",
+              color: "#1e293b",
+            }}
+          >
+            {data.name}
+          </Typography>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: "0.5rem",
+            }}
+          >
+            <Typography
+              sx={{
+                fontSize: "0.875rem",
+                color: "#64748b",
+              }}
+            >
+              Total de Pesagens:
+            </Typography>
+            <Typography
+              sx={{
+                fontWeight: 600,
+                fontSize: "1rem",
+                color: "#334155",
+              }}
+            >
+              {data.value}
+            </Typography>
+          </Box>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <Typography
+              sx={{
+                fontSize: "0.875rem",
+                color: "#64748b",
+              }}
+            >
+              Porcentagem:
+            </Typography>
+            <Typography
+              sx={{
+                fontWeight: 600,
+                fontSize: "1rem",
+                color: color,
+              }}
+            >
+              {`${(data.payload.percentage).toFixed(1)}%`}
+            </Typography>
+          </Box>
+        </Box>
+      )
     }
+    return null
   }
 
-  const getInitials = (name) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
+  // Custom legend for pie chart
+  const renderLegend = (props) => {
+    const { payload } = props
+
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          flexWrap: "wrap",
+          justifyContent: "center",
+          gap: "0.75rem",
+          marginTop: "1rem",
+        }}
+      >
+        {payload.map((entry, index) => {
+          const gradientStart = PIE_COLORS[index % PIE_COLORS.length].start
+          const gradientEnd = PIE_COLORS[index % PIE_COLORS.length].end
+
+          return (
+            <Box
+              key={`legend-${index}`}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                padding: "0.25rem 0.5rem",
+                borderRadius: "6px",
+                "&:hover": {
+                  backgroundColor: "rgba(241, 245, 249, 0.7)",
+                },
+              }}
+              onClick={() => setActiveIndex(index)}
+            >
+              <Box
+                sx={{
+                  width: "12px",
+                  height: "12px",
+                  borderRadius: "4px",
+                  marginRight: "0.5rem",
+                  background: `linear-gradient(135deg, ${gradientStart}, ${gradientEnd})`,
+                  boxShadow:
+                    activeIndex === index ? `0 0 0 2px rgba(255,255,255,0.8), 0 0 0 4px ${gradientStart}40` : "none",
+                  transition: "all 0.2s ease",
+                }}
+              />
+              <Typography
+                sx={{
+                  fontSize: "0.75rem",
+                  fontWeight: activeIndex === index ? 600 : 400,
+                  color: activeIndex === index ? "#334155" : "#64748b",
+                  transition: "all 0.2s ease",
+                }}
+              >
+                {entry.value.split(" ")[1]}
+              </Typography>
+            </Box>
+          )
+        })}
+      </Box>
+    )
+  }
+
+  // Enhanced custom bar chart legend
+  const CustomBarChartLegend = (props) => {
+    const { payload } = props
+
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          gap: "1.5rem",
+          marginTop: "0.5rem",
+          padding: "0.5rem",
+          flexWrap: "wrap",
+        }}
+      >
+        {payload.map((entry, index) => {
+          const color = entry.color
+          const isSelectiva = entry.value === "seletiva"
+
+          return (
+            <Box
+              key={`legend-${index}`}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                padding: "0.5rem 0.75rem",
+                borderRadius: "8px",
+                backgroundColor: "rgba(241, 245, 249, 0.5)",
+                "&:hover": {
+                  backgroundColor: "rgba(241, 245, 249, 0.9)",
+                  transform: "translateY(-2px)",
+                  boxShadow: "245,249,0.9)",
+                  transform: "translateY(-2px)",
+                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
+                },
+              }}
+            >
+              <Box
+                sx={{
+                  width: "16px",
+                  height: "16px",
+                  borderRadius: "4px",
+                  marginRight: "0.75rem",
+                  background: isSelectiva
+                    ? "linear-gradient(135deg, #10b981, #059669)"
+                    : "linear-gradient(135deg, #f59e0b, #d97706)",
+                  boxShadow: `0 2px 6px ${color}40`,
+                }}
+              />
+              <Typography
+                sx={{
+                  fontSize: "0.875rem",
+                  fontWeight: 600,
+                  color: isSelectiva ? "#10b981" : "#f59e0b",
+                }}
+              >
+                {isSelectiva ? "Seletiva" : "Cata Treco"}
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: "0.875rem",
+                  fontWeight: 700,
+                  color: "#334155",
+                  marginLeft: "0.5rem",
+                }}
+              >
+                {isSelectiva ? `${totalSeletiva}` : `${totalCataTreco}`}
+              </Typography>
+            </Box>
+          )
+        })}
+      </Box>
+    )
+  }
+
+  // Custom label for bar chart
+  const renderCustomBarLabel = (props) => {
+    const { x, y, width, height, value } = props
+    return (
+      <text
+        x={x + width / 2}
+        y={y - 6}
+        fill="#334155"
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fontSize="12"
+        fontWeight="600"
+      >
+        {value}
+      </text>
+    )
+  }
+
+  const getStatusChip = (efficiency) => {
+    if (efficiency > 90) {
+      return (
+        <Chip
+          label="Excelente"
+          sx={{
+            backgroundColor: "rgba(16, 185, 129, 0.1)",
+            color: "#10b981",
+            fontWeight: 600,
+            borderRadius: "20px",
+            transition: "all 0.3s ease",
+            animation: "pulse 2s infinite ease-in-out",
+            boxShadow: "0 2px 10px rgba(16, 185, 129, 0.2)",
+            "&:hover": {
+              backgroundColor: "rgba(16, 185, 129, 0.2)",
+              boxShadow: "0 2px 15px rgba(16, 185, 129, 0.3)",
+            },
+          }}
+        />
+      )
+    } else if (efficiency > 80) {
+      return (
+        <Chip
+          label="Bom"
+          sx={{
+            backgroundColor: "rgba(245, 158, 11, 0.1)",
+            color: "#f59e0b",
+            fontWeight: 600,
+            borderRadius: "20px",
+            transition: "all 0.3s ease",
+            animation: "pulse 2s infinite ease-in-out",
+            boxShadow: "0 2px 10px rgba(245, 158, 11, 0.2)",
+            "&:hover": {
+              backgroundColor: "rgba(245, 158, 11, 0.2)",
+              boxShadow: "0 2px 15px rgba(245, 158, 11, 0.3)",
+            },
+          }}
+        />
+      )
+    } else {
+      return (
+        <Chip
+          label="Precisa Melhorar"
+          sx={{
+            backgroundColor: "rgba(239, 68, 68, 0.1)",
+            color: "#ef4444",
+            fontWeight: 600,
+            borderRadius: "20px",
+            transition: "all 0.3s ease",
+            animation: "pulse 2s infinite ease-in-out",
+            boxShadow: "0 2px 10px rgba(239, 68, 68, 0.1)",
+            "&:hover": {
+              backgroundColor: "rgba(239, 68, 68, 0.2)",
+              boxShadow: "0 2px 15px rgba(239, 68, 68, 0.3)",
+            },
+          }}
+        />
+      )
+    }
   }
 
   // Filter functions
@@ -1227,553 +888,2172 @@ export default function WeighingDashboard() {
         ? filteredLowestDriversData
         : filteredAllDriversData
 
+  // Truck SVG for the top vehicle card
+  const TruckSVG = () => (
+    <svg
+      width="100%"
+      height="100%"
+      viewBox="0 0 100 60"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      style={{
+        filter: "drop-shadow(0px 4px 6px rgba(0, 0, 0, 0.1))",
+        animation: "truckDrive 4s infinite ease-in-out",
+      }}
+    >
+      <rect x="10" y="35" width="50" height="15" rx="2" fill="#10b981" />
+      <rect x="60" y="35" width="25" height="15" rx="2" fill="#059669" />
+      <rect x="15" y="25" width="30" height="10" rx="2" fill="#059669" />
+      <circle cx="25" cy="50" r="6" fill="#334155" />
+      <circle cx="25" cy="50" r="3" fill="#f8fafc" />
+      <circle cx="70" cy="50" r="6" fill="#334155" />
+      <circle cx="70" cy="50" r="3" fill="#f8fafc" />
+      <rect x="60" y="30" width="5" height="5" rx="1" fill="#f8fafc" />
+    </svg>
+  )
+
   return (
     <>
-      <style>{styles}</style>
-      <div className="dashboard-container">
-        <AppBar position="sticky" className="app-bar">
-          <Toolbar>
-            <Typography variant="h6" className="dashboard-title">
-              <EcoIcon className="dashboard-title-icon" />
-              Dashboard de Pesagens
-            </Typography>
-          </Toolbar>
-        </AppBar>
+      <style>
+        {`
+          ${keyframes.fadeIn}
+          ${keyframes.slideInUp}
+          ${keyframes.pulse}
+          ${keyframes.float}
+          ${keyframes.progressAnimation}
+          ${keyframes.gradientShift}
+          ${keyframes.rotate}
+          ${keyframes.pieAnimation}
+          ${keyframes.shimmer}
+          ${keyframes.barAnimation}
+          ${keyframes.glowPulse}
+          ${keyframes.truckDrive}
+        `}
+      </style>
+      <Box sx={{ display: "flex" }}>
+        {/* Sidebar */}
+        <Sidebar onCollapse={handleSidebarCollapse} user={mockUser} />
 
-        <main className="dashboard-main">
-          <div className="dashboard-grid">
-            {/* Efficiency Section */}
-            <section className="efficiency-section">
-              <div className="metrics-grid">
-                <Fade in={!loading} timeout={500}>
-                  <Card className="metric-card efficiency-card">
-                    <CardContent>
-                      <Typography variant="subtitle2" className="card-title">
-                        <div className="card-icon">
-                          <Speed />
-                        </div>
-                        Meta de Eficiência
-                      </Typography>
-                      <Typography variant="caption" className="card-description">
-                        Toneladas alvo vs. atual
-                      </Typography>
-                      <div className="metric-content">
-                        <div>
-                          <Typography variant="h4" className="metric-value">
-                            {efficiencyData.current} ton
-                          </Typography>
-                          <Typography variant="caption" className="metric-target">
-                            Meta: {efficiencyData.target} ton
-                          </Typography>
-                        </div>
-                        <Chip
-                          icon={<TrendingUp fontSize="small" />}
-                          label={`${efficiencyData.percentage}%`}
-                          className="percentage-chip"
-                        />
-                      </div>
-                      <LinearProgress
-                        variant="determinate"
-                        value={efficiencyData.percentage}
-                        className="progress-bar"
-                      />
-                    </CardContent>
-                  </Card>
-                </Fade>
+        {/* Main Content */}
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            minHeight: "100vh",
+            animation: "fadeIn 0.5s ease-in-out",
+            backgroundColor: themeColors.background,
+            marginLeft: sidebarCollapsed ? "80px" : "280px",
+            width: "calc(100% - " + (sidebarCollapsed ? "80px" : "280px") + ")",
+            transition: "all 0.3s ease",
+          }}
+        >
+          <AppBar
+            position="sticky"
+            sx={{
+              backgroundColor: `${themeColors.card} !important`,
+              color: `${themeColors.cardForeground} !important`,
+              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05) !important",
+              position: "relative",
+              zIndex: 10,
+              transition: "all 0.3s ease",
+              "&:after": {
+                content: "''",
+                position: "absolute",
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: "3px",
+                background: "linear-gradient(90deg, #10b981, #3b82f6, #8b5cf6)",
+                backgroundSize: "200% 200%",
+                animation: "gradientShift 5s ease infinite",
+                zIndex: 1,
+              },
+            }}
+          >
+            <Toolbar>
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: 700,
+                  fontSize: "1.8rem",
+                  background: "linear-gradient(90deg, #10b981, #3b82f6)",
+                  backgroundClip: "text",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  letterSpacing: "-0.5px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.8rem",
+                }}
+              >
+                <EcoIcon
+                  sx={{
+                    color: "#10b981",
+                    animation: "float 3s infinite ease-in-out",
+                    fontSize: "2.2rem",
+                  }}
+                />
+                Dashboard de Pesagens
+              </Typography>
+            </Toolbar>
+          </AppBar>
 
-                <Fade in={!loading} timeout={500} style={{ transitionDelay: !loading ? "100ms" : "0ms" }}>
-                  <Card className="metric-card total-card">
-                    <CardContent>
-                      <Typography variant="subtitle2" className="card-title">
-                        <div className="card-icon">
-                          <RecyclingOutlined />
-                        </div>
-                        Total de Pesagens
-                      </Typography>
-                      <Typography variant="caption" className="card-description">
-                        Seletiva e Cata Treco
-                      </Typography>
-                      <Typography variant="h4" className="metric-value">
-                        8,742
-                      </Typography>
-                      <div className="trend-indicator positive">
-                        <ArrowUpward fontSize="small" />
-                        <Typography variant="caption">12.5% desde o último {period}</Typography>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Fade>
-
-                <Fade in={!loading} timeout={500} style={{ transitionDelay: !loading ? "200ms" : "0ms" }}>
-                  <Card className="metric-card average-card">
-                    <CardContent>
-                      <Typography variant="subtitle2" className="card-title">
-                        <div className="card-icon">
-                          <DirectionsCar />
-                        </div>
-                        Média por Veículo
-                      </Typography>
-                      <Typography variant="caption" className="card-description">
-                        Pesagens por veículo
-                      </Typography>
-                      <Typography variant="h4" className="metric-value">
-                        215
-                      </Typography>
-                      <div className="trend-indicator positive">
-                        <ArrowUpward fontSize="small" />
-                        <Typography variant="caption">8.3% desde o último {period}</Typography>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Fade>
-
-                <Fade in={!loading} timeout={500} style={{ transitionDelay: !loading ? "300ms" : "0ms" }}>
-                  <Card className="metric-card drivers-card">
-                    <CardContent>
-                      <Typography variant="subtitle2" className="card-title">
-                        <div className="card-icon">
-                          <Groups />
-                        </div>
-                        Motoristas Ativos
-                      </Typography>
-                      <Typography variant="caption" className="card-description">
-                        Total de motoristas
-                      </Typography>
-                      <Typography variant="h4" className="metric-value">
-                        32
-                      </Typography>
-                      <div className="trend-indicator negative">
-                        <ArrowDownward fontSize="small" />
-                        <Typography variant="caption">2 desde o último {period}</Typography>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Fade>
-              </div>
-            </section>
-
-            {/* Charts Section */}
-            <section className="charts-section">
-              <div className="charts-grid">
-                <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "400ms" : "0ms" }}>
-                  <Card className="chart-card">
-                    <CardHeader
-                      title={
-                        <span>
-                          <BarChartIcon style={{ verticalAlign: "middle", marginRight: "8px" }} />
-                          Comparativo de Pesagens
-                        </span>
-                      }
-                      subheader="Seletiva vs. Cata Treco"
-                      action={
-                        <Box>
-                          <IconButton size="small" className="action-icon-button">
-                            <Refresh />
-                          </IconButton>
-                          <IconButton size="small" className="action-icon-button">
-                            <Download />
-                          </IconButton>
-                        </Box>
-                      }
-                      className="chart-header"
-                    />
-                    <CardContent>
-                      <div className="chart-container">
-                        {!chartsLoaded.barChart && (
-                          <div className="chart-loading">
-                            <div className="chart-loading-indicator"></div>
-                          </div>
-                        )}
-                        <Fade in={chartsLoaded.barChart} timeout={500}>
-                          <div style={{ width: "100%", height: "100%" }}>
-                            <ResponsiveContainer width="100%" height="100%">
-                              <BarChart data={monthlyData} margin={{ top: 20, right: 30, left: 20, bottom: 24 }}>
-                                <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#e2e8f0" />
-                                <XAxis
-                                  dataKey="month"
-                                  tickLine={false}
-                                  axisLine={false}
-                                  tick={{ fill: "#64748b", fontSize: 12 }}
-                                />
-                                <YAxis tickLine={false} axisLine={false} tick={{ fill: "#64748b", fontSize: 12 }} />
-                                <Tooltip content={<CustomTooltip />} />
-                                <Legend />
-                                <Bar
-                                  dataKey="seletiva"
-                                  fill="#10b981"
-                                  radius={[4, 4, 0, 0]}
-                                  name="Seletiva"
-                                  animationDuration={1500}
-                                  animationEasing="ease-out"
-                                />
-                                <Bar
-                                  dataKey="cataTreco"
-                                  fill="#f59e0b"
-                                  radius={[4, 4, 0, 0]}
-                                  name="Cata Treco"
-                                  animationDuration={1500}
-                                  animationEasing="ease-out"
-                                  animationBegin={300}
-                                />
-                              </BarChart>
-                            </ResponsiveContainer>
-                          </div>
-                        </Fade>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Zoom>
-
-                <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "500ms" : "0ms" }}>
-                  <Card className="chart-card">
-                    <CardHeader
-                      title={
-                        <span>
-                          <DonutLarge style={{ verticalAlign: "middle", marginRight: "8px" }} />
-                          Cooperativas com Mais Pesagens
-                        </span>
-                      }
-                      subheader="Top 5 cooperativas por volume"
-                      action={
-                        <Box>
-                          <IconButton size="small" className="action-icon-button">
-                            <Print />
-                          </IconButton>
-                          <IconButton size="small" className="action-icon-button">
-                            <Share />
-                          </IconButton>
-                        </Box>
-                      }
-                      className="chart-header"
-                    />
-                    <CardContent>
-                      <div className="chart-container">
-                        {!chartsLoaded.pieChart && (
-                          <div className="chart-loading">
-                            <div className="chart-loading-indicator"></div>
-                          </div>
-                        )}
-                        <Fade in={chartsLoaded.pieChart} timeout={500}>
-                          <div style={{ width: "100%", height: "100%" }}>
-                            <ResponsiveContainer width="100%" height="100%">
-                              <PieChart>
-                                <Pie
-                                  data={cooperativesData.slice(0, 5)}
-                                  cx="50%"
-                                  cy="50%"
-                                  labelLine={false}
-                                  outerRadius={80}
-                                  fill="#8884d8"
-                                  dataKey="weighings"
-                                  nameKey="name"
-                                  label={({ name, percent }) => `${name.split(" ")[1]}: ${(percent * 100).toFixed(0)}%`}
-                                  animationDuration={1500}
-                                >
-                                  {cooperativesData.slice(0, 5).map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                  ))}
-                                </Pie>
-                                <Tooltip
-                                  formatter={(value, name, props) => [`${value} pesagens`, props.payload.name]}
-                                />
-                                <Legend />
-                              </PieChart>
-                            </ResponsiveContainer>
-                          </div>
-                        </Fade>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Zoom>
-              </div>
-            </section>
-
-            {/* Drivers Section */}
-            <section className="drivers-section">
-              <Grow in={!loading} timeout={800} style={{ transitionDelay: !loading ? "700ms" : "0ms" }}>
-                <Card className="drivers-card">
-                  <CardHeader
-                    title={
-                      <span>
-                        <EmojiEvents style={{ verticalAlign: "middle", marginRight: "8px" }} />
-                        Motoristas e Pesagens
-                        <span className="table-count-badge">{totalDrivers}</span>
-                      </span>
-                    }
-                    action={
-                      <div className="card-actions">
-                        <Button variant="outlined" size="small" startIcon={<FilterList />} className="action-button">
-                          Filtrar
-                        </Button>
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          startIcon={<DateRange />}
-                          endIcon={<ExpandMore />}
-                          className="action-button"
-                          onClick={handlePeriodMenuOpen}
-                        >
-                          {period === "week" ? "Semana" : period === "month" ? "Mês" : "Ano"}
-                        </Button>
-                        <Menu
-                          anchorEl={periodMenuAnchor}
-                          open={Boolean(periodMenuAnchor)}
-                          onClose={handlePeriodMenuClose}
-                        >
-                          <MenuItem
-                            onClick={() => handlePeriodChange("week")}
-                            className={`period-menu-item ${period === "week" ? "active" : ""}`}
-                          >
-                            Semana
-                          </MenuItem>
-                          <MenuItem
-                            onClick={() => handlePeriodChange("month")}
-                            className={`period-menu-item ${period === "month" ? "active" : ""}`}
-                          >
-                            Mês
-                          </MenuItem>
-                          <MenuItem
-                            onClick={() => handlePeriodChange("year")}
-                            className={`period-menu-item ${period === "year" ? "active" : ""}`}
-                          >
-                            Ano
-                          </MenuItem>
-                        </Menu>
-                      </div>
-                    }
-                    className="drivers-header"
-                  />
-                  <CardContent>
-                    <TextField
-                      size="small"
-                      placeholder="Buscar motoristas..."
-                      fullWidth
-                      value={driverFilter}
-                      onChange={(e) => setDriverFilter(e.target.value)}
-                      className="driver-search"
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <Search fontSize="small" />
-                          </InputAdornment>
-                        ),
-                        className: "search-input",
-                      }}
-                    />
-
-                    <Tabs value={tabValue} onChange={handleTabChange} className="drivers-tabs" variant="fullWidth">
-                      <Tab label="Top Motoristas" />
-                      <Tab label="Menor Desempenho" />
-                      <Tab label="Todos" />
-                    </Tabs>
-
-                    <div className="tab-content">
-                      <Fade in={true} timeout={500}>
-                        <TableContainer component={Paper} className="drivers-table">
-                          <Table>
-                            <TableHead>
-                              <TableRow>
-                                <TableCell>Motorista</TableCell>
-                                <TableCell align="right">Pesagens</TableCell>
-                                <TableCell align="right">Eficiência</TableCell>
-                                <TableCell align="right">Status</TableCell>
-                              </TableRow>
-                            </TableHead>
-                            <TableBody>
-                              {currentDriversData.map((driver) => (
-                                <TableRow key={driver.id}>
-                                  <TableCell className="driver-name">{driver.name}</TableCell>
-                                  <TableCell align="right">{driver.weighings}</TableCell>
-                                  <TableCell align="right">{driver.efficiency}%</TableCell>
-                                  <TableCell align="right">{getStatusChip(driver.efficiency)}</TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                        </TableContainer>
-                      </Fade>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Grow>
-            </section>
-
-            {/* Vehicle and Cooperatives Section */}
-            <section className="vehicle-section">
-              <div className="tables-container">
-                <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "800ms" : "0ms" }}>
-                  <Card className="vehicle-card table-card">
-                    <CardHeader
-                      title={
-                        <span>
-                          <Truck style={{ verticalAlign: "middle", marginRight: "8px" }} />
-                          Veículos e Média de Pesagens
-                          <span className="table-count-badge">{totalVehicles}</span>
-                        </span>
-                      }
-                      subheader="Por tipo de veículo"
-                      action={
-                        <Box>
-                          <IconButton size="small" className="action-icon-button">
-                            <Print />
-                          </IconButton>
-                          <IconButton size="small" className="action-icon-button">
-                            <MoreVert />
-                          </IconButton>
-                        </Box>
-                      }
-                      className="vehicle-header"
-                    />
-                    <CardContent>
-                      <TextField
-                        size="small"
-                        placeholder="Filtrar veículos..."
-                        fullWidth
-                        value={vehicleFilter}
-                        onChange={(e) => setVehicleFilter(e.target.value)}
-                        className="search-filter"
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <Search fontSize="small" />
-                            </InputAdornment>
-                          ),
-                          className: "search-input",
+          <Box
+            component="main"
+            sx={{
+              flex: 1,
+              padding: "1.5rem",
+            }}
+          >
+            <Container maxWidth="xl" disableGutters>
+              <Box sx={{ display: "grid", gap: "1.5rem" }}>
+                {/* Efficiency Section */}
+                <Box component="section">
+                  <Box
+                    sx={{
+                      display: "grid",
+                      gap: "1.5rem",
+                      gridTemplateColumns: {
+                        xs: "repeat(1, 1fr)",
+                        md: "repeat(2, 1fr)",
+                        lg: "repeat(4, 1fr)",
+                      },
+                    }}
+                  >
+                    <Fade in={!loading} timeout={500}>
+                      <Card
+                        sx={{
+                          position: "relative",
+                          overflow: "hidden",
+                          borderRadius: "16px !important",
+                          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05) !important",
+                          transition: "all 0.3s ease !important",
+                          animation: "slideInUp 0.5s ease-out forwards",
+                          opacity: 0,
+                          animationDelay: "0s",
+                          borderLeft: "4px solid #10b981 !important",
+                          "&:hover": {
+                            transform: "translateY(-5px)",
+                            boxShadow: "0 8px 30px rgba(0, 0, 0, 0.1) !important",
+                          },
+                          "&::before": {
+                            content: "''",
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            width: "100%",
+                            height: "100%",
+                            background:
+                              "linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%)",
+                            pointerEvents: "none",
+                          },
                         }}
-                      />
-                      <TableContainer
-                        component={Paper}
-                        className="drivers-table"
-                        style={{ maxHeight: "500px", overflowY: "auto" }}
                       >
-                        <Table>
-                          <TableHead>
-                            <TableRow>
-                              <TableCell>Tipo de Veículo</TableCell>
-                              <TableCell align="right">Quantidade</TableCell>
-                              <TableCell align="right">Média de Pesagens</TableCell>
-                            </TableRow>
-                          </TableHead>
-                          <TableBody>
-                            {filteredVehicleData.map((vehicle) => (
-                              <TableRow key={vehicle.type}>
-                                <TableCell className="vehicle-type">
-                                  <div className="vehicle-icon">{vehicle.icon}</div>
-                                  {vehicle.type}
-                                </TableCell>
-                                <TableCell align="right">{vehicle.count}</TableCell>
-                                <TableCell align="right">{vehicle.avgWeighings}</TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </TableContainer>
-                    </CardContent>
-                  </Card>
-                </Zoom>
+                        <CardContent>
+                          <Typography
+                            variant="subtitle2"
+                            sx={{
+                              fontSize: "0.875rem",
+                              fontWeight: 600,
+                              marginBottom: "0.25rem",
+                              color: "#334155",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "0.5rem",
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                width: "28px",
+                                height: "28px",
+                                borderRadius: "8px",
+                                backgroundColor: "rgba(16, 185, 129, 0.1)",
+                                color: "#10b981",
+                              }}
+                            >
+                              <Speed />
+                            </Box>
+                            Meta de Eficiência
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: themeColors.mutedForeground,
+                              fontSize: "0.75rem",
+                            }}
+                          >
+                            Toneladas alvo vs. atual
+                          </Typography>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              marginTop: "0.75rem",
+                              marginBottom: "0.75rem",
+                            }}
+                          >
+                            <Box>
+                              <Typography
+                                variant="h4"
+                                sx={{
+                                  fontWeight: 700,
+                                  fontSize: "1.75rem",
+                                  lineHeight: 1.2,
+                                  marginBottom: "0.25rem",
+                                  background: "linear-gradient(90deg, #059669, #10b981)",
+                                  backgroundClip: "text",
+                                  WebkitBackgroundClip: "text",
+                                  WebkitTextFillColor: "transparent",
+                                  letterSpacing: "-0.5px",
+                                }}
+                              >
+                                {efficiencyData.current} ton
+                              </Typography>
+                              <Typography
+                                variant="caption"
+                                sx={{
+                                  color: themeColors.mutedForeground,
+                                  fontSize: "0.75rem",
+                                }}
+                              >
+                                Meta: {efficiencyData.target} ton
+                              </Typography>
+                            </Box>
+                            <Chip
+                              icon={<TrendingUp fontSize="small" />}
+                              label={`${efficiencyData.percentage}%`}
+                              sx={{
+                                backgroundColor: "rgba(16, 185, 129, 0.1)",
+                                color: "#10b981",
+                                fontWeight: 600,
+                                borderRadius: "20px",
+                                transition: "all 0.3s ease",
+                                animation: "pulse 2s infinite ease-in-out",
+                                boxShadow: "0 2px 10px rgba(16, 185, 129, 0.2)",
+                                "&:hover": {
+                                  backgroundColor: "rgba(16, 185, 129, 0.2)",
+                                  boxShadow: "0 2px 15px rgba(16, 185, 129, 0.3)",
+                                },
+                              }}
+                            />
+                          </Box>
+                          <LinearProgress
+                            variant="determinate"
+                            value={efficiencyData.percentage}
+                            sx={{
+                              marginTop: "1rem",
+                              height: "8px !important",
+                              borderRadius: "9999px",
+                              backgroundColor: "rgba(241, 245, 249, 0.7) !important",
+                              overflow: "hidden",
+                              boxShadow: "inset 0 1px 2px rgba(0, 0, 0, 0.05)",
+                              "& .MuiLinearProgress-bar": {
+                                background: "linear-gradient(90deg, #059669, #10b981) !important",
+                                "--progress-width": "94.2%",
+                                animation: "progressAnimation 1.5s ease-out forwards",
+                              },
+                            }}
+                          />
+                        </CardContent>
+                      </Card>
+                    </Fade>
 
-                <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "900ms" : "0ms" }}>
-                  <Card className="cooperatives-ranking-card table-card">
-                    <CardHeader
-                      title={
-                        <span>
-                          <Leaderboard style={{ verticalAlign: "middle", marginRight: "8px" }} />
-                          Ranking de Cooperativas
-                          <span className="table-count-badge">{totalCooperatives}</span>
-                        </span>
-                      }
-                      subheader="Top cooperativas por volume de pesagens"
-                      action={
-                        <Box>
-                          <IconButton size="small" className="action-icon-button">
-                            <Download />
-                          </IconButton>
-                          <IconButton size="small" className="action-icon-button">
-                            <MoreVert />
-                          </IconButton>
-                        </Box>
-                      }
-                      className="cooperatives-ranking-header"
-                    />
-                    <CardContent>
-                      <TextField
-                        size="small"
-                        placeholder="Filtrar cooperativas..."
-                        fullWidth
-                        value={cooperativeFilter}
-                        onChange={(e) => setCooperativeFilter(e.target.value)}
-                        className="search-filter"
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <Search fontSize="small" />
-                            </InputAdornment>
-                          ),
-                          className: "search-input",
+                    <Fade in={!loading} timeout={500} style={{ transitionDelay: !loading ? "100ms" : "0ms" }}>
+                      <Card
+                        sx={{
+                          position: "relative",
+                          overflow: "hidden",
+                          borderRadius: "16px !important",
+                          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05) !important",
+                          transition: "all 0.3s ease !important",
+                          animation: "slideInUp 0.5s ease-out forwards",
+                          opacity: 0,
+                          animationDelay: "calc(1 * 0.1s)",
+                          borderLeft: "4px solid #3b82f6 !important",
+                          "&:hover": {
+                            transform: "translateY(-5px)",
+                            boxShadow: "0 8px 30px rgba(0, 0, 0, 0.1) !important",
+                          },
+                          "&::before": {
+                            content: "''",
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            width: "100%",
+                            height: "100%",
+                            background:
+                              "linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%)",
+                            pointerEvents: "none",
+                          },
+                        }}
+                      >
+                        <CardContent>
+                          <Typography
+                            variant="subtitle2"
+                            sx={{
+                              fontSize: "0.875rem",
+                              fontWeight: 600,
+                              marginBottom: "0.25rem",
+                              color: "#334155",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "0.5rem",
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                width: "28px",
+                                height: "28px",
+                                borderRadius: "8px",
+                                backgroundColor: "rgba(59, 130, 246, 0.1)",
+                                color: "#3b82f6",
+                              }}
+                            >
+                              <RecyclingOutlined />
+                            </Box>
+                            Total de Pesagens
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: themeColors.mutedForeground,
+                              fontSize: "0.75rem",
+                            }}
+                          >
+                            Seletiva e Cata Treco
+                          </Typography>
+                          <Typography
+                            variant="h4"
+                            sx={{
+                              fontWeight: 700,
+                              fontSize: "1.75rem",
+                              lineHeight: 1.2,
+                              marginBottom: "0.25rem",
+                              marginTop: "0.75rem",
+                              background: "linear-gradient(90deg, #1d4ed8, #3b82f6)",
+                              backgroundClip: "text",
+                              WebkitBackgroundClip: "text",
+                              WebkitTextFillColor: "transparent",
+                              letterSpacing: "-0.5px",
+                            }}
+                          >
+                            {totalWeighings}
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              color: "#64748b",
+                              fontSize: "0.75rem",
+                              marginTop: "0.25rem",
+                            }}
+                          >
+                            Número total de pesagens realizadas no período atual.
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Fade>
+
+                    <Fade in={!loading} timeout={500} style={{ transitionDelay: !loading ? "200ms" : "0ms" }}>
+                      <Card
+                        sx={{
+                          position: "relative",
+                          overflow: "hidden",
+                          borderRadius: "16px !important",
+                          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05) !important",
+                          transition: "all 0.3s ease !important",
+                          animation: "slideInUp 0.5s ease-out forwards",
+                          opacity: 0,
+                          animationDelay: "calc(2 * 0.1s)",
+                          borderLeft: "4px solid #10b981 !important",
+                          "&:hover": {
+                            transform: "translateY(-5px)",
+                            boxShadow: "0 8px 30px rgba(0, 0, 0, 0.1) !important",
+                          },
+                          "&::before": {
+                            content: "''",
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            width: "100%",
+                            height: "100%",
+                            background:
+                              "linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%)",
+                            pointerEvents: "none",
+                          },
+                        }}
+                      >
+                        <CardContent>
+                          <Typography
+                            variant="subtitle2"
+                            sx={{
+                              fontSize: "0.875rem",
+                              fontWeight: 600,
+                              marginBottom: "0.25rem",
+                              color: "#334155",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "0.5rem",
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                width: "28px",
+                                height: "28px",
+                                borderRadius: "8px",
+                                backgroundColor: "rgba(16, 185, 129, 0.1)",
+                                color: "#10b981",
+                              }}
+                            >
+                              <RecyclingOutlined />
+                            </Box>
+                            Total de Seletiva
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: themeColors.mutedForeground,
+                              fontSize: "0.75rem",
+                            }}
+                          >
+                            Coleta seletiva
+                          </Typography>
+                          <Typography
+                            variant="h4"
+                            sx={{
+                              fontWeight: 700,
+                              fontSize: "1.75rem",
+                              lineHeight: 1.2,
+                              marginBottom: "0.25rem",
+                              marginTop: "0.75rem",
+                              background: "linear-gradient(90deg, #059669, #10b981)",
+                              backgroundClip: "text",
+                              WebkitBackgroundClip: "text",
+                              WebkitTextFillColor: "transparent",
+                              letterSpacing: "-0.5px",
+                            }}
+                          >
+                            {totalSeletiva}
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              color: "#059669",
+                              fontSize: "0.75rem",
+                              marginTop: "0.25rem",
+                            }}
+                          >
+                            Total de coletas seletivas para reciclagem.
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Fade>
+
+                    <Fade in={!loading} timeout={500} style={{ transitionDelay: !loading ? "300ms" : "0ms" }}>
+                      <Card
+                        sx={{
+                          position: "relative",
+                          overflow: "hidden",
+                          borderRadius: "16px !important",
+                          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05) !important",
+                          transition: "all 0.3s ease !important",
+                          animation: "slideInUp 0.5s ease-out forwards",
+                          opacity: 0,
+                          animationDelay: "calc(3 * 0.1s)",
+                          borderLeft: "4px solid #f59e0b !important",
+                          "&:hover": {
+                            transform: "translateY(-5px)",
+                            boxShadow: "0 8px 30px rgba(0, 0, 0, 0.1) !important",
+                          },
+                          "&::before": {
+                            content: "''",
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            width: "100%",
+                            height: "100%",
+                            background:
+                              "linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%)",
+                            pointerEvents: "none",
+                          },
+                        }}
+                      >
+                        <CardContent>
+                          <Typography
+                            variant="subtitle2"
+                            sx={{
+                              fontSize: "0.875rem",
+                              fontWeight: 600,
+                              marginBottom: "0.25rem",
+                              color: "#334155",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "0.5rem",
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                width: "28px",
+                                height: "28px",
+                                borderRadius: "8px",
+                                backgroundColor: "rgba(245, 158, 11, 0.1)",
+                                color: "#f59e0b",
+                              }}
+                            >
+                              <LocalShipping />
+                            </Box>
+                            Total de Cata Treco
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: themeColors.mutedForeground,
+                              fontSize: "0.75rem",
+                            }}
+                          >
+                            Coleta de volumosos
+                          </Typography>
+                          <Typography
+                            variant="h4"
+                            sx={{
+                              fontWeight: 700,
+                              fontSize: "1.75rem",
+                              lineHeight: 1.2,
+                              marginBottom: "0.25rem",
+                              marginTop: "0.75rem",
+                              background: "linear-gradient(90deg, #d97706, #f59e0b)",
+                              backgroundClip: "text",
+                              WebkitBackgroundClip: "text",
+                              WebkitTextFillColor: "transparent",
+                              letterSpacing: "-0.5px",
+                            }}
+                          >
+                            {totalCataTreco}
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              color: "#d97706",
+                              fontSize: "0.75rem",
+                              marginTop: "0.25rem",
+                            }}
+                          >
+                            Total de coletas de materiais volumosos descartados.
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Fade>
+                  </Box>
+                </Box>
+
+                {/* Enhanced Bar Chart Section */}
+                <Box component="section" sx={{ marginTop: "1.5rem" }}>
+                  <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "400ms" : "0ms" }}>
+                    <Card
+                      sx={{
+                        height: "100%",
+                        borderRadius: "16px !important",
+                        boxShadow: "0 8px 30px rgba(0, 0, 0, 0.08) !important",
+                        transition: "all 0.3s ease !important",
+                        animation: "slideInUp 0.6s ease-out forwards",
+                        opacity: 0,
+                        animationDelay: "0.4s",
+                        overflow: "hidden",
+                        "&:hover": {
+                          transform: "translateY(-5px)",
+                          boxShadow: "0 12px 40px rgba(0, 0, 0, 0.12) !important",
+                        },
+                        background: "linear-gradient(to bottom, #ffffff, #f8fafc)",
+                        border: "1px solid rgba(226, 232, 240, 0.8)",
+                        willChange: "transform, opacity", // Fix for flickering
+                      }}
+                    >
+                      <CardHeader
+                        title={
+                          <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                            <Box
+                              sx={{
+                                width: "36px",
+                                height: "36px",
+                                borderRadius: "10px",
+                                background: "linear-gradient(135deg, #10b981, #3b82f6)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)",
+                              }}
+                            >
+                              <BarChartIcon
+                                sx={{
+                                  color: "white",
+                                  fontSize: "1.4rem",
+                                  animation: "pulse 3s infinite ease-in-out",
+                                }}
+                              />
+                            </Box>
+                            <Box>
+                              <Typography
+                                sx={{
+                                  fontWeight: 700,
+                                  fontSize: "1.25rem",
+                                  background: "linear-gradient(90deg, #10b981, #3b82f6)",
+                                  backgroundClip: "text",
+                                  WebkitBackgroundClip: "text",
+                                  WebkitTextFillColor: "transparent",
+                                  letterSpacing: "-0.02em",
+                                }}
+                              >
+                                Comparativo de Pesagens
+                              </Typography>
+                              <Typography
+                                sx={{
+                                  fontSize: "0.85rem",
+                                  color: "#64748b",
+                                  fontWeight: 500,
+                                }}
+                              >
+                                Análise mensal de Seletiva vs. Cata Treco
+                              </Typography>
+                            </Box>
+                          </Box>
+                        }
+                        action={
+                          <Box sx={{ display: "flex", gap: "0.5rem" }}>
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              startIcon={<InfoOutlined />}
+                              sx={{
+                                height: "2.2rem",
+                                textTransform: "none",
+                                borderRadius: "10px",
+                                transition: "all 0.3s ease",
+                                fontWeight: 500,
+                                padding: "0 1rem",
+                                borderColor: "rgba(226, 232, 240, 0.8)",
+                                color: "#64748b",
+                                "&:hover": {
+                                  backgroundColor: "rgba(241, 245, 249, 0.8)",
+                                  borderColor: "rgba(148, 163, 184, 0.5)",
+                                  transform: "translateY(-2px)",
+                                },
+                              }}
+                            >
+                              Detalhes
+                            </Button>
+                            <IconButton
+                              sx={{
+                                color: "#64748b",
+                                transition: "all 0.2s ease",
+                                backgroundColor: "rgba(241, 245, 249, 0.5)",
+                                "&:hover": {
+                                  color: "#3b82f6",
+                                  transform: "rotate(15deg)",
+                                  backgroundColor: "rgba(241, 245, 249, 0.8)",
+                                },
+                              }}
+                            >
+                              <Download />
+                            </IconButton>
+                          </Box>
+                        }
+                        sx={{
+                          paddingBottom: "0.75rem",
+                          borderBottom: "1px solid rgba(226, 232, 240, 0.5)",
+                          "& .MuiCardHeader-title": {
+                            fontWeight: 600,
+                            fontSize: "1.125rem",
+                            color: "#334155",
+                          },
+                          "& .MuiCardHeader-action": {
+                            margin: 0,
+                          },
                         }}
                       />
-                      <div style={{ maxHeight: "500px", overflowY: "auto" }}>
-                        <table className="cooperatives-table">
-                          <thead>
-                            <tr>
-                              <th>Rank</th>
-                              <th>Cooperativa</th>
-                              <th>Pesagens</th>
-                              <th>%</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {filteredCooperativesData.map((coop) => (
-                              <tr key={coop.rank}>
-                                <td>
-                                  <div
-                                    className={`cooperatives-rank ${
-                                      coop.rank === 2
-                                        ? "second"
-                                        : coop.rank === 3
-                                          ? "third"
-                                          : coop.rank === 4
-                                            ? "fourth"
-                                            : coop.rank === 5
-                                              ? "fifth"
-                                              : ""
-                                    }`}
+                      <CardContent sx={{ padding: "1.5rem" }}>
+                        <Box
+                          sx={{
+                            width: "100%",
+                            height: "400px",
+                            position: "relative",
+                          }}
+                        >
+                          {!chartsLoaded.barChart && (
+                            <Box
+                              sx={{
+                                position: "absolute",
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                backgroundColor: "rgba(255, 255, 255, 0.7)",
+                                zIndex: 10,
+                                borderRadius: "12px",
+                              }}
+                            >
+                              <Box
+                                sx={{
+                                  width: "60px",
+                                  height: "60px",
+                                  borderRadius: "50%",
+                                  background: "linear-gradient(135deg, #10b981, #3b82f6)",
+                                  backgroundSize: "200% 200%",
+                                  animation: "gradientShift 2s ease infinite, rotate 1.5s linear infinite",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
+                                  "&::before": {
+                                    content: "''",
+                                    position: "absolute",
+                                    top: "15px",
+                                    left: "15px",
+                                    right: "15px",
+                                    bottom: "15px",
+                                    background: "white",
+                                    borderRadius: "50%",
+                                    boxShadow: "inset 0 4px 10px rgba(0, 0, 0, 0.05)",
+                                  },
+                                }}
+                              />
+                            </Box>
+                          )}
+                          <Fade in={chartsLoaded.barChart} timeout={800}>
+                            <Box
+                              sx={{
+                                width: "100%",
+                                height: "100%",
+                                animation: "fadeIn 0.8s ease-out forwards",
+                                willChange: "transform, opacity", // Fix for flickering
+                              }}
+                            >
+                              <ResponsiveContainer width="100%" height="100%">
+                                <BarChart
+                                  data={monthlyData}
+                                  margin={{ top: 30, right: 30, left: 20, bottom: 60 }}
+                                  barGap={8}
+                                  barCategoryGap={30}
+                                >
+                                  <defs>
+                                    <linearGradient id="colorSeletiva" x1="0" y1="0" x2="0" y2="1">
+                                      <stop offset="0%" stopColor="#10b981" stopOpacity={1} />
+                                      <stop offset="100%" stopColor="#059669" stopOpacity={0.8} />
+                                    </linearGradient>
+                                    <linearGradient id="colorCataTreco" x1="0" y1="0" x2="0" y2="1">
+                                      <stop offset="0%" stopColor="#f59e0b" stopOpacity={1} />
+                                      <stop offset="100%" stopColor="#d97706" stopOpacity={0.8} />
+                                    </linearGradient>
+                                    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                                      <feDropShadow
+                                        dx="0"
+                                        dy="2"
+                                        stdDeviation="3"
+                                        floodColor="#000"
+                                        floodOpacity="0.1"
+                                      />
+                                    </filter>
+                                    <filter id="glow1">
+                                      <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
+                                      <feMerge>
+                                        <feMergeNode in="coloredBlur" />
+                                        <feMergeNode in="SourceGraphic" />
+                                      </feMerge>
+                                    </filter>
+                                    <filter id="glow2">
+                                      <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
+                                      <feMerge>
+                                        <feMergeNode in="coloredBlur" />
+                                        <feMergeNode in="SourceGraphic" />
+                                      </feMerge>
+                                    </filter>
+                                  </defs>
+                                  <CartesianGrid
+                                    vertical={false}
+                                    strokeDasharray="3 3"
+                                    stroke="#e2e8f0"
+                                    strokeOpacity={0.8}
+                                  />
+                                  <XAxis
+                                    dataKey="month"
+                                    tickLine={false}
+                                    axisLine={{ stroke: "#e2e8f0", strokeWidth: 1 }}
+                                    tick={{ fill: "#334155", fontSize: 12, fontWeight: 500 }}
+                                    dy={10}
+                                  />
+                                  <YAxis
+                                    tickLine={false}
+                                    axisLine={{ stroke: "#e2e8f0", strokeWidth: 1 }}
+                                    tick={{ fill: "#334155", fontSize: 12, fontWeight: 500 }}
+                                    tickFormatter={(value) => `${value}`}
+                                    dx={-10}
+                                  />
+                                  <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(241, 245, 249, 0.5)" }} />
+                                  <Legend
+                                    content={<CustomBarChartLegend />}
+                                    verticalAlign="bottom"
+                                    wrapperStyle={{ paddingTop: 20 }}
+                                  />
+                                  <ReferenceLine y={0} stroke="#e2e8f0" strokeWidth={1} />
+                                  <Bar
+                                    dataKey="seletiva"
+                                    fill="url(#colorSeletiva)"
+                                    radius={[6, 6, 0, 0]}
+                                    name="Seletiva"
+                                    animationDuration={1800}
+                                    animationEasing="ease-out"
+                                    filter="url(#shadow)"
+                                    barSize={36}
+                                    onMouseOver={() => setChartTooltip("seletiva")}
+                                    onMouseOut={() => setChartTooltip(null)}
+                                    style={{
+                                      filter: chartTooltip === "seletiva" ? "url(#glow1)" : "none",
+                                      transition: "filter 0.3s ease",
+                                    }}
                                   >
-                                    {coop.rank}
-                                  </div>
-                                </td>
-                                <td>{coop.name}</td>
-                                <td>{coop.weighings}</td>
-                                <td>{coop.percentage}%</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Zoom>
-              </div>
-            </section>
-          </div>
-        </main>
-      </div>
+                                    <LabelList
+                                      dataKey="seletiva"
+                                      position="top"
+                                      content={renderCustomBarLabel}
+                                      fill="#10b981"
+                                    />
+                                  </Bar>
+                                  <Bar
+                                    dataKey="cataTreco"
+                                    fill="url(#colorCataTreco)"
+                                    radius={[6, 6, 0, 0]}
+                                    name="Cata Treco"
+                                    animationDuration={1800}
+                                    animationEasing="ease-out"
+                                    animationBegin={300}
+                                    filter="url(#shadow)"
+                                    barSize={36}
+                                    onMouseOver={() => setChartTooltip("cataTreco")}
+                                    onMouseOut={() => setChartTooltip(null)}
+                                    style={{
+                                      filter: chartTooltip === "cataTreco" ? "url(#glow2)" : "none",
+                                      transition: "filter 0.3s ease",
+                                    }}
+                                  >
+                                    <LabelList
+                                      dataKey="cataTreco"
+                                      position="top"
+                                      content={renderCustomBarLabel}
+                                      fill="#f59e0b"
+                                    />
+                                  </Bar>
+                                </BarChart>
+                              </ResponsiveContainer>
+                            </Box>
+                          </Fade>
+                        </Box>
+
+                        <Box
+                          sx={{
+                            marginTop: "1rem",
+                            display: "flex",
+                            justifyContent: "center",
+                            padding: "1rem",
+                            borderTop: "1px dashed rgba(226, 232, 240, 0.8)",
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "1.5rem",
+                              flexWrap: "wrap",
+                              justifyContent: "center",
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "0.5rem",
+                                backgroundColor: "rgba(16, 185, 129, 0.1)",
+                                padding: "0.5rem 1rem",
+                                borderRadius: "10px",
+                              }}
+                            >
+                              <Box
+                                sx={{
+                                  width: "12px",
+                                  height: "12px",
+                                  borderRadius: "3px",
+                                  background: "linear-gradient(135deg, #10b981, #059669)",
+                                }}
+                              />
+                              <Typography sx={{ fontSize: "0.875rem", fontWeight: 600, color: "#10b981" }}>
+                                Seletiva: {totalSeletiva} (
+                                {((totalSeletiva / (totalSeletiva + totalCataTreco)) * 100).toFixed(1)}%)
+                              </Typography>
+                            </Box>
+
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "0.5rem",
+                                backgroundColor: "rgba(245, 158, 11, 0.1)",
+                                padding: "0.5rem 1rem",
+                                borderRadius: "10px",
+                              }}
+                            >
+                              <Box
+                                sx={{
+                                  width: "12px",
+                                  height: "12px",
+                                  borderRadius: "3px",
+                                  background: "linear-gradient(135deg, #f59e0b, #d97706)",
+                                }}
+                              />
+                              <Typography sx={{ fontSize: "0.875rem", fontWeight: 600, color: "#f59e0b" }}>
+                                Cata Treco: {totalCataTreco} (
+                                {((totalCataTreco / (totalSeletiva + totalCataTreco)) * 100).toFixed(1)}%)
+                              </Typography>
+                            </Box>
+
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "0.5rem",
+                                backgroundColor: "rgba(59, 130, 246, 0.1)",
+                                padding: "0.5rem 1rem",
+                                borderRadius: "10px",
+                              }}
+                            >
+                              <Box
+                                sx={{
+                                  width: "12px",
+                                  height: "12px",
+                                  borderRadius: "3px",
+                                  background: "linear-gradient(135deg, #3b82f6, #1d4ed8)",
+                                }}
+                              />
+                              <Typography sx={{ fontSize: "0.875rem", fontWeight: 600, color: "#3b82f6" }}>
+                                Total: {totalSeletiva + totalCataTreco}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Zoom>
+                </Box>
+
+                {/* Charts Section */}
+                <Box component="section" sx={{ marginTop: "1.5rem" }}>
+                  <Box
+                    sx={{
+                      display: "grid",
+                      gap: "1.5rem",
+                      gridTemplateColumns: {
+                        xs: "1fr",
+                        md: "repeat(2, 1fr)",
+                      },
+                    }}
+                  >
+                    {/* Pie Chart */}
+                    <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "500ms" : "0ms" }}>
+                      <Card
+                        sx={{
+                          height: "100%",
+                          minHeight: "500px",
+                          borderRadius: "16px !important",
+                          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05) !important",
+                          transition: "all 0.3s ease !important",
+                          animation: "slideInUp 0.6s ease-out forwards",
+                          opacity: 0,
+                          animationDelay: "0.4s",
+                          overflow: "hidden",
+                          "&:hover": {
+                            transform: "translateY(-5px)",
+                            boxShadow: "0 8px 30px rgba(0, 0, 0, 0.1) !important",
+                          },
+                          position: "relative",
+                          "&::after": {
+                            content: "''",
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            height: "100%",
+                            background: "linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.8) 100%)",
+                            opacity: 0.1,
+                            pointerEvents: "none",
+                          },
+                          willChange: "transform, opacity", // Fix for flickering
+                        }}
+                      >
+                        <CardHeader
+                          title={
+                            <Box sx={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                              <DonutLarge
+                                sx={{
+                                  color: "#10b981",
+                                  animation: "pulse 3s infinite ease-in-out",
+                                }}
+                              />
+                              Cooperativas com Mais Pesagens
+                            </Box>
+                          }
+                          subheader="Top 5 cooperativas por volume de coleta"
+                          action={
+                            <Box>
+                              <IconButton
+                                size="small"
+                                sx={{
+                                  color: "#64748b",
+                                  transition: "all 0.2s ease",
+                                  "&:hover": {
+                                    color: "#10b981",
+                                    transform: "rotate(15deg)",
+                                  },
+                                }}
+                              >
+                                <Print />
+                              </IconButton>
+                              <IconButton
+                                size="small"
+                                sx={{
+                                  color: "#64748b",
+                                  transition: "all 0.2s ease",
+                                  "&:hover": {
+                                    color: "#3b82f6",
+                                    transform: "scale(1.1)",
+                                  },
+                                }}
+                              >
+                                <Share />
+                              </IconButton>
+                            </Box>
+                          }
+                          sx={{
+                            paddingBottom: "0.5rem",
+                            borderBottom: "1px solid rgba(226, 232, 240, 0.5)",
+                            background: "linear-gradient(to right, rgba(16, 185, 129, 0.05), rgba(59, 130, 246, 0.05))",
+                            "& .MuiCardHeader-title": {
+                              fontWeight: 600,
+                              fontSize: "1rem",
+                              color: "#334155",
+                            },
+                            "& .MuiCardHeader-subheader": {
+                              fontSize: "0.75rem",
+                            },
+                            "& .MuiCardHeader-action": {
+                              margin: 0,
+                            },
+                          }}
+                        />
+                        <CardContent
+                          sx={{
+                            padding: "1rem",
+                            "&:last-child": {
+                              paddingBottom: "1rem",
+                            },
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              width: "100%",
+                              height: "100%",
+                              aspectRatio: "16/12",
+                              padding: "0",
+                              position: "relative",
+                            }}
+                          >
+                            {!chartsLoaded.pieChart && (
+                              <Box
+                                sx={{
+                                  position: "absolute",
+                                  top: 0,
+                                  left: 0,
+                                  right: 0,
+                                  bottom: 0,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  backgroundColor: "rgba(255, 255, 255, 0.7)",
+                                  zIndex: 10,
+                                  borderRadius: "12px",
+                                }}
+                              >
+                                <Box
+                                  sx={{
+                                    width: "60px",
+                                    height: "60px",
+                                    borderRadius: "50%",
+                                    background: "linear-gradient(135deg, #10b981, #3b82f6)",
+                                    backgroundSize: "200% 200%",
+                                    animation: "gradientShift 2s ease infinite, rotate 1.5s linear infinite",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
+                                    "&::before": {
+                                      content: "''",
+                                      position: "absolute",
+                                      top: "15px",
+                                      left: "15px",
+                                      right: "15px",
+                                      bottom: "15px",
+                                      background: "white",
+                                      borderRadius: "50%",
+                                      boxShadow: "inset 0 4px 10px rgba(0, 0, 0, 0.05)",
+                                    },
+                                  }}
+                                />
+                              </Box>
+                            )}
+                            <Fade in={chartsLoaded.pieChart} timeout={800}>
+                              <Box
+                                sx={{
+                                  width: "100%",
+                                  height: "100%",
+                                  animation: "pieAnimation 0.8s ease-out forwards",
+                                }}
+                              >
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <PieChart>
+                                    <defs>
+                                      {PIE_COLORS.map((color, index) => (
+                                        <linearGradient
+                                          key={`color${index}`}
+                                          id={`color${index}`}
+                                          x1="0"
+                                          y1="0"
+                                          x2="0"
+                                          y2="1"
+                                        >
+                                          <stop offset="0%" stopColor={color.start} stopOpacity={1} />
+                                          <stop offset="100%" stopColor={color.end} stopOpacity={1} />
+                                        </linearGradient>
+                                      ))}
+                                      <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                                        <feDropShadow
+                                          dx="0"
+                                          dy="0"
+                                          stdDeviation="3"
+                                          floodColor="#000"
+                                          floodOpacity="0.1"
+                                        />
+                                      </filter>
+                                    </defs>
+                                    <Pie
+                                      activeIndex={activeIndex}
+                                      activeShape={renderActiveShape}
+                                      data={cooperativesData.slice(0, 5)}
+                                      cx="50%"
+                                      cy="45%"
+                                      innerRadius={80}
+                                      outerRadius={120}
+                                      paddingAngle={4}
+                                      dataKey="weighings"
+                                      nameKey="name"
+                                      onMouseEnter={onPieEnter}
+                                      animationDuration={1500}
+                                      animationBegin={300}
+                                      filter="url(#shadow)"
+                                    >
+                                      {cooperativesData.slice(0, 5).map((entry, index) => (
+                                        <Cell
+                                          key={`cell-${index}`}
+                                          fill={`url(#color${index})`}
+                                          stroke="white"
+                                          strokeWidth={2}
+                                        />
+                                      ))}
+                                    </Pie>
+                                    <Tooltip content={<PieTooltip />} />
+                                    <Legend content={renderLegend} verticalAlign="bottom" height={36} />
+                                  </PieChart>
+                                </ResponsiveContainer>
+                              </Box>
+                            </Fade>
+                          </Box>
+                        </CardContent>
+                      </Card>
+                    </Zoom>
+
+                    {/* Top Vehicle Card - NEW COMPONENT */}
+                    <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "550ms" : "0ms" }}>
+                      <Card
+                        sx={{
+                          height: "100%",
+                          minHeight: "500px",
+                          borderRadius: "16px !important",
+                          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05) !important",
+                          transition: "all 0.3s ease !important",
+                          animation: "slideInUp 0.6s ease-out forwards",
+                          opacity: 0,
+                          animationDelay: "0.45s",
+                          overflow: "hidden",
+                          "&:hover": {
+                            transform: "translateY(-5px)",
+                            boxShadow: "0 8px 30px rgba(0, 0, 0, 0.1) !important",
+                          },
+                          position: "relative",
+                          background: "linear-gradient(135deg, #ffffff, #f8fafc)",
+                          "&::after": {
+                            content: "''",
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            height: "100%",
+                            background: "linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.8) 100%)",
+                            opacity: 0.1,
+                            pointerEvents: "none",
+                          },
+                        }}
+                      >
+                        <CardHeader
+                          title={
+                            <Box sx={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                              <EmojiTransportation
+                                sx={{
+                                  color: "#10b981",
+                                  animation: "pulse 3s infinite ease-in-out",
+                                }}
+                              />
+                              Veículo com Maior Pesagem
+                            </Box>
+                          }
+                          subheader="Detalhes do veículo com melhor desempenho"
+                          action={
+                            <Box>
+                              <IconButton
+                                size="small"
+                                sx={{
+                                  color: "#64748b",
+                                  transition: "all 0.2s ease",
+                                  "&:hover": {
+                                    color: "#10b981",
+                                    transform: "rotate(15deg)",
+                                  },
+                                }}
+                              >
+                                <Print />
+                              </IconButton>
+                              <IconButton
+                                size="small"
+                                sx={{
+                                  color: "#64748b",
+                                  transition: "all 0.2s ease",
+                                  "&:hover": {
+                                    color: "#3b82f6",
+                                    transform: "scale(1.1)",
+                                  },
+                                }}
+                              >
+                                <Share />
+                              </IconButton>
+                            </Box>
+                          }
+                          sx={{
+                            paddingBottom: "0.5rem",
+                            borderBottom: "1px solid rgba(226, 232, 240, 0.5)",
+                            background: "linear-gradient(to right, rgba(16, 185, 129, 0.05), rgba(59, 130, 246, 0.05))",
+                            "& .MuiCardHeader-title": {
+                              fontWeight: 600,
+                              fontSize: "1rem",
+                              color: "#334155",
+                            },
+                            "& .MuiCardHeader-subheader": {
+                              fontSize: "0.75rem",
+                            },
+                            "& .MuiCardHeader-action": {
+                              margin: 0,
+                            },
+                          }}
+                        />
+                        <CardContent
+                          sx={{
+                            padding: "1.5rem",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            height: "calc(100% - 72px)",
+                            "&:last-child": {
+                              paddingBottom: "1.5rem",
+                            },
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              width: "100%",
+                              maxWidth: "300px",
+                              height: "180px",
+                              marginBottom: "1.5rem",
+                              position: "relative",
+                            }}
+                          >
+                            <TruckSVG />
+                          </Box>
+
+                          <Box
+                            sx={{
+                              display: "flex",
+                              flexDirection: "column",
+                              alignItems: "center",
+                              gap: "1rem",
+                              width: "100%",
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                gap: "0.5rem",
+                                marginBottom: "0.5rem",
+                              }}
+                            >
+                              <Star sx={{ color: "#f59e0b", fontSize: "2rem" }} />
+                              <Typography
+                                variant="h5"
+                                sx={{
+                                  fontWeight: 700,
+                                  background: "linear-gradient(90deg, #10b981, #3b82f6)",
+                                  backgroundClip: "text",
+                                  WebkitBackgroundClip: "text",
+                                  WebkitTextFillColor: "transparent",
+                                }}
+                              >
+                                {topVehicle.type}
+                              </Typography>
+                              <Star sx={{ color: "#f59e0b", fontSize: "2rem" }} />
+                            </Box>
+
+                            <Box
+                              sx={{
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                width: "100%",
+                                padding: "1.5rem",
+                                backgroundColor: "rgba(16, 185, 129, 0.05)",
+                                borderRadius: "12px",
+                                border: "1px dashed rgba(16, 185, 129, 0.3)",
+                              }}
+                            >
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  width: "60px",
+                                  height: "60px",
+                                  borderRadius: "50%",
+                                  backgroundColor: "rgba(16, 185, 129, 0.1)",
+                                  marginBottom: "1rem",
+                                }}
+                              >
+                                {topVehicle.icon}
+                              </Box>
+
+                              <Typography
+                                sx={{
+                                  fontSize: "1.25rem",
+                                  fontWeight: 700,
+                                  color: "#10b981",
+                                  marginBottom: "0.5rem",
+                                }}
+                              >
+                                Prefixo: {topVehicle.prefix}
+                              </Typography>
+
+                              <Divider sx={{ width: "80%", margin: "0.75rem 0" }} />
+
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  alignItems: "center",
+                                  gap: "0.5rem",
+                                  width: "100%",
+                                }}
+                              >
+                                <Box
+                                  sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "space-between",
+                                    width: "100%",
+                                  }}
+                                >
+                                  <Typography sx={{ fontWeight: 500, color: "#64748b" }}>Média de Pesagens:</Typography>
+                                  <Typography
+                                    sx={{
+                                      fontWeight: 700,
+                                      fontSize: "1.25rem",
+                                      color: "#10b981",
+                                    }}
+                                  >
+                                    {topVehicle.avgWeighings}
+                                  </Typography>
+                                </Box>
+
+                                <Box
+                                  sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "space-between",
+                                    width: "100%",
+                                  }}
+                                >
+                                  <Typography sx={{ fontWeight: 500, color: "#64748b" }}>Quantidade:</Typography>
+                                  <Typography
+                                    sx={{
+                                      fontWeight: 600,
+                                      color: "#334155",
+                                    }}
+                                  >
+                                    {topVehicle.count} unidades
+                                  </Typography>
+                                </Box>
+                              </Box>
+                            </Box>
+
+                            <Button
+                              variant="contained"
+                              startIcon={<InfoOutlined />}
+                              sx={{
+                                marginTop: "1rem",
+                                backgroundColor: "#10b981",
+                                borderRadius: "8px",
+                                textTransform: "none",
+                                fontWeight: 600,
+                                padding: "0.5rem 1.5rem",
+                                boxShadow: "0 4px 14px rgba(16, 185, 129, 0.4)",
+                                "&:hover": {
+                                  backgroundColor: "#059669",
+                                  transform: "translateY(-2px)",
+                                  boxShadow: "0 6px 20px rgba(16, 185, 129, 0.6)",
+                                },
+                              }}
+                            >
+                              Ver Detalhes do Veículo
+                            </Button>
+                          </Box>
+                        </CardContent>
+                      </Card>
+                    </Zoom>
+                  </Box>
+                </Box>
+
+                {/* Drivers Section */}
+                <Box component="section" sx={{ marginTop: "1.5rem" }}>
+                  <Grow in={!loading} timeout={800} style={{ transitionDelay: !loading ? "600ms" : "0ms" }}>
+                    <Card
+                      sx={{
+                        borderRadius: "16px",
+                        boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05)",
+                        transition: "all 0.3s ease",
+                        animation: "slideInUp 0.7s ease-out forwards",
+                        opacity: 0,
+                        animationDelay: "0.6s",
+                        overflow: "hidden",
+                        "&:hover": {
+                          boxShadow: "0 8px 30px rgba(0, 0, 0, 0.1)",
+                        },
+                      }}
+                    >
+                      <CardHeader
+                        title={
+                          <Box sx={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                            <EmojiEvents />
+                            Motoristas e Pesagens
+                            <Box
+                              sx={{
+                                background: "linear-gradient(135deg, #8b5cf6, #7c3aed)",
+                                color: "white",
+                                fontSize: "0.75rem",
+                                fontWeight: 600,
+                                padding: "0.25rem 0.5rem",
+                                borderRadius: "12px",
+                                marginLeft: "0.5rem",
+                                boxShadow: "0 2px 8px rgba(139, 92, 246, 0.2)",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                minWidth: "1.5rem",
+                              }}
+                            >
+                              {totalDrivers}
+                            </Box>
+                          </Box>
+                        }
+                        action={
+                          <Box sx={{ display: "flex", gap: "0.5rem" }}>
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              startIcon={<FilterList />}
+                              sx={{
+                                height: "2.2rem",
+                                textTransform: "none",
+                                borderRadius: "12px",
+                                transition: "all 0.3s ease",
+                                fontWeight: 500,
+                                padding: "0 1rem",
+                                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)",
+                                "&:hover": {
+                                  backgroundColor: "rgba(139, 92, 246, 0.1)",
+                                  borderColor: "rgba(139, 92, 246, 0.3)",
+                                  transform: "translateY(-2px)",
+                                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+                                },
+                              }}
+                            >
+                              Filtrar
+                            </Button>
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              startIcon={<DateRange />}
+                              endIcon={<ExpandMore />}
+                              onClick={handlePeriodMenuOpen}
+                              sx={{
+                                height: "2.2rem",
+                                textTransform: "none",
+                                borderRadius: "12px",
+                                transition: "all 0.3s ease",
+                                fontWeight: 500,
+                                padding: "0 1rem",
+                                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)",
+                                "&:hover": {
+                                  backgroundColor: "rgba(139, 92, 246, 0.1)",
+                                  borderColor: "rgba(139, 92, 246, 0.3)",
+                                  transform: "translateY(-2px)",
+                                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+                                },
+                              }}
+                            >
+                              {period === "week" ? "Semana" : period === "month" ? "Mês" : "Ano"}
+                            </Button>
+                            <Menu
+                              anchorEl={periodMenuAnchor}
+                              open={Boolean(periodMenuAnchor)}
+                              onClose={handlePeriodMenuClose}
+                            >
+                              <MenuItem
+                                onClick={() => handlePeriodChange("week")}
+                                sx={{
+                                  fontSize: "0.875rem",
+                                  transition: "all 0.2s ease",
+                                  backgroundColor: period === "week" ? "rgba(16, 185, 129, 0.1)" : "transparent",
+                                  fontWeight: period === "week" ? 600 : 400,
+                                  "&:hover": {
+                                    backgroundColor: "rgba(16, 185, 129, 0.1)",
+                                  },
+                                }}
+                              >
+                                Semana
+                              </MenuItem>
+                              <MenuItem
+                                onClick={() => handlePeriodChange("month")}
+                                sx={{
+                                  fontSize: "0.875rem",
+                                  transition: "all 0.2s ease",
+                                  backgroundColor: period === "month" ? "rgba(16, 185, 129, 0.1)" : "transparent",
+                                  fontWeight: period === "month" ? 600 : 400,
+                                  "&:hover": {
+                                    backgroundColor: "rgba(16, 185, 129, 0.1)",
+                                  },
+                                }}
+                              >
+                                Mês
+                              </MenuItem>
+                              <MenuItem
+                                onClick={() => handlePeriodChange("year")}
+                                sx={{
+                                  fontSize: "0.875rem",
+                                  transition: "all 0.2s ease",
+                                  backgroundColor: period === "year" ? "rgba(16, 185, 129, 0.1)" : "transparent",
+                                  fontWeight: period === "year" ? 600 : 400,
+                                  "&:hover": {
+                                    backgroundColor: "rgba(16, 185, 129, 0.1)",
+                                  },
+                                }}
+                              >
+                                Ano
+                              </MenuItem>
+                            </Menu>
+                          </Box>
+                        }
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          borderBottom: "1px solid rgba(226, 232, 240, 0.5)",
+                          background: "linear-gradient(to right, rgba(139, 92, 246, 0.05), rgba(236, 72, 153, 0.05))",
+                          "& .MuiCardHeader-title": {
+                            fontWeight: 600,
+                            fontSize: "1.125rem",
+                            color: "#334155",
+                          },
+                        }}
+                      />
+                      <CardContent>
+                        <TextField
+                          size="small"
+                          placeholder="Buscar motoristas..."
+                          fullWidth
+                          value={driverFilter}
+                          onChange={(e) => setDriverFilter(e.target.value)}
+                          sx={{ marginBottom: "1rem" }}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <Search fontSize="small" />
+                              </InputAdornment>
+                            ),
+                            sx: {
+                              borderRadius: "12px",
+                              backgroundColor: "rgba(241, 245, 249, 0.7)",
+                              transition: "all 0.3s ease",
+                              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.03)",
+                              "&:hover": {
+                                backgroundColor: "rgba(241, 245, 249, 0.9)",
+                                boxShadow: "0 3px 10px rgba(0, 0, 0, 0.05)",
+                              },
+                              "&.Mui-focused": {
+                                backgroundColor: "white",
+                                boxShadow: "0 0 0 2px rgba(16, 185, 129, 0.2)",
+                              },
+                            },
+                          }}
+                        />
+
+                        <Tabs
+                          value={tabValue}
+                          onChange={handleTabChange}
+                          variant="fullWidth"
+                          sx={{
+                            marginBottom: "1rem",
+                            "& .MuiTabs-indicator": {
+                              background: "linear-gradient(90deg, #7c3aed, #8b5cf6)",
+                              height: "3px",
+                              borderRadius: "3px",
+                            },
+                            "& .MuiTab-root": {
+                              textTransform: "none",
+                              fontWeight: 500,
+                              transition: "all 0.3s ease",
+                              minWidth: "120px",
+                              "&.Mui-selected": {
+                                color: "#8b5cf6",
+                                fontWeight: 600,
+                              },
+                            },
+                          }}
+                        >
+                          <Tab label="Top Motoristas" />
+                          <Tab label="Menor Desempenho" />
+                          <Tab label="Todos" />
+                        </Tabs>
+
+                        <Fade in={true} timeout={500}>
+                          <TableContainer
+                            component={Paper}
+                            sx={{
+                              boxShadow: "none",
+                              borderRadius: "8px",
+                              overflow: "hidden",
+                              "& .MuiTableHead-root": {
+                                backgroundColor: "rgba(241, 245, 249, 0.5)",
+                              },
+                              "& .MuiTableHead-root .MuiTableCell-root": {
+                                fontWeight: 600,
+                                color: "#64748b",
+                                fontSize: "0.75rem",
+                                textTransform: "uppercase",
+                                letterSpacing: "0.5px",
+                              },
+                              "& .MuiTableBody-root .MuiTableRow-root": {
+                                transition: "background-color 0.3s ease",
+                                "&:hover": {
+                                  backgroundColor: "rgba(241, 245, 249, 0.5)",
+                                },
+                              },
+                            }}
+                          >
+                            <Table>
+                              <TableHead>
+                                <TableRow>
+                                  <TableCell>Motorista</TableCell>
+                                  <TableCell align="right">Pesagens</TableCell>
+                                  <TableCell align="right">Eficiência</TableCell>
+                                  <TableCell align="right">Status</TableCell>
+                                </TableRow>
+                              </TableHead>
+                              <TableBody>
+                                {currentDriversData.map((driver) => (
+                                  <TableRow key={driver.id}>
+                                    <TableCell
+                                      sx={{
+                                        fontWeight: 500,
+                                        color: "#334155",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "0.75rem",
+                                      }}
+                                    >
+                                      <Avatar
+                                        sx={{
+                                          width: 32,
+                                          height: 32,
+                                          fontSize: "0.875rem",
+                                          fontWeight: 600,
+                                          backgroundColor:
+                                            driver.efficiency > 90
+                                              ? "rgba(16, 185, 129, 0.2)"
+                                              : driver.efficiency > 80
+                                                ? "rgba(245, 158, 11, 0.2)"
+                                                : "rgba(239, 68, 68, 0.2)",
+                                          color:
+                                            driver.efficiency > 90
+                                              ? "#10b981"
+                                              : driver.efficiency > 80
+                                                ? "#f59e0b"
+                                                : "#ef4444",
+                                        }}
+                                      >
+                                        {driver.avatar}
+                                      </Avatar>
+                                      {driver.name}
+                                    </TableCell>
+                                    <TableCell align="right">{driver.weighings}</TableCell>
+                                    <TableCell align="right">{driver.efficiency}%</TableCell>
+                                    <TableCell align="right">{getStatusChip(driver.efficiency)}</TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </TableContainer>
+                        </Fade>
+                      </CardContent>
+                    </Card>
+                  </Grow>
+                </Box>
+
+                {/* Vehicle and Cooperatives Section */}
+                <Box component="section" sx={{ marginTop: "1.5rem" }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      gap: "1.5rem",
+                      flexDirection: { xs: "column", md: "row" },
+                    }}
+                  >
+                    <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "800ms" : "0ms" }}>
+                      <Card
+                        sx={{
+                          flex: 1,
+                          minWidth: 0,
+                          height: "100%",
+                          borderRadius: "16px",
+                          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05)",
+                          transition: "all 0.3s ease",
+                          animation: "slideInUp 0.8s ease-out forwards",
+                          opacity: 0,
+                          animationDelay: "0.8s",
+                          overflow: "hidden",
+                          "&:hover": {
+                            transform: "translateY(-5px)",
+                            boxShadow: "0 8px 30px rgba(0, 0, 0, 0.1)",
+                          },
+                        }}
+                      >
+                        <CardHeader
+                          title={
+                            <Box sx={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                              <Truck />
+                              Veículos e Média de Pesagens
+                              <Box
+                                sx={{
+                                  background: "linear-gradient(135deg, #f59e0b, #d97706)",
+                                  color: "white",
+                                  fontSize: "0.75rem",
+                                  fontWeight: 600,
+                                  padding: "0.25rem 0.5rem",
+                                  borderRadius: "12px",
+                                  marginLeft: "0.5rem",
+                                  boxShadow: "0 2px 8px rgba(245, 158, 11, 0.2)",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  minWidth: "1.5rem",
+                                }}
+                              >
+                                {totalVehicles}
+                              </Box>
+                            </Box>
+                          }
+                          subheader="Por tipo de veículo"
+                          action={
+                            <Box>
+                              <IconButton
+                                size="small"
+                                sx={{
+                                  color: "#64748b",
+                                  transition: "all 0.3s ease",
+                                  "&:hover": { color: "#334155", backgroundColor: "rgba(241, 245, 249, 0.8)" },
+                                }}
+                              >
+                                <Print />
+                              </IconButton>
+                              <IconButton
+                                size="small"
+                                sx={{
+                                  color: "#64748b",
+                                  transition: "all 0.3s ease",
+                                  "&:hover": { color: "#334155", backgroundColor: "rgba(241, 245, 249, 0.8)" },
+                                }}
+                              >
+                                <MoreVert />
+                              </IconButton>
+                            </Box>
+                          }
+                          sx={{
+                            borderBottom: "1px solid rgba(226, 232, 240, 0.5)",
+                            background: "linear-gradient(to right, rgba(16, 185, 129, 0.05), rgba(59, 130, 246, 0.05))",
+                            "& .MuiCardHeader-title": {
+                              fontWeight: 600,
+                              fontSize: "1rem",
+                              color: "#334155",
+                            },
+                            "& .MuiCardHeader-subheader": {
+                              fontSize: "0.75rem",
+                            },
+                            "& .MuiCardHeader-action": {
+                              margin: 0,
+                            },
+                          }}
+                        />
+                        <CardContent>
+                          <TextField
+                            size="small"
+                            placeholder="Filtrar veículos..."
+                            fullWidth
+                            value={vehicleFilter}
+                            onChange={(e) => setVehicleFilter(e.target.value)}
+                            sx={{ marginBottom: "1rem" }}
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  <Search fontSize="small" />
+                                </InputAdornment>
+                              ),
+                              sx: {
+                                borderRadius: "12px",
+                                backgroundColor: "rgba(241, 245, 249, 0.7)",
+                                transition: "all 0.3s ease",
+                                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.03)",
+                                "&:hover": {
+                                  backgroundColor: "rgba(241, 245, 249, 0.9)",
+                                  boxShadow: "0 3px 10px rgba(0, 0, 0, 0.05)",
+                                },
+                                "&.Mui-focused": {
+                                  backgroundColor: "white",
+                                  boxShadow: "0 0 0 2px rgba(16, 185, 129, 0.2)",
+                                },
+                              },
+                            }}
+                          />
+                          <TableContainer
+                            component={Paper}
+                            sx={{
+                              maxHeight: "500px",
+                              overflowY: "auto",
+                              boxShadow: "none",
+                              borderRadius: "8px",
+                              overflow: "hidden",
+                              "& .MuiTableHead-root": {
+                                backgroundColor: "rgba(241, 245, 249, 0.5)",
+                              },
+                              "& .MuiTableHead-root .MuiTableCell-root": {
+                                fontWeight: 600,
+                                color: "#64748b",
+                                fontSize: "0.75rem",
+                                textTransform: "uppercase",
+                                letterSpacing: "0.5px",
+                              },
+                              "& .MuiTableBody-root .MuiTableRow-root": {
+                                transition: "background-color 0.3s ease",
+                                "&:hover": {
+                                  backgroundColor: "rgba(241, 245, 249, 0.5)",
+                                },
+                              },
+                            }}
+                          >
+                            <Table>
+                              <TableHead>
+                                <TableRow>
+                                  <TableCell>Tipo de Veículo</TableCell>
+                                  <TableCell align="right">Quantidade</TableCell>
+                                  <TableCell align="right">Média de Pesagens</TableCell>
+                                </TableRow>
+                              </TableHead>
+                              <TableBody>
+                                {filteredVehicleData.map((vehicle) => (
+                                  <TableRow key={vehicle.type}>
+                                    <TableCell
+                                      sx={{
+                                        fontWeight: 500,
+                                        color: "#334155",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "0.75rem",
+                                      }}
+                                    >
+                                      <Box
+                                        sx={{
+                                          width: "32px",
+                                          height: "32px",
+                                          background: "linear-gradient(135deg, #f59e0b, #d97706)",
+                                          color: "white",
+                                          borderRadius: "8px",
+                                          display: "flex",
+                                          alignItems: "center",
+                                          justifyContent: "center",
+                                          boxShadow: "0 2px 10px rgba(245, 158, 11, 0.2)",
+                                          "& svg": {
+                                            fontSize: "1.25rem",
+                                          },
+                                        }}
+                                      >
+                                        {vehicle.icon}
+                                      </Box>
+                                      {vehicle.type}
+                                    </TableCell>
+                                    <TableCell align="right">{vehicle.count}</TableCell>
+                                    <TableCell align="right">{vehicle.avgWeighings}</TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </TableContainer>
+                        </CardContent>
+                      </Card>
+                    </Zoom>
+
+                    <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "900ms" : "0ms" }}>
+                      <Card
+                        sx={{
+                          flex: 1,
+                          minWidth: 0,
+                          height: "100%",
+                          borderRadius: "16px",
+                          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05)",
+                          transition: "all 0.3s ease",
+                          animation: "slideInUp 0.8s ease-out forwards",
+                          opacity: 0,
+                          animationDelay: "0.8s",
+                          overflow: "hidden",
+                          "&:hover": {
+                            transform: "translateY(-5px)",
+                            boxShadow: "0 8px 30px rgba(0, 0, 0, 0.1)",
+                          },
+                        }}
+                      >
+                        <CardHeader
+                          title={
+                            <Box sx={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                              <Leaderboard />
+                              Ranking de Cooperativas
+                              <Box
+                                sx={{
+                                  background: "linear-gradient(135deg, #10b981, #059669)",
+                                  color: "white",
+                                  fontSize: "0.75rem",
+                                  fontWeight: 600,
+                                  padding: "0.25rem 0.5rem",
+                                  borderRadius: "12px",
+                                  marginLeft: "0.5rem",
+                                  boxShadow: "0 2px 8px rgba(16, 185, 129, 0.2)",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  minWidth: "1.5rem",
+                                }}
+                              >
+                                {totalCooperatives}
+                              </Box>
+                            </Box>
+                          }
+                          subheader="Top cooperativas por volume de pesagens"
+                          action={
+                            <Box>
+                              <IconButton
+                                size="small"
+                                sx={{
+                                  color: "#64748b",
+                                  transition: "all 0.3s ease",
+                                  "&:hover": { color: "#334155", backgroundColor: "rgba(241, 245, 249, 0.8)" },
+                                }}
+                              >
+                                <Download />
+                              </IconButton>
+                              <IconButton
+                                size="small"
+                                sx={{
+                                  color: "#64748b",
+                                  transition: "all 0.3s ease",
+                                  "&:hover": { color: "#334155", backgroundColor: "rgba(241, 245, 249, 0.8)" },
+                                }}
+                              >
+                                <MoreVert />
+                              </IconButton>
+                            </Box>
+                          }
+                          sx={{
+                            borderBottom: "1px solid rgba(226, 232, 240, 0.5)",
+                            background: "linear-gradient(to right, rgba(16, 185, 129, 0.05), rgba(59, 130, 246, 0.05))",
+                            "& .MuiCardHeader-title": {
+                              fontWeight: 600,
+                              fontSize: "1rem",
+                              color: "#334155",
+                            },
+                            "& .MuiCardHeader-subheader": {
+                              fontSize: "0.75rem",
+                            },
+                            "& .MuiCardHeader-action": {
+                              margin: 0,
+                            },
+                          }}
+                        />
+                        <CardContent>
+                          <TextField
+                            size="small"
+                            placeholder="Filtrar cooperativas..."
+                            fullWidth
+                            value={cooperativeFilter}
+                            onChange={(e) => setCooperativeFilter(e.target.value)}
+                            sx={{ marginBottom: "1rem" }}
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  <Search fontSize="small" />
+                                </InputAdornment>
+                              ),
+                              sx: {
+                                borderRadius: "12px",
+                                backgroundColor: "rgba(241, 245, 249, 0.7)",
+                                transition: "all 0.3s ease",
+                                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.03)",
+                                "&:hover": {
+                                  backgroundColor: "rgba(241, 245, 249, 0.9)",
+                                  boxShadow: "0 3px 10px rgba(0, 0, 0, 0.05)",
+                                },
+                                "&.Mui-focused": {
+                                  backgroundColor: "white",
+                                  boxShadow: "0 0 0 2px rgba(16, 185, 129, 0.2)",
+                                },
+                              },
+                            }}
+                          />
+                          <Box sx={{ maxHeight: "500px", overflowY: "auto" }}>
+                            <Table
+                              sx={{
+                                width: "100%",
+                                borderCollapse: "collapse",
+                                "& th": {
+                                  backgroundColor: "rgba(16, 185, 129, 0.1)",
+                                  color: "#10b981",
+                                  fontWeight: 600,
+                                  textAlign: "left",
+                                  padding: "0.75rem",
+                                },
+                                "& td": {
+                                  padding: "0.75rem",
+                                  borderBottom: "1px solid rgba(226, 232, 240, 0.5)",
+                                },
+                                "& tr:last-child td": {
+                                  borderBottom: "none",
+                                },
+                                "& tr:hover td": {
+                                  backgroundColor: "rgba(241, 245, 249, 0.5)",
+                                },
+                              }}
+                            >
+                              <TableHead>
+                                <TableRow>
+                                  <TableCell>Rank</TableCell>
+                                  <TableCell>Cooperativa</TableCell>
+                                  <TableCell>Pesagens</TableCell>
+                                  <TableCell>%</TableCell>
+                                </TableRow>
+                              </TableHead>
+                              <TableBody>
+                                {filteredCooperativesData.map((coop) => (
+                                  <TableRow key={coop.rank}>
+                                    <TableCell>
+                                      <Box
+                                        sx={{
+                                          fontWeight: 700,
+                                          width: "32px",
+                                          height: "32px",
+                                          display: "flex",
+                                          alignItems: "center",
+                                          justifyContent: "center",
+                                          borderRadius: "50%",
+                                          background:
+                                            coop.rank === 1
+                                              ? "linear-gradient(135deg, #10b981, #059669)"
+                                              : coop.rank === 2
+                                                ? "linear-gradient(135deg, #3b82f6, #1d4ed8)"
+                                                : coop.rank === 3
+                                                  ? "linear-gradient(135deg, #f59e0b, #d97706)"
+                                                  : coop.rank === 4
+                                                    ? "linear-gradient(135deg, #8b5cf6, #7c3aed)"
+                                                    : coop.rank === 5
+                                                      ? "linear-gradient(135deg, #ec4899, #be185d)"
+                                                      : "linear-gradient(135deg, #64748b, #475569)",
+                                          color: "white",
+                                          marginRight: "0.75rem",
+                                        }}
+                                      >
+                                        {coop.rank}
+                                      </Box>
+                                    </TableCell>
+                                    <TableCell>{coop.name}</TableCell>
+                                    <TableCell>{coop.weighings}</TableCell>
+                                    <TableCell>{coop.percentage}%</TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </Box>
+                        </CardContent>
+                      </Card>
+                    </Zoom>
+                  </Box>
+                </Box>
+              </Box>
+            </Container>
+          </Box>
+        </Box>
+      </Box>
     </>
   )
-}
-
-// Render the component
-if (typeof document !== "undefined") {
-  import("react-dom/client").then(({ createRoot }) => {
-    const container = document.getElementById("root")
-    if (container) {
-      const root = createRoot(container)
-      root.render(
-        <React.StrictMode>
-          <WeighingDashboard />
-        </React.StrictMode>,
-      )
-    }
-  })
 }
 
