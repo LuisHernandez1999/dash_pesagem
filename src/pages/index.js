@@ -401,6 +401,7 @@ export default function WeighingDashboard() {
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue)
+    setDriverPage(0) // Reset to first page when changing tabs
   }
 
   const handlePeriodMenuOpen = (event) => {
@@ -2655,6 +2656,23 @@ export default function WeighingDashboard() {
                           rowsPerPageOptions={[5, 10, 25]}
                           labelRowsPerPage="Linhas por página:"
                           labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
+                          sx={{
+                            ".MuiTablePagination-actions": {
+                              marginLeft: 2,
+                              "& .MuiIconButton-root": {
+                                padding: "4px",
+                                color: "#64748b",
+                                "&:hover": {
+                                  backgroundColor: "rgba(16, 185, 129, 0.1)",
+                                  color: "#10b981",
+                                },
+                                "&.Mui-disabled": {
+                                  opacity: 0.5,
+                                  color: "#cbd5e1",
+                                },
+                              },
+                            },
+                          }}
                         />
                       </CardContent>
                     </Card>
@@ -2865,6 +2883,23 @@ export default function WeighingDashboard() {
                             rowsPerPageOptions={[5, 10, 25]}
                             labelRowsPerPage="Linhas por página:"
                             labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
+                            sx={{
+                              ".MuiTablePagination-actions": {
+                                marginLeft: 2,
+                                "& .MuiIconButton-root": {
+                                  padding: "4px",
+                                  color: "#64748b",
+                                  "&:hover": {
+                                    backgroundColor: "rgba(245, 158, 11, 0.1)",
+                                    color: "#f59e0b",
+                                  },
+                                  "&.Mui-disabled": {
+                                    opacity: 0.5,
+                                    color: "#cbd5e1",
+                                  },
+                                },
+                              },
+                            }}
                           />
                         </CardContent>
                       </Card>
@@ -3065,6 +3100,23 @@ export default function WeighingDashboard() {
                             rowsPerPageOptions={[5, 10, 25]}
                             labelRowsPerPage="Linhas por página:"
                             labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
+                            sx={{
+                              ".MuiTablePagination-actions": {
+                                marginLeft: 2,
+                                "& .MuiIconButton-root": {
+                                  padding: "4px",
+                                  color: "#64748b",
+                                  "&:hover": {
+                                    backgroundColor: "rgba(16, 185, 129, 0.1)",
+                                    color: "#10b981",
+                                  },
+                                  "&.Mui-disabled": {
+                                    opacity: 0.5,
+                                    color: "#cbd5e1",
+                                  },
+                                },
+                              },
+                            }}
                           />
                         </CardContent>
                       </Card>
