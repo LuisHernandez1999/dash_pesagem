@@ -39,7 +39,6 @@ import {
   Box,
   Fade,
   Zoom,
-  Grow,
   TextField,
   InputAdornment,
   Menu,
@@ -105,7 +104,7 @@ const themeColors = {
   chart6: "#06b6d4",
 }
 
-// Keyframes for animations
+// Keyframes for animations - keeping only essential ones
 const keyframes = {
   fadeIn: `
     @keyframes fadeIn {
@@ -139,12 +138,6 @@ const keyframes = {
       100% { transform: translateY(0px); }
     }
   `,
-  progressAnimation: `
-    @keyframes progressAnimation {
-      0% { width: 0%; }
-      100% { width: var(--progress-width); }
-    }
-  `,
   gradientShift: `
     @keyframes gradientShift {
       0% { background-position: 0% 50%; }
@@ -156,31 +149,6 @@ const keyframes = {
     @keyframes rotate {
       from { transform: rotate(0deg); }
       to { transform: rotate(360deg); }
-    }
-  `,
-  pieAnimation: `
-    @keyframes pieAnimation {
-      0% { opacity: 0; transform: scale(0.8); }
-      100% { opacity: 1; transform: scale(1); }
-    }
-  `,
-  shimmer: `
-    @keyframes shimmer {
-      0% { background-position: -200% 0; }
-      100% { background-position: 200% 0; }
-    }
-  `,
-  barAnimation: `
-    @keyframes barAnimation {
-      0% { height: 0; y: 300; }
-      100% { height: attr(height); y: attr(y); }
-    }
-  `,
-  glowPulse: `
-    @keyframes glowPulse {
-      0% { filter: drop-shadow(0px 0px 2px rgba(16, 185, 129, 0.3)); }
-      50% { filter: drop-shadow(0px 0px 8px rgba(16, 185, 129, 0.6)); }
-      100% { filter: drop-shadow(0px 0px 2px rgba(16, 185, 129, 0.3)); }
     }
   `,
   truckDrive: `
@@ -239,16 +207,16 @@ export default function WeighingDashboard() {
   }, [vehicleData])
 
   useEffect(() => {
-    // Simulate loading data
+    // Simulate loading data - optimized to load faster
     const timer = setTimeout(() => {
       setLoading(false)
-    }, 1000)
+    }, 500)
 
-    // Simulate charts loading one by one
-    setTimeout(() => setChartsLoaded((prev) => ({ ...prev, barChart: true })), 1500)
-    setTimeout(() => setChartsLoaded((prev) => ({ ...prev, pieChart: true })), 2000)
-    setTimeout(() => setChartsLoaded((prev) => ({ ...prev, lineChart: true })), 2500)
-    setTimeout(() => setChartsLoaded((prev) => ({ ...prev, radarChart: true })), 3000)
+    // Simulate charts loading one by one - reduced timeouts
+    setTimeout(() => setChartsLoaded((prev) => ({ ...prev, barChart: true })), 600)
+    setTimeout(() => setChartsLoaded((prev) => ({ ...prev, pieChart: true })), 700)
+    setTimeout(() => setChartsLoaded((prev) => ({ ...prev, lineChart: true })), 800)
+    setTimeout(() => setChartsLoaded((prev) => ({ ...prev, radarChart: true })), 900)
 
     return () => clearTimeout(timer)
   }, [])
@@ -375,10 +343,6 @@ export default function WeighingDashboard() {
             <stop offset="0%" stopColor={gradientStart} stopOpacity={1} />
             <stop offset="100%" stopColor={gradientEnd} stopOpacity={1} />
           </linearGradient>
-          <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="4" result="blur" />
-            <feComposite in="SourceGraphic" in2="blur" operator="over" />
-          </filter>
         </defs>
         <Sector
           cx={cx}
@@ -388,7 +352,6 @@ export default function WeighingDashboard() {
           startAngle={startAngle}
           endAngle={endAngle}
           fill={`url(#colorActive${index})`}
-          filter="url(#glow)"
         />
         <Sector
           cx={cx}
@@ -440,9 +403,7 @@ export default function WeighingDashboard() {
             borderRadius: "12px",
             padding: "1rem",
             boxShadow: "0 8px 30px rgba(0, 0, 0, 0.12)",
-            animation: "fadeIn 0.2s ease-out",
             maxWidth: "280px",
-            transition: "all 0.2s ease",
             position: "relative",
             "&:before": {
               content: "''",
@@ -491,7 +452,6 @@ export default function WeighingDashboard() {
                     borderRadius: "4px",
                     marginRight: "0.75rem",
                     backgroundColor: entry.color,
-                    boxShadow: `0 0 6px ${entry.color}80`,
                   }}
                 />
                 <Typography sx={{ color: "#475569", fontWeight: 500 }}>{entry.name}:</Typography>
@@ -551,9 +511,7 @@ export default function WeighingDashboard() {
             borderRadius: "12px",
             padding: "1rem",
             boxShadow: "0 8px 30px rgba(0, 0, 0, 0.12)",
-            animation: "fadeIn 0.3s ease-out",
             maxWidth: "280px",
-            transition: "all 0.3s ease",
             position: "relative",
             "&:before": {
               content: "''",
@@ -724,16 +682,11 @@ export default function WeighingDashboard() {
                 display: "flex",
                 alignItems: "center",
                 cursor: "pointer",
-                transition: "all 0.2s ease",
                 padding: "0.5rem 0.75rem",
                 borderRadius: "8px",
                 backgroundColor: "rgba(241, 245, 249, 0.5)",
                 "&:hover": {
                   backgroundColor: "rgba(241, 245, 249, 0.9)",
-                  transform: "translateY(-2px)",
-                  boxShadow: "245,249,0.9)",
-                  transform: "translateY(-2px)",
-                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
                 },
               }}
             >
@@ -746,7 +699,6 @@ export default function WeighingDashboard() {
                   background: isSelectiva
                     ? "linear-gradient(135deg, #10b981, #059669)"
                     : "linear-gradient(135deg, #f59e0b, #d97706)",
-                  boxShadow: `0 2px 6px ${color}40`,
                 }}
               />
               <Typography
@@ -803,8 +755,6 @@ export default function WeighingDashboard() {
             color: "#10b981",
             fontWeight: 600,
             borderRadius: "20px",
-            transition: "all 0.3s ease",
-            animation: "pulse 2s infinite ease-in-out",
             boxShadow: "0 2px 10px rgba(16, 185, 129, 0.2)",
             "&:hover": {
               backgroundColor: "rgba(16, 185, 129, 0.2)",
@@ -822,8 +772,6 @@ export default function WeighingDashboard() {
             color: "#f59e0b",
             fontWeight: 600,
             borderRadius: "20px",
-            transition: "all 0.3s ease",
-            animation: "pulse 2s infinite ease-in-out",
             boxShadow: "0 2px 10px rgba(245, 158, 11, 0.2)",
             "&:hover": {
               backgroundColor: "rgba(245, 158, 11, 0.2)",
@@ -841,8 +789,6 @@ export default function WeighingDashboard() {
             color: "#ef4444",
             fontWeight: 600,
             borderRadius: "20px",
-            transition: "all 0.3s ease",
-            animation: "pulse 2s infinite ease-in-out",
             boxShadow: "0 2px 10px rgba(239, 68, 68, 0.1)",
             "&:hover": {
               backgroundColor: "rgba(239, 68, 68, 0.2)",
@@ -893,22 +839,70 @@ export default function WeighingDashboard() {
     <svg
       width="100%"
       height="100%"
-      viewBox="0 0 100 60"
+      viewBox="0 0 240 120"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       style={{
-        filter: "drop-shadow(0px 4px 6px rgba(0, 0, 0, 0.1))",
-        animation: "truckDrive 4s infinite ease-in-out",
+        filter: "drop-shadow(0px 6px 12px rgba(0, 0, 0, 0.15))",
       }}
     >
-      <rect x="10" y="35" width="50" height="15" rx="2" fill="#10b981" />
-      <rect x="60" y="35" width="25" height="15" rx="2" fill="#059669" />
-      <rect x="15" y="25" width="30" height="10" rx="2" fill="#059669" />
-      <circle cx="25" cy="50" r="6" fill="#334155" />
-      <circle cx="25" cy="50" r="3" fill="#f8fafc" />
-      <circle cx="70" cy="50" r="6" fill="#334155" />
-      <circle cx="70" cy="50" r="3" fill="#f8fafc" />
-      <rect x="60" y="30" width="5" height="5" rx="1" fill="#f8fafc" />
+      {/* Truck Body */}
+      <rect x="20" y="60" width="120" height="35" rx="4" fill="url(#truckGradient)" />
+      <rect x="20" y="45" width="70" height="15" rx="2" fill="url(#cabGradient)" />
+
+      {/* Cabin Details */}
+      <rect x="25" y="50" width="30" height="8" rx="1" fill="#f8fafc" fillOpacity="0.9" />
+      <rect x="60" y="50" width="10" height="8" rx="1" fill="#f8fafc" fillOpacity="0.9" />
+
+      {/* Truck Cargo */}
+      <rect x="140" y="60" width="70" height="35" rx="4" fill="url(#cargoGradient)" />
+      <rect x="140" y="55" width="70" height="5" rx="1" fill="#059669" />
+
+      {/* Truck Details */}
+      <rect x="30" y="70" width="100" height="3" rx="1" fill="#059669" />
+      <rect x="30" y="80" width="100" height="3" rx="1" fill="#059669" />
+      <rect x="150" y="70" width="50" height="3" rx="1" fill="#10b981" />
+      <rect x="150" y="80" width="50" height="3" rx="1" fill="#10b981" />
+
+      {/* Wheels */}
+      <circle cx="50" cy="95" r="12" fill="#1e293b" />
+      <circle cx="50" cy="95" r="6" fill="#94a3b8" />
+      <circle cx="50" cy="95" r="3" fill="#334155" />
+
+      <circle cx="110" cy="95" r="12" fill="#1e293b" />
+      <circle cx="110" cy="95" r="6" fill="#94a3b8" />
+      <circle cx="110" cy="95" r="3" fill="#334155" />
+
+      <circle cx="170" cy="95" r="12" fill="#1e293b" />
+      <circle cx="170" cy="95" r="6" fill="#94a3b8" />
+      <circle cx="170" cy="95" r="3" fill="#334155" />
+
+      {/* Lights */}
+      <rect x="20" y="65" width="5" height="5" rx="1" fill="#fbbf24" />
+      <rect x="205" y="65" width="5" height="5" rx="1" fill="#ef4444" />
+
+      {/* Windshield */}
+      <path d="M90 45 L90 60 L20 60 L20 45 Q55 35 90 45 Z" fill="#0ea5e9" fillOpacity="0.3" />
+
+      {/* Gradients */}
+      <defs>
+        <linearGradient id="truckGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#10b981" />
+          <stop offset="100%" stopColor="#059669" />
+        </linearGradient>
+        <linearGradient id="cabGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#0d9488" />
+          <stop offset="100%" stopColor="#0f766e" />
+        </linearGradient>
+        <linearGradient id="cargoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#059669" />
+          <stop offset="100%" stopColor="#047857" />
+        </linearGradient>
+      </defs>
+
+      {/* Reflection */}
+      <path d="M30 60 L110 60 L110 65 L30 65 Z" fill="white" fillOpacity="0.1" />
+      <path d="M150 60 L200 60 L200 65 L150 65 Z" fill="white" fillOpacity="0.1" />
     </svg>
   )
 
@@ -920,13 +914,8 @@ export default function WeighingDashboard() {
           ${keyframes.slideInUp}
           ${keyframes.pulse}
           ${keyframes.float}
-          ${keyframes.progressAnimation}
           ${keyframes.gradientShift}
           ${keyframes.rotate}
-          ${keyframes.pieAnimation}
-          ${keyframes.shimmer}
-          ${keyframes.barAnimation}
-          ${keyframes.glowPulse}
           ${keyframes.truckDrive}
         `}
       </style>
@@ -940,7 +929,6 @@ export default function WeighingDashboard() {
             display: "flex",
             flexDirection: "column",
             minHeight: "100vh",
-            animation: "fadeIn 0.5s ease-in-out",
             backgroundColor: themeColors.background,
             marginLeft: sidebarCollapsed ? "80px" : "280px",
             width: "calc(100% - " + (sidebarCollapsed ? "80px" : "280px") + ")",
@@ -964,8 +952,6 @@ export default function WeighingDashboard() {
                 right: 0,
                 height: "3px",
                 background: "linear-gradient(90deg, #10b981, #3b82f6, #8b5cf6)",
-                backgroundSize: "200% 200%",
-                animation: "gradientShift 5s ease infinite",
                 zIndex: 1,
               },
             }}
@@ -989,7 +975,6 @@ export default function WeighingDashboard() {
                 <EcoIcon
                   sx={{
                     color: "#10b981",
-                    animation: "float 3s infinite ease-in-out",
                     fontSize: "2.2rem",
                   }}
                 />
@@ -1028,24 +1013,10 @@ export default function WeighingDashboard() {
                           borderRadius: "16px !important",
                           boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05) !important",
                           transition: "all 0.3s ease !important",
-                          animation: "slideInUp 0.5s ease-out forwards",
-                          opacity: 0,
-                          animationDelay: "0s",
                           borderLeft: "4px solid #10b981 !important",
                           "&:hover": {
                             transform: "translateY(-5px)",
                             boxShadow: "0 8px 30px rgba(0, 0, 0, 0.1) !important",
-                          },
-                          "&::before": {
-                            content: "''",
-                            position: "absolute",
-                            top: 0,
-                            left: 0,
-                            width: "100%",
-                            height: "100%",
-                            background:
-                              "linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%)",
-                            pointerEvents: "none",
                           },
                         }}
                       >
@@ -1131,8 +1102,6 @@ export default function WeighingDashboard() {
                                 color: "#10b981",
                                 fontWeight: 600,
                                 borderRadius: "20px",
-                                transition: "all 0.3s ease",
-                                animation: "pulse 2s infinite ease-in-out",
                                 boxShadow: "0 2px 10px rgba(16, 185, 129, 0.2)",
                                 "&:hover": {
                                   backgroundColor: "rgba(16, 185, 129, 0.2)",
@@ -1153,8 +1122,6 @@ export default function WeighingDashboard() {
                               boxShadow: "inset 0 1px 2px rgba(0, 0, 0, 0.05)",
                               "& .MuiLinearProgress-bar": {
                                 background: "linear-gradient(90deg, #059669, #10b981) !important",
-                                "--progress-width": "94.2%",
-                                animation: "progressAnimation 1.5s ease-out forwards",
                               },
                             }}
                           />
@@ -1170,24 +1137,10 @@ export default function WeighingDashboard() {
                           borderRadius: "16px !important",
                           boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05) !important",
                           transition: "all 0.3s ease !important",
-                          animation: "slideInUp 0.5s ease-out forwards",
-                          opacity: 0,
-                          animationDelay: "calc(1 * 0.1s)",
                           borderLeft: "4px solid #3b82f6 !important",
                           "&:hover": {
                             transform: "translateY(-5px)",
                             boxShadow: "0 8px 30px rgba(0, 0, 0, 0.1) !important",
-                          },
-                          "&::before": {
-                            content: "''",
-                            position: "absolute",
-                            top: 0,
-                            left: 0,
-                            width: "100%",
-                            height: "100%",
-                            background:
-                              "linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%)",
-                            pointerEvents: "none",
                           },
                         }}
                       >
@@ -1268,24 +1221,10 @@ export default function WeighingDashboard() {
                           borderRadius: "16px !important",
                           boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05) !important",
                           transition: "all 0.3s ease !important",
-                          animation: "slideInUp 0.5s ease-out forwards",
-                          opacity: 0,
-                          animationDelay: "calc(2 * 0.1s)",
                           borderLeft: "4px solid #10b981 !important",
                           "&:hover": {
                             transform: "translateY(-5px)",
                             boxShadow: "0 8px 30px rgba(0, 0, 0, 0.1) !important",
-                          },
-                          "&::before": {
-                            content: "''",
-                            position: "absolute",
-                            top: 0,
-                            left: 0,
-                            width: "100%",
-                            height: "100%",
-                            background:
-                              "linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%)",
-                            pointerEvents: "none",
                           },
                         }}
                       >
@@ -1366,24 +1305,10 @@ export default function WeighingDashboard() {
                           borderRadius: "16px !important",
                           boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05) !important",
                           transition: "all 0.3s ease !important",
-                          animation: "slideInUp 0.5s ease-out forwards",
-                          opacity: 0,
-                          animationDelay: "calc(3 * 0.1s)",
                           borderLeft: "4px solid #f59e0b !important",
                           "&:hover": {
                             transform: "translateY(-5px)",
                             boxShadow: "0 8px 30px rgba(0, 0, 0, 0.1) !important",
-                          },
-                          "&::before": {
-                            content: "''",
-                            position: "absolute",
-                            top: 0,
-                            left: 0,
-                            width: "100%",
-                            height: "100%",
-                            background:
-                              "linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%)",
-                            pointerEvents: "none",
                           },
                         }}
                       >
@@ -1467,9 +1392,6 @@ export default function WeighingDashboard() {
                         borderRadius: "16px !important",
                         boxShadow: "0 8px 30px rgba(0, 0, 0, 0.08) !important",
                         transition: "all 0.3s ease !important",
-                        animation: "slideInUp 0.6s ease-out forwards",
-                        opacity: 0,
-                        animationDelay: "0.4s",
                         overflow: "hidden",
                         "&:hover": {
                           transform: "translateY(-5px)",
@@ -1477,7 +1399,6 @@ export default function WeighingDashboard() {
                         },
                         background: "linear-gradient(to bottom, #ffffff, #f8fafc)",
                         border: "1px solid rgba(226, 232, 240, 0.8)",
-                        willChange: "transform, opacity", // Fix for flickering
                       }}
                     >
                       <CardHeader
@@ -1499,7 +1420,6 @@ export default function WeighingDashboard() {
                                 sx={{
                                   color: "white",
                                   fontSize: "1.4rem",
-                                  animation: "pulse 3s infinite ease-in-out",
                                 }}
                               />
                             </Box>
@@ -1612,8 +1532,6 @@ export default function WeighingDashboard() {
                                   height: "60px",
                                   borderRadius: "50%",
                                   background: "linear-gradient(135deg, #10b981, #3b82f6)",
-                                  backgroundSize: "200% 200%",
-                                  animation: "gradientShift 2s ease infinite, rotate 1.5s linear infinite",
                                   display: "flex",
                                   alignItems: "center",
                                   justifyContent: "center",
@@ -1638,8 +1556,6 @@ export default function WeighingDashboard() {
                               sx={{
                                 width: "100%",
                                 height: "100%",
-                                animation: "fadeIn 0.8s ease-out forwards",
-                                willChange: "transform, opacity", // Fix for flickering
                               }}
                             >
                               <ResponsiveContainer width="100%" height="100%">
@@ -1658,29 +1574,6 @@ export default function WeighingDashboard() {
                                       <stop offset="0%" stopColor="#f59e0b" stopOpacity={1} />
                                       <stop offset="100%" stopColor="#d97706" stopOpacity={0.8} />
                                     </linearGradient>
-                                    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-                                      <feDropShadow
-                                        dx="0"
-                                        dy="2"
-                                        stdDeviation="3"
-                                        floodColor="#000"
-                                        floodOpacity="0.1"
-                                      />
-                                    </filter>
-                                    <filter id="glow1">
-                                      <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
-                                      <feMerge>
-                                        <feMergeNode in="coloredBlur" />
-                                        <feMergeNode in="SourceGraphic" />
-                                      </feMerge>
-                                    </filter>
-                                    <filter id="glow2">
-                                      <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
-                                      <feMerge>
-                                        <feMergeNode in="coloredBlur" />
-                                        <feMergeNode in="SourceGraphic" />
-                                      </feMerge>
-                                    </filter>
                                   </defs>
                                   <CartesianGrid
                                     vertical={false}
@@ -1714,16 +1607,10 @@ export default function WeighingDashboard() {
                                     fill="url(#colorSeletiva)"
                                     radius={[6, 6, 0, 0]}
                                     name="Seletiva"
-                                    animationDuration={1800}
-                                    animationEasing="ease-out"
-                                    filter="url(#shadow)"
+                                    animationDuration={1000}
                                     barSize={36}
                                     onMouseOver={() => setChartTooltip("seletiva")}
                                     onMouseOut={() => setChartTooltip(null)}
-                                    style={{
-                                      filter: chartTooltip === "seletiva" ? "url(#glow1)" : "none",
-                                      transition: "filter 0.3s ease",
-                                    }}
                                   >
                                     <LabelList
                                       dataKey="seletiva"
@@ -1737,17 +1624,11 @@ export default function WeighingDashboard() {
                                     fill="url(#colorCataTreco)"
                                     radius={[6, 6, 0, 0]}
                                     name="Cata Treco"
-                                    animationDuration={1800}
-                                    animationEasing="ease-out"
+                                    animationDuration={1000}
                                     animationBegin={300}
-                                    filter="url(#shadow)"
                                     barSize={36}
                                     onMouseOver={() => setChartTooltip("cataTreco")}
                                     onMouseOut={() => setChartTooltip(null)}
-                                    style={{
-                                      filter: chartTooltip === "cataTreco" ? "url(#glow2)" : "none",
-                                      transition: "filter 0.3s ease",
-                                    }}
                                   >
                                     <LabelList
                                       dataKey="cataTreco"
@@ -1878,27 +1759,12 @@ export default function WeighingDashboard() {
                           borderRadius: "16px !important",
                           boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05) !important",
                           transition: "all 0.3s ease !important",
-                          animation: "slideInUp 0.6s ease-out forwards",
-                          opacity: 0,
-                          animationDelay: "0.4s",
                           overflow: "hidden",
                           "&:hover": {
                             transform: "translateY(-5px)",
                             boxShadow: "0 8px 30px rgba(0, 0, 0, 0.1) !important",
                           },
                           position: "relative",
-                          "&::after": {
-                            content: "''",
-                            position: "absolute",
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            height: "100%",
-                            background: "linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.8) 100%)",
-                            opacity: 0.1,
-                            pointerEvents: "none",
-                          },
-                          willChange: "transform, opacity", // Fix for flickering
                         }}
                       >
                         <CardHeader
@@ -1907,10 +1773,9 @@ export default function WeighingDashboard() {
                               <DonutLarge
                                 sx={{
                                   color: "#10b981",
-                                  animation: "pulse 3s infinite ease-in-out",
                                 }}
                               />
-                              Cooperativas com Mais Pesagens
+                              Top 5 Coperativas com mais pesagens
                             </Box>
                           }
                           subheader="Top 5 cooperativas por volume de coleta"
@@ -2000,8 +1865,6 @@ export default function WeighingDashboard() {
                                     height: "60px",
                                     borderRadius: "50%",
                                     background: "linear-gradient(135deg, #10b981, #3b82f6)",
-                                    backgroundSize: "200% 200%",
-                                    animation: "gradientShift 2s ease infinite, rotate 1.5s linear infinite",
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center",
@@ -2026,7 +1889,6 @@ export default function WeighingDashboard() {
                                 sx={{
                                   width: "100%",
                                   height: "100%",
-                                  animation: "pieAnimation 0.8s ease-out forwards",
                                 }}
                               >
                                 <ResponsiveContainer width="100%" height="100%">
@@ -2045,15 +1907,6 @@ export default function WeighingDashboard() {
                                           <stop offset="100%" stopColor={color.end} stopOpacity={1} />
                                         </linearGradient>
                                       ))}
-                                      <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-                                        <feDropShadow
-                                          dx="0"
-                                          dy="0"
-                                          stdDeviation="3"
-                                          floodColor="#000"
-                                          floodOpacity="0.1"
-                                        />
-                                      </filter>
                                     </defs>
                                     <Pie
                                       activeIndex={activeIndex}
@@ -2067,9 +1920,7 @@ export default function WeighingDashboard() {
                                       dataKey="weighings"
                                       nameKey="name"
                                       onMouseEnter={onPieEnter}
-                                      animationDuration={1500}
-                                      animationBegin={300}
-                                      filter="url(#shadow)"
+                                      animationDuration={1000}
                                     >
                                       {cooperativesData.slice(0, 5).map((entry, index) => (
                                         <Cell
@@ -2091,7 +1942,7 @@ export default function WeighingDashboard() {
                       </Card>
                     </Zoom>
 
-                    {/* Top Vehicle Card - NEW COMPONENT */}
+                    {/* Top Vehicle Card */}
                     <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "550ms" : "0ms" }}>
                       <Card
                         sx={{
@@ -2100,9 +1951,6 @@ export default function WeighingDashboard() {
                           borderRadius: "16px !important",
                           boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05) !important",
                           transition: "all 0.3s ease !important",
-                          animation: "slideInUp 0.6s ease-out forwards",
-                          opacity: 0,
-                          animationDelay: "0.45s",
                           overflow: "hidden",
                           "&:hover": {
                             transform: "translateY(-5px)",
@@ -2110,17 +1958,6 @@ export default function WeighingDashboard() {
                           },
                           position: "relative",
                           background: "linear-gradient(135deg, #ffffff, #f8fafc)",
-                          "&::after": {
-                            content: "''",
-                            position: "absolute",
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            height: "100%",
-                            background: "linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.8) 100%)",
-                            opacity: 0.1,
-                            pointerEvents: "none",
-                          },
                         }}
                       >
                         <CardHeader
@@ -2129,7 +1966,6 @@ export default function WeighingDashboard() {
                               <EmojiTransportation
                                 sx={{
                                   color: "#10b981",
-                                  animation: "pulse 3s infinite ease-in-out",
                                 }}
                               />
                               Veículo com Maior Pesagem
@@ -2361,15 +2197,12 @@ export default function WeighingDashboard() {
 
                 {/* Drivers Section */}
                 <Box component="section" sx={{ marginTop: "1.5rem" }}>
-                  <Grow in={!loading} timeout={800} style={{ transitionDelay: !loading ? "600ms" : "0ms" }}>
+                  <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "600ms" : "0ms" }}>
                     <Card
                       sx={{
                         borderRadius: "16px",
                         boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05)",
                         transition: "all 0.3s ease",
-                        animation: "slideInUp 0.7s ease-out forwards",
-                        opacity: 0,
-                        animationDelay: "0.6s",
                         overflow: "hidden",
                         "&:hover": {
                           boxShadow: "0 8px 30px rgba(0, 0, 0, 0.1)",
@@ -2652,7 +2485,7 @@ export default function WeighingDashboard() {
                         </Fade>
                       </CardContent>
                     </Card>
-                  </Grow>
+                  </Zoom>
                 </Box>
 
                 {/* Vehicle and Cooperatives Section */}
@@ -2673,9 +2506,6 @@ export default function WeighingDashboard() {
                           borderRadius: "16px",
                           boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05)",
                           transition: "all 0.3s ease",
-                          animation: "slideInUp 0.8s ease-out forwards",
-                          opacity: 0,
-                          animationDelay: "0.8s",
                           overflow: "hidden",
                           "&:hover": {
                             transform: "translateY(-5px)",
@@ -2687,7 +2517,7 @@ export default function WeighingDashboard() {
                           title={
                             <Box sx={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                               <Truck />
-                              Veículos e Média de Pesagens
+                              Eficiência Veiculos
                               <Box
                                 sx={{
                                   background: "linear-gradient(135deg, #f59e0b, #d97706)",
@@ -2865,9 +2695,6 @@ export default function WeighingDashboard() {
                           borderRadius: "16px",
                           boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05)",
                           transition: "all 0.3s ease",
-                          animation: "slideInUp 0.8s ease-out forwards",
-                          opacity: 0,
-                          animationDelay: "0.8s",
                           overflow: "hidden",
                           "&:hover": {
                             transform: "translateY(-5px)",

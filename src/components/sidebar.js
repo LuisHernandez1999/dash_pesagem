@@ -9,25 +9,26 @@ import {
   ListItemText,
   TextField,
   InputAdornment,
-  Tooltip,  
+  Tooltip,
   Collapse,
   IconButton,
   Typography,
   Avatar,
 } from "@mui/material"
 import {
-  AiOutlineReconciliation,  
+  AiOutlineReconciliation,
   AiOutlineLogout,
   AiOutlineSearch,
   AiOutlineTeam,
   AiOutlineCar,
   AiOutlineDown,
-  AiOutlineMenu,    
+  AiOutlineMenu,
 } from "react-icons/ai"
-import { MdOutlineAddBusiness, MdOutlineBalance } from "react-icons/md";
-import { BsGraphUpArrow } from "react-icons/bs";
+import { MdOutlineAddBusiness, MdOutlineBalance } from "react-icons/md"
+import { BsGraphUpArrow } from "react-icons/bs"
 import { useRouter } from "next/router"
 import Image from "next/image"
+import { IoStatsChartSharp } from "react-icons/io5"
 
 const greenColors = {
   deepGreen: "#1b5e20",
@@ -46,6 +47,7 @@ export default function Sidebar({ onCollapse, user }) {
 
   // Define os itens do menu
   const menuItems = [
+    { text: "Dashboard de Pesagem", icon: IoStatsChartSharp, path: "/dashboard/pesagem" },
     { text: "Cadastro de Pesagem", icon: MdOutlineBalance, path: "/cadastro/cadastro" },
     { text: "Resumo de Pesagem", icon: BsGraphUpArrow, path: "/resumo_pesagem/resumo_pesagens_rel" },
     {
@@ -71,7 +73,10 @@ export default function Sidebar({ onCollapse, user }) {
 
     // Remove acentos e converte para minúsculas
     const normalizeText = (text) =>
-      text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+      text
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
 
     const searchNormalized = normalizeText(searchValue)
 
@@ -80,9 +85,7 @@ export default function Sidebar({ onCollapse, user }) {
 
       let matchingSubItems = []
       if (item.subItems) {
-        matchingSubItems = item.subItems.filter(subItem =>
-          normalizeText(subItem.text).includes(searchNormalized)
-        )
+        matchingSubItems = item.subItems.filter((subItem) => normalizeText(subItem.text).includes(searchNormalized))
       }
 
       if (mainItemMatches || matchingSubItems.length > 0) {
@@ -185,7 +188,6 @@ export default function Sidebar({ onCollapse, user }) {
           >
             <Box sx={{ width: 150, height: 70, position: "relative", mb: 0.5 }}>
               <Image
-                
                 alt="LimpaGyn Logo"
                 width={150}
                 height={70}
@@ -196,7 +198,15 @@ export default function Sidebar({ onCollapse, user }) {
                 }}
               />
             </Box>
-            <Typography variant="h6" sx={{ fontWeight: 700, fontSize: "1.3rem", letterSpacing: "0.5px", textShadow: "0px 2px 4px rgba(0,0,0,0.2)" }}>
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 700,
+                fontSize: "1.3rem",
+                letterSpacing: "0.5px",
+                textShadow: "0px 2px 4px rgba(0,0,0,0.2)",
+              }}
+            >
               LimpaGyn
             </Typography>
           </Box>
@@ -237,10 +247,17 @@ export default function Sidebar({ onCollapse, user }) {
               fontSize: "1.2rem",
             }}
           >
-            {!user?.avatarUrl && user?.name ? user.name.charAt(0).toUpperCase() : user?.email ? user.email.charAt(0).toUpperCase() : "U"}
+            {!user?.avatarUrl && user?.name
+              ? user.name.charAt(0).toUpperCase()
+              : user?.email
+                ? user.email.charAt(0).toUpperCase()
+                : "U"}
           </Avatar>
           <Box sx={{ ml: 2 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 600, color: "#fff", fontSize: "0.95rem", lineHeight: 1.2 }}>
+            <Typography
+              variant="subtitle1"
+              sx={{ fontWeight: 600, color: "#fff", fontSize: "0.95rem", lineHeight: 1.2 }}
+            >
               {user?.name || user?.email || "Usuário"}
             </Typography>
             <Typography variant="body2" sx={{ color: "rgba(255, 255, 255, 0.7)", fontSize: "0.8rem" }}>
@@ -461,3 +478,4 @@ export default function Sidebar({ onCollapse, user }) {
     </Box>
   )
 }
+
