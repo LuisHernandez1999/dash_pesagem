@@ -302,22 +302,28 @@ export default function WeighingDashboard() {
         setPesagensAnoPorTipo(anoPorTipoData || [])
         setTopCooperativas(cooperativasData || [])
         setVeiculoMaiorPesagem(veiculoData || null)
-        
+
         // Process vehicle data from API
-        if (veiculoData && Array.isArray(veiculoData)) {
-          const processedVehicleData = veiculoData.map(vehicle => ({
-            ...vehicle,
-            icon: getVehicleIcon(vehicle.type || "")
-          }));
-          setVehicleData(processedVehicleData);
+        if (veiculoData) {
+          const processedVehicleData = [
+            {
+              type: veiculoData.type,
+              prefix: veiculoData.prefix,
+              total_pesagens: veiculoData.total_pesagens,
+              eficiencia: veiculoData.eficiencia,
+              icon: getVehicleIcon(veiculoData.type || ""),
+            },
+          ]
+          setVehicleData(processedVehicleData)
         }
 
-        // Split motoristas into top and bottom performers
+        // Process motoristas data
         if (motoristasData && Array.isArray(motoristasData)) {
           const sortedMotoristas = [...motoristasData].sort((a, b) => b.eficiencia - a.eficiencia)
+          const topPercentage = 0.7 // Top 70%
           setMotoristas({
-            top: sortedMotoristas.slice(0, Math.ceil(sortedMotoristas.length * 0.7)),
-            bottom: sortedMotoristas.slice(Math.ceil(sortedMotoristas.length * 0.7)),
+            top: sortedMotoristas.slice(0, Math.ceil(sortedMotoristas.length * topPercentage)),
+            bottom: sortedMotoristas.slice(Math.ceil(sortedMotoristas.length * topPercentage)),
           })
         }
 
@@ -337,15 +343,15 @@ export default function WeighingDashboard() {
 
     fetchData()
   }, [])
-  
+
   // Helper function to get vehicle icon based on type
   const getVehicleIcon = (type) => {
-    const typeLC = type.toLowerCase();
-    if (typeLC.includes("compactador")) return <LocalShipping />;
-    if (typeLC.includes("basculante")) return <FireTruck />;
-    if (typeLC.includes("carroceria")) return <AirportShuttle />;
-    if (typeLC.includes("utilitário") || typeLC.includes("utilitario")) return <ElectricCar />;
-    return <Truck />;
+    const typeLC = type.toLowerCase()
+    if (typeLC.includes("compactador")) return <LocalShipping />
+    if (typeLC.includes("basculante")) return <FireTruck />
+    if (typeLC.includes("carroceria")) return <AirportShuttle />
+    if (typeLC.includes("utilitário") || typeLC.includes("utilitario")) return <ElectricCar />
+    return <Truck />
   }
 
   // Data from API
@@ -408,14 +414,12 @@ export default function WeighingDashboard() {
     const textAnchor = cos >= 0 ? "start" : "end"
 
     // Get the gradient for the active slice
-    const index = cooperativesData.findIndex(
-      (item) => item.nome === (payload.nome || "") || item.name === (payload.name || ""),
-    )
+    const index = cooperativesData.findIndex((item) => item.nome === (payload.nome || ""))
     const gradientStart = PIE_COLORS[index % PIE_COLORS.length].start
     const gradientEnd = PIE_COLORS[index % PIE_COLORS.length].end
 
-    // Safely extract the name - this fixes the error
-    const displayName = payload.name || payload.nome || ""
+    // Safely extract the name
+    const displayName = payload.nome || ""
     const nameParts = displayName.split(" ")
     const shortName = nameParts.length > 1 ? nameParts[1] : displayName
 
@@ -586,7 +590,7 @@ export default function WeighingDashboard() {
       const data = payload[0]
       const color = data.payload.fill || "#10b981"
       // Safely access percentage with a fallback
-      const percentage = data.payload.percentual || data.payload.percentage || 0
+      const percentage = data.payload.percentual || 0
 
       return (
         <Box
@@ -2232,7 +2236,7 @@ export default function WeighingDashboard() {
                                     marginBottom: "1rem",
                                   }}
                                 >
-                                  {topVehicle?.icon || <Truck />}
+                                  {getVehicleIcon(topVehicle?.type || "")}
                                 </Box>
 
                                 <Typography
@@ -2265,7 +2269,9 @@ export default function WeighingDashboard() {
                                       width: "100%",
                                     }}
                                   >
-                                    <Typography sx={{ fontWeight: 500, color: "#64748b" }}>Total de Pesagens:</Typography>
+                                    <Typography sx={{ fontWeight: 500, color: "#64748b" }}>
+                                      Total de Pesagens:
+                                    </Typography>
                                     <Typography
                                       sx={{
                                         fontWeight: 700,
@@ -3080,7 +3086,7 @@ export default function WeighingDashboard() {
                               </TableBody>
                             </Table>
                           </TableContainer>
-    
+
                           <TablePagination
                             component="div"
                             count={filteredCooperativesData.length}
@@ -3122,3 +3128,4 @@ export default function WeighingDashboard() {
     </>
   )
 }
+
