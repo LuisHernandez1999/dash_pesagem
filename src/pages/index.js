@@ -33,7 +33,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
+  TablePagination,
   Chip,
   IconButton,
   Box,
@@ -75,6 +75,19 @@ import {
   Star,
 } from "@mui/icons-material"
 import Sidebar from "../components/sidebar"
+
+import {
+  quantidade_de_pesagens,
+  quantidade_de_toneladas_pesadas,
+  exibir_pesagem_por_mes,
+  meta_batida,
+  def_pesagens_seletiva,
+  def_pesagens_cata_treco,
+  def_pesagens_ao_longo_ano_por_tipo_pesagem,
+  top_5_coperativas_por_pesagem,
+  veiculo_maior_pesagens,
+  eficiencia_motoristas,
+} from "../service/dashboard"
 
 // Theme colors - can be used in sx props
 const themeColors = {
@@ -164,6 +177,7 @@ export default function WeighingDashboard() {
   const [period, setPeriod] = useState("month")
   const [tabValue, setTabValue] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [chartsLoaded, setChartsLoaded] = useState({
     barChart: false,
     pieChart: false,
@@ -177,6 +191,26 @@ export default function WeighingDashboard() {
   const [activeIndex, setActiveIndex] = useState(0)
   const [chartTooltip, setChartTooltip] = useState(null)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+
+  // Pagination states
+  const [vehiclePage, setVehiclePage] = useState(0)
+  const [vehicleRowsPerPage, setVehicleRowsPerPage] = useState(5)
+  const [cooperativePage, setCooperativePage] = useState(0)
+  const [cooperativeRowsPerPage, setCooperativeRowsPerPage] = useState(5)
+  const [driverPage, setDriverPage] = useState(0)
+  const [driverRowsPerPage, setDriverRowsPerPage] = useState(5)
+
+  // API data states
+  const [totalPesagens, setTotalPesagens] = useState(0)
+  const [toneladasPesadas, setToneladasPesadas] = useState({ target: 0, current: 0, percentage: 0 })
+  const [pesagensPorMes, setPesagensPorMes] = useState([])
+  const [metaBatida, setMetaBatida] = useState({})
+  const [pesagensSeletiva, setPesagensSeletiva] = useState(0)
+  const [pesagensCataTreco, setPesagensCataTreco] = useState(0)
+  const [pesagensAnoPorTipo, setPesagensAnoPorTipo] = useState([])
+  const [topCooperativas, setTopCooperativas] = useState([])
+  const [veiculoMaiorPesagem, setVeiculoMaiorPesagem] = useState(null)
+  const [motoristas, setMotoristas] = useState({ top: [], bottom: [] })
   const [vehicleData, setVehicleData] = useState([
     { type: "Caminhão Compactador", prefix: "CMP-2023", count: 12, avgWeighings: 245, icon: <LocalShipping /> },
     { type: "Caminhão Basculante", prefix: "BSC-2022", count: 8, avgWeighings: 210, icon: <FireTruck /> },
@@ -201,83 +235,151 @@ export default function WeighingDashboard() {
     setSidebarCollapsed(collapsed)
   }
 
+  // Pagination handlers
+  const handleVehiclePageChange = (event, newPage) => {
+    setVehiclePage(newPage)
+  }
+
+  const handleVehicleRowsPerPageChange = (event) => {
+    setVehicleRowsPerPage(Number.parseInt(event.target.value, 10))
+    setVehiclePage(0)
+  }
+
+  const handleCooperativePageChange = (event, newPage) => {
+    setCooperativePage(newPage)
+  }
+
+  const handleCooperativeRowsPerPageChange = (event) => {
+    setCooperativeRowsPerPage(Number.parseInt(event.target.value, 10))
+    setCooperativePage(0)
+  }
+
+  const handleDriverPageChange = (event, newPage) => {
+    setDriverPage(newPage)
+  }
+
+  const handleDriverRowsPerPageChange = (event) => {
+    setDriverRowsPerPage(Number.parseInt(event.target.value, 10))
+    setDriverPage(0)
+  }
+
   // Find the vehicle with the highest average weighings
   const topVehicle = useMemo(() => {
-    return [...vehicleData].sort((a, b) => b.avgWeighings - a.avgWeighings)[0]
-  }, [vehicleData])
+    return (
+      veiculoMaiorPesagem ||
+      (vehicleData.length > 0 ? [...vehicleData].sort((a, b) => b.avgWeighings - a.avgWeighings)[0] : null)
+    )
+  }, [veiculoMaiorPesagem, vehicleData])
 
   useEffect(() => {
-    // Simulate loading data - optimized to load faster
-    const timer = setTimeout(() => {
-      setLoading(false)
-    }, 500)
+    const fetchData = async () => {
+      try {
+        setLoading(true)
 
-    // Simulate charts loading one by one - reduced timeouts
-    setTimeout(() => setChartsLoaded((prev) => ({ ...prev, barChart: true })), 600)
-    setTimeout(() => setChartsLoaded((prev) => ({ ...prev, pieChart: true })), 700)
-    setTimeout(() => setChartsLoaded((prev) => ({ ...prev, lineChart: true })), 800)
-    setTimeout(() => setChartsLoaded((prev) => ({ ...prev, radarChart: true })), 900)
+        // Fetch all data in parallel
+        const [
+          pesagensData,
+          toneladasData,
+          pesagensMesData,
+          metaData,
+          seletivaData,
+          cataTrecoData,
+          anoPorTipoData,
+          cooperativasData,
+          veiculoData,
+          motoristasData,
+        ] = await Promise.all([
+          quantidade_de_pesagens(),
+          quantidade_de_toneladas_pesadas(),
+          exibir_pesagem_por_mes(),
+          meta_batida(),
+          def_pesagens_seletiva(),
+          def_pesagens_cata_treco(),
+          def_pesagens_ao_longo_ano_por_tipo_pesagem(),
+          top_5_coperativas_por_pesagem(),
+          veiculo_maior_pesagens(),
+          eficiencia_motoristas(),
+        ])
 
-    return () => clearTimeout(timer)
+        // Update state with API data
+        setTotalPesagens(pesagensData?.total || 0)
+        setToneladasPesadas({
+          target: toneladasData?.meta || 0,
+          current: toneladasData?.atual || 0,
+          percentage: toneladasData?.percentual || 0,
+        })
+        setPesagensPorMes(pesagensMesData || [])
+        setMetaBatida(metaData || {})
+        setPesagensSeletiva(seletivaData?.total || 0)
+        setPesagensCataTreco(cataTrecoData?.total || 0)
+        setPesagensAnoPorTipo(anoPorTipoData || [])
+        setTopCooperativas(cooperativasData || [])
+        setVeiculoMaiorPesagem(veiculoData || null)
+
+        // Split motoristas into top and bottom performers
+        if (motoristasData && Array.isArray(motoristasData)) {
+          const sortedMotoristas = [...motoristasData].sort((a, b) => b.eficiencia - a.eficiencia)
+          setMotoristas({
+            top: sortedMotoristas.slice(0, Math.ceil(sortedMotoristas.length * 0.7)),
+            bottom: sortedMotoristas.slice(Math.ceil(sortedMotoristas.length * 0.7)),
+          })
+        }
+
+        setLoading(false)
+
+        // Simulate charts loading one by one
+        setTimeout(() => setChartsLoaded((prev) => ({ ...prev, barChart: true })), 100)
+        setTimeout(() => setChartsLoaded((prev) => ({ ...prev, pieChart: true })), 200)
+        setTimeout(() => setChartsLoaded((prev) => ({ ...prev, lineChart: true })), 300)
+        setTimeout(() => setChartsLoaded((prev) => ({ ...prev, radarChart: true })), 400)
+      } catch (err) {
+        console.error("Error fetching dashboard data:", err)
+        setError("Falha ao carregar dados do dashboard. Por favor, tente novamente mais tarde.")
+        setLoading(false)
+      }
+    }
+
+    fetchData()
   }, [])
 
   // Sample data - in a real app, this would come from an API or database
-  const efficiencyData = {
-    target: 2601,
-    current: 2450,
-    percentage: 94.2,
-  }
+  const efficiencyData = toneladasPesadas
 
-  const driversData = [
-    { id: 1, name: "Carlos Silva", weighings: 342, efficiency: 98.2, avatar: "CS" },
-    { id: 2, name: "João Oliveira", weighings: 315, efficiency: 95.7, avatar: "JO" },
-    { id: 3, name: "Marcos Santos", weighings: 301, efficiency: 94.3, avatar: "MS" },
-    { id: 4, name: "Pedro Lima", weighings: 287, efficiency: 92.1, avatar: "PL" },
-    { id: 5, name: "Antonio Souza", weighings: 265, efficiency: 89.8, avatar: "AS" },
-    { id: 6, name: "Ricardo Pereira", weighings: 243, efficiency: 87.5, avatar: "RP" },
-    { id: 7, name: "José Ferreira", weighings: 221, efficiency: 85.2, avatar: "JF" },
-    { id: 8, name: "Paulo Costa", weighings: 198, efficiency: 82.9, avatar: "PC" },
-  ]
+  const driversData = motoristas.top || []
 
-  const lowestDriversData = [
-    { id: 9, name: "Miguel Alves", weighings: 156, efficiency: 76.4, avatar: "MA" },
-    { id: 10, name: "Fernando Dias", weighings: 142, efficiency: 72.1, avatar: "FD" },
-    { id: 11, name: "Eduardo Gomes", weighings: 128, efficiency: 68.7, avatar: "EG" },
-  ]
+  const lowestDriversData = motoristas.bottom || []
 
-  const cooperativesData = [
-    { rank: 1, name: "Cooperativa Recicla Vida", weighings: 1250, percentage: 28.1 },
-    { rank: 2, name: "Cooperativa EcoSol", weighings: 980, percentage: 22.0 },
-    { rank: 3, name: "Cooperativa Reciclagem Verde", weighings: 850, percentage: 19.1 },
-    { rank: 4, name: "Cooperativa Futuro Limpo", weighings: 720, percentage: 16.2 },
-    { rank: 5, name: "Cooperativa Recicla Cidadão", weighings: 650, percentage: 14.6 },
-    { rank: 6, name: "Cooperativa Mãos que Reciclam", weighings: 520, percentage: 11.7 },
-    { rank: 7, name: "Cooperativa Reciclando o Futuro", weighings: 480, percentage: 10.8 },
-    { rank: 8, name: "Cooperativa Amigos do Meio Ambiente", weighings: 420, percentage: 9.4 },
-    { rank: 9, name: "Cooperativa Recicla Já", weighings: 380, percentage: 8.5 },
-    { rank: 10, name: "Cooperativa Planeta Verde", weighings: 350, percentage: 7.9 },
-  ]
+  const cooperativesData =
+    topCooperativas.length > 0
+      ? topCooperativas
+      : [
+          { rank: 1, nome: "Carregando...", total_pesagens: 0, percentual: 0 },
+          // ... other default data
+        ]
 
   // Enhanced monthly data with additional metrics for all 12 months
-  const monthlyData = [
-    { month: "Jan", seletiva: 850, cataTreco: 350, total: 1200, meta: 1100, eficiencia: 109.1 },
-    { month: "Fev", seletiva: 920, cataTreco: 380, total: 1300, meta: 1150, eficiencia: 113.0 },
-    { month: "Mar", seletiva: 880, cataTreco: 400, total: 1280, meta: 1200, eficiencia: 106.7 },
-    { month: "Abr", seletiva: 950, cataTreco: 420, total: 1370, meta: 1250, eficiencia: 109.6 },
-    { month: "Mai", seletiva: 1020, cataTreco: 450, total: 1470, meta: 1300, eficiencia: 113.1 },
-    { month: "Jun", seletiva: 980, cataTreco: 430, total: 1410, meta: 1350, eficiencia: 104.4 },
-    { month: "Jul", seletiva: 1050, cataTreco: 460, total: 1510, meta: 1400, eficiencia: 107.9 },
-    { month: "Ago", seletiva: 1100, cataTreco: 480, total: 1580, meta: 1450, eficiencia: 109.0 },
-    { month: "Set", seletiva: 1030, cataTreco: 470, total: 1500, meta: 1500, eficiencia: 100.0 },
-    { month: "Out", seletiva: 1080, cataTreco: 490, total: 1570, meta: 1550, eficiencia: 101.3 },
-    { month: "Nov", seletiva: 1150, cataTreco: 510, total: 1660, meta: 1600, eficiencia: 103.8 },
-    { month: "Dez", seletiva: 1200, cataTreco: 550, total: 1750, meta: 1650, eficiencia: 106.1 },
-  ]
+  const monthlyData =
+    pesagensPorMes.length > 0
+      ? pesagensPorMes
+      : [
+          { month: "Jan", seletiva: 0, cataTreco: 0, total: 0, meta: 0, eficiencia: 0 },
+          { month: "Fev", seletiva: 0, cataTreco: 0, total: 0, meta: 0, eficiencia: 0 },
+          { month: "Mar", seletiva: 0, cataTreco: 0, total: 0, meta: 0, eficiencia: 0 },
+          { month: "Abr", seletiva: 0, cataTreco: 0, total: 0, meta: 0, eficiencia: 0 },
+          { month: "Mai", seletiva: 0, cataTreco: 0, total: 0, meta: 0, eficiencia: 0 },
+          { month: "Jun", seletiva: 0, cataTreco: 0, total: 0, meta: 0, eficiencia: 0 },
+          { month: "Jul", seletiva: 0, cataTreco: 0, total: 0, meta: 0, eficiencia: 0 },
+          { month: "Ago", seletiva: 0, cataTreco: 0, total: 0, meta: 0, eficiencia: 0 },
+          { month: "Set", seletiva: 0, cataTreco: 0, total: 0, meta: 0, eficiencia: 0 },
+          { month: "Out", seletiva: 0, cataTreco: 0, total: 0, meta: 0, eficiencia: 0 },
+          { month: "Nov", seletiva: 0, cataTreco: 0, total: 0, meta: 0, eficiencia: 0 },
+          { month: "Dez", seletiva: 0, cataTreco: 0, total: 0, meta: 0, eficiencia: 0 },
+        ]
 
   // Calculate totals for Seletiva and Cata Treco
-  const totalSeletiva = monthlyData.reduce((sum, item) => sum + item.seletiva, 0)
-  const totalCataTreco = monthlyData.reduce((sum, item) => sum + item.cataTreco, 0)
-  const totalWeighings = totalSeletiva + totalCataTreco
+  const totalSeletiva = pesagensSeletiva
+  const totalCataTreco = pesagensCataTreco
+  const totalWeighings = totalPesagens
 
   const vehiclePerformanceData = [
     { vehicle: "Compactador", efficiency: 92, maintenance: 85, fuel: 78, availability: 95, weighings: 245 },
@@ -318,6 +420,7 @@ export default function WeighingDashboard() {
     setActiveIndex(index)
   }
 
+  // Fixed renderActiveShape function to handle undefined name property
   const renderActiveShape = (props) => {
     const RADIAN = Math.PI / 180
     const { cx, cy, midAngle, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent, value } = props
@@ -332,9 +435,16 @@ export default function WeighingDashboard() {
     const textAnchor = cos >= 0 ? "start" : "end"
 
     // Get the gradient for the active slice
-    const index = cooperativesData.findIndex((item) => item.name === payload.name)
+    const index = cooperativesData.findIndex(
+      (item) => item.nome === (payload.nome || "") || item.name === (payload.name || ""),
+    )
     const gradientStart = PIE_COLORS[index % PIE_COLORS.length].start
     const gradientEnd = PIE_COLORS[index % PIE_COLORS.length].end
+
+    // Safely extract the name - this fixes the error
+    const displayName = payload.name || payload.nome || ""
+    const nameParts = displayName.split(" ")
+    const shortName = nameParts.length > 1 ? nameParts[1] : displayName
 
     return (
       <g>
@@ -371,7 +481,7 @@ export default function WeighingDashboard() {
           fill="#333333"
           style={{ fontWeight: 600, fontSize: 16, textShadow: "0 1px 2px rgba(0,0,0,0.1)" }}
         >
-          {payload.name.split(" ")[1]}
+          {shortName}
         </text>
         <text
           x={ex + (cos >= 0 ? 1 : -1) * 12}
@@ -497,11 +607,13 @@ export default function WeighingDashboard() {
     return null
   }
 
-  // Enhanced tooltip for pie chart
+  // Enhanced tooltip for pie chart - fixed to handle undefined percentage
   const PieTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
       const data = payload[0]
       const color = data.payload.fill || "#10b981"
+      // Safely access percentage with a fallback
+      const percentage = data.payload.percentual || data.payload.percentage || 0
 
       return (
         <Box
@@ -534,7 +646,7 @@ export default function WeighingDashboard() {
               color: "#1e293b",
             }}
           >
-            {data.name}
+            {data.name || data.payload.nome || ""}
           </Typography>
           <Box
             sx={{
@@ -584,7 +696,7 @@ export default function WeighingDashboard() {
                 color: color,
               }}
             >
-              {`${(data.payload.percentage).toFixed(1)}%`}
+              {`${percentage.toFixed(1)}%`}
             </Typography>
           </Box>
         </Box>
@@ -593,7 +705,7 @@ export default function WeighingDashboard() {
     return null
   }
 
-  // Custom legend for pie chart
+  // Custom legend for pie chart - fixed to handle undefined values
   const renderLegend = (props) => {
     const { payload } = props
 
@@ -610,6 +722,11 @@ export default function WeighingDashboard() {
         {payload.map((entry, index) => {
           const gradientStart = PIE_COLORS[index % PIE_COLORS.length].start
           const gradientEnd = PIE_COLORS[index % PIE_COLORS.length].end
+
+          // Safely extract the name parts
+          const displayName = entry.value || ""
+          const nameParts = displayName.split(" ")
+          const shortName = nameParts.length > 1 ? nameParts[1] : displayName
 
           return (
             <Box
@@ -647,7 +764,7 @@ export default function WeighingDashboard() {
                   transition: "all 0.2s ease",
                 }}
               >
-                {entry.value.split(" ")[1]}
+                {shortName}
               </Typography>
             </Box>
           )
@@ -806,19 +923,19 @@ export default function WeighingDashboard() {
   )
 
   const filteredCooperativesData = cooperativesData.filter((coop) =>
-    coop.name.toLowerCase().includes(cooperativeFilter.toLowerCase()),
+    (coop.nome || "").toLowerCase().includes(cooperativeFilter.toLowerCase()),
   )
 
   const filteredDriversData = driversData.filter((driver) =>
-    driver.name.toLowerCase().includes(driverFilter.toLowerCase()),
+    (driver.nome || "").toLowerCase().includes(driverFilter.toLowerCase()),
   )
 
   const filteredLowestDriversData = lowestDriversData.filter((driver) =>
-    driver.name.toLowerCase().includes(driverFilter.toLowerCase()),
+    (driver.nome || "").toLowerCase().includes(driverFilter.toLowerCase()),
   )
 
   const filteredAllDriversData = [...driversData, ...lowestDriversData].filter((driver) =>
-    driver.name.toLowerCase().includes(driverFilter.toLowerCase()),
+    (driver.nome || "").toLowerCase().includes(driverFilter.toLowerCase()),
   )
 
   // Get total counts for table headers
@@ -826,13 +943,30 @@ export default function WeighingDashboard() {
   const totalVehicles = filteredVehicleData.length
   const totalCooperatives = filteredCooperativesData.length
 
-  // Get current data based on selected tab
+  // Get current data based on selected tab and pagination
   const currentDriversData =
     tabValue === 0
-      ? filteredDriversData.slice(0, 5)
+      ? filteredDriversData.slice(driverPage * driverRowsPerPage, driverPage * driverRowsPerPage + driverRowsPerPage)
       : tabValue === 1
-        ? filteredLowestDriversData
-        : filteredAllDriversData
+        ? filteredLowestDriversData.slice(
+            driverPage * driverRowsPerPage,
+            driverPage * driverRowsPerPage + driverRowsPerPage,
+          )
+        : filteredAllDriversData.slice(
+            driverPage * driverRowsPerPage,
+            driverPage * driverRowsPerPage + driverRowsPerPage,
+          )
+
+  // Get paginated data for vehicles and cooperatives
+  const paginatedVehicleData = filteredVehicleData.slice(
+    vehiclePage * vehicleRowsPerPage,
+    vehiclePage * vehicleRowsPerPage + vehicleRowsPerPage,
+  )
+
+  const paginatedCooperativesData = filteredCooperativesData.slice(
+    cooperativePage * cooperativeRowsPerPage,
+    cooperativePage * cooperativeRowsPerPage + cooperativeRowsPerPage,
+  )
 
   // Truck SVG for the top vehicle card
   const TruckSVG = () => (
@@ -843,66 +977,70 @@ export default function WeighingDashboard() {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       style={{
-        filter: "drop-shadow(0px 6px 12px rgba(0, 0, 0, 0.15))",
+        filter: "drop-shadow(0px 4px 8px rgba(0, 0, 0, 0.2))",
       }}
     >
+      {/* Chassis/Base */}
+      <rect x="15" y="85" width="210" height="8" rx="2" fill="#2c3e50" />
+
+      {/* Truck Cab */}
+      <path
+        d="M20 85 L20 45 C20 42 22 40 25 40 L70 40 C73 40 75 42 75 45 L75 85 Z"
+        fill="url(#cabGradient)"
+        stroke="#2c3e50"
+        strokeWidth="1.5"
+      />
+
+      {/* Cab Windows */}
+      <path d="M25 45 L25 65 L70 65 L70 45 Z" fill="#e0e6ed" stroke="#2c3e50" strokeWidth="1" />
+      <line x1="47" y1="45" x2="47" y2="65" stroke="#2c3e50" strokeWidth="1" />
+
+      {/* Cab Details */}
+      <rect x="30" y="70" width="35" height="5" rx="1" fill="#34495e" />
+      <rect x="22" y="55" width="3" height="5" rx="1" fill="#f1c40f" />
+      <rect x="70" y="55" width="3" height="5" rx="1" fill="#f1c40f" />
+
       {/* Truck Body */}
-      <rect x="20" y="60" width="120" height="35" rx="4" fill="url(#truckGradient)" />
-      <rect x="20" y="45" width="70" height="15" rx="2" fill="url(#cabGradient)" />
+      <path d="M75 85 L75 50 L200 50 L200 85 Z" fill="url(#bodyGradient)" stroke="#2c3e50" strokeWidth="1.5" />
 
-      {/* Cabin Details */}
-      <rect x="25" y="50" width="30" height="8" rx="1" fill="#f8fafc" fillOpacity="0.9" />
-      <rect x="60" y="50" width="10" height="8" rx="1" fill="#f8fafc" fillOpacity="0.9" />
+      {/* Body Details */}
+      <line x1="75" y1="60" x2="200" y2="60" stroke="#34495e" strokeWidth="1" strokeDasharray="2 2" />
+      <line x1="75" y1="70" x2="200" y2="70" stroke="#34495e" strokeWidth="1" strokeDasharray="2 2" />
+      <rect x="190" y="55" width="4" height="4" rx="1" fill="#e74c3c" />
 
-      {/* Truck Cargo */}
-      <rect x="140" y="60" width="70" height="35" rx="4" fill="url(#cargoGradient)" />
-      <rect x="140" y="55" width="70" height="5" rx="1" fill="#059669" />
+      {/* Front Wheel */}
+      <circle cx="45" cy="85" r="15" fill="#2c3e50" />
+      <circle cx="45" cy="85" r="10" fill="#7f8c8d" />
+      <circle cx="45" cy="85" r="5" fill="#34495e" />
+      <circle cx="45" cy="85" r="2" fill="#2c3e50" />
 
-      {/* Truck Details */}
-      <rect x="30" y="70" width="100" height="3" rx="1" fill="#059669" />
-      <rect x="30" y="80" width="100" height="3" rx="1" fill="#059669" />
-      <rect x="150" y="70" width="50" height="3" rx="1" fill="#10b981" />
-      <rect x="150" y="80" width="50" height="3" rx="1" fill="#10b981" />
+      {/* Rear Wheels */}
+      <circle cx="110" cy="85" r="15" fill="#2c3e50" />
+      <circle cx="110" cy="85" r="10" fill="#7f8c8d" />
+      <circle cx="110" cy="85" r="5" fill="#34495e" />
+      <circle cx="110" cy="85" r="2" fill="#2c3e50" />
 
-      {/* Wheels */}
-      <circle cx="50" cy="95" r="12" fill="#1e293b" />
-      <circle cx="50" cy="95" r="6" fill="#94a3b8" />
-      <circle cx="50" cy="95" r="3" fill="#334155" />
+      <circle cx="160" cy="85" r="15" fill="#2c3e50" />
+      <circle cx="160" cy="85" r="10" fill="#7f8c8d" />
+      <circle cx="160" cy="85" r="5" fill="#34495e" />
+      <circle cx="160" cy="85" r="2" fill="#2c3e50" />
 
-      <circle cx="110" cy="95" r="12" fill="#1e293b" />
-      <circle cx="110" cy="95" r="6" fill="#94a3b8" />
-      <circle cx="110" cy="95" r="3" fill="#334155" />
-
-      <circle cx="170" cy="95" r="12" fill="#1e293b" />
-      <circle cx="170" cy="95" r="6" fill="#94a3b8" />
-      <circle cx="170" cy="95" r="3" fill="#334155" />
-
-      {/* Lights */}
-      <rect x="20" y="65" width="5" height="5" rx="1" fill="#fbbf24" />
-      <rect x="205" y="65" width="5" height="5" rx="1" fill="#ef4444" />
-
-      {/* Windshield */}
-      <path d="M90 45 L90 60 L20 60 L20 45 Q55 35 90 45 Z" fill="#0ea5e9" fillOpacity="0.3" />
+      {/* Shadows and Highlights */}
+      <path d="M25 85 L70 85 L70 80 C50 83 40 83 25 80 Z" fill="#34495e" fillOpacity="0.5" />
+      <path d="M75 85 L200 85 L200 80 C150 83 120 83 75 80 Z" fill="#34495e" fillOpacity="0.5" />
+      <path d="M25 40 L70 40 L70 45 C50 42 40 42 25 45 Z" fill="#ecf0f1" fillOpacity="0.3" />
 
       {/* Gradients */}
       <defs>
-        <linearGradient id="truckGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#10b981" />
-          <stop offset="100%" stopColor="#059669" />
-        </linearGradient>
         <linearGradient id="cabGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#0d9488" />
-          <stop offset="100%" stopColor="#0f766e" />
+          <stop offset="0%" stopColor="#34495e" />
+          <stop offset="100%" stopColor="#2c3e50" />
         </linearGradient>
-        <linearGradient id="cargoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#059669" />
-          <stop offset="100%" stopColor="#047857" />
+        <linearGradient id="bodyGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#3498db" />
+          <stop offset="100%" stopColor="#2980b9" />
         </linearGradient>
       </defs>
-
-      {/* Reflection */}
-      <path d="M30 60 L110 60 L110 65 L30 65 Z" fill="white" fillOpacity="0.1" />
-      <path d="M150 60 L200 60 L200 65 L150 65 Z" fill="white" fillOpacity="0.1" />
     </svg>
   )
 
@@ -983,6 +1121,24 @@ export default function WeighingDashboard() {
             </Toolbar>
           </AppBar>
 
+          {error && (
+            <Box
+              sx={{
+                padding: "1rem",
+                backgroundColor: "rgba(239, 68, 68, 0.1)",
+                color: "#ef4444",
+                borderRadius: "8px",
+                margin: "1rem",
+                fontWeight: 500,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              {error}
+            </Box>
+          )}
+
           <Box
             component="main"
             sx={{
@@ -991,526 +1147,858 @@ export default function WeighingDashboard() {
             }}
           >
             <Container maxWidth="xl" disableGutters>
-              <Box sx={{ display: "grid", gap: "1.5rem" }}>
-                {/* Efficiency Section */}
-                <Box component="section">
-                  <Box
-                    sx={{
-                      display: "grid",
-                      gap: "1.5rem",
-                      gridTemplateColumns: {
-                        xs: "repeat(1, 1fr)",
-                        md: "repeat(2, 1fr)",
-                        lg: "repeat(4, 1fr)",
-                      },
-                    }}
-                  >
-                    <Fade in={!loading} timeout={500}>
-                      <Card
-                        sx={{
-                          position: "relative",
-                          overflow: "hidden",
-                          borderRadius: "16px !important",
-                          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05) !important",
-                          transition: "all 0.3s ease !important",
-                          borderLeft: "4px solid #10b981 !important",
-                          "&:hover": {
-                            transform: "translateY(-5px)",
-                            boxShadow: "0 8px 30px rgba(0, 0, 0, 0.1) !important",
-                          },
-                        }}
-                      >
-                        <CardContent>
-                          <Typography
-                            variant="subtitle2"
-                            sx={{
-                              fontSize: "0.875rem",
-                              fontWeight: 600,
-                              marginBottom: "0.25rem",
-                              color: "#334155",
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "0.5rem",
-                            }}
-                          >
-                            <Box
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                width: "28px",
-                                height: "28px",
-                                borderRadius: "8px",
-                                backgroundColor: "rgba(16, 185, 129, 0.1)",
-                                color: "#10b981",
-                              }}
-                            >
-                              <Speed />
-                            </Box>
-                            Meta de Eficiência
-                          </Typography>
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              color: themeColors.mutedForeground,
-                              fontSize: "0.75rem",
-                            }}
-                          >
-                            Toneladas alvo vs. atual
-                          </Typography>
+              <Box sx={{ display: "grid", gap: "1.5rem" }}>{/* Efficiency Section */}</Box>
+              <Box component="section">
+                <Box
+                  sx={{
+                    display: "grid",
+                    gap: "1.5rem",
+                    gridTemplateColumns: {
+                      xs: "repeat(1, 1fr)",
+                      md: "repeat(2, 1fr)",
+                      lg: "repeat(4, 1fr)",
+                    },
+                  }}
+                >
+                  <Fade in={!loading} timeout={500}>
+                    <Card
+                      sx={{
+                        position: "relative",
+                        overflow: "hidden",
+                        borderRadius: "16px !important",
+                        boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05) !important",
+                        transition: "all 0.3s ease !important",
+                        borderLeft: "4px solid #10b981 !important",
+                        "&:hover": {
+                          transform: "translateY(-5px)",
+                          boxShadow: "0 8px 30px rgba(0, 0, 0, 0.1) !important",
+                        },
+                      }}
+                    >
+                      <CardContent>
+                        <Typography
+                          variant="subtitle2"
+                          sx={{
+                            fontSize: "0.875rem",
+                            fontWeight: 600,
+                            marginBottom: "0.25rem",
+                            color: "#334155",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.5rem",
+                          }}
+                        >
                           <Box
                             sx={{
                               display: "flex",
                               alignItems: "center",
-                              justifyContent: "space-between",
-                              marginTop: "0.75rem",
-                              marginBottom: "0.75rem",
+                              justifyContent: "center",
+                              width: "28px",
+                              height: "28px",
+                              borderRadius: "8px",
+                              backgroundColor: "rgba(16, 185, 129, 0.1)",
+                              color: "#10b981",
                             }}
                           >
-                            <Box>
-                              <Typography
-                                variant="h4"
-                                sx={{
-                                  fontWeight: 700,
-                                  fontSize: "1.75rem",
-                                  lineHeight: 1.2,
-                                  marginBottom: "0.25rem",
-                                  background: "linear-gradient(90deg, #059669, #10b981)",
-                                  backgroundClip: "text",
-                                  WebkitBackgroundClip: "text",
-                                  WebkitTextFillColor: "transparent",
-                                  letterSpacing: "-0.5px",
-                                }}
-                              >
-                                {efficiencyData.current} ton
-                              </Typography>
-                              <Typography
-                                variant="caption"
-                                sx={{
-                                  color: themeColors.mutedForeground,
-                                  fontSize: "0.75rem",
-                                }}
-                              >
-                                Meta: {efficiencyData.target} ton
-                              </Typography>
-                            </Box>
-                            <Chip
-                              icon={<TrendingUp fontSize="small" />}
-                              label={`${efficiencyData.percentage}%`}
-                              sx={{
-                                backgroundColor: "rgba(16, 185, 129, 0.1)",
-                                color: "#10b981",
-                                fontWeight: 600,
-                                borderRadius: "20px",
-                                boxShadow: "0 2px 10px rgba(16, 185, 129, 0.2)",
-                                "&:hover": {
-                                  backgroundColor: "rgba(16, 185, 129, 0.2)",
-                                  boxShadow: "0 2px 15px rgba(16, 185, 129, 0.3)",
-                                },
-                              }}
-                            />
+                            <Speed />
                           </Box>
-                          <LinearProgress
-                            variant="determinate"
-                            value={efficiencyData.percentage}
+                          Meta de Eficiência
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: themeColors.mutedForeground,
+                            fontSize: "0.75rem",
+                          }}
+                        >
+                          Toneladas alvo vs. atual
+                        </Typography>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            marginTop: "0.75rem",
+                            marginBottom: "0.75rem",
+                          }}
+                        >
+                          <Box>
+                            <Typography
+                              variant="h4"
+                              sx={{
+                                fontWeight: 700,
+                                fontSize: "1.75rem",
+                                lineHeight: 1.2,
+                                marginBottom: "0.25rem",
+                                background: "linear-gradient(90deg, #059669, #10b981)",
+                                backgroundClip: "text",
+                                WebkitBackgroundClip: "text",
+                                WebkitTextFillColor: "transparent",
+                                letterSpacing: "-0.5px",
+                              }}
+                            >
+                              {efficiencyData.current} ton
+                            </Typography>
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                color: themeColors.mutedForeground,
+                                fontSize: "0.75rem",
+                              }}
+                            >
+                              Meta: {efficiencyData.target} ton
+                            </Typography>
+                          </Box>
+                          <Chip
+                            icon={<TrendingUp fontSize="small" />}
+                            label={`${efficiencyData.percentage}%`}
                             sx={{
-                              marginTop: "1rem",
-                              height: "8px !important",
-                              borderRadius: "9999px",
-                              backgroundColor: "rgba(241, 245, 249, 0.7) !important",
-                              overflow: "hidden",
-                              boxShadow: "inset 0 1px 2px rgba(0, 0, 0, 0.05)",
-                              "& .MuiLinearProgress-bar": {
-                                background: "linear-gradient(90deg, #059669, #10b981) !important",
+                              backgroundColor: "rgba(16, 185, 129, 0.1)",
+                              color: "#10b981",
+                              fontWeight: 600,
+                              borderRadius: "20px",
+                              boxShadow: "0 2px 10px rgba(16, 185, 129, 0.2)",
+                              "&:hover": {
+                                backgroundColor: "rgba(16, 185, 129, 0.2)",
+                                boxShadow: "0 2px 15px rgba(16, 185, 129, 0.3)",
                               },
                             }}
                           />
-                        </CardContent>
-                      </Card>
-                    </Fade>
+                        </Box>
+                        <LinearProgress
+                          variant="determinate"
+                          value={efficiencyData.percentage}
+                          sx={{
+                            marginTop: "1rem",
+                            height: "8px !important",
+                            borderRadius: "9999px",
+                            backgroundColor: "rgba(241, 245, 249, 0.7) !important",
+                            overflow: "hidden",
+                            boxShadow: "inset 0 1px 2px rgba(0, 0, 0, 0.05)",
+                            "& .MuiLinearProgress-bar": {
+                              background: "linear-gradient(90deg, #059669, #10b981) !important",
+                            },
+                          }}
+                        />
+                      </CardContent>
+                    </Card>
+                  </Fade>
 
-                    <Fade in={!loading} timeout={500} style={{ transitionDelay: !loading ? "100ms" : "0ms" }}>
-                      <Card
-                        sx={{
-                          position: "relative",
-                          overflow: "hidden",
-                          borderRadius: "16px !important",
-                          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05) !important",
-                          transition: "all 0.3s ease !important",
-                          borderLeft: "4px solid #3b82f6 !important",
-                          "&:hover": {
-                            transform: "translateY(-5px)",
-                            boxShadow: "0 8px 30px rgba(0, 0, 0, 0.1) !important",
-                          },
-                        }}
-                      >
-                        <CardContent>
-                          <Typography
-                            variant="subtitle2"
-                            sx={{
-                              fontSize: "0.875rem",
-                              fontWeight: 600,
-                              marginBottom: "0.25rem",
-                              color: "#334155",
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "0.5rem",
-                            }}
-                          >
-                            <Box
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                width: "28px",
-                                height: "28px",
-                                borderRadius: "8px",
-                                backgroundColor: "rgba(59, 130, 246, 0.1)",
-                                color: "#3b82f6",
-                              }}
-                            >
-                              <RecyclingOutlined />
-                            </Box>
-                            Total de Pesagens
-                          </Typography>
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              color: themeColors.mutedForeground,
-                              fontSize: "0.75rem",
-                            }}
-                          >
-                            Seletiva e Cata Treco
-                          </Typography>
-                          <Typography
-                            variant="h4"
-                            sx={{
-                              fontWeight: 700,
-                              fontSize: "1.75rem",
-                              lineHeight: 1.2,
-                              marginBottom: "0.25rem",
-                              marginTop: "0.75rem",
-                              background: "linear-gradient(90deg, #1d4ed8, #3b82f6)",
-                              backgroundClip: "text",
-                              WebkitBackgroundClip: "text",
-                              WebkitTextFillColor: "transparent",
-                              letterSpacing: "-0.5px",
-                            }}
-                          >
-                            {totalWeighings}
-                          </Typography>
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              color: "#64748b",
-                              fontSize: "0.75rem",
-                              marginTop: "0.25rem",
-                            }}
-                          >
-                            Número total de pesagens realizadas no período atual.
-                          </Typography>
-                        </CardContent>
-                      </Card>
-                    </Fade>
-
-                    <Fade in={!loading} timeout={500} style={{ transitionDelay: !loading ? "200ms" : "0ms" }}>
-                      <Card
-                        sx={{
-                          position: "relative",
-                          overflow: "hidden",
-                          borderRadius: "16px !important",
-                          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05) !important",
-                          transition: "all 0.3s ease !important",
-                          borderLeft: "4px solid #10b981 !important",
-                          "&:hover": {
-                            transform: "translateY(-5px)",
-                            boxShadow: "0 8px 30px rgba(0, 0, 0, 0.1) !important",
-                          },
-                        }}
-                      >
-                        <CardContent>
-                          <Typography
-                            variant="subtitle2"
-                            sx={{
-                              fontSize: "0.875rem",
-                              fontWeight: 600,
-                              marginBottom: "0.25rem",
-                              color: "#334155",
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "0.5rem",
-                            }}
-                          >
-                            <Box
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                width: "28px",
-                                height: "28px",
-                                borderRadius: "8px",
-                                backgroundColor: "rgba(16, 185, 129, 0.1)",
-                                color: "#10b981",
-                              }}
-                            >
-                              <RecyclingOutlined />
-                            </Box>
-                            Total de Seletiva
-                          </Typography>
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              color: themeColors.mutedForeground,
-                              fontSize: "0.75rem",
-                            }}
-                          >
-                            Coleta seletiva
-                          </Typography>
-                          <Typography
-                            variant="h4"
-                            sx={{
-                              fontWeight: 700,
-                              fontSize: "1.75rem",
-                              lineHeight: 1.2,
-                              marginBottom: "0.25rem",
-                              marginTop: "0.75rem",
-                              background: "linear-gradient(90deg, #059669, #10b981)",
-                              backgroundClip: "text",
-                              WebkitBackgroundClip: "text",
-                              WebkitTextFillColor: "transparent",
-                              letterSpacing: "-0.5px",
-                            }}
-                          >
-                            {totalSeletiva}
-                          </Typography>
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              color: "#059669",
-                              fontSize: "0.75rem",
-                              marginTop: "0.25rem",
-                            }}
-                          >
-                            Total de coletas seletivas para reciclagem.
-                          </Typography>
-                        </CardContent>
-                      </Card>
-                    </Fade>
-
-                    <Fade in={!loading} timeout={500} style={{ transitionDelay: !loading ? "300ms" : "0ms" }}>
-                      <Card
-                        sx={{
-                          position: "relative",
-                          overflow: "hidden",
-                          borderRadius: "16px !important",
-                          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05) !important",
-                          transition: "all 0.3s ease !important",
-                          borderLeft: "4px solid #f59e0b !important",
-                          "&:hover": {
-                            transform: "translateY(-5px)",
-                            boxShadow: "0 8px 30px rgba(0, 0, 0, 0.1) !important",
-                          },
-                        }}
-                      >
-                        <CardContent>
-                          <Typography
-                            variant="subtitle2"
-                            sx={{
-                              fontSize: "0.875rem",
-                              fontWeight: 600,
-                              marginBottom: "0.25rem",
-                              color: "#334155",
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "0.5rem",
-                            }}
-                          >
-                            <Box
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                width: "28px",
-                                height: "28px",
-                                borderRadius: "8px",
-                                backgroundColor: "rgba(245, 158, 11, 0.1)",
-                                color: "#f59e0b",
-                              }}
-                            >
-                              <LocalShipping />
-                            </Box>
-                            Total de Cata Treco
-                          </Typography>
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              color: themeColors.mutedForeground,
-                              fontSize: "0.75rem",
-                            }}
-                          >
-                            Coleta de volumosos
-                          </Typography>
-                          <Typography
-                            variant="h4"
-                            sx={{
-                              fontWeight: 700,
-                              fontSize: "1.75rem",
-                              lineHeight: 1.2,
-                              marginBottom: "0.25rem",
-                              marginTop: "0.75rem",
-                              background: "linear-gradient(90deg, #d97706, #f59e0b)",
-                              backgroundClip: "text",
-                              WebkitBackgroundClip: "text",
-                              WebkitTextFillColor: "transparent",
-                              letterSpacing: "-0.5px",
-                            }}
-                          >
-                            {totalCataTreco}
-                          </Typography>
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              color: "#d97706",
-                              fontSize: "0.75rem",
-                              marginTop: "0.25rem",
-                            }}
-                          >
-                            Total de coletas de materiais volumosos descartados.
-                          </Typography>
-                        </CardContent>
-                      </Card>
-                    </Fade>
-                  </Box>
-                </Box>
-
-                {/* Enhanced Bar Chart Section */}
-                <Box component="section" sx={{ marginTop: "1.5rem" }}>
-                  <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "400ms" : "0ms" }}>
+                  <Fade in={!loading} timeout={500} style={{ transitionDelay: !loading ? "100ms" : "0ms" }}>
                     <Card
                       sx={{
-                        height: "100%",
-                        borderRadius: "16px !important",
-                        boxShadow: "0 8px 30px rgba(0, 0, 0, 0.08) !important",
-                        transition: "all 0.3s ease !important",
+                        position: "relative",
                         overflow: "hidden",
+                        borderRadius: "16px !important",
+                        boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05) !important",
+                        transition: "all 0.3s ease !important",
+                        borderLeft: "4px solid #3b82f6 !important",
                         "&:hover": {
                           transform: "translateY(-5px)",
-                          boxShadow: "0 12px 40px rgba(0, 0, 0, 0.12) !important",
+                          boxShadow: "0 8px 30px rgba(0, 0, 0, 0.1) !important",
                         },
-                        background: "linear-gradient(to bottom, #ffffff, #f8fafc)",
-                        border: "1px solid rgba(226, 232, 240, 0.8)",
                       }}
                     >
-                      <CardHeader
-                        title={
-                          <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                      <CardContent>
+                        <Typography
+                          variant="subtitle2"
+                          sx={{
+                            fontSize: "0.875rem",
+                            fontWeight: 600,
+                            marginBottom: "0.25rem",
+                            color: "#334155",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.5rem",
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              width: "28px",
+                              height: "28px",
+                              borderRadius: "8px",
+                              backgroundColor: "rgba(59, 130, 246, 0.1)",
+                              color: "#3b82f6",
+                            }}
+                          >
+                            <RecyclingOutlined />
+                          </Box>
+                          Total de Pesagens
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: themeColors.mutedForeground,
+                            fontSize: "0.75rem",
+                          }}
+                        >
+                          Seletiva e Cata Treco
+                        </Typography>
+                        <Typography
+                          variant="h4"
+                          sx={{
+                            fontWeight: 700,
+                            fontSize: "1.75rem",
+                            lineHeight: 1.2,
+                            marginBottom: "0.25rem",
+                            marginTop: "0.75rem",
+                            background: "linear-gradient(90deg, #1d4ed8, #3b82f6)",
+                            backgroundClip: "text",
+                            WebkitBackgroundClip: "text",
+                            WebkitTextFillColor: "transparent",
+                            letterSpacing: "-0.5px",
+                          }}
+                        >
+                          {totalWeighings}
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: "#64748b",
+                            fontSize: "0.75rem",
+                            marginTop: "0.25rem",
+                          }}
+                        >
+                          Número total de pesagens realizadas no período atual.
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Fade>
+
+                  <Fade in={!loading} timeout={500} style={{ transitionDelay: !loading ? "200ms" : "0ms" }}>
+                    <Card
+                      sx={{
+                        position: "relative",
+                        overflow: "hidden",
+                        borderRadius: "16px !important",
+                        boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05) !important",
+                        transition: "all 0.3s ease !important",
+                        borderLeft: "4px solid #10b981 !important",
+                        "&:hover": {
+                          transform: "translateY(-5px)",
+                          boxShadow: "0 8px 30px rgba(0, 0, 0, 0.1) !important",
+                        },
+                      }}
+                    >
+                      <CardContent>
+                        <Typography
+                          variant="subtitle2"
+                          sx={{
+                            fontSize: "0.875rem",
+                            fontWeight: 600,
+                            marginBottom: "0.25rem",
+                            color: "#334155",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.5rem",
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              width: "28px",
+                              height: "28px",
+                              borderRadius: "8px",
+                              backgroundColor: "rgba(16, 185, 129, 0.1)",
+                              color: "#10b981",
+                            }}
+                          >
+                            <RecyclingOutlined />
+                          </Box>
+                          Total de Seletiva
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: themeColors.mutedForeground,
+                            fontSize: "0.75rem",
+                          }}
+                        >
+                          Coleta seletiva
+                        </Typography>
+                        <Typography
+                          variant="h4"
+                          sx={{
+                            fontWeight: 700,
+                            fontSize: "1.75rem",
+                            lineHeight: 1.2,
+                            marginBottom: "0.25rem",
+                            marginTop: "0.75rem",
+                            background: "linear-gradient(90deg, #059669, #10b981)",
+                            backgroundClip: "text",
+                            WebkitBackgroundClip: "text",
+                            WebkitTextFillColor: "transparent",
+                            letterSpacing: "-0.5px",
+                          }}
+                        >
+                          {totalSeletiva}
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: "#059669",
+                            fontSize: "0.75rem",
+                            marginTop: "0.25rem",
+                          }}
+                        >
+                          Total de coletas seletivas para reciclagem.
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Fade>
+
+                  <Fade in={!loading} timeout={500} style={{ transitionDelay: !loading ? "300ms" : "0ms" }}>
+                    <Card
+                      sx={{
+                        position: "relative",
+                        overflow: "hidden",
+                        borderRadius: "16px !important",
+                        boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05) !important",
+                        transition: "all 0.3s ease !important",
+                        borderLeft: "4px solid #f59e0b !important",
+                        "&:hover": {
+                          transform: "translateY(-5px)",
+                          boxShadow: "0 8px 30px rgba(0, 0, 0, 0.1) !important",
+                        },
+                      }}
+                    >
+                      <CardContent>
+                        <Typography
+                          variant="subtitle2"
+                          sx={{
+                            fontSize: "0.875rem",
+                            fontWeight: 600,
+                            marginBottom: "0.25rem",
+                            color: "#334155",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.5rem",
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              width: "28px",
+                              height: "28px",
+                              borderRadius: "8px",
+                              backgroundColor: "rgba(245, 158, 11, 0.1)",
+                              color: "#f59e0b",
+                            }}
+                          >
+                            <LocalShipping />
+                          </Box>
+                          Total de Cata Treco
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: themeColors.mutedForeground,
+                            fontSize: "0.75rem",
+                          }}
+                        >
+                          Coleta de volumosos
+                        </Typography>
+                        <Typography
+                          variant="h4"
+                          sx={{
+                            fontWeight: 700,
+                            fontSize: "1.75rem",
+                            lineHeight: 1.2,
+                            marginBottom: "0.25rem",
+                            marginTop: "0.75rem",
+                            background: "linear-gradient(90deg, #d97706, #f59e0b)",
+                            backgroundClip: "text",
+                            WebkitBackgroundClip: "text",
+                            WebkitTextFillColor: "transparent",
+                            letterSpacing: "-0.5px",
+                          }}
+                        >
+                          {totalCataTreco}
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: "#d97706",
+                            fontSize: "0.75rem",
+                            marginTop: "0.25rem",
+                          }}
+                        >
+                          Total de coletas de materiais volumosos descartados.
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Fade>
+                </Box>
+              </Box>
+
+              {/* Enhanced Bar Chart Section */}
+              <Box component="section" sx={{ marginTop: "1.5rem" }}>
+                <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "400ms" : "0ms" }}>
+                  <Card
+                    sx={{
+                      height: "100%",
+                      borderRadius: "16px !important",
+                      boxShadow: "0 8px 30px rgba(0, 0, 0, 0.08) !important",
+                      transition: "all 0.3s ease !important",
+                      overflow: "hidden",
+                      "&:hover": {
+                        transform: "translateY(-5px)",
+                        boxShadow: "0 12px 40px rgba(0, 0, 0, 0.12) !important",
+                      },
+                      background: "linear-gradient(to bottom, #ffffff, #f8fafc)",
+                      border: "1px solid rgba(226, 232, 240, 0.8)",
+                    }}
+                  >
+                    <CardHeader
+                      title={
+                        <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                          <Box
+                            sx={{
+                              width: "36px",
+                              height: "36px",
+                              borderRadius: "10px",
+                              background: "linear-gradient(135deg, #10b981, #3b82f6)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)",
+                            }}
+                          >
+                            <BarChartIcon
+                              sx={{
+                                color: "white",
+                                fontSize: "1.4rem",
+                              }}
+                            />
+                          </Box>
+                          <Box>
+                            <Typography
+                              sx={{
+                                fontWeight: 700,
+                                fontSize: "1.25rem",
+                                background: "linear-gradient(90deg, #10b981, #3b82f6)",
+                                backgroundClip: "text",
+                                WebkitBackgroundClip: "text",
+                                WebkitTextFillColor: "transparent",
+                                letterSpacing: "-0.02em",
+                              }}
+                            >
+                              Comparativo de Pesagens
+                            </Typography>
+                            <Typography
+                              sx={{
+                                fontSize: "0.85rem",
+                                color: "#64748b",
+                                fontWeight: 500,
+                              }}
+                            >
+                              Análise mensal de Seletiva vs. Cata Treco
+                            </Typography>
+                          </Box>
+                        </Box>
+                      }
+                      action={
+                        <Box sx={{ display: "flex", gap: "0.5rem" }}>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={<InfoOutlined />}
+                            sx={{
+                              height: "2.2rem",
+                              textTransform: "none",
+                              borderRadius: "10px",
+                              transition: "all 0.3s ease",
+                              fontWeight: 500,
+                              padding: "0 1rem",
+                              borderColor: "rgba(226, 232, 240, 0.8)",
+                              color: "#64748b",
+                              "&:hover": {
+                                backgroundColor: "rgba(241, 245, 249, 0.8)",
+                                borderColor: "rgba(148, 163, 184, 0.5)",
+                                transform: "translateY(-2px)",
+                              },
+                            }}
+                          >
+                            Detalhes
+                          </Button>
+                          <IconButton
+                            sx={{
+                              color: "#64748b",
+                              transition: "all 0.2s ease",
+                              backgroundColor: "rgba(241, 245, 249, 0.5)",
+                              "&:hover": {
+                                color: "#3b82f6",
+                                transform: "rotate(15deg)",
+                                backgroundColor: "rgba(241, 245, 249, 0.8)",
+                              },
+                            }}
+                          >
+                            <Download />
+                          </IconButton>
+                        </Box>
+                      }
+                      sx={{
+                        paddingBottom: "0.75rem",
+                        borderBottom: "1px solid rgba(226, 232, 240, 0.5)",
+                        "& .MuiCardHeader-title": {
+                          fontWeight: 600,
+                          fontSize: "1.125rem",
+                          color: "#334155",
+                        },
+                        "& .MuiCardHeader-action": {
+                          margin: 0,
+                        },
+                      }}
+                    />
+                    <CardContent sx={{ padding: "1.5rem" }}>
+                      <Box
+                        sx={{
+                          width: "100%",
+                          height: "400px",
+                          position: "relative",
+                        }}
+                      >
+                        {!chartsLoaded.barChart && (
+                          <Box
+                            sx={{
+                              position: "absolute",
+                              top: 0,
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              backgroundColor: "rgba(255, 255, 255, 0.7)",
+                              zIndex: 10,
+                              borderRadius: "12px",
+                            }}
+                          >
                             <Box
                               sx={{
-                                width: "36px",
-                                height: "36px",
-                                borderRadius: "10px",
+                                width: "60px",
+                                height: "60px",
+                                borderRadius: "50%",
                                 background: "linear-gradient(135deg, #10b981, #3b82f6)",
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
-                                boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)",
-                              }}
-                            >
-                              <BarChartIcon
-                                sx={{
-                                  color: "white",
-                                  fontSize: "1.4rem",
-                                }}
-                              />
-                            </Box>
-                            <Box>
-                              <Typography
-                                sx={{
-                                  fontWeight: 700,
-                                  fontSize: "1.25rem",
-                                  background: "linear-gradient(90deg, #10b981, #3b82f6)",
-                                  backgroundClip: "text",
-                                  WebkitBackgroundClip: "text",
-                                  WebkitTextFillColor: "transparent",
-                                  letterSpacing: "-0.02em",
-                                }}
-                              >
-                                Comparativo de Pesagens
-                              </Typography>
-                              <Typography
-                                sx={{
-                                  fontSize: "0.85rem",
-                                  color: "#64748b",
-                                  fontWeight: 500,
-                                }}
-                              >
-                                Análise mensal de Seletiva vs. Cata Treco
-                              </Typography>
-                            </Box>
-                          </Box>
-                        }
-                        action={
-                          <Box sx={{ display: "flex", gap: "0.5rem" }}>
-                            <Button
-                              variant="outlined"
-                              size="small"
-                              startIcon={<InfoOutlined />}
-                              sx={{
-                                height: "2.2rem",
-                                textTransform: "none",
-                                borderRadius: "10px",
-                                transition: "all 0.3s ease",
-                                fontWeight: 500,
-                                padding: "0 1rem",
-                                borderColor: "rgba(226, 232, 240, 0.8)",
-                                color: "#64748b",
-                                "&:hover": {
-                                  backgroundColor: "rgba(241, 245, 249, 0.8)",
-                                  borderColor: "rgba(148, 163, 184, 0.5)",
-                                  transform: "translateY(-2px)",
+                                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
+                                "&::before": {
+                                  content: "''",
+                                  position: "absolute",
+                                  top: "15px",
+                                  left: "15px",
+                                  right: "15px",
+                                  bottom: "15px",
+                                  background: "white",
+                                  borderRadius: "50%",
+                                  boxShadow: "inset 0 4px 10px rgba(0, 0, 0, 0.05)",
                                 },
                               }}
-                            >
-                              Detalhes
-                            </Button>
+                            />
+                          </Box>
+                        )}
+                        <Fade in={chartsLoaded.barChart} timeout={800}>
+                          <Box
+                            sx={{
+                              width: "100%",
+                              height: "100%",
+                            }}
+                          >
+                            <ResponsiveContainer width="100%" height="100%">
+                              <BarChart
+                                data={monthlyData}
+                                margin={{ top: 30, right: 30, left: 20, bottom: 60 }}
+                                barGap={8}
+                                barCategoryGap={30}
+                              >
+                                <defs>
+                                  <linearGradient id="colorSeletiva" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stopColor="#10b981" stopOpacity={1} />
+                                    <stop offset="100%" stopColor="#059669" stopOpacity={0.8} />
+                                  </linearGradient>
+                                  <linearGradient id="colorCataTreco" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stopColor="#f59e0b" stopOpacity={1} />
+                                    <stop offset="100%" stopColor="#d97706" stopOpacity={0.8} />
+                                  </linearGradient>
+                                </defs>
+                                <CartesianGrid
+                                  vertical={false}
+                                  strokeDasharray="3 3"
+                                  stroke="#e2e8f0"
+                                  strokeOpacity={0.8}
+                                />
+                                <XAxis
+                                  dataKey="month"
+                                  tickLine={false}
+                                  axisLine={{ stroke: "#e2e8f0", strokeWidth: 1 }}
+                                  tick={{ fill: "#334155", fontSize: 12, fontWeight: 500 }}
+                                  dy={10}
+                                />
+                                <YAxis
+                                  tickLine={false}
+                                  axisLine={{ stroke: "#e2e8f0", strokeWidth: 1 }}
+                                  tick={{ fill: "#334155", fontSize: 12, fontWeight: 500 }}
+                                  tickFormatter={(value) => `${value}`}
+                                  dx={-10}
+                                />
+                                <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(241, 245, 249, 0.5)" }} />
+                                <Legend
+                                  content={<CustomBarChartLegend />}
+                                  verticalAlign="bottom"
+                                  wrapperStyle={{ paddingTop: 20 }}
+                                />
+                                <ReferenceLine y={0} stroke="#e2e8f0" strokeWidth={1} />
+                                <Bar
+                                  dataKey="seletiva"
+                                  fill="url(#colorSeletiva)"
+                                  radius={[6, 6, 0, 0]}
+                                  name="Seletiva"
+                                  animationDuration={1000}
+                                  barSize={36}
+                                  onMouseOver={() => setChartTooltip("seletiva")}
+                                  onMouseOut={() => setChartTooltip(null)}
+                                >
+                                  <LabelList
+                                    dataKey="seletiva"
+                                    position="top"
+                                    content={renderCustomBarLabel}
+                                    fill="#10b981"
+                                  />
+                                </Bar>
+                                <Bar
+                                  dataKey="cataTreco"
+                                  fill="url(#colorCataTreco)"
+                                  radius={[6, 6, 0, 0]}
+                                  name="Cata Treco"
+                                  animationDuration={1000}
+                                  animationBegin={300}
+                                  barSize={36}
+                                  onMouseOver={() => setChartTooltip("cataTreco")}
+                                  onMouseOut={() => setChartTooltip(null)}
+                                >
+                                  <LabelList
+                                    dataKey="cataTreco"
+                                    position="top"
+                                    content={renderCustomBarLabel}
+                                    fill="#f59e0b"
+                                  />
+                                </Bar>
+                              </BarChart>
+                            </ResponsiveContainer>
+                          </Box>
+                        </Fade>
+                      </Box>
+
+                      <Box
+                        sx={{
+                          marginTop: "1rem",
+                          display: "flex",
+                          justifyContent: "center",
+                          padding: "1rem",
+                          borderTop: "1px dashed rgba(226, 232, 240, 0.8)",
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "1.5rem",
+                            flexWrap: "wrap",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "0.5rem",
+                              backgroundColor: "rgba(16, 185, 129, 0.1)",
+                              padding: "0.5rem 1rem",
+                              borderRadius: "10px",
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                width: "12px",
+                                height: "12px",
+                                borderRadius: "3px",
+                                background: "linear-gradient(135deg, #10b981, #059669)",
+                              }}
+                            />
+                            <Typography sx={{ fontSize: "0.875rem", fontWeight: 600, color: "#10b981" }}>
+                              Seletiva: {totalSeletiva} (
+                              {((totalSeletiva / (totalSeletiva + totalCataTreco)) * 100).toFixed(1)}%)
+                            </Typography>
+                          </Box>
+
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "0.5rem",
+                              backgroundColor: "rgba(245, 158, 11, 0.1)",
+                              padding: "0.5rem 1rem",
+                              borderRadius: "10px",
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                width: "12px",
+                                height: "12px",
+                                borderRadius: "3px",
+                                background: "linear-gradient(135deg, #f59e0b, #d97706)",
+                              }}
+                            />
+                            <Typography sx={{ fontSize: "0.875rem", fontWeight: 600, color: "#f59e0b" }}>
+                              Cata Treco: {totalCataTreco} (
+                              {((totalCataTreco / (totalSeletiva + totalCataTreco)) * 100).toFixed(1)}%)
+                            </Typography>
+                          </Box>
+
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "0.5rem",
+                              backgroundColor: "rgba(59, 130, 246, 0.1)",
+                              padding: "0.5rem 1rem",
+                              borderRadius: "10px",
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                width: "12px",
+                                height: "12px",
+                                borderRadius: "3px",
+                                background: "linear-gradient(135deg, #3b82f6, #1d4ed8)",
+                              }}
+                            />
+                            <Typography sx={{ fontSize: "0.875rem", fontWeight: 600, color: "#3b82f6" }}>
+                              Total: {totalSeletiva + totalCataTreco}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Zoom>
+              </Box>
+
+              {/* Charts Section */}
+              <Box component="section" sx={{ marginTop: "1.5rem" }}>
+                <Box
+                  sx={{
+                    display: "grid",
+                    gap: "1.5rem",
+                    gridTemplateColumns: {
+                      xs: "1fr",
+                      md: "repeat(2, 1fr)",
+                    },
+                  }}
+                >
+                  {/* Pie Chart */}
+                  <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "500ms" : "0ms" }}>
+                    <Card
+                      sx={{
+                        height: "100%",
+                        minHeight: "500px",
+                        borderRadius: "16px !important",
+                        boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05) !important",
+                        transition: "all 0.3s ease !important",
+                        overflow: "hidden",
+                        "&:hover": {
+                          transform: "translateY(-5px)",
+                          boxShadow: "0 8px 30px rgba(0, 0, 0, 0.1) !important",
+                        },
+                        position: "relative",
+                      }}
+                    >
+                      <CardHeader
+                        title={
+                          <Box sx={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                            <DonutLarge
+                              sx={{
+                                color: "#10b981",
+                              }}
+                            />
+                            Top 5 Coperativas com mais pesagens
+                          </Box>
+                        }
+                        subheader="Top 5 cooperativas por volume de coleta"
+                        action={
+                          <Box>
                             <IconButton
+                              size="small"
                               sx={{
                                 color: "#64748b",
                                 transition: "all 0.2s ease",
-                                backgroundColor: "rgba(241, 245, 249, 0.5)",
                                 "&:hover": {
-                                  color: "#3b82f6",
+                                  color: "#10b981",
                                   transform: "rotate(15deg)",
-                                  backgroundColor: "rgba(241, 245, 249, 0.8)",
                                 },
                               }}
                             >
-                              <Download />
+                              <Print />
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              sx={{
+                                color: "#64748b",
+                                transition: "all 0.2s ease",
+                                "&:hover": {
+                                  color: "#3b82f6",
+                                  transform: "scale(1.1)",
+                                },
+                              }}
+                            >
+                              <Share />
                             </IconButton>
                           </Box>
                         }
                         sx={{
-                          paddingBottom: "0.75rem",
+                          paddingBottom: "0.5rem",
                           borderBottom: "1px solid rgba(226, 232, 240, 0.5)",
+                          background: "linear-gradient(to right, rgba(16, 185, 129, 0.05), rgba(59, 130, 246, 0.05))",
                           "& .MuiCardHeader-title": {
                             fontWeight: 600,
-                            fontSize: "1.125rem",
+                            fontSize: "1rem",
                             color: "#334155",
+                          },
+                          "& .MuiCardHeader-subheader": {
+                            fontSize: "0.75rem",
                           },
                           "& .MuiCardHeader-action": {
                             margin: 0,
                           },
                         }}
                       />
-                      <CardContent sx={{ padding: "1.5rem" }}>
+                      <CardContent
+                        sx={{
+                          padding: "1rem",
+                          "&:last-child": {
+                            paddingBottom: "1rem",
+                          },
+                        }}
+                      >
                         <Box
                           sx={{
                             width: "100%",
-                            height: "400px",
+                            height: "100%",
+                            aspectRatio: "16/12",
+                            padding: "0",
                             position: "relative",
                           }}
                         >
-                          {!chartsLoaded.barChart && (
+                          {!chartsLoaded.pieChart && (
                             <Box
                               sx={{
                                 position: "absolute",
@@ -1551,7 +2039,7 @@ export default function WeighingDashboard() {
                               />
                             </Box>
                           )}
-                          <Fade in={chartsLoaded.barChart} timeout={800}>
+                          <Fade in={chartsLoaded.pieChart} timeout={800}>
                             <Box
                               sx={{
                                 width: "100%",
@@ -1559,489 +2047,190 @@ export default function WeighingDashboard() {
                               }}
                             >
                               <ResponsiveContainer width="100%" height="100%">
-                                <BarChart
-                                  data={monthlyData}
-                                  margin={{ top: 30, right: 30, left: 20, bottom: 60 }}
-                                  barGap={8}
-                                  barCategoryGap={30}
-                                >
+                                <PieChart>
                                   <defs>
-                                    <linearGradient id="colorSeletiva" x1="0" y1="0" x2="0" y2="1">
-                                      <stop offset="0%" stopColor="#10b981" stopOpacity={1} />
-                                      <stop offset="100%" stopColor="#059669" stopOpacity={0.8} />
-                                    </linearGradient>
-                                    <linearGradient id="colorCataTreco" x1="0" y1="0" x2="0" y2="1">
-                                      <stop offset="0%" stopColor="#f59e0b" stopOpacity={1} />
-                                      <stop offset="100%" stopColor="#d97706" stopOpacity={0.8} />
-                                    </linearGradient>
+                                    {PIE_COLORS.map((color, index) => (
+                                      <linearGradient
+                                        key={`color${index}`}
+                                        id={`color${index}`}
+                                        x1="0"
+                                        y1="0"
+                                        x2="0"
+                                        y2="1"
+                                      >
+                                        <stop offset="0%" stopColor={color.start} stopOpacity={1} />
+                                        <stop offset="100%" stopColor={color.end} stopOpacity={1} />
+                                      </linearGradient>
+                                    ))}
                                   </defs>
-                                  <CartesianGrid
-                                    vertical={false}
-                                    strokeDasharray="3 3"
-                                    stroke="#e2e8f0"
-                                    strokeOpacity={0.8}
-                                  />
-                                  <XAxis
-                                    dataKey="month"
-                                    tickLine={false}
-                                    axisLine={{ stroke: "#e2e8f0", strokeWidth: 1 }}
-                                    tick={{ fill: "#334155", fontSize: 12, fontWeight: 500 }}
-                                    dy={10}
-                                  />
-                                  <YAxis
-                                    tickLine={false}
-                                    axisLine={{ stroke: "#e2e8f0", strokeWidth: 1 }}
-                                    tick={{ fill: "#334155", fontSize: 12, fontWeight: 500 }}
-                                    tickFormatter={(value) => `${value}`}
-                                    dx={-10}
-                                  />
-                                  <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(241, 245, 249, 0.5)" }} />
-                                  <Legend
-                                    content={<CustomBarChartLegend />}
-                                    verticalAlign="bottom"
-                                    wrapperStyle={{ paddingTop: 20 }}
-                                  />
-                                  <ReferenceLine y={0} stroke="#e2e8f0" strokeWidth={1} />
-                                  <Bar
-                                    dataKey="seletiva"
-                                    fill="url(#colorSeletiva)"
-                                    radius={[6, 6, 0, 0]}
-                                    name="Seletiva"
+                                  <Pie
+                                    activeIndex={activeIndex}
+                                    activeShape={renderActiveShape}
+                                    data={cooperativesData.slice(0, 5)}
+                                    cx="50%"
+                                    cy="45%"
+                                    innerRadius={80}
+                                    outerRadius={120}
+                                    paddingAngle={4}
+                                    dataKey="total_pesagens"
+                                    nameKey="nome"
+                                    onMouseEnter={onPieEnter}
                                     animationDuration={1000}
-                                    barSize={36}
-                                    onMouseOver={() => setChartTooltip("seletiva")}
-                                    onMouseOut={() => setChartTooltip(null)}
                                   >
-                                    <LabelList
-                                      dataKey="seletiva"
-                                      position="top"
-                                      content={renderCustomBarLabel}
-                                      fill="#10b981"
-                                    />
-                                  </Bar>
-                                  <Bar
-                                    dataKey="cataTreco"
-                                    fill="url(#colorCataTreco)"
-                                    radius={[6, 6, 0, 0]}
-                                    name="Cata Treco"
-                                    animationDuration={1000}
-                                    animationBegin={300}
-                                    barSize={36}
-                                    onMouseOver={() => setChartTooltip("cataTreco")}
-                                    onMouseOut={() => setChartTooltip(null)}
-                                  >
-                                    <LabelList
-                                      dataKey="cataTreco"
-                                      position="top"
-                                      content={renderCustomBarLabel}
-                                      fill="#f59e0b"
-                                    />
-                                  </Bar>
-                                </BarChart>
+                                    {cooperativesData.slice(0, 5).map((entry, index) => (
+                                      <Cell
+                                        key={`cell-${index}`}
+                                        fill={`url(#color${index})`}
+                                        stroke="white"
+                                        strokeWidth={2}
+                                      />
+                                    ))}
+                                  </Pie>
+                                  <Tooltip content={<PieTooltip />} />
+                                  <Legend content={renderLegend} verticalAlign="bottom" height={36} />
+                                </PieChart>
                               </ResponsiveContainer>
                             </Box>
                           </Fade>
                         </Box>
+                      </CardContent>
+                    </Card>
+                  </Zoom>
+
+                  {/* Top Vehicle Card */}
+                  <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "550ms" : "0ms" }}>
+                    <Card
+                      sx={{
+                        height: "100%",
+                        minHeight: "500px",
+                        borderRadius: "16px !important",
+                        boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05) !important",
+                        transition: "all 0.3s ease !important",
+                        overflow: "hidden",
+                        "&:hover": {
+                          transform: "translateY(-5px)",
+                          boxShadow: "0 8px 30px rgba(0, 0, 0, 0.1) !important",
+                        },
+                        position: "relative",
+                        background: "linear-gradient(135deg, #ffffff, #f8fafc)",
+                      }}
+                    >
+                      <CardHeader
+                        title={
+                          <Box sx={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                            <EmojiTransportation
+                              sx={{
+                                color: "#10b981",
+                              }}
+                            />
+                            Veículo com Maior Pesagem
+                          </Box>
+                        }
+                        subheader="Detalhes do veículo com melhor desempenho"
+                        action={
+                          <Box>
+                            <IconButton
+                              size="small"
+                              sx={{
+                                color: "#64748b",
+                                transition: "all 0.2s ease",
+                                "&:hover": {
+                                  color: "#10b981",
+                                  transform: "rotate(15deg)",
+                                },
+                              }}
+                            >
+                              <Print />
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              sx={{
+                                color: "#64748b",
+                                transition: "all 0.2s ease",
+                                "&:hover": {
+                                  color: "#3b82f6",
+                                  transform: "scale(1.1)",
+                                },
+                              }}
+                            >
+                              <Share />
+                            </IconButton>
+                          </Box>
+                        }
+                        sx={{
+                          paddingBottom: "0.5rem",
+                          borderBottom: "1px solid rgba(226, 232, 240, 0.5)",
+                          background: "linear-gradient(to right, rgba(16, 185, 129, 0.05), rgba(59, 130, 246, 0.05))",
+                          "& .MuiCardHeader-title": {
+                            fontWeight: 600,
+                            fontSize: "1rem",
+                            color: "#334155",
+                          },
+                          "& .MuiCardHeader-subheader": {
+                            fontSize: "0.75rem",
+                          },
+                          "& .MuiCardHeader-action": {
+                            margin: 0,
+                          },
+                        }}
+                      />
+                      <CardContent
+                        sx={{
+                          padding: "1.5rem",
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          height: "calc(100% - 72px)",
+                          "&:last-child": {
+                            paddingBottom: "1.5rem",
+                          },
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            width: "100%",
+                            maxWidth: "300px",
+                            height: "180px",
+                            marginBottom: "1.5rem",
+                            position: "relative",
+                          }}
+                        >
+                          <TruckSVG />
+                        </Box>
 
                         <Box
                           sx={{
-                            marginTop: "1rem",
                             display: "flex",
-                            justifyContent: "center",
-                            padding: "1rem",
-                            borderTop: "1px dashed rgba(226, 232, 240, 0.8)",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            gap: "1rem",
+                            width: "100%",
                           }}
                         >
                           <Box
                             sx={{
                               display: "flex",
                               alignItems: "center",
-                              gap: "1.5rem",
-                              flexWrap: "wrap",
                               justifyContent: "center",
+                              gap: "0.5rem",
+                              marginBottom: "0.5rem",
                             }}
                           >
-                            <Box
+                            <Star sx={{ color: "#f59e0b", fontSize: "2rem" }} />
+                            <Typography
+                              variant="h5"
                               sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "0.5rem",
-                                backgroundColor: "rgba(16, 185, 129, 0.1)",
-                                padding: "0.5rem 1rem",
-                                borderRadius: "10px",
+                                fontWeight: 700,
+                                background: "linear-gradient(90deg, #10b981, #3b82f6)",
+                                backgroundClip: "text",
+                                WebkitBackgroundClip: "text",
+                                WebkitTextFillColor: "transparent",
                               }}
                             >
-                              <Box
-                                sx={{
-                                  width: "12px",
-                                  height: "12px",
-                                  borderRadius: "3px",
-                                  background: "linear-gradient(135deg, #10b981, #059669)",
-                                }}
-                              />
-                              <Typography sx={{ fontSize: "0.875rem", fontWeight: 600, color: "#10b981" }}>
-                                Seletiva: {totalSeletiva} (
-                                {((totalSeletiva / (totalSeletiva + totalCataTreco)) * 100).toFixed(1)}%)
-                              </Typography>
-                            </Box>
-
-                            <Box
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "0.5rem",
-                                backgroundColor: "rgba(245, 158, 11, 0.1)",
-                                padding: "0.5rem 1rem",
-                                borderRadius: "10px",
-                              }}
-                            >
-                              <Box
-                                sx={{
-                                  width: "12px",
-                                  height: "12px",
-                                  borderRadius: "3px",
-                                  background: "linear-gradient(135deg, #f59e0b, #d97706)",
-                                }}
-                              />
-                              <Typography sx={{ fontSize: "0.875rem", fontWeight: 600, color: "#f59e0b" }}>
-                                Cata Treco: {totalCataTreco} (
-                                {((totalCataTreco / (totalSeletiva + totalCataTreco)) * 100).toFixed(1)}%)
-                              </Typography>
-                            </Box>
-
-                            <Box
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "0.5rem",
-                                backgroundColor: "rgba(59, 130, 246, 0.1)",
-                                padding: "0.5rem 1rem",
-                                borderRadius: "10px",
-                              }}
-                            >
-                              <Box
-                                sx={{
-                                  width: "12px",
-                                  height: "12px",
-                                  borderRadius: "3px",
-                                  background: "linear-gradient(135deg, #3b82f6, #1d4ed8)",
-                                }}
-                              />
-                              <Typography sx={{ fontSize: "0.875rem", fontWeight: 600, color: "#3b82f6" }}>
-                                Total: {totalSeletiva + totalCataTreco}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </Box>
-                      </CardContent>
-                    </Card>
-                  </Zoom>
-                </Box>
-
-                {/* Charts Section */}
-                <Box component="section" sx={{ marginTop: "1.5rem" }}>
-                  <Box
-                    sx={{
-                      display: "grid",
-                      gap: "1.5rem",
-                      gridTemplateColumns: {
-                        xs: "1fr",
-                        md: "repeat(2, 1fr)",
-                      },
-                    }}
-                  >
-                    {/* Pie Chart */}
-                    <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "500ms" : "0ms" }}>
-                      <Card
-                        sx={{
-                          height: "100%",
-                          minHeight: "500px",
-                          borderRadius: "16px !important",
-                          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05) !important",
-                          transition: "all 0.3s ease !important",
-                          overflow: "hidden",
-                          "&:hover": {
-                            transform: "translateY(-5px)",
-                            boxShadow: "0 8px 30px rgba(0, 0, 0, 0.1) !important",
-                          },
-                          position: "relative",
-                        }}
-                      >
-                        <CardHeader
-                          title={
-                            <Box sx={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                              <DonutLarge
-                                sx={{
-                                  color: "#10b981",
-                                }}
-                              />
-                              Top 5 Coperativas com mais pesagens
-                            </Box>
-                          }
-                          subheader="Top 5 cooperativas por volume de coleta"
-                          action={
-                            <Box>
-                              <IconButton
-                                size="small"
-                                sx={{
-                                  color: "#64748b",
-                                  transition: "all 0.2s ease",
-                                  "&:hover": {
-                                    color: "#10b981",
-                                    transform: "rotate(15deg)",
-                                  },
-                                }}
-                              >
-                                <Print />
-                              </IconButton>
-                              <IconButton
-                                size="small"
-                                sx={{
-                                  color: "#64748b",
-                                  transition: "all 0.2s ease",
-                                  "&:hover": {
-                                    color: "#3b82f6",
-                                    transform: "scale(1.1)",
-                                  },
-                                }}
-                              >
-                                <Share />
-                              </IconButton>
-                            </Box>
-                          }
-                          sx={{
-                            paddingBottom: "0.5rem",
-                            borderBottom: "1px solid rgba(226, 232, 240, 0.5)",
-                            background: "linear-gradient(to right, rgba(16, 185, 129, 0.05), rgba(59, 130, 246, 0.05))",
-                            "& .MuiCardHeader-title": {
-                              fontWeight: 600,
-                              fontSize: "1rem",
-                              color: "#334155",
-                            },
-                            "& .MuiCardHeader-subheader": {
-                              fontSize: "0.75rem",
-                            },
-                            "& .MuiCardHeader-action": {
-                              margin: 0,
-                            },
-                          }}
-                        />
-                        <CardContent
-                          sx={{
-                            padding: "1rem",
-                            "&:last-child": {
-                              paddingBottom: "1rem",
-                            },
-                          }}
-                        >
-                          <Box
-                            sx={{
-                              width: "100%",
-                              height: "100%",
-                              aspectRatio: "16/12",
-                              padding: "0",
-                              position: "relative",
-                            }}
-                          >
-                            {!chartsLoaded.pieChart && (
-                              <Box
-                                sx={{
-                                  position: "absolute",
-                                  top: 0,
-                                  left: 0,
-                                  right: 0,
-                                  bottom: 0,
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  backgroundColor: "rgba(255, 255, 255, 0.7)",
-                                  zIndex: 10,
-                                  borderRadius: "12px",
-                                }}
-                              >
-                                <Box
-                                  sx={{
-                                    width: "60px",
-                                    height: "60px",
-                                    borderRadius: "50%",
-                                    background: "linear-gradient(135deg, #10b981, #3b82f6)",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
-                                    "&::before": {
-                                      content: "''",
-                                      position: "absolute",
-                                      top: "15px",
-                                      left: "15px",
-                                      right: "15px",
-                                      bottom: "15px",
-                                      background: "white",
-                                      borderRadius: "50%",
-                                      boxShadow: "inset 0 4px 10px rgba(0, 0, 0, 0.05)",
-                                    },
-                                  }}
-                                />
-                              </Box>
-                            )}
-                            <Fade in={chartsLoaded.pieChart} timeout={800}>
-                              <Box
-                                sx={{
-                                  width: "100%",
-                                  height: "100%",
-                                }}
-                              >
-                                <ResponsiveContainer width="100%" height="100%">
-                                  <PieChart>
-                                    <defs>
-                                      {PIE_COLORS.map((color, index) => (
-                                        <linearGradient
-                                          key={`color${index}`}
-                                          id={`color${index}`}
-                                          x1="0"
-                                          y1="0"
-                                          x2="0"
-                                          y2="1"
-                                        >
-                                          <stop offset="0%" stopColor={color.start} stopOpacity={1} />
-                                          <stop offset="100%" stopColor={color.end} stopOpacity={1} />
-                                        </linearGradient>
-                                      ))}
-                                    </defs>
-                                    <Pie
-                                      activeIndex={activeIndex}
-                                      activeShape={renderActiveShape}
-                                      data={cooperativesData.slice(0, 5)}
-                                      cx="50%"
-                                      cy="45%"
-                                      innerRadius={80}
-                                      outerRadius={120}
-                                      paddingAngle={4}
-                                      dataKey="weighings"
-                                      nameKey="name"
-                                      onMouseEnter={onPieEnter}
-                                      animationDuration={1000}
-                                    >
-                                      {cooperativesData.slice(0, 5).map((entry, index) => (
-                                        <Cell
-                                          key={`cell-${index}`}
-                                          fill={`url(#color${index})`}
-                                          stroke="white"
-                                          strokeWidth={2}
-                                        />
-                                      ))}
-                                    </Pie>
-                                    <Tooltip content={<PieTooltip />} />
-                                    <Legend content={renderLegend} verticalAlign="bottom" height={36} />
-                                  </PieChart>
-                                </ResponsiveContainer>
-                              </Box>
-                            </Fade>
-                          </Box>
-                        </CardContent>
-                      </Card>
-                    </Zoom>
-
-                    {/* Top Vehicle Card */}
-                    <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "550ms" : "0ms" }}>
-                      <Card
-                        sx={{
-                          height: "100%",
-                          minHeight: "500px",
-                          borderRadius: "16px !important",
-                          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05) !important",
-                          transition: "all 0.3s ease !important",
-                          overflow: "hidden",
-                          "&:hover": {
-                            transform: "translateY(-5px)",
-                            boxShadow: "0 8px 30px rgba(0, 0, 0, 0.1) !important",
-                          },
-                          position: "relative",
-                          background: "linear-gradient(135deg, #ffffff, #f8fafc)",
-                        }}
-                      >
-                        <CardHeader
-                          title={
-                            <Box sx={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                              <EmojiTransportation
-                                sx={{
-                                  color: "#10b981",
-                                }}
-                              />
-                              Veículo com Maior Pesagem
-                            </Box>
-                          }
-                          subheader="Detalhes do veículo com melhor desempenho"
-                          action={
-                            <Box>
-                              <IconButton
-                                size="small"
-                                sx={{
-                                  color: "#64748b",
-                                  transition: "all 0.2s ease",
-                                  "&:hover": {
-                                    color: "#10b981",
-                                    transform: "rotate(15deg)",
-                                  },
-                                }}
-                              >
-                                <Print />
-                              </IconButton>
-                              <IconButton
-                                size="small"
-                                sx={{
-                                  color: "#64748b",
-                                  transition: "all 0.2s ease",
-                                  "&:hover": {
-                                    color: "#3b82f6",
-                                    transform: "scale(1.1)",
-                                  },
-                                }}
-                              >
-                                <Share />
-                              </IconButton>
-                            </Box>
-                          }
-                          sx={{
-                            paddingBottom: "0.5rem",
-                            borderBottom: "1px solid rgba(226, 232, 240, 0.5)",
-                            background: "linear-gradient(to right, rgba(16, 185, 129, 0.05), rgba(59, 130, 246, 0.05))",
-                            "& .MuiCardHeader-title": {
-                              fontWeight: 600,
-                              fontSize: "1rem",
-                              color: "#334155",
-                            },
-                            "& .MuiCardHeader-subheader": {
-                              fontSize: "0.75rem",
-                            },
-                            "& .MuiCardHeader-action": {
-                              margin: 0,
-                            },
-                          }}
-                        />
-                        <CardContent
-                          sx={{
-                            padding: "1.5rem",
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            height: "calc(100% - 72px)",
-                            "&:last-child": {
-                              paddingBottom: "1.5rem",
-                            },
-                          }}
-                        >
-                          <Box
-                            sx={{
-                              width: "100%",
-                              maxWidth: "300px",
-                              height: "180px",
-                              marginBottom: "1.5rem",
-                              position: "relative",
-                            }}
-                          >
-                            <TruckSVG />
+                              {topVehicle?.type}
+                            </Typography>
+                            <Star sx={{ color: "#f59e0b", fontSize: "2rem" }} />
                           </Box>
 
                           <Box
@@ -2049,8 +2238,11 @@ export default function WeighingDashboard() {
                               display: "flex",
                               flexDirection: "column",
                               alignItems: "center",
-                              gap: "1rem",
                               width: "100%",
+                              padding: "1.5rem",
+                              backgroundColor: "rgba(16, 185, 129, 0.05)",
+                              borderRadius: "12px",
+                              border: "1px dashed rgba(16, 185, 129, 0.3)",
                             }}
                           >
                             <Box
@@ -2058,141 +2250,103 @@ export default function WeighingDashboard() {
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
-                                gap: "0.5rem",
+                                width: "60px",
+                                height: "60px",
+                                borderRadius: "50%",
+                                backgroundColor: "rgba(16, 185, 129, 0.1)",
+                                marginBottom: "1rem",
+                              }}
+                            >
+                              {topVehicle?.icon}
+                            </Box>
+
+                            <Typography
+                              sx={{
+                                fontSize: "1.25rem",
+                                fontWeight: 700,
+                                color: "#10b981",
                                 marginBottom: "0.5rem",
                               }}
                             >
-                              <Star sx={{ color: "#f59e0b", fontSize: "2rem" }} />
-                              <Typography
-                                variant="h5"
-                                sx={{
-                                  fontWeight: 700,
-                                  background: "linear-gradient(90deg, #10b981, #3b82f6)",
-                                  backgroundClip: "text",
-                                  WebkitBackgroundClip: "text",
-                                  WebkitTextFillColor: "transparent",
-                                }}
-                              >
-                                {topVehicle.type}
-                              </Typography>
-                              <Star sx={{ color: "#f59e0b", fontSize: "2rem" }} />
-                            </Box>
+                              Prefixo: {topVehicle?.prefix}
+                            </Typography>
+
+                            <Divider sx={{ width: "80%", margin: "0.75rem 0" }} />
 
                             <Box
                               sx={{
                                 display: "flex",
                                 flexDirection: "column",
                                 alignItems: "center",
+                                gap: "0.5rem",
                                 width: "100%",
-                                padding: "1.5rem",
-                                backgroundColor: "rgba(16, 185, 129, 0.05)",
-                                borderRadius: "12px",
-                                border: "1px dashed rgba(16, 185, 129, 0.3)",
                               }}
                             >
                               <Box
                                 sx={{
                                   display: "flex",
                                   alignItems: "center",
-                                  justifyContent: "center",
-                                  width: "60px",
-                                  height: "60px",
-                                  borderRadius: "50%",
-                                  backgroundColor: "rgba(16, 185, 129, 0.1)",
-                                  marginBottom: "1rem",
-                                }}
-                              >
-                                {topVehicle.icon}
-                              </Box>
-
-                              <Typography
-                                sx={{
-                                  fontSize: "1.25rem",
-                                  fontWeight: 700,
-                                  color: "#10b981",
-                                  marginBottom: "0.5rem",
-                                }}
-                              >
-                                Prefixo: {topVehicle.prefix}
-                              </Typography>
-
-                              <Divider sx={{ width: "80%", margin: "0.75rem 0" }} />
-
-                              <Box
-                                sx={{
-                                  display: "flex",
-                                  flexDirection: "column",
-                                  alignItems: "center",
-                                  gap: "0.5rem",
+                                  justifyContent: "space-between",
                                   width: "100%",
                                 }}
                               >
-                                <Box
+                                <Typography sx={{ fontWeight: 500, color: "#64748b" }}>Média de Pesagens:</Typography>
+                                <Typography
                                   sx={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "space-between",
-                                    width: "100%",
+                                    fontWeight: 700,
+                                    fontSize: "1.25rem",
+                                    color: "#10b981",
                                   }}
                                 >
-                                  <Typography sx={{ fontWeight: 500, color: "#64748b" }}>Média de Pesagens:</Typography>
-                                  <Typography
-                                    sx={{
-                                      fontWeight: 700,
-                                      fontSize: "1.25rem",
-                                      color: "#10b981",
-                                    }}
-                                  >
-                                    {topVehicle.avgWeighings}
-                                  </Typography>
-                                </Box>
+                                  {topVehicle?.avgWeighings}
+                                </Typography>
+                              </Box>
 
-                                <Box
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "space-between",
+                                  width: "100%",
+                                }}
+                              >
+                                <Typography sx={{ fontWeight: 500, color: "#64748b" }}>Quantidade:</Typography>
+                                <Typography
                                   sx={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "space-between",
-                                    width: "100%",
+                                    fontWeight: 600,
+                                    color: "#334155",
                                   }}
                                 >
-                                  <Typography sx={{ fontWeight: 500, color: "#64748b" }}>Quantidade:</Typography>
-                                  <Typography
-                                    sx={{
-                                      fontWeight: 600,
-                                      color: "#334155",
-                                    }}
-                                  >
-                                    {topVehicle.count} unidades
-                                  </Typography>
-                                </Box>
+                                  {topVehicle?.count} unidades
+                                </Typography>
                               </Box>
                             </Box>
-
-                            <Button
-                              variant="contained"
-                              startIcon={<InfoOutlined />}
-                              sx={{
-                                marginTop: "1rem",
-                                backgroundColor: "#10b981",
-                                borderRadius: "8px",
-                                textTransform: "none",
-                                fontWeight: 600,
-                                padding: "0.5rem 1.5rem",
-                                boxShadow: "0 4px 14px rgba(16, 185, 129, 0.4)",
-                                "&:hover": {
-                                  backgroundColor: "#059669",
-                                  transform: "translateY(-2px)",
-                                  boxShadow: "0 6px 20px rgba(16, 185, 129, 0.6)",
-                                },
-                              }}
-                            >
-                              Ver Detalhes do Veículo
-                            </Button>
                           </Box>
-                        </CardContent>
-                      </Card>
-                    </Zoom>
-                  </Box>
+
+                          <Button
+                            variant="contained"
+                            startIcon={<InfoOutlined />}
+                            sx={{
+                              marginTop: "1rem",
+                              backgroundColor: "#10b981",
+                              borderRadius: "8px",
+                              textTransform: "none",
+                              fontWeight: 600,
+                              padding: "0.5rem 1.5rem",
+                              boxShadow: "0 4px 14px rgba(16, 185, 129, 0.4)",
+                              "&:hover": {
+                                backgroundColor: "#059669",
+                                transform: "translateY(-2px)",
+                                boxShadow: "0 6px 20px rgba(16, 185, 129, 0.6)",
+                              },
+                            }}
+                          >
+                            Ver Detalhes do Veículo
+                          </Button>
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Zoom>
                 </Box>
 
                 {/* Drivers Section */}
@@ -2213,24 +2367,26 @@ export default function WeighingDashboard() {
                         title={
                           <Box sx={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                             <EmojiEvents />
-                            Motoristas e Pesagens
-                            <Box
-                              sx={{
-                                background: "linear-gradient(135deg, #8b5cf6, #7c3aed)",
-                                color: "white",
-                                fontSize: "0.75rem",
-                                fontWeight: 600,
-                                padding: "0.25rem 0.5rem",
-                                borderRadius: "12px",
-                                marginLeft: "0.5rem",
-                                boxShadow: "0 2px 8px rgba(139, 92, 246, 0.2)",
-                                display: "inline-flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                minWidth: "1.5rem",
-                              }}
-                            >
-                              {totalDrivers}
+                            <Box sx={{ display: "flex", alignItems: "center" }}>
+                              Motoristas e Pesagens
+                              <Box
+                                sx={{
+                                  background: "linear-gradient(135deg, #8b5cf6, #7c3aed)",
+                                  color: "white",
+                                  fontSize: "0.75rem",
+                                  fontWeight: 600,
+                                  padding: "0.25rem 0.5rem",
+                                  borderRadius: "12px",
+                                  marginLeft: "0.5rem",
+                                  boxShadow: "0 2px 8px rgba(139, 92, 246, 0.2)",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  minWidth: "1.5rem",
+                                }}
+                              >
+                                {totalDrivers}
+                              </Box>
                             </Box>
                           </Box>
                         }
@@ -2406,7 +2562,6 @@ export default function WeighingDashboard() {
 
                         <Fade in={true} timeout={500}>
                           <TableContainer
-                            component={Paper}
                             sx={{
                               boxShadow: "none",
                               borderRadius: "8px",
@@ -2457,32 +2612,50 @@ export default function WeighingDashboard() {
                                           fontSize: "0.875rem",
                                           fontWeight: 600,
                                           backgroundColor:
-                                            driver.efficiency > 90
+                                            driver.eficiencia > 90
                                               ? "rgba(16, 185, 129, 0.2)"
-                                              : driver.efficiency > 80
+                                              : driver.eficiencia > 80
                                                 ? "rgba(245, 158, 11, 0.2)"
                                                 : "rgba(239, 68, 68, 0.2)",
                                           color:
-                                            driver.efficiency > 90
+                                            driver.eficiencia > 90
                                               ? "#10b981"
-                                              : driver.efficiency > 80
+                                              : driver.eficiencia > 80
                                                 ? "#f59e0b"
                                                 : "#ef4444",
                                         }}
                                       >
                                         {driver.avatar}
                                       </Avatar>
-                                      {driver.name}
+                                      {driver.nome}
                                     </TableCell>
-                                    <TableCell align="right">{driver.weighings}</TableCell>
-                                    <TableCell align="right">{driver.efficiency}%</TableCell>
-                                    <TableCell align="right">{getStatusChip(driver.efficiency)}</TableCell>
+                                    <TableCell align="right">{driver.total_pesagens}</TableCell>
+                                    <TableCell align="right">{driver.eficiencia}%</TableCell>
+                                    <TableCell align="right">{getStatusChip(driver.eficiencia)}</TableCell>
                                   </TableRow>
                                 ))}
                               </TableBody>
                             </Table>
                           </TableContainer>
                         </Fade>
+
+                        <TablePagination
+                          component="div"
+                          count={
+                            tabValue === 0
+                              ? filteredDriversData.length
+                              : tabValue === 1
+                                ? filteredLowestDriversData.length
+                                : filteredAllDriversData.length
+                          }
+                          page={driverPage}
+                          onPageChange={handleDriverPageChange}
+                          rowsPerPage={driverRowsPerPage}
+                          onRowsPerPageChange={handleDriverRowsPerPageChange}
+                          rowsPerPageOptions={[5, 10, 25]}
+                          labelRowsPerPage="Linhas por página:"
+                          labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
+                        />
                       </CardContent>
                     </Card>
                   </Zoom>
@@ -2610,7 +2783,6 @@ export default function WeighingDashboard() {
                             }}
                           />
                           <TableContainer
-                            component={Paper}
                             sx={{
                               maxHeight: "500px",
                               overflowY: "auto",
@@ -2644,7 +2816,7 @@ export default function WeighingDashboard() {
                                 </TableRow>
                               </TableHead>
                               <TableBody>
-                                {filteredVehicleData.map((vehicle) => (
+                                {paginatedVehicleData.map((vehicle) => (
                                   <TableRow key={vehicle.type}>
                                     <TableCell
                                       sx={{
@@ -2682,6 +2854,18 @@ export default function WeighingDashboard() {
                               </TableBody>
                             </Table>
                           </TableContainer>
+
+                          <TablePagination
+                            component="div"
+                            count={filteredVehicleData.length}
+                            page={vehiclePage}
+                            onPageChange={handleVehiclePageChange}
+                            rowsPerPage={vehicleRowsPerPage}
+                            onRowsPerPageChange={handleVehicleRowsPerPageChange}
+                            rowsPerPageOptions={[5, 10, 25]}
+                            labelRowsPerPage="Linhas por página:"
+                            labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
+                          />
                         </CardContent>
                       </Card>
                     </Zoom>
@@ -2798,7 +2982,7 @@ export default function WeighingDashboard() {
                               },
                             }}
                           />
-                          <Box sx={{ maxHeight: "500px", overflowY: "auto" }}>
+                          <TableContainer sx={{ maxHeight: "500px", overflowY: "auto" }}>
                             <Table
                               sx={{
                                 width: "100%",
@@ -2831,7 +3015,7 @@ export default function WeighingDashboard() {
                                 </TableRow>
                               </TableHead>
                               <TableBody>
-                                {filteredCooperativesData.map((coop) => (
+                                {paginatedCooperativesData.map((coop) => (
                                   <TableRow key={coop.rank}>
                                     <TableCell>
                                       <Box
@@ -2862,14 +3046,26 @@ export default function WeighingDashboard() {
                                         {coop.rank}
                                       </Box>
                                     </TableCell>
-                                    <TableCell>{coop.name}</TableCell>
-                                    <TableCell>{coop.weighings}</TableCell>
-                                    <TableCell>{coop.percentage}%</TableCell>
+                                    <TableCell>{coop.nome}</TableCell>
+                                    <TableCell>{coop.total_pesagens}</TableCell>
+                                    <TableCell>{coop.percentual}%</TableCell>
                                   </TableRow>
                                 ))}
                               </TableBody>
                             </Table>
-                          </Box>
+                          </TableContainer>
+
+                          <TablePagination
+                            component="div"
+                            count={filteredCooperativesData.length}
+                            page={cooperativePage}
+                            onPageChange={handleCooperativePageChange}
+                            rowsPerPage={cooperativeRowsPerPage}
+                            onRowsPerPageChange={handleCooperativeRowsPerPageChange}
+                            rowsPerPageOptions={[5, 10, 25]}
+                            labelRowsPerPage="Linhas por página:"
+                            labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
+                          />
                         </CardContent>
                       </Card>
                     </Zoom>
