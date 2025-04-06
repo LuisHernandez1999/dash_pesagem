@@ -2990,7 +2990,7 @@ export default function WeighingDashboard() {
                         <CardContent>
                           <TextField
                             size="small"
-                            placeholder="Filtrar cooperativas..."
+                            placeholder="Filtrar coperativaS..."
                             fullWidth
                             value={cooperativeFilter}
                             onChange={(e) => setCooperativeFilter(e.target.value)}
@@ -3089,7 +3089,7 @@ export default function WeighingDashboard() {
                               </TableBody>
                             </Table>
                           </TableContainer>
-
+    
                           <TablePagination
                             component="div"
                             count={filteredCooperativesData.length}
