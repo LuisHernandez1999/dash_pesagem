@@ -211,17 +211,7 @@ export default function WeighingDashboard() {
   const [topCooperativas, setTopCooperativas] = useState([])
   const [veiculoMaiorPesagem, setVeiculoMaiorPesagem] = useState(null)
   const [motoristas, setMotoristas] = useState({ top: [], bottom: [] })
-  const [vehicleData, setVehicleData] = useState([
-    { type: "Caminhão Compactador", prefix: "CMP-2023", count: 12, avgWeighings: 245, icon: <LocalShipping /> },
-    { type: "Caminhão Basculante", prefix: "BSC-2022", count: 8, avgWeighings: 210, icon: <FireTruck /> },
-    { type: "Caminhão Carroceria", prefix: "CRR-2021", count: 6, avgWeighings: 180, icon: <AirportShuttle /> },
-    { type: "Veículo Utilitário", prefix: "UTL-2023", count: 4, avgWeighings: 120, icon: <ElectricCar /> },
-    { type: "Caminhão Baú", prefix: "BAU-2022", count: 3, avgWeighings: 150, icon: <Truck /> },
-    { type: "Caminhão Tanque", prefix: "TNQ-2021", count: 2, avgWeighings: 130, icon: <LocalShipping /> },
-    { type: "Caminhão Guincho", prefix: "GCH-2023", count: 2, avgWeighings: 110, icon: <Truck /> },
-    { type: "Caminhão Plataforma", prefix: "PLT-2022", count: 1, avgWeighings: 95, icon: <LocalShipping /> },
-    { type: "Caminhão Cegonha", prefix: "CGN-2021", count: 1, avgWeighings: 85, icon: <Truck /> },
-  ])
+  const [vehicleData, setVehicleData] = useState([])
 
   // Mock user data for sidebar
   const mockUser = {
@@ -265,11 +255,8 @@ export default function WeighingDashboard() {
 
   // Find the vehicle with the highest average weighings
   const topVehicle = useMemo(() => {
-    return (
-      veiculoMaiorPesagem ||
-      (vehicleData.length > 0 ? [...vehicleData].sort((a, b) => b.avgWeighings - a.avgWeighings)[0] : null)
-    )
-  }, [veiculoMaiorPesagem, vehicleData])
+    return veiculoMaiorPesagem || null
+  }, [veiculoMaiorPesagem])
 
   useEffect(() => {
     const fetchData = async () => {
@@ -315,6 +302,15 @@ export default function WeighingDashboard() {
         setPesagensAnoPorTipo(anoPorTipoData || [])
         setTopCooperativas(cooperativasData || [])
         setVeiculoMaiorPesagem(veiculoData || null)
+        
+        // Process vehicle data from API
+        if (veiculoData && Array.isArray(veiculoData)) {
+          const processedVehicleData = veiculoData.map(vehicle => ({
+            ...vehicle,
+            icon: getVehicleIcon(vehicle.type || "")
+          }));
+          setVehicleData(processedVehicleData);
+        }
 
         // Split motoristas into top and bottom performers
         if (motoristasData && Array.isArray(motoristasData)) {
@@ -341,52 +337,28 @@ export default function WeighingDashboard() {
 
     fetchData()
   }, [])
+  
+  // Helper function to get vehicle icon based on type
+  const getVehicleIcon = (type) => {
+    const typeLC = type.toLowerCase();
+    if (typeLC.includes("compactador")) return <LocalShipping />;
+    if (typeLC.includes("basculante")) return <FireTruck />;
+    if (typeLC.includes("carroceria")) return <AirportShuttle />;
+    if (typeLC.includes("utilitário") || typeLC.includes("utilitario")) return <ElectricCar />;
+    return <Truck />;
+  }
 
-  // Sample data - in a real app, this would come from an API or database
+  // Data from API
   const efficiencyData = toneladasPesadas
-
   const driversData = motoristas.top || []
-
   const lowestDriversData = motoristas.bottom || []
-
-  const cooperativesData =
-    topCooperativas.length > 0
-      ? topCooperativas
-      : [
-          { rank: 1, nome: "Carregando...", total_pesagens: 0, percentual: 0 },
-          // ... other default data
-        ]
-
-  // Enhanced monthly data with additional metrics for all 12 months
-  const monthlyData =
-    pesagensPorMes.length > 0
-      ? pesagensPorMes
-      : [
-          { month: "Jan", seletiva: 0, cataTreco: 0, total: 0, meta: 0, eficiencia: 0 },
-          { month: "Fev", seletiva: 0, cataTreco: 0, total: 0, meta: 0, eficiencia: 0 },
-          { month: "Mar", seletiva: 0, cataTreco: 0, total: 0, meta: 0, eficiencia: 0 },
-          { month: "Abr", seletiva: 0, cataTreco: 0, total: 0, meta: 0, eficiencia: 0 },
-          { month: "Mai", seletiva: 0, cataTreco: 0, total: 0, meta: 0, eficiencia: 0 },
-          { month: "Jun", seletiva: 0, cataTreco: 0, total: 0, meta: 0, eficiencia: 0 },
-          { month: "Jul", seletiva: 0, cataTreco: 0, total: 0, meta: 0, eficiencia: 0 },
-          { month: "Ago", seletiva: 0, cataTreco: 0, total: 0, meta: 0, eficiencia: 0 },
-          { month: "Set", seletiva: 0, cataTreco: 0, total: 0, meta: 0, eficiencia: 0 },
-          { month: "Out", seletiva: 0, cataTreco: 0, total: 0, meta: 0, eficiencia: 0 },
-          { month: "Nov", seletiva: 0, cataTreco: 0, total: 0, meta: 0, eficiencia: 0 },
-          { month: "Dez", seletiva: 0, cataTreco: 0, total: 0, meta: 0, eficiencia: 0 },
-        ]
+  const cooperativesData = topCooperativas || []
+  const monthlyData = pesagensPorMes || []
 
   // Calculate totals for Seletiva and Cata Treco
   const totalSeletiva = pesagensSeletiva
   const totalCataTreco = pesagensCataTreco
   const totalWeighings = totalPesagens
-
-  const vehiclePerformanceData = [
-    { vehicle: "Compactador", efficiency: 92, maintenance: 85, fuel: 78, availability: 95, weighings: 245 },
-    { vehicle: "Basculante", efficiency: 88, maintenance: 80, fuel: 82, availability: 90, weighings: 210 },
-    { vehicle: "Carroceria", efficiency: 85, maintenance: 75, fuel: 90, availability: 88, weighings: 180 },
-    { vehicle: "Utilitário", efficiency: 80, maintenance: 90, fuel: 95, availability: 85, weighings: 120 },
-  ]
 
   // Enhanced colors with gradients for pie chart
   const PIE_COLORS = [
@@ -502,9 +474,9 @@ export default function WeighingDashboard() {
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       const data = monthlyData.find((item) => item.month === label)
-      const total = data.total
-      const meta = data.meta
-      const eficiencia = data.eficiencia
+      const total = data?.total || 0
+      const meta = data?.meta || 0
+      const eficiencia = data?.eficiencia || 0
 
       return (
         <Box
@@ -920,7 +892,7 @@ export default function WeighingDashboard() {
 
   // Filter functions
   const filteredVehicleData = vehicleData.filter((vehicle) =>
-    vehicle.type.toLowerCase().includes(vehicleFilter.toLowerCase()),
+    (vehicle.type || "").toLowerCase().includes(vehicleFilter.toLowerCase()),
   )
 
   const filteredCooperativesData = cooperativesData.filter((coop) =>
@@ -1837,7 +1809,7 @@ export default function WeighingDashboard() {
                             />
                             <Typography sx={{ fontSize: "0.875rem", fontWeight: 600, color: "#10b981" }}>
                               Seletiva: {totalSeletiva} (
-                              {((totalSeletiva / (totalSeletiva + totalCataTreco)) * 100).toFixed(1)}%)
+                              {((totalSeletiva / (totalSeletiva + totalCataTreco || 1)) * 100).toFixed(1)}%)
                             </Typography>
                           </Box>
 
@@ -1861,7 +1833,7 @@ export default function WeighingDashboard() {
                             />
                             <Typography sx={{ fontSize: "0.875rem", fontWeight: 600, color: "#f59e0b" }}>
                               Cata Treco: {totalCataTreco} (
-                              {((totalCataTreco / (totalSeletiva + totalCataTreco)) * 100).toFixed(1)}%)
+                              {((totalCataTreco / (totalSeletiva + totalCataTreco || 1)) * 100).toFixed(1)}%)
                             </Typography>
                           </Box>
 
@@ -2188,98 +2160,26 @@ export default function WeighingDashboard() {
                           },
                         }}
                       >
-                        <Box
-                          sx={{
-                            width: "100%",
-                            maxWidth: "300px",
-                            height: "180px",
-                            marginBottom: "1.5rem",
-                            position: "relative",
-                          }}
-                        >
-                          <TruckSVG />
-                        </Box>
-
-                        <Box
-                          sx={{
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            gap: "1rem",
-                            width: "100%",
-                          }}
-                        >
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              gap: "0.5rem",
-                              marginBottom: "0.5rem",
-                            }}
-                          >
-                            <Star sx={{ color: "#f59e0b", fontSize: "2rem" }} />
-                            <Typography
-                              variant="h5"
-                              sx={{
-                                fontWeight: 700,
-                                background: "linear-gradient(90deg, #10b981, #3b82f6)",
-                                backgroundClip: "text",
-                                WebkitBackgroundClip: "text",
-                                WebkitTextFillColor: "transparent",
-                              }}
-                            >
-                              {topVehicle?.type}
-                            </Typography>
-                            <Star sx={{ color: "#f59e0b", fontSize: "2rem" }} />
-                          </Box>
-
-                          <Box
-                            sx={{
-                              display: "flex",
-                              flexDirection: "column",
-                              alignItems: "center",
-                              width: "100%",
-                              padding: "1.5rem",
-                              backgroundColor: "rgba(16, 185, 129, 0.05)",
-                              borderRadius: "12px",
-                              border: "1px dashed rgba(16, 185, 129, 0.3)",
-                            }}
-                          >
+                        {topVehicle ? (
+                          <>
                             <Box
                               sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                width: "60px",
-                                height: "60px",
-                                borderRadius: "50%",
-                                backgroundColor: "rgba(16, 185, 129, 0.1)",
-                                marginBottom: "1rem",
+                                width: "100%",
+                                maxWidth: "300px",
+                                height: "180px",
+                                marginBottom: "1.5rem",
+                                position: "relative",
                               }}
                             >
-                              {topVehicle?.icon}
+                              <TruckSVG />
                             </Box>
-
-                            <Typography
-                              sx={{
-                                fontSize: "1.25rem",
-                                fontWeight: 700,
-                                color: "#10b981",
-                                marginBottom: "0.5rem",
-                              }}
-                            >
-                              Prefixo: {topVehicle?.prefix}
-                            </Typography>
-
-                            <Divider sx={{ width: "80%", margin: "0.75rem 0" }} />
 
                             <Box
                               sx={{
                                 display: "flex",
                                 flexDirection: "column",
                                 alignItems: "center",
-                                gap: "0.5rem",
+                                gap: "1rem",
                                 width: "100%",
                               }}
                             >
@@ -2287,64 +2187,155 @@ export default function WeighingDashboard() {
                                 sx={{
                                   display: "flex",
                                   alignItems: "center",
-                                  justifyContent: "space-between",
-                                  width: "100%",
+                                  justifyContent: "center",
+                                  gap: "0.5rem",
+                                  marginBottom: "0.5rem",
                                 }}
                               >
-                                <Typography sx={{ fontWeight: 500, color: "#64748b" }}>Média de Pesagens:</Typography>
+                                <Star sx={{ color: "#f59e0b", fontSize: "2rem" }} />
                                 <Typography
+                                  variant="h5"
                                   sx={{
                                     fontWeight: 700,
-                                    fontSize: "1.25rem",
-                                    color: "#10b981",
+                                    background: "linear-gradient(90deg, #10b981, #3b82f6)",
+                                    backgroundClip: "text",
+                                    WebkitBackgroundClip: "text",
+                                    WebkitTextFillColor: "transparent",
                                   }}
                                 >
-                                  {topVehicle?.avgWeighings}
+                                  {topVehicle?.type || "Carregando..."}
                                 </Typography>
+                                <Star sx={{ color: "#f59e0b", fontSize: "2rem" }} />
                               </Box>
 
                               <Box
                                 sx={{
                                   display: "flex",
+                                  flexDirection: "column",
                                   alignItems: "center",
-                                  justifyContent: "space-between",
                                   width: "100%",
+                                  padding: "1.5rem",
+                                  backgroundColor: "rgba(16, 185, 129, 0.05)",
+                                  borderRadius: "12px",
+                                  border: "1px dashed rgba(16, 185, 129, 0.3)",
                                 }}
                               >
-                                <Typography sx={{ fontWeight: 500, color: "#64748b" }}>Quantidade:</Typography>
-                                <Typography
+                                <Box
                                   sx={{
-                                    fontWeight: 600,
-                                    color: "#334155",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    width: "60px",
+                                    height: "60px",
+                                    borderRadius: "50%",
+                                    backgroundColor: "rgba(16, 185, 129, 0.1)",
+                                    marginBottom: "1rem",
                                   }}
                                 >
-                                  {topVehicle?.count} unidades
-                                </Typography>
-                              </Box>
-                            </Box>
-                          </Box>
+                                  {topVehicle?.icon || <Truck />}
+                                </Box>
 
-                          <Button
-                            variant="contained"
-                            startIcon={<InfoOutlined />}
+                                <Typography
+                                  sx={{
+                                    fontSize: "1.25rem",
+                                    fontWeight: 700,
+                                    color: "#10b981",
+                                    marginBottom: "0.5rem",
+                                  }}
+                                >
+                                  Prefixo: {topVehicle?.prefix || "N/A"}
+                                </Typography>
+
+                                <Divider sx={{ width: "80%", margin: "0.75rem 0" }} />
+
+                                <Box
+                                  sx={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "center",
+                                    gap: "0.5rem",
+                                    width: "100%",
+                                  }}
+                                >
+                                  <Box
+                                    sx={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "space-between",
+                                      width: "100%",
+                                    }}
+                                  >
+                                    <Typography sx={{ fontWeight: 500, color: "#64748b" }}>Total de Pesagens:</Typography>
+                                    <Typography
+                                      sx={{
+                                        fontWeight: 700,
+                                        fontSize: "1.25rem",
+                                        color: "#10b981",
+                                      }}
+                                    >
+                                      {topVehicle?.total_pesagens || 0}
+                                    </Typography>
+                                  </Box>
+
+                                  <Box
+                                    sx={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "space-between",
+                                      width: "100%",
+                                    }}
+                                  >
+                                    <Typography sx={{ fontWeight: 500, color: "#64748b" }}>Eficiência:</Typography>
+                                    <Typography
+                                      sx={{
+                                        fontWeight: 600,
+                                        color: "#334155",
+                                      }}
+                                    >
+                                      {topVehicle?.eficiencia || 0}%
+                                    </Typography>
+                                  </Box>
+                                </Box>
+                              </Box>
+
+                              <Button
+                                variant="contained"
+                                startIcon={<InfoOutlined />}
+                                sx={{
+                                  marginTop: "1rem",
+                                  backgroundColor: "#10b981",
+                                  borderRadius: "8px",
+                                  textTransform: "none",
+                                  fontWeight: 600,
+                                  padding: "0.5rem 1.5rem",
+                                  boxShadow: "0 4px 14px rgba(16, 185, 129, 0.4)",
+                                  "&:hover": {
+                                    backgroundColor: "#059669",
+                                    transform: "translateY(-2px)",
+                                    boxShadow: "0 6px 20px rgba(16, 185, 129, 0.6)",
+                                  },
+                                }}
+                              >
+                                Ver Detalhes do Veículo
+                              </Button>
+                            </Box>
+                          </>
+                        ) : (
+                          <Box
                             sx={{
-                              marginTop: "1rem",
-                              backgroundColor: "#10b981",
-                              borderRadius: "8px",
-                              textTransform: "none",
-                              fontWeight: 600,
-                              padding: "0.5rem 1.5rem",
-                              boxShadow: "0 4px 14px rgba(16, 185, 129, 0.4)",
-                              "&:hover": {
-                                backgroundColor: "#059669",
-                                transform: "translateY(-2px)",
-                                boxShadow: "0 6px 20px rgba(16, 185, 129, 0.6)",
-                              },
+                              display: "flex",
+                              flexDirection: "column",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              height: "100%",
+                              gap: "1rem",
                             }}
                           >
-                            Ver Detalhes do Veículo
-                          </Button>
-                        </Box>
+                            <Typography variant="h6" sx={{ color: "#64748b" }}>
+                              Carregando dados do veículo...
+                            </Typography>
+                          </Box>
+                        )}
                       </CardContent>
                     </Card>
                   </Zoom>
@@ -2626,7 +2617,7 @@ export default function WeighingDashboard() {
                                                 : "#ef4444",
                                         }}
                                       >
-                                        {driver.avatar}
+                                        {driver.nome ? driver.nome.charAt(0) : ""}
                                       </Avatar>
                                       {driver.nome}
                                     </TableCell>
@@ -2830,12 +2821,12 @@ export default function WeighingDashboard() {
                                 <TableRow>
                                   <TableCell>Tipo de Veículo</TableCell>
                                   <TableCell align="right">Quantidade</TableCell>
-                                  <TableCell align="right">Média de Pesagens</TableCell>
+                                  <TableCell align="right">Total de Pesagens</TableCell>
                                 </TableRow>
                               </TableHead>
                               <TableBody>
-                                {paginatedVehicleData.map((vehicle) => (
-                                  <TableRow key={vehicle.type}>
+                                {paginatedVehicleData.map((vehicle, index) => (
+                                  <TableRow key={index}>
                                     <TableCell
                                       sx={{
                                         fontWeight: 500,
@@ -2861,12 +2852,12 @@ export default function WeighingDashboard() {
                                           },
                                         }}
                                       >
-                                        {vehicle.icon}
+                                        {vehicle.icon || <Truck />}
                                       </Box>
-                                      {vehicle.type}
+                                      {vehicle.type || "N/A"}
                                     </TableCell>
-                                    <TableCell align="right">{vehicle.count}</TableCell>
-                                    <TableCell align="right">{vehicle.avgWeighings}</TableCell>
+                                    <TableCell align="right">{vehicle.count || vehicle.quantidade || 0}</TableCell>
+                                    <TableCell align="right">{vehicle.total_pesagens || 0}</TableCell>
                                   </TableRow>
                                 ))}
                               </TableBody>
@@ -3050,8 +3041,8 @@ export default function WeighingDashboard() {
                                 </TableRow>
                               </TableHead>
                               <TableBody>
-                                {paginatedCooperativesData.map((coop) => (
-                                  <TableRow key={coop.rank}>
+                                {paginatedCooperativesData.map((coop, index) => (
+                                  <TableRow key={index}>
                                     <TableCell>
                                       <Box
                                         sx={{
@@ -3078,12 +3069,12 @@ export default function WeighingDashboard() {
                                           marginRight: "0.75rem",
                                         }}
                                       >
-                                        {coop.rank}
+                                        {coop.rank || index + 1}
                                       </Box>
                                     </TableCell>
-                                    <TableCell>{coop.nome}</TableCell>
-                                    <TableCell>{coop.total_pesagens}</TableCell>
-                                    <TableCell>{coop.percentual}%</TableCell>
+                                    <TableCell>{coop.nome || "N/A"}</TableCell>
+                                    <TableCell>{coop.total_pesagens || 0}</TableCell>
+                                    <TableCell>{coop.percentual || 0}%</TableCell>
                                   </TableRow>
                                 ))}
                               </TableBody>
@@ -3131,4 +3122,3 @@ export default function WeighingDashboard() {
     </>
   )
 }
-
