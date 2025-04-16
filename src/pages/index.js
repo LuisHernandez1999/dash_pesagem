@@ -59,6 +59,8 @@ import {
   ListItem,
   ListItemText,
   ListItemIcon,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material"
 import {
   BarChart as BarChartIcon,
@@ -83,11 +85,10 @@ import {
   LocationOn,
   AccessTime,
   Person,
-  Speed,
-  EmojiEvents,
   Timeline,
+  Menu as MenuIcon,
 } from "@mui/icons-material"
-import Sidebar from "../components/sidebar"
+import Sidebar from "@/components/sidebar"
 
 // Animation keyframes
 const keyframes = {
@@ -420,6 +421,9 @@ const getAreaChartData = () => {
 const COLORS = ["#2DCE89", "#4A6FFF", "#FB6340"]
 
 export default function RemovalDashboard() {
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
+
   // State variables
   const [loading, setLoading] = useState(true)
   const [selectedMonth, setSelectedMonth] = useState("Todos")
@@ -442,6 +446,7 @@ export default function RemovalDashboard() {
   const [chartType, setChartType] = useState(0)
   const [modalOpen, setModalOpen] = useState(false)
   const [selectedRemoval, setSelectedRemoval] = useState(null)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const topDriver = getDriverWithMostRemovals()
   const pieChartData = getPieChartData()
   const areaChartData = getAreaChartData()
@@ -468,6 +473,11 @@ export default function RemovalDashboard() {
 
     loadData()
   }, [])
+
+  // Handle sidebar collapse
+  const handleSidebarCollapse = (collapsed) => {
+    setSidebarCollapsed(collapsed)
+  }
 
   // Handle month menu
   const handleMonthMenuOpen = (event) => {
@@ -688,7 +698,7 @@ export default function RemovalDashboard() {
   }
 
   // Custom stat card component
-  const StatCard = ({ title, value, icon: Icon, color, gradient }) => (
+  const StatCard = ({ title, value, icon: Icon, color }) => (
     <Card
       sx={{
         p: 3,
@@ -699,135 +709,47 @@ export default function RemovalDashboard() {
         borderRadius: "16px",
         boxShadow: "0 10px 15px rgba(0, 0, 0, 0.1)",
         transition: "all 0.3s ease",
-        background: gradient,
+        background: "white",
         position: "relative",
         overflow: "hidden",
-        minHeight: "180px",
+        minHeight: { xs: "150px", sm: "180px" },
         "&:hover": {
           transform: "translateY(-5px)",
           boxShadow: "0 15px 30px rgba(0, 0, 0, 0.15)",
-        },
-        "&::before": {
-          content: '""',
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          background: `radial-gradient(circle at 10% 10%, ${color}22, transparent 80%)`,
         },
       }}
     >
       <Box
         sx={{
-          position: "absolute",
-          top: "15px",
-          right: "15px",
-          width: "50px",
-          height: "50px",
+          width: { xs: "50px", sm: "60px" },
+          height: { xs: "50px", sm: "60px" },
           borderRadius: "50%",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "rgba(255, 255, 255, 0.2)",
-          backdropFilter: "blur(5px)",
+          background: `${color}22`,
+          marginBottom: "1rem",
         }}
       >
-        <Icon sx={{ fontSize: 30, color: "white" }} />
+        <Icon sx={{ fontSize: { xs: 24, sm: 30 }, color: color }} />
       </Box>
-      <Typography variant="h3" sx={{ fontWeight: "bold", color: "white", mb: 1, mt: 2, fontSize: "2.5rem" }}>
+      <Typography
+        variant="h3"
+        sx={{ fontWeight: "bold", color: "#334155", mb: 1, fontSize: { xs: "2rem", sm: "2.5rem" } }}
+      >
         {value}
       </Typography>
       <Typography
         variant="body1"
         sx={{
-          color: "white",
+          color: "#64748b",
           textAlign: "center",
           fontWeight: "500",
-          fontSize: "1rem",
-          textShadow: "0px 1px 2px rgba(0,0,0,0.2)",
+          fontSize: { xs: "0.9rem", sm: "1rem" },
         }}
       >
         {title}
       </Typography>
-    </Card>
-  )
-
-  // Summary card component
-  const SummaryCard = ({ title, value, icon: Icon, color, gradient, subtitle }) => (
-    <Card
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        borderRadius: "16px",
-        boxShadow: "0 8px 20px rgba(0, 0, 0, 0.08)",
-        transition: "all 0.3s ease",
-        overflow: "hidden",
-        height: "100%",
-        "&:hover": {
-          transform: "translateY(-5px)",
-          boxShadow: "0 12px 30px rgba(0, 0, 0, 0.12)",
-        },
-      }}
-    >
-      <Box
-        sx={{
-          background: gradient,
-          padding: "1.5rem",
-          display: "flex",
-          alignItems: "center",
-          gap: "1rem",
-        }}
-      >
-        <Box
-          sx={{
-            width: "60px",
-            height: "60px",
-            borderRadius: "12px",
-            background: "rgba(255, 255, 255, 0.2)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Icon sx={{ fontSize: 32, color: "white" }} />
-        </Box>
-        <Box>
-          <Typography
-            sx={{
-              color: "white",
-              fontWeight: 600,
-              fontSize: "1rem",
-            }}
-          >
-            {title}
-          </Typography>
-          <Typography
-            variant="h4"
-            sx={{
-              color: "white",
-              fontWeight: 700,
-              fontSize: "2rem",
-              textShadow: "0px 2px 4px rgba(0,0,0,0.1)",
-            }}
-          >
-            {value}
-          </Typography>
-        </Box>
-      </Box>
-      {subtitle && (
-        <Box sx={{ padding: "1rem", backgroundColor: "white" }}>
-          <Typography
-            sx={{
-              color: "#64748b",
-              fontSize: "0.875rem",
-              fontWeight: 500,
-            }}
-          >
-            {subtitle}
-          </Typography>
-        </Box>
-      )}
     </Card>
   )
 
@@ -1075,7 +997,7 @@ export default function RemovalDashboard() {
       </style>
       <Box sx={{ display: "flex" }}>
         {/* Sidebar */}
-        <Sidebar />
+        <Sidebar onCollapse={handleSidebarCollapse} />
 
         {/* Main Content */}
         <Box
@@ -1084,8 +1006,14 @@ export default function RemovalDashboard() {
             flexDirection: "column",
             minHeight: "100vh",
             backgroundColor: "#f8fafc",
-            marginLeft: { xs: 0, sm: "290px" },
-            width: { xs: "100%", sm: "calc(100% - 290px)" },
+            marginLeft: {
+              xs: 0,
+              sm: sidebarCollapsed ? "80px" : "280px",
+            },
+            width: {
+              xs: "100%",
+              sm: sidebarCollapsed ? "calc(100% - 80px)" : "calc(100% - 280px)",
+            },
             transition: "all 0.3s ease",
           }}
         >
@@ -1112,11 +1040,16 @@ export default function RemovalDashboard() {
             }}
           >
             <Toolbar>
+              {isMobile && (
+                <IconButton edge="start" color="inherit" aria-label="menu" sx={{ mr: 2 }}>
+                  <MenuIcon />
+                </IconButton>
+              )}
               <Typography
                 variant="h6"
                 sx={{
                   fontWeight: 700,
-                  fontSize: "1.8rem",
+                  fontSize: { xs: "1.4rem", sm: "1.8rem" },
                   background: "linear-gradient(90deg, #4A6FFF, #6B8CFF)",
                   backgroundClip: "text",
                   WebkitBackgroundClip: "text",
@@ -1131,7 +1064,7 @@ export default function RemovalDashboard() {
                 <TruckIcon
                   sx={{
                     color: "#4A6FFF",
-                    fontSize: "2.2rem",
+                    fontSize: { xs: "1.8rem", sm: "2.2rem" },
                     animation: "float 3s ease-in-out infinite",
                   }}
                 />
@@ -1145,7 +1078,7 @@ export default function RemovalDashboard() {
             component="main"
             sx={{
               flex: 1,
-              padding: "1.5rem",
+              padding: { xs: "1rem", sm: "1.5rem" },
               animation: "fadeIn 1s ease-out",
             }}
           >
@@ -1171,7 +1104,6 @@ export default function RemovalDashboard() {
                         value={statsData.totalVehicles}
                         icon={DirectionsCar}
                         color="#4A6FFF"
-                        gradient="linear-gradient(135deg, #4A6FFF 0%, #6B8CFF 100%)"
                       />
                     </Box>
                   </Fade>
@@ -1182,7 +1114,6 @@ export default function RemovalDashboard() {
                         value={statsData.activeVehicles}
                         icon={CheckCircle}
                         color="#2DCE89"
-                        gradient="linear-gradient(135deg, #2DCE89 0%, #2DCEAC 100%)"
                       />
                     </Box>
                   </Fade>
@@ -1193,7 +1124,6 @@ export default function RemovalDashboard() {
                         value={statsData.inactiveVehicles}
                         icon={Cancel}
                         color="#F5365C"
-                        gradient="linear-gradient(135deg, #F5365C 0%, #F56036 100%)"
                       />
                     </Box>
                   </Fade>
@@ -1204,7 +1134,6 @@ export default function RemovalDashboard() {
                         value={statsData.releasedToday}
                         icon={Today}
                         color="#FB6340"
-                        gradient="linear-gradient(135deg, #FB6340 0%, #FBB140 100%)"
                       />
                     </Box>
                   </Fade>
@@ -1233,8 +1162,8 @@ export default function RemovalDashboard() {
                         <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
                           <Box
                             sx={{
-                              width: "36px",
-                              height: "36px",
+                              width: { xs: "30px", sm: "36px" },
+                              height: { xs: "30px", sm: "36px" },
                               borderRadius: "10px",
                               background: "linear-gradient(135deg, #4A6FFF, #6B8CFF)",
                               display: "flex",
@@ -1246,7 +1175,7 @@ export default function RemovalDashboard() {
                             <BarChartIcon
                               sx={{
                                 color: "white",
-                                fontSize: "1.4rem",
+                                fontSize: { xs: "1.2rem", sm: "1.4rem" },
                               }}
                             />
                           </Box>
@@ -1254,7 +1183,7 @@ export default function RemovalDashboard() {
                             <Typography
                               sx={{
                                 fontWeight: 700,
-                                fontSize: "1.25rem",
+                                fontSize: { xs: "1.1rem", sm: "1.25rem" },
                                 background: "linear-gradient(90deg, #4A6FFF, #6B8CFF)",
                                 backgroundClip: "text",
                                 WebkitBackgroundClip: "text",
@@ -1266,7 +1195,7 @@ export default function RemovalDashboard() {
                             </Typography>
                             <Typography
                               sx={{
-                                fontSize: "0.85rem",
+                                fontSize: { xs: "0.8rem", sm: "0.85rem" },
                                 color: "#64748b",
                                 fontWeight: 500,
                               }}
@@ -1293,6 +1222,7 @@ export default function RemovalDashboard() {
                               padding: "0 1rem",
                               borderColor: "rgba(226, 232, 240, 0.8)",
                               color: "#64748b",
+                              display: { xs: "none", sm: "flex" },
                               "&:hover": {
                                 backgroundColor: "rgba(241, 245, 249, 0.8)",
                                 borderColor: "rgba(148, 163, 184, 0.5)",
@@ -1302,6 +1232,15 @@ export default function RemovalDashboard() {
                           >
                             {selectedMonth}
                           </Button>
+                          <IconButton
+                            onClick={handleMonthMenuOpen}
+                            sx={{
+                              display: { xs: "flex", sm: "none" },
+                              color: "#64748b",
+                            }}
+                          >
+                            <CalendarMonth />
+                          </IconButton>
                           <Menu
                             anchorEl={monthMenuAnchor}
                             open={Boolean(monthMenuAnchor)}
@@ -1350,6 +1289,7 @@ export default function RemovalDashboard() {
                                 transform: "rotate(15deg)",
                                 backgroundColor: "rgba(241, 245, 249, 0.8)",
                               },
+                              display: { xs: "none", sm: "flex" },
                             }}
                           >
                             <Download />
@@ -1364,6 +1304,7 @@ export default function RemovalDashboard() {
                                 transform: "rotate(15deg)",
                                 backgroundColor: "rgba(241, 245, 249, 0.8)",
                               },
+                              display: { xs: "none", sm: "flex" },
                             }}
                           >
                             <FilterAlt />
@@ -1397,9 +1338,10 @@ export default function RemovalDashboard() {
                           },
                           "& .MuiTab-root": {
                             textTransform: "none",
-                            minWidth: "120px",
+                            minWidth: { xs: "80px", sm: "120px" },
                             fontWeight: 500,
                             color: "#64748b",
+                            fontSize: { xs: "0.8rem", sm: "0.9rem" },
                             "&.Mui-selected": {
                               color: "#4A6FFF",
                               fontWeight: 600,
@@ -1417,7 +1359,7 @@ export default function RemovalDashboard() {
                       <Box
                         sx={{
                           width: "100%",
-                          height: "400px",
+                          height: { xs: "300px", sm: "400px" },
                           position: "relative",
                         }}
                       >
@@ -1487,7 +1429,7 @@ export default function RemovalDashboard() {
                           sx={{
                             display: "flex",
                             alignItems: "center",
-                            gap: "1.5rem",
+                            gap: { xs: "0.8rem", sm: "1.5rem" },
                             flexWrap: "wrap",
                             justifyContent: "center",
                           }}
@@ -1498,7 +1440,7 @@ export default function RemovalDashboard() {
                               alignItems: "center",
                               gap: "0.5rem",
                               backgroundColor: "rgba(74, 111, 255, 0.1)",
-                              padding: "0.5rem 1rem",
+                              padding: { xs: "0.4rem 0.8rem", sm: "0.5rem 1rem" },
                               borderRadius: "10px",
                             }}
                           >
@@ -1510,8 +1452,10 @@ export default function RemovalDashboard() {
                                 background: "linear-gradient(135deg, #4A6FFF, #6B8CFF)",
                               }}
                             />
-                            <Typography sx={{ fontSize: "0.875rem", fontWeight: 600, color: "#4A6FFF" }}>
-                              Total de Remoções: {chartData.reduce((sum, item) => sum + item.removals, 0)}
+                            <Typography
+                              sx={{ fontSize: { xs: "0.8rem", sm: "0.875rem" }, fontWeight: 600, color: "#4A6FFF" }}
+                            >
+                              Total: {chartData.reduce((sum, item) => sum + item.removals, 0)}
                             </Typography>
                           </Box>
 
@@ -1521,7 +1465,7 @@ export default function RemovalDashboard() {
                               alignItems: "center",
                               gap: "0.5rem",
                               backgroundColor: "rgba(45, 206, 137, 0.1)",
-                              padding: "0.5rem 1rem",
+                              padding: { xs: "0.4rem 0.8rem", sm: "0.5rem 1rem" },
                               borderRadius: "10px",
                             }}
                           >
@@ -1533,8 +1477,10 @@ export default function RemovalDashboard() {
                                 background: "linear-gradient(135deg, #2DCE89, #2DCEAC)",
                               }}
                             />
-                            <Typography sx={{ fontSize: "0.875rem", fontWeight: 600, color: "#2DCE89" }}>
-                              Média Mensal:{" "}
+                            <Typography
+                              sx={{ fontSize: { xs: "0.8rem", sm: "0.875rem" }, fontWeight: 600, color: "#2DCE89" }}
+                            >
+                              Média:{" "}
                               {Math.round(
                                 chartData.reduce((sum, item) => sum + item.removals, 0) / (chartData.length || 1),
                               )}
@@ -1546,9 +1492,6 @@ export default function RemovalDashboard() {
                   </Card>
                 </Zoom>
               </Box>
-
-              {/* Summary Cards Section */}
-              
 
               {/* Tables Section */}
               <Box component="section">
@@ -1585,8 +1528,8 @@ export default function RemovalDashboard() {
                             <Box sx={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                               <Box
                                 sx={{
-                                  width: "32px",
-                                  height: "32px",
+                                  width: { xs: "28px", sm: "32px" },
+                                  height: { xs: "28px", sm: "32px" },
                                   borderRadius: "8px",
                                   background: "linear-gradient(135deg, #4A6FFF, #6B8CFF)",
                                   display: "flex",
@@ -1595,12 +1538,12 @@ export default function RemovalDashboard() {
                                   boxShadow: "0 4px 12px rgba(74, 111, 255, 0.2)",
                                 }}
                               >
-                                <TruckIcon sx={{ color: "white", fontSize: "1.2rem" }} />
+                                <TruckIcon sx={{ color: "white", fontSize: { xs: "1rem", sm: "1.2rem" } }} />
                               </Box>
                               <Typography
                                 sx={{
                                   fontWeight: 600,
-                                  fontSize: "1.1rem",
+                                  fontSize: { xs: "1rem", sm: "1.1rem" },
                                   color: "#334155",
                                 }}
                               >
@@ -1635,10 +1578,10 @@ export default function RemovalDashboard() {
                           }
                           sx={{
                             borderBottom: "1px solid rgba(226, 232, 240, 0.5)",
-                            padding: "1rem 1.25rem",
+                            padding: { xs: "0.8rem 1rem", sm: "1rem 1.25rem" },
                           }}
                         />
-                        <CardContent sx={{ padding: "0.5rem 1rem" }}>
+                        <CardContent sx={{ padding: { xs: "0.5rem 0.8rem", sm: "0.5rem 1rem" } }}>
                           <TextField
                             size="small"
                             placeholder="Buscar remoções..."
@@ -1679,6 +1622,7 @@ export default function RemovalDashboard() {
                                       "&:hover": { color: "#4A6FFF" },
                                       display: "flex",
                                       alignItems: "center",
+                                      fontSize: { xs: "0.8rem", sm: "0.875rem" },
                                     }}
                                   >
                                     Motorista
@@ -1693,6 +1637,7 @@ export default function RemovalDashboard() {
                                       "&:hover": { color: "#4A6FFF" },
                                       display: "flex",
                                       alignItems: "center",
+                                      fontSize: { xs: "0.8rem", sm: "0.875rem" },
                                     }}
                                   >
                                     Prefixo
@@ -1707,12 +1652,21 @@ export default function RemovalDashboard() {
                                       "&:hover": { color: "#4A6FFF" },
                                       display: "flex",
                                       alignItems: "center",
+                                      fontSize: { xs: "0.8rem", sm: "0.875rem" },
                                     }}
                                   >
-                                    Horário de Saída
+                                    Horário
                                     <SortIndicator field="departureTime" />
                                   </TableCell>
-                                  <TableCell sx={{ fontWeight: 600, color: "#64748b" }}>Status</TableCell>
+                                  <TableCell
+                                    sx={{
+                                      fontWeight: 600,
+                                      color: "#64748b",
+                                      fontSize: { xs: "0.8rem", sm: "0.875rem" },
+                                    }}
+                                  >
+                                    Status
+                                  </TableCell>
                                 </TableRow>
                               </TableHead>
                               <TableBody>
@@ -1732,17 +1686,21 @@ export default function RemovalDashboard() {
                                       <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
                                         <Avatar
                                           sx={{
-                                            width: 32,
-                                            height: 32,
+                                            width: { xs: 28, sm: 32 },
+                                            height: { xs: 28, sm: 32 },
                                             backgroundColor: "rgba(74, 111, 255, 0.1)",
                                             color: "#4A6FFF",
                                             fontWeight: 600,
-                                            fontSize: "0.875rem",
+                                            fontSize: { xs: "0.8rem", sm: "0.875rem" },
                                           }}
                                         >
                                           {removal.driver.charAt(0)}
                                         </Avatar>
-                                        <Typography sx={{ fontWeight: 500 }}>{removal.driver}</Typography>
+                                        <Typography
+                                          sx={{ fontWeight: 500, fontSize: { xs: "0.8rem", sm: "0.875rem" } }}
+                                        >
+                                          {isMobile ? removal.driver.split(" ")[0] : removal.driver}
+                                        </Typography>
                                       </Box>
                                     </TableCell>
                                     <TableCell>
@@ -1753,12 +1711,14 @@ export default function RemovalDashboard() {
                                           backgroundColor: "rgba(45, 206, 137, 0.1)",
                                           color: "#2DCE89",
                                           fontWeight: 600,
-                                          height: "1.5rem",
-                                          fontSize: "0.75rem",
+                                          height: { xs: "1.4rem", sm: "1.5rem" },
+                                          fontSize: { xs: "0.7rem", sm: "0.75rem" },
                                         }}
                                       />
                                     </TableCell>
-                                    <TableCell>{removal.departureTime}</TableCell>
+                                    <TableCell sx={{ fontSize: { xs: "0.8rem", sm: "0.875rem" } }}>
+                                      {removal.departureTime}
+                                    </TableCell>
                                     <TableCell>{getStatusChip(removal.status)}</TableCell>
                                   </TableRow>
                                 ))}
@@ -1773,7 +1733,7 @@ export default function RemovalDashboard() {
                             rowsPerPage={totalRowsPerPage}
                             onRowsPerPageChange={handleTotalRowsPerPageChange}
                             rowsPerPageOptions={[5, 10, 25]}
-                            labelRowsPerPage="Linhas:"
+                            labelRowsPerPage={isMobile ? "" : "Linhas:"}
                             labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
                             sx={{
                               ".MuiTablePagination-actions": {
@@ -1784,6 +1744,12 @@ export default function RemovalDashboard() {
                                     color: "#4A6FFF",
                                   },
                                 },
+                              },
+                              ".MuiTablePagination-selectLabel": {
+                                display: { xs: "none", sm: "block" },
+                              },
+                              ".MuiTablePagination-select": {
+                                paddingLeft: { xs: 0, sm: "8px" },
                               },
                             }}
                           />
@@ -1813,8 +1779,8 @@ export default function RemovalDashboard() {
                             <Box sx={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                               <Box
                                 sx={{
-                                  width: "32px",
-                                  height: "32px",
+                                  width: { xs: "28px", sm: "32px" },
+                                  height: { xs: "28px", sm: "32px" },
                                   borderRadius: "8px",
                                   background: "linear-gradient(135deg, #FB6340, #FBB140)",
                                   display: "flex",
@@ -1823,12 +1789,12 @@ export default function RemovalDashboard() {
                                   boxShadow: "0 4px 12px rgba(251, 99, 64, 0.2)",
                                 }}
                               >
-                                <Today sx={{ color: "white", fontSize: "1.2rem" }} />
+                                <Today sx={{ color: "white", fontSize: { xs: "1rem", sm: "1.2rem" } }} />
                               </Box>
                               <Typography
                                 sx={{
                                   fontWeight: 600,
-                                  fontSize: "1.1rem",
+                                  fontSize: { xs: "1rem", sm: "1.1rem" },
                                   color: "#334155",
                                 }}
                               >
@@ -1863,10 +1829,10 @@ export default function RemovalDashboard() {
                           }
                           sx={{
                             borderBottom: "1px solid rgba(226, 232, 240, 0.5)",
-                            padding: "1rem 1.25rem",
+                            padding: { xs: "0.8rem 1rem", sm: "1rem 1.25rem" },
                           }}
                         />
-                        <CardContent sx={{ padding: "0.5rem 1rem" }}>
+                        <CardContent sx={{ padding: { xs: "0.5rem 0.8rem", sm: "0.5rem 1rem" } }}>
                           <TextField
                             size="small"
                             placeholder="Buscar remoções de hoje..."
@@ -1898,10 +1864,42 @@ export default function RemovalDashboard() {
                             <Table>
                               <TableHead>
                                 <TableRow>
-                                  <TableCell sx={{ fontWeight: 600, color: "#64748b" }}>Motorista</TableCell>
-                                  <TableCell sx={{ fontWeight: 600, color: "#64748b" }}>Prefixo</TableCell>
-                                  <TableCell sx={{ fontWeight: 600, color: "#64748b" }}>Horário de Saída</TableCell>
-                                  <TableCell sx={{ fontWeight: 600, color: "#64748b" }}>Status</TableCell>
+                                  <TableCell
+                                    sx={{
+                                      fontWeight: 600,
+                                      color: "#64748b",
+                                      fontSize: { xs: "0.8rem", sm: "0.875rem" },
+                                    }}
+                                  >
+                                    Motorista
+                                  </TableCell>
+                                  <TableCell
+                                    sx={{
+                                      fontWeight: 600,
+                                      color: "#64748b",
+                                      fontSize: { xs: "0.8rem", sm: "0.875rem" },
+                                    }}
+                                  >
+                                    Prefixo
+                                  </TableCell>
+                                  <TableCell
+                                    sx={{
+                                      fontWeight: 600,
+                                      color: "#64748b",
+                                      fontSize: { xs: "0.8rem", sm: "0.875rem" },
+                                    }}
+                                  >
+                                    Horário
+                                  </TableCell>
+                                  <TableCell
+                                    sx={{
+                                      fontWeight: 600,
+                                      color: "#64748b",
+                                      fontSize: { xs: "0.8rem", sm: "0.875rem" },
+                                    }}
+                                  >
+                                    Status
+                                  </TableCell>
                                 </TableRow>
                               </TableHead>
                               <TableBody>
@@ -1921,17 +1919,21 @@ export default function RemovalDashboard() {
                                       <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
                                         <Avatar
                                           sx={{
-                                            width: 32,
-                                            height: 32,
+                                            width: { xs: 28, sm: 32 },
+                                            height: { xs: 28, sm: 32 },
                                             backgroundColor: "rgba(251, 99, 64, 0.1)",
                                             color: "#FB6340",
                                             fontWeight: 600,
-                                            fontSize: "0.875rem",
+                                            fontSize: { xs: "0.8rem", sm: "0.875rem" },
                                           }}
                                         >
                                           {removal.driver.charAt(0)}
                                         </Avatar>
-                                        <Typography sx={{ fontWeight: 500 }}>{removal.driver}</Typography>
+                                        <Typography
+                                          sx={{ fontWeight: 500, fontSize: { xs: "0.8rem", sm: "0.875rem" } }}
+                                        >
+                                          {isMobile ? removal.driver.split(" ")[0] : removal.driver}
+                                        </Typography>
                                       </Box>
                                     </TableCell>
                                     <TableCell>
@@ -1942,12 +1944,14 @@ export default function RemovalDashboard() {
                                           backgroundColor: "rgba(251, 99, 64, 0.1)",
                                           color: "#FB6340",
                                           fontWeight: 600,
-                                          height: "1.5rem",
-                                          fontSize: "0.75rem",
+                                          height: { xs: "1.4rem", sm: "1.5rem" },
+                                          fontSize: { xs: "0.7rem", sm: "0.75rem" },
                                         }}
                                       />
                                     </TableCell>
-                                    <TableCell>{removal.departureTime}</TableCell>
+                                    <TableCell sx={{ fontSize: { xs: "0.8rem", sm: "0.875rem" } }}>
+                                      {removal.departureTime}
+                                    </TableCell>
                                     <TableCell>{getStatusChip(removal.status)}</TableCell>
                                   </TableRow>
                                 ))}
@@ -1962,7 +1966,7 @@ export default function RemovalDashboard() {
                             rowsPerPage={todayRowsPerPage}
                             onRowsPerPageChange={handleTodayRowsPerPageChange}
                             rowsPerPageOptions={[5, 10, 25]}
-                            labelRowsPerPage="Linhas:"
+                            labelRowsPerPage={isMobile ? "" : "Linhas:"}
                             labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
                             sx={{
                               ".MuiTablePagination-actions": {
@@ -1973,6 +1977,12 @@ export default function RemovalDashboard() {
                                     color: "#FB6340",
                                   },
                                 },
+                              },
+                              ".MuiTablePagination-selectLabel": {
+                                display: { xs: "none", sm: "block" },
+                              },
+                              ".MuiTablePagination-select": {
+                                paddingLeft: { xs: 0, sm: "8px" },
                               },
                             }}
                           />
@@ -1991,13 +2001,14 @@ export default function RemovalDashboard() {
       <Dialog
         open={modalOpen}
         onClose={handleCloseModal}
-        maxWidth="md"
-        fullWidth
+        maxWidth="sm"
+        fullScreen={isMobile}
         PaperProps={{
           sx: {
-            borderRadius: "16px",
+            borderRadius: isMobile ? 0 : "16px",
             boxShadow: "0 24px 48px rgba(0, 0, 0, 0.2)",
             overflow: "hidden",
+            width: "100%",
           },
         }}
       >
@@ -2010,12 +2021,12 @@ export default function RemovalDashboard() {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                padding: "1rem 1.5rem",
+                padding: { xs: "0.6rem 1rem", sm: "0.75rem 1.25rem" },
               }}
             >
-              <Box sx={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-                <TruckIcon sx={{ fontSize: "1.8rem" }} />
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                <TruckIcon sx={{ fontSize: { xs: "1.3rem", sm: "1.5rem" } }} />
+                <Typography variant="h6" sx={{ fontWeight: 600, fontSize: { xs: "1rem", sm: "1.1rem" } }}>
                   Detalhes da Remoção
                 </Typography>
               </Box>
@@ -2023,21 +2034,22 @@ export default function RemovalDashboard() {
                 onClick={handleCloseModal}
                 sx={{
                   color: "white",
+                  padding: "0.5rem",
                   "&:hover": {
                     backgroundColor: "rgba(255, 255, 255, 0.2)",
                   },
                 }}
               >
-                <Close />
+                <Close fontSize="small" />
               </IconButton>
             </DialogTitle>
-            <DialogContent sx={{ padding: "1.5rem" }}>
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
+            <DialogContent sx={{ padding: "1rem" }}>
+              <Grid container spacing={2}>
+                <Grid item xs={12}>
                   <Paper
                     elevation={0}
                     sx={{
-                      padding: "1.5rem",
+                      padding: "1rem",
                       borderRadius: "12px",
                       backgroundColor: "rgba(241, 245, 249, 0.5)",
                       border: "1px solid rgba(226, 232, 240, 0.8)",
@@ -2048,72 +2060,114 @@ export default function RemovalDashboard() {
                       sx={{
                         fontWeight: 600,
                         color: "#334155",
-                        marginBottom: "1rem",
+                        marginBottom: "0.75rem",
                         display: "flex",
                         alignItems: "center",
                         gap: "0.5rem",
+                        fontSize: "0.95rem",
                       }}
                     >
-                      <Person fontSize="small" /> Informações do Motorista
+                      <Person fontSize="small" /> Informações da Equipe
                     </Typography>
-                    <List disablePadding>
-                      <ListItem disablePadding sx={{ mb: 1 }}>
-                        <ListItemIcon sx={{ minWidth: "40px" }}>
+                    <List disablePadding dense>
+                      <ListItem disablePadding sx={{ mb: 0.5 }}>
+                        <ListItemIcon sx={{ minWidth: "36px" }}>
                           <Avatar
                             sx={{
-                              width: 32,
-                              height: 32,
+                              width: 28,
+                              height: 28,
                               backgroundColor: "rgba(74, 111, 255, 0.1)",
                               color: "#4A6FFF",
                               fontWeight: 600,
-                              fontSize: "0.875rem",
+                              fontSize: "0.8rem",
                             }}
                           >
                             {selectedRemoval.driver.charAt(0)}
                           </Avatar>
                         </ListItemIcon>
                         <ListItemText
-                          primary={selectedRemoval.driver}
+                          primary={
+                            <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                              <Typography sx={{ fontWeight: 600, color: "#334155", fontSize: "0.9rem" }}>
+                                {selectedRemoval.driver}
+                              </Typography>
+                              <Typography sx={{ color: "#64748b", fontSize: "0.85rem" }}>Matrícula: 12345</Typography>
+                            </Box>
+                          }
                           secondary="Motorista"
-                          primaryTypographyProps={{ fontWeight: 600, color: "#334155" }}
                           secondaryTypographyProps={{ fontSize: "0.75rem", color: "#64748b" }}
                         />
                       </ListItem>
-                      <Divider sx={{ my: 1 }} />
-                      <ListItem disablePadding sx={{ mb: 1 }}>
-                        <ListItemIcon sx={{ minWidth: "40px" }}>
-                          <DirectionsCar fontSize="small" sx={{ color: "#4A6FFF" }} />
+                      <Divider sx={{ my: 0.5 }} />
+                      <ListItem disablePadding sx={{ mb: 0.5 }}>
+                        <ListItemIcon sx={{ minWidth: "36px" }}>
+                          <Avatar
+                            sx={{
+                              width: 28,
+                              height: 28,
+                              backgroundColor: "rgba(45, 206, 137, 0.1)",
+                              color: "#2DCE89",
+                              fontWeight: 600,
+                              fontSize: "0.8rem",
+                            }}
+                          >
+                            C1
+                          </Avatar>
                         </ListItemIcon>
                         <ListItemText
-                          primary={selectedRemoval.vehiclePrefix}
-                          secondary="Prefixo do Veículo"
-                          primaryTypographyProps={{ fontWeight: 600, color: "#334155" }}
+                          primary={
+                            <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                              <Typography sx={{ fontWeight: 600, color: "#334155", fontSize: "0.9rem" }}>
+                                João Silva
+                              </Typography>
+                              <Typography sx={{ color: "#64748b", fontSize: "0.85rem" }}>Matrícula: 23456</Typography>
+                            </Box>
+                          }
+                          secondary="Coletor"
                           secondaryTypographyProps={{ fontSize: "0.75rem", color: "#64748b" }}
                         />
                       </ListItem>
-                      <Divider sx={{ my: 1 }} />
+                      <Divider sx={{ my: 0.5 }} />
                       <ListItem disablePadding>
-                        <ListItemIcon sx={{ minWidth: "40px" }}>
-                          <TruckIcon fontSize="small" sx={{ color: "#4A6FFF" }} />
+                        <ListItemIcon sx={{ minWidth: "36px" }}>
+                          <Avatar
+                            sx={{
+                              width: 28,
+                              height: 28,
+                              backgroundColor: "rgba(45, 206, 137, 0.1)",
+                              color: "#2DCE89",
+                              fontWeight: 600,
+                              fontSize: "0.8rem",
+                            }}
+                          >
+                            C2
+                          </Avatar>
                         </ListItemIcon>
                         <ListItemText
-                          primary={selectedRemoval.vehicle || "Não especificado"}
-                          secondary="Tipo de Veículo"
-                          primaryTypographyProps={{ fontWeight: 600, color: "#334155" }}
+                          primary={
+                            <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                              <Typography sx={{ fontWeight: 600, color: "#334155", fontSize: "0.9rem" }}>
+                                Pedro Oliveira
+                              </Typography>
+                              <Typography sx={{ color: "#64748b", fontSize: "0.85rem" }}>Matrícula: 34567</Typography>
+                            </Box>
+                          }
+                          secondary="Coletor"
                           secondaryTypographyProps={{ fontSize: "0.75rem", color: "#64748b" }}
                         />
                       </ListItem>
                     </List>
                   </Paper>
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid item xs={12} sm={6}>
                   <Paper
                     elevation={0}
                     sx={{
-                      padding: "1.5rem",
+                      padding: "1rem",
                       borderRadius: "12px",
                       backgroundColor: "rgba(241, 245, 249, 0.5)",
                       border: "1px solid rgba(226, 232, 240, 0.8)",
+                      height: "100%",
                     }}
                   >
                     <Typography
@@ -2121,47 +2175,112 @@ export default function RemovalDashboard() {
                       sx={{
                         fontWeight: 600,
                         color: "#334155",
-                        marginBottom: "1rem",
+                        marginBottom: "0.75rem",
                         display: "flex",
                         alignItems: "center",
                         gap: "0.5rem",
+                        fontSize: "0.95rem",
+                      }}
+                    >
+                      <DirectionsCar fontSize="small" /> Informações do Veículo
+                    </Typography>
+                    <List disablePadding dense>
+                      <ListItem disablePadding sx={{ mb: 0.5 }}>
+                        <ListItemIcon sx={{ minWidth: "36px" }}>
+                          <DirectionsCar fontSize="small" sx={{ color: "#4A6FFF" }} />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={selectedRemoval.vehiclePrefix}
+                          secondary="Prefixo do Veículo"
+                          primaryTypographyProps={{ fontWeight: 600, color: "#334155", fontSize: "0.9rem" }}
+                          secondaryTypographyProps={{ fontSize: "0.75rem", color: "#64748b" }}
+                        />
+                      </ListItem>
+                      <Divider sx={{ my: 0.5 }} />
+                      <ListItem disablePadding sx={{ mb: 0.5 }}>
+                        <ListItemIcon sx={{ minWidth: "36px" }}>
+                          <TruckIcon fontSize="small" sx={{ color: "#4A6FFF" }} />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={selectedRemoval.vehicle || "Caminhão Reboque"}
+                          secondary="Tipo de Veículo"
+                          primaryTypographyProps={{ fontWeight: 600, color: "#334155", fontSize: "0.9rem" }}
+                          secondaryTypographyProps={{ fontSize: "0.75rem", color: "#64748b" }}
+                        />
+                      </ListItem>
+                      <Divider sx={{ my: 0.5 }} />
+                      <ListItem disablePadding>
+                        <ListItemIcon sx={{ minWidth: "36px" }}>
+                          <LocationOn fontSize="small" sx={{ color: "#4A6FFF" }} />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary="PA2"
+                          secondary="Garagem"
+                          primaryTypographyProps={{ fontWeight: 600, color: "#334155", fontSize: "0.9rem" }}
+                          secondaryTypographyProps={{ fontSize: "0.75rem", color: "#64748b" }}
+                        />
+                      </ListItem>
+                    </List>
+                  </Paper>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      padding: "1rem",
+                      borderRadius: "12px",
+                      backgroundColor: "rgba(241, 245, 249, 0.5)",
+                      border: "1px solid rgba(226, 232, 240, 0.8)",
+                      height: "100%",
+                    }}
+                  >
+                    <Typography
+                      variant="subtitle1"
+                      sx={{
+                        fontWeight: 600,
+                        color: "#334155",
+                        marginBottom: "0.75rem",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        fontSize: "0.95rem",
                       }}
                     >
                       <Info fontSize="small" /> Detalhes da Operação
                     </Typography>
-                    <List disablePadding>
-                      <ListItem disablePadding sx={{ mb: 1 }}>
-                        <ListItemIcon sx={{ minWidth: "40px" }}>
+                    <List disablePadding dense>
+                      <ListItem disablePadding sx={{ mb: 0.5 }}>
+                        <ListItemIcon sx={{ minWidth: "36px" }}>
                           <AccessTime fontSize="small" sx={{ color: "#FB6340" }} />
                         </ListItemIcon>
                         <ListItemText
                           primary={selectedRemoval.departureTime}
                           secondary="Horário de Saída"
-                          primaryTypographyProps={{ fontWeight: 600, color: "#334155" }}
+                          primaryTypographyProps={{ fontWeight: 600, color: "#334155", fontSize: "0.9rem" }}
                           secondaryTypographyProps={{ fontSize: "0.75rem", color: "#64748b" }}
                         />
                       </ListItem>
-                      <Divider sx={{ my: 1 }} />
-                      <ListItem disablePadding sx={{ mb: 1 }}>
-                        <ListItemIcon sx={{ minWidth: "40px" }}>
-                          <AccessTime fontSize="small" sx={{ color: "#FB6340" }} />
+                      <Divider sx={{ my: 0.5 }} />
+                      <ListItem disablePadding sx={{ mb: 0.5 }}>
+                        <ListItemIcon sx={{ minWidth: "36px" }}>
+                          <Timeline fontSize="small" sx={{ color: "#FB6340" }} />
                         </ListItemIcon>
                         <ListItemText
-                          primary={selectedRemoval.arrivalTime}
-                          secondary="Horário de Chegada"
-                          primaryTypographyProps={{ fontWeight: 600, color: "#334155" }}
+                          primary="Rota 15 - Zona Sul"
+                          secondary="Rota"
+                          primaryTypographyProps={{ fontWeight: 600, color: "#334155", fontSize: "0.9rem" }}
                           secondaryTypographyProps={{ fontSize: "0.75rem", color: "#64748b" }}
                         />
                       </ListItem>
-                      <Divider sx={{ my: 1 }} />
+                      <Divider sx={{ my: 0.5 }} />
                       <ListItem disablePadding>
-                        <ListItemIcon sx={{ minWidth: "40px" }}>
-                          <Speed fontSize="small" sx={{ color: "#FB6340" }} />
+                        <ListItemIcon sx={{ minWidth: "36px" }}>
+                          <Info fontSize="small" sx={{ color: "#FB6340" }} />
                         </ListItemIcon>
                         <ListItemText
-                          primary={selectedRemoval.distance || "Não especificado"}
-                          secondary="Distância Percorrida"
-                          primaryTypographyProps={{ fontWeight: 600, color: "#334155" }}
+                          primary="Remoção Programada"
+                          secondary="Tipo de Serviço"
+                          primaryTypographyProps={{ fontWeight: 600, color: "#334155", fontSize: "0.9rem" }}
                           secondaryTypographyProps={{ fontSize: "0.75rem", color: "#64748b" }}
                         />
                       </ListItem>
@@ -2172,7 +2291,7 @@ export default function RemovalDashboard() {
                   <Paper
                     elevation={0}
                     sx={{
-                      padding: "1.5rem",
+                      padding: "1rem",
                       borderRadius: "12px",
                       backgroundColor: "rgba(241, 245, 249, 0.5)",
                       border: "1px solid rgba(226, 232, 240, 0.8)",
@@ -2183,35 +2302,36 @@ export default function RemovalDashboard() {
                       sx={{
                         fontWeight: 600,
                         color: "#334155",
-                        marginBottom: "1rem",
+                        marginBottom: "0.75rem",
                         display: "flex",
                         alignItems: "center",
                         gap: "0.5rem",
+                        fontSize: "0.95rem",
                       }}
                     >
-                      <LocationOn fontSize="small" /> Informações Adicionais
+                      <LocationOn fontSize="small" /> Local e Observações
                     </Typography>
-                    <List disablePadding>
-                      <ListItem disablePadding sx={{ mb: 1 }}>
-                        <ListItemIcon sx={{ minWidth: "40px" }}>
+                    <List disablePadding dense>
+                      <ListItem disablePadding sx={{ mb: 0.5 }}>
+                        <ListItemIcon sx={{ minWidth: "36px" }}>
                           <LocationOn fontSize="small" sx={{ color: "#2DCE89" }} />
                         </ListItemIcon>
                         <ListItemText
                           primary={selectedRemoval.location || "Não especificado"}
                           secondary="Local da Remoção"
-                          primaryTypographyProps={{ fontWeight: 600, color: "#334155" }}
+                          primaryTypographyProps={{ fontWeight: 600, color: "#334155", fontSize: "0.9rem" }}
                           secondaryTypographyProps={{ fontSize: "0.75rem", color: "#64748b" }}
                         />
                       </ListItem>
-                      <Divider sx={{ my: 1 }} />
+                      <Divider sx={{ my: 0.5 }} />
                       <ListItem disablePadding>
-                        <ListItemIcon sx={{ minWidth: "40px" }}>
+                        <ListItemIcon sx={{ minWidth: "36px" }}>
                           <Info fontSize="small" sx={{ color: "#2DCE89" }} />
                         </ListItemIcon>
                         <ListItemText
                           primary={selectedRemoval.notes || "Sem observações"}
                           secondary="Observações"
-                          primaryTypographyProps={{ fontWeight: 600, color: "#334155" }}
+                          primaryTypographyProps={{ fontWeight: 600, color: "#334155", fontSize: "0.9rem" }}
                           secondaryTypographyProps={{ fontSize: "0.75rem", color: "#64748b" }}
                         />
                       </ListItem>
@@ -2220,12 +2340,13 @@ export default function RemovalDashboard() {
                 </Grid>
               </Grid>
             </DialogContent>
-            <DialogActions sx={{ padding: "1rem 1.5rem", borderTop: "1px solid rgba(226, 232, 240, 0.8)" }}>
+            <DialogActions sx={{ padding: "0.75rem 1.25rem", borderTop: "1px solid rgba(226, 232, 240, 0.8)" }}>
               <Button
                 onClick={handleCloseModal}
                 variant="outlined"
+                size="small"
                 sx={{
-                  borderRadius: "10px",
+                  borderRadius: "8px",
                   textTransform: "none",
                   fontWeight: 500,
                   borderColor: "rgba(226, 232, 240, 0.8)",
@@ -2241,8 +2362,9 @@ export default function RemovalDashboard() {
               </Button>
               <Button
                 variant="contained"
+                size="small"
                 sx={{
-                  borderRadius: "10px",
+                  borderRadius: "8px",
                   textTransform: "none",
                   fontWeight: 500,
                   backgroundColor: "#4A6FFF",

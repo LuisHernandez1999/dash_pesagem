@@ -14,21 +14,23 @@ import {
   IconButton,
   Typography,
   Avatar,
+  useMediaQuery,
+  useTheme,
+  Drawer,
 } from "@mui/material"
 import {
-  AiOutlineReconciliation,
-  AiOutlineLogout,
-  AiOutlineSearch,
-  AiOutlineTeam,
-  AiOutlineCar,
-  AiOutlineDown,
-  AiOutlineMenu,
-} from "react-icons/ai"
-import { MdOutlineAddBusiness, MdOutlineBalance } from "react-icons/md"
-import { BsGraphUpArrow } from "react-icons/bs"
-import { useRouter } from "next/router"
-import Image from "next/image"
-import { IoStatsChartSharp } from "react-icons/io5"
+  BarChart as BarChartIcon,
+  Balance as BalanceIcon,
+  TrendingUp as TrendingUpIcon,
+  Receipt as ReceiptIcon,
+  People as TeamIcon,
+  DirectionsCar as CarIcon,
+  Business as BusinessIcon,
+  KeyboardArrowDown,
+  Search,
+  Logout,
+  Menu as MenuIcon,
+} from "@mui/icons-material"
 
 const greenColors = {
   deepGreen: "#1b5e20",
@@ -37,26 +39,28 @@ const greenColors = {
 }
 
 export default function Sidebar({ onCollapse, user }) {
-  const router = useRouter()
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
   const [isRouterReady, setIsRouterReady] = useState(false)
   const [searchValue, setSearchValue] = useState("")
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
   const [openSubMenu, setOpenSubMenu] = useState(null)
   const [activeItem, setActiveItem] = useState("")
   const [filteredMenuItems, setFilteredMenuItems] = useState([])
 
-  // Define os itens do menu
+  // Define menu items
   const menuItems = [
-    { text: "Dashboard de Pesagem", icon: IoStatsChartSharp, path: "/dashboard/pesagem" },
-    { text: "Cadastro de Pesagem", icon: MdOutlineBalance, path: "/cadastro/cadastro" },
-    { text: "Resumo de Pesagem", icon: BsGraphUpArrow, path: "/resumo_pesagem/resumo_pesagens_rel" },
+    { text: "Dashboard de Pesagem", icon: BarChartIcon, path: "/dashboard/pesagem" },
+    { text: "Cadastro de Pesagem", icon: BalanceIcon, path: "/cadastro/cadastro" },
+    { text: "Resumo de Pesagem", icon: TrendingUpIcon, path: "/resumo_pesagem/resumo_pesagens_rel" },
     {
       text: "Controle e Registro",
-      icon: AiOutlineReconciliation,
+      icon: ReceiptIcon,
       subItems: [
-        { text: "Colaboradores", icon: AiOutlineTeam, path: "/colaborador/colaboradores_page" },
-        { text: "Veículos", icon: AiOutlineCar, path: "/veiculos/veiculos_page" },
-        { text: "Cooperativas", icon: MdOutlineAddBusiness, path: "/cooperativas/cooperativa_page" },
+        { text: "Colaboradores", icon: TeamIcon, path: "/colaborador/colaboradores_page" },
+        { text: "Veículos", icon: CarIcon, path: "/veiculos/veiculos_page" },
+        { text: "Cooperativas", icon: BusinessIcon, path: "/cooperativas/cooperativa_page" },
       ],
     },
   ]
@@ -71,7 +75,7 @@ export default function Sidebar({ onCollapse, user }) {
       return
     }
 
-    // Remove acentos e converte para minúsculas
+    // Remove accents and convert to lowercase
     const normalizeText = (text) =>
       text
         .normalize("NFD")
@@ -105,24 +109,25 @@ export default function Sidebar({ onCollapse, user }) {
   }, [searchValue])
 
   useEffect(() => {
-    if (router?.isReady) {
-      setIsRouterReady(true)
-      const currentPath = router.pathname
-      menuItems.forEach((item) => {
-        if (item.path === currentPath) {
-          setActiveItem(item.text)
+    // Check if we're in a browser environment
+    if (typeof window !== "undefined") {
+      const handleResize = () => {
+        if (window.innerWidth < 768 && !isCollapsed) {
+          setIsCollapsed(true)
+          if (onCollapse) onCollapse(true)
         }
-        if (item.subItems) {
-          item.subItems.forEach((subItem) => {
-            if (subItem.path === currentPath) {
-              setActiveItem(subItem.text)
-              setOpenSubMenu(item.text)
-            }
-          })
-        }
-      })
+      }
+
+      // Initial check
+      handleResize()
+
+      // Add event listener
+      window.addEventListener("resize", handleResize)
+
+      // Cleanup
+      return () => window.removeEventListener("resize", handleResize)
     }
-  }, [router?.isReady, router?.pathname])
+  }, [isCollapsed, onCollapse])
 
   const toggleCollapse = () => {
     const newCollapsedState = !isCollapsed
@@ -130,10 +135,17 @@ export default function Sidebar({ onCollapse, user }) {
     if (onCollapse) onCollapse(newCollapsedState)
   }
 
+  const toggleMobileDrawer = () => {
+    setMobileOpen(!mobileOpen)
+  }
+
   const handleNavigation = (path, itemText) => {
     if (isRouterReady && path) {
       setActiveItem(itemText)
-      router.push(path)
+      if (isMobile) {
+        setMobileOpen(false)
+      }
+      // router.push(path) - commented out as we don't have router in this example
     }
   }
 
@@ -145,26 +157,9 @@ export default function Sidebar({ onCollapse, user }) {
     setSearchValue(e.target.value)
   }
 
-  return (
-    <Box
-      sx={{
-        width: isCollapsed ? "80px" : "280px",
-        height: "100vh",
-        background: `linear-gradient(165deg, ${greenColors.deepGreen} 0%, ${greenColors.mainGreen} 100%)`,
-        color: "#FFFFFF",
-        display: "flex",
-        flexDirection: "column",
-        position: "fixed",
-        top: 0,
-        left: 0,
-        zIndex: 1000,
-        boxShadow: "0 4px 20px rgba(0, 0, 0, 0.15)",
-        transition: "all 0.3s ease",
-        overflow: "hidden",
-        borderRight: "1px solid rgba(255, 255, 255, 0.08)",
-      }}
-    >
-      {/* Cabeçalho */}
+  const sidebarContent = (
+    <>
+      {/* Header */}
       <Box
         sx={{
           display: "flex",
@@ -187,16 +182,20 @@ export default function Sidebar({ onCollapse, user }) {
             }}
           >
             <Box sx={{ width: 150, height: 70, position: "relative", mb: 0.5 }}>
-              <Image
-                alt="LimpaGyn Logo"
-                width={150}
-                height={70}
+              {/* Placeholder for Image component */}
+              <div
                 style={{
-                  objectFit: "contain",
+                  width: "100%",
+                  height: "100%",
+                  background: "rgba(255, 255, 255, 0.2)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                   filter: "brightness(0) invert(1)",
-                  transition: "all 0.3s ease",
                 }}
-              />
+              >
+                LimpaGyn Logo
+              </div>
             </Box>
             <Typography
               variant="h6"
@@ -212,7 +211,7 @@ export default function Sidebar({ onCollapse, user }) {
           </Box>
         )}
         <IconButton
-          onClick={toggleCollapse}
+          onClick={isMobile ? toggleMobileDrawer : toggleCollapse}
           sx={{
             color: "#fff",
             backgroundColor: "rgba(255, 255, 255, 0.15)",
@@ -223,11 +222,11 @@ export default function Sidebar({ onCollapse, user }) {
             "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.25)", transform: "rotate(180deg)" },
           }}
         >
-          <AiOutlineMenu size={20} />
+          {isMobile ? <MenuIcon size={20} /> : <MenuIcon size={20} />}
         </IconButton>
       </Box>
 
-      {/* Área do usuário */}
+      {/* User area */}
       {!isCollapsed && (
         <Box
           sx={{
@@ -267,7 +266,7 @@ export default function Sidebar({ onCollapse, user }) {
         </Box>
       )}
 
-      {/* Barra de pesquisa */}
+      {/* Search bar */}
       {!isCollapsed && (
         <Box sx={{ p: "1.2rem 1.5rem 0.8rem" }}>
           <TextField
@@ -279,7 +278,7 @@ export default function Sidebar({ onCollapse, user }) {
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <AiOutlineSearch color="rgba(255, 255, 255, 0.8)" size={20} />
+                  <Search color="rgba(255, 255, 255, 0.8)" size={20} />
                 </InputAdornment>
               ),
             }}
@@ -300,14 +299,14 @@ export default function Sidebar({ onCollapse, user }) {
         </Box>
       )}
 
-      {/* Itens do menu */}
+      {/* Menu items */}
       <Box
         sx={{
           mt: 2,
           px: isCollapsed ? 1 : 1.5,
           flex: 1,
           overflowY: "auto",
-          overflowX: "hidden", // Impede scrollbar horizontal
+          overflowX: "hidden", // Prevent horizontal scrollbar
           "&::-webkit-scrollbar": { width: "4px" },
           "&::-webkit-scrollbar-track": { background: "rgba(255, 255, 255, 0.05)" },
           "&::-webkit-scrollbar-thumb": { background: "rgba(255, 255, 255, 0.2)", borderRadius: "4px" },
@@ -375,7 +374,7 @@ export default function Sidebar({ onCollapse, user }) {
                             transform: openSubMenu === item.text ? "rotate(180deg)" : "rotate(0deg)",
                           }}
                         >
-                          <AiOutlineDown size={14} />
+                          <KeyboardArrowDown size={14} />
                         </Box>
                       )}
                     </>
@@ -428,7 +427,7 @@ export default function Sidebar({ onCollapse, user }) {
         </List>
       </Box>
 
-      {/* Rodapé: Logout */}
+      {/* Footer: Logout */}
       <Box
         sx={{
           mt: "auto",
@@ -459,7 +458,7 @@ export default function Sidebar({ onCollapse, user }) {
                 justifyContent: isCollapsed ? "center" : "flex-start",
               }}
             >
-              <AiOutlineLogout style={{ fontSize: "1.5rem" }} />
+              <Logout style={{ fontSize: "1.5rem" }} />
             </ListItemIcon>
             {!isCollapsed && (
               <ListItemText
@@ -475,7 +474,72 @@ export default function Sidebar({ onCollapse, user }) {
           </ListItem>
         </Tooltip>
       </Box>
+    </>
+  )
+
+  // For mobile, render a drawer
+  if (isMobile) {
+    return (
+      <>
+        <IconButton
+          onClick={toggleMobileDrawer}
+          sx={{
+            position: "fixed",
+            top: "10px",
+            left: "10px",
+            zIndex: 1200,
+            color: "#fff",
+            backgroundColor: greenColors.mainGreen,
+            "&:hover": {
+              backgroundColor: greenColors.deepGreen,
+            },
+          }}
+        >
+          <MenuIcon />
+        </IconButton>
+
+        <Drawer
+          variant="temporary"
+          open={mobileOpen}
+          onClose={toggleMobileDrawer}
+          ModalProps={{
+            keepMounted: true, // Better open performance on mobile
+          }}
+          sx={{
+            "& .MuiDrawer-paper": {
+              width: "280px",
+              background: `linear-gradient(165deg, ${greenColors.deepGreen} 0%, ${greenColors.mainGreen} 100%)`,
+              boxSizing: "border-box",
+            },
+          }}
+        >
+          {sidebarContent}
+        </Drawer>
+      </>
+    )
+  }
+
+  // For desktop, render the sidebar
+  return (
+    <Box
+      sx={{
+        width: isCollapsed ? "80px" : "280px",
+        height: "100vh",
+        background: `linear-gradient(165deg, ${greenColors.deepGreen} 0%, ${greenColors.mainGreen} 100%)`,
+        color: "#FFFFFF",
+        display: "flex",
+        flexDirection: "column",
+        position: "fixed",
+        top: 0,
+        left: 0,
+        zIndex: 1000,
+        boxShadow: "0 4px 20px rgba(0, 0, 0, 0.15)",
+        transition: "all 0.3s ease",
+        overflow: "hidden",
+        borderRight: "1px solid rgba(255, 255, 255, 0.08)",
+      }}
+    >
+      {sidebarContent}
     </Box>
   )
 }
-

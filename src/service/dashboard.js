@@ -1,209 +1,82 @@
+import axios from 'axios';
 
+const API_BASE_URL = '/api/soltura'; // ou sua base real
 
-// Get total number of weighings
-export const quantidade_de_pesagens = async () => {
-  try {
-    const response = await api.get("/quantidade-pesagens/")
-    return { total: response.data.quantidade_de_pesagens || 0 }
-  } catch (error) {
-    console.error("Error fetching quantidade_de_pesagens:", error)
-    return { total: 0 }
-  }
-}
+/**
+ * Total de remoções realizadas hoje (únicas por motorista e veículo).
+ * Exemplo de resposta: { total_remocoes: 5 }
+ */
+export const getTotalRemocoesHoje = async () => {
+  const response = await axios.get(`${API_BASE_URL}/total-remocoes-hoje`);
+  return {
+    total: response.data.total_remocoes
+  };
+};
 
-// Get total tonnage weighed
-export const quantidade_de_toneladas_pesadas = async () => {
-  try {
-    const response = await api.get("/quantidade-toneladas/")
-    const meta = 2601.0 // Default meta value from backend
-    const atual = response.data.total_toneladas_pesadas || 0
-    const percentual = meta > 0 ? Math.round((atual / meta) * 100) : 0
+/**
+ * Total de remoções únicas feitas (motorista + veículo + data).
+ * Exemplo de resposta: { total_remocoes_unicas: 12 }
+ */
+export const getTotalRemocoesUnicas = async () => {
+  const response = await axios.get(`${API_BASE_URL}/total-remocoes-unicas`);
+  return {
+    total: response.data.total_remocoes_unicas
+  };
+};
 
-    return {
-      meta: meta,
-      atual: atual,
-      percentual: percentual,
-    }
-  } catch (error) {
-    console.error("Error fetching quantidade_de_toneladas_pesadas:", error)
-    return { meta: 0, atual: 0, percentual: 0 }
-  }
-}
+/**
+ * Lista com os dados completos de todas as remoções (sem filtro de data).
+ * Cada item tem motorista, veículo, coletores, horários, setor, etc.
+ */
+export const getTodasRemocoes = async () => {
+  const response = await axios.get(`${API_BASE_URL}/detalhes-todas-remocoes`);
+  return response.data.remocoes.map((item) => ({
+    motorista: item.motorista,
+    matricula: item.matricula_motorista,
+    coletores: item.coletores,
+    prefixoVeiculo: item.prefixo,
+    frequencia: item.frequencia,
+    setores: item.setores,
+    celular: item.celular,
+    lider: item.lider,
+    horaEntregaChave: item.hora_entrega_chave,
+    horaSaidaFrota: item.hora_saida_frota,
+    tipoServico: item.tipo_servico,
+    turno: item.turno,
+    rota: item.rota
+  }));
+};
 
-// Get weighings by month
-export const exibir_pesagem_por_mes = async () => {
-  try {
-    const response = await api.get("/exibir-pesagem-mes/")
-    const data = response.data.pesagens_por_periodo_personalizado || []
+/**
+ * Lista com os dados completos de remoções feitas HOJE.
+ * Estrutura idêntica à função acima, mas filtrada pela data atual.
+ */
+export const getRemocoesHoje = async () => {
+  const response = await axios.get(`${API_BASE_URL}/detalhes-remocoes-hoje`);
+  return response.data.remocoes_hoje.map((item) => ({
+    motorista: item.motorista,
+    matricula: item.matricula_motorista,
+    coletores: item.coletores,
+    prefixoVeiculo: item.prefixo,
+    frequencia: item.frequencia,
+    setores: item.setores,
+    celular: item.celular,
+    lider: item.lider,
+    horaEntregaChave: item.hora_entrega_chave,
+    horaSaidaFrota: item.hora_saida_frota,
+    tipoServico: item.tipo_servico,
+    turno: item.turno,
+    rota: item.rota
+  }));
+};
 
-    // Transform data to match dashboard format
-    return data.map((item) => ({
-      month: `${item.mes_referencia}/${item.ano}`,
-      seletiva: item.tipo_pesagem === "SELETIVA" ? item.quantidade_pesagens : 0,
-      cataTreco: item.tipo_pesagem === "CATA TRECO" ? item.quantidade_pesagens : 0,
-      total: item.quantidade_pesagens,
-      meta: Math.round(item.quantidade_pesagens * 1.2), // Example meta calculation
-      eficiencia: Math.round((item.quantidade_pesagens / (item.quantidade_pesagens * 1.2)) * 100),
-    }))
-  } catch (error) {
-    console.error("Error fetching exibir_pesagem_por_mes:", error)
-    return []
-  }
-}
-
-// Get target achievement data
-export const meta_batida = async () => {
-  try {
-    const response = await api.get("/meta-batida/")
-    return {
-      meta: response.data.meta_toneladas || 0,
-      atual: response.data.peso_total_batido || 0,
-      percentual: response.data.porcentagem_atingida || 0,
-    }
-  } catch (error) {
-    console.error("Error fetching meta_batida:", error)
-    return { meta: 0, atual: 0, percentual: 0 }
-  }
-}
-
-// Get selective weighings count
-export const def_pesagens_seletiva = async () => {
-  try {
-    const response = await api.get("/def-pesagens-seletiva/")
-    return { total: response.data.total_pesagens_seletiva || 0 }
-  } catch (error) {
-    console.error("Error fetching def_pesagens_seletiva:", error)
-    return { total: 0 }
-  }
-}
-
-// Get "cata treco" weighings count
-export const def_pesagens_cata_treco = async () => {
-  try {
-    const response = await api.get("/def-pesagens-cata-treco/")
-    return { total: response.data.total_pesagens_cata_treco || 0 }
-  } catch (error) {
-    console.error("Error fetching def_pesagens_cata_treco:", error)
-    return { total: 0 }
-  }
-}
-
-// Get weighings throughout the year by type
-export const def_pesagens_ao_longo_ano_por_tipo_pesagem = async () => {
-  try {
-    const response = await api.get("/def-pesagens-ao-longo-ano-por-tipo-pesagem/")
-    const data = response.data.pesagens_ao_longo_ano || {}
-
-    // Transform data to match dashboard format
-    return Object.entries(data).map(([key, value]) => {
-      const [year, month] = key.split("-")
-      return {
-        month: `${month}/${year}`,
-        seletiva: value.SELETIVA || 0,
-        cataTreco: value["CATA TRECO"] || 0,
-        outros: value.OUTROS || 0,
-        total: value.total_geral || 0,
-      }
-    })
-  } catch (error) {
-    console.error("Error fetching def_pesagens_ao_longo_ano_por_tipo_pesagem:", error)
-    return []
-  }
-}
-
-// Get top 5 cooperatives by weighing
-export const top_5_coperativas_por_pesagem = async () => {
-  try {
-    const response = await api.get("/topo-5-coperativas-por-pesagem/")
-    const data = response.data.top_5_cooperativas || []
-
-    // Transform data to match dashboard format
-    return data.map((item, index) => ({
-      rank: index + 1,
-      nome: item.cooperativa,
-      total_pesagens: item.total_pesagens,
-      percentual: Number.parseFloat(item.porcentagem.replace("%", "")),
-    }))
-  } catch (error) {
-    console.error("Error fetching top_5_coperativas_por_pesagem:", error)
-    return []
-  }
-}
-
-// Get vehicle with most weighings
-export const veiculo_maior_pesagens = async () => {
-  try {
-    const response = await api.get("/veiculo-maior-pesagens/")
-    const data = response.data.veiculo_com_mais_pesagens
-
-    if (!data) return null
-
-    return {
-      prefix: data.prefixo,
-      type: data.tipo_veiculo,
-      total_pesagens: data.quantidade_de_pesagens,
-      eficiencia: 95, // Example value
-    }
-  } catch (error) {
-    console.error("Error fetching veiculo_maior_pesagens:", error)
-    return null
-  }
-}
-
-// Get driver efficiency
-export const eficiencia_motoristas = async () => {
-  try {
-    const response = await api.get("/eficiencia-motoristas/")
-    const data = response.data.eficiencia_motoristas || []
-
-    // Transform data to match dashboard format
-    return data.map((item) => ({
-      id: item.motorista_id,
-      nome: item.nome,
-      total_pesagens: item.total_pesagens,
-      eficiencia: item.eficiencia_percentual,
-    }))
-  } catch (error) {
-    console.error("Error fetching eficiencia_motoristas:", error)
-    return []
-  }
-}
-
-// Get vehicle efficiency (additional endpoint)
-export const eficiencia_veiculos = async () => {
-  try {
-    const response = await api.get("/eficiencia-veiculos/")
-    const data = response.data.eficiencia_veiculos || []
-
-    // Transform data to match dashboard format
-    return data.map((item) => ({
-      id: item.veiculo_id,
-      prefixo: item.prefixo,
-      total_pesagens: item.total_pesagens,
-      eficiencia: item.eficiencia_percentual,
-    }))
-  } catch (error) {
-    console.error("Error fetching eficiencia_veiculos:", error)
-    return []
-  }
-}
-
-// Get cooperative efficiency (additional endpoint)
-export const eficiencia_cooperativas = async () => {
-  try {
-    const response = await api.get("/eficiencia-cooperativas/")
-    const data = response.data.eficiencia_cooperativas || []
-
-    // Transform data to match dashboard format
-    return data.map((item) => ({
-      id: item.cooperativa_id,
-      nome: item.nome,
-      total_pesagens: item.total_pesagens,
-      eficiencia: item.eficiencia_percentual,
-    }))
-  } catch (error) {
-    console.error("Error fetching eficiencia_cooperativas:", error)
-    return []
-  }
-}
-
+/**
+ * Média mensal de solturas realizadas no ano atual.
+ * Exemplo de resposta: { media_mensal_de_solturas: 9.42 }
+ */
+export const getMediaMensalSolturas = async () => {
+  const response = await axios.get(`${API_BASE_URL}/media-mensal`);
+  return {
+    mediaMensal: response.data.media_mensal_de_solturas
+  };
+};
