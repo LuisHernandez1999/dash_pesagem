@@ -1,4 +1,4 @@
-import api from "../pages/api/api"
+
 
 // Get total number of weighings
 export const quantidade_de_pesagens = async () => {
