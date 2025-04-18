@@ -19,6 +19,7 @@ import {
   Legend,
   LabelList,
   ReferenceLine,
+  Sector,
 } from "recharts"
 import {
   AppBar,
@@ -40,8 +41,6 @@ import {
   Box,
   Fade,
   Zoom,
-  TextField,
-  InputAdornment,
   Menu,
   MenuItem,
   Container,
@@ -61,6 +60,16 @@ import {
   ListItemIcon,
   useMediaQuery,
   useTheme,
+  Badge,
+  Tooltip as MuiTooltip,
+  ToggleButtonGroup,
+  ToggleButton,
+  InputBase,
+  Select,
+  FormControl,
+  InputLabel,
+  ButtonGroup,
+  Slide,
 } from "@mui/material"
 import {
   BarChart as BarChartIcon,
@@ -87,6 +96,24 @@ import {
   Person,
   Timeline,
   Menu as MenuIcon,
+  WbSunny,
+  Brightness3,
+  Brightness5,
+  DonutLarge,
+  FilterList,
+  Sort,
+  Notifications,
+  Settings,
+  Tune,
+  ViewModule,
+  ViewList,
+  ViewDay,
+  MoreVert,
+  Share,
+  Print,
+  Visibility,
+  Edit,
+  Delete,
 } from "@mui/icons-material"
 import Sidebar from "@/components/sidebar"
 
@@ -131,6 +158,39 @@ const keyframes = {
       100% { background-position: 0% 50%; }
     }
   `,
+  shimmer: `
+    @keyframes shimmer {
+      0% {
+        background-position: -1000px 0;
+      }
+      100% {
+        background-position: 1000px 0;
+      }
+    }
+  `,
+  rotate: `
+    @keyframes rotate {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+  `,
+  bounce: `
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+  `,
+  glow: `
+    @keyframes glow {
+      0% { box-shadow: 0 0 5px rgba(74, 111, 255, 0.2); }
+      50% { box-shadow: 0 0 20px rgba(74, 111, 255, 0.4); }
+      100% { box-shadow: 0 0 5px rgba(74, 111, 255, 0.2); }
+    }
+  `,
 }
 
 // Mock data for the dashboard
@@ -147,6 +207,37 @@ const mockMonthlyData = [
   { month: "Out", removals: 95, target: 85, efficiency: 111.8 },
   { month: "Nov", removals: 100, target: 90, efficiency: 111.1 },
   { month: "Dez", removals: 110, target: 95, efficiency: 115.8 },
+]
+
+// Mock data for team performance
+const mockTeamData = [
+  {
+    name: "Equipe 1",
+    label: "Matutino",
+    releases: 42,
+    color: "#FF9F43",
+    icon: <WbSunny />,
+    vehicles: 15,
+    hours: 8,
+  },
+  {
+    name: "Equipe 2",
+    label: "Vespertino",
+    releases: 38,
+    color: "#4A6FFF",
+    icon: <Brightness5 />,
+    vehicles: 12,
+    hours: 8,
+  },
+  {
+    name: "Equipe 3",
+    label: "Noturno",
+    releases: 25,
+    color: "#6C757D",
+    icon: <Brightness3 />,
+    vehicles: 8,
+    hours: 8,
+  },
 ]
 
 // Mock data for total removals
@@ -402,9 +493,9 @@ const getPieChartData = () => {
   })
 
   return [
-    { name: "Concluído", value: statusCounts["Concluído"] },
-    { name: "Em andamento", value: statusCounts["Em andamento"] },
-    { name: "Agendado", value: statusCounts["Agendado"] },
+    { name: "Concluído", value: statusCounts["Concluído"], color: "#2DCE89" },
+    { name: "Em andamento", value: statusCounts["Em andamento"], color: "#4A6FFF" },
+    { name: "Agendado", value: statusCounts["Agendado"], color: "#FB6340" },
   ]
 }
 
@@ -413,7 +504,6 @@ const getAreaChartData = () => {
   return mockMonthlyData.map((item) => ({
     month: item.month,
     removals: item.removals,
-    target: item.target,
   }))
 }
 
@@ -423,6 +513,7 @@ const COLORS = ["#2DCE89", "#4A6FFF", "#FB6340"]
 export default function RemovalDashboard() {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
+  const isTablet = useMediaQuery(theme.breakpoints.down("md"))
 
   // State variables
   const [loading, setLoading] = useState(true)
@@ -444,9 +535,17 @@ export default function RemovalDashboard() {
     releasedToday: 0,
   })
   const [chartType, setChartType] = useState(0)
+  const [teamChartType, setTeamChartType] = useState(0)
   const [modalOpen, setModalOpen] = useState(false)
   const [selectedRemoval, setSelectedRemoval] = useState(null)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [activeIndex, setActiveIndex] = useState(0)
+  const [filterMenuAnchor, setFilterMenuAnchor] = useState(null)
+  const [viewMode, setViewMode] = useState("card")
+  const [statusFilter, setStatusFilter] = useState("all")
+  const [dateFilter, setDateFilter] = useState("today")
+  const [actionMenuAnchor, setActionMenuAnchor] = useState(null)
+  const [selectedRowId, setSelectedRowId] = useState(null)
   const topDriver = getDriverWithMostRemovals()
   const pieChartData = getPieChartData()
   const areaChartData = getAreaChartData()
@@ -493,6 +592,44 @@ export default function RemovalDashboard() {
     setMonthMenuAnchor(null)
   }
 
+  // Handle filter menu
+  const handleFilterMenuOpen = (event) => {
+    setFilterMenuAnchor(event.currentTarget)
+  }
+
+  const handleFilterMenuClose = () => {
+    setFilterMenuAnchor(null)
+  }
+
+  // Handle action menu
+  const handleActionMenuOpen = (event, id) => {
+    event.stopPropagation()
+    setActionMenuAnchor(event.currentTarget)
+    setSelectedRowId(id)
+  }
+
+  const handleActionMenuClose = () => {
+    setActionMenuAnchor(null)
+    setSelectedRowId(null)
+  }
+
+  // Handle view mode change
+  const handleViewModeChange = (event, newMode) => {
+    if (newMode !== null) {
+      setViewMode(newMode)
+    }
+  }
+
+  // Handle status filter change
+  const handleStatusFilterChange = (event) => {
+    setStatusFilter(event.target.value)
+  }
+
+  // Handle date filter change
+  const handleDateFilterChange = (event) => {
+    setDateFilter(event.target.value)
+  }
+
   // Handle pagination for total removals table
   const handleTotalPageChange = (event, newPage) => {
     setTotalPage(newPage)
@@ -525,6 +662,11 @@ export default function RemovalDashboard() {
     setChartType(newValue)
   }
 
+  // Handle team chart type change
+  const handleTeamChartTypeChange = (event, newValue) => {
+    setTeamChartType(newValue)
+  }
+
   // Handle modal open
   const handleOpenModal = (removal) => {
     setSelectedRemoval(removal)
@@ -534,6 +676,11 @@ export default function RemovalDashboard() {
   // Handle modal close
   const handleCloseModal = () => {
     setModalOpen(false)
+  }
+
+  // Handle pie chart hover
+  const onPieEnter = (_, index) => {
+    setActiveIndex(index)
   }
 
   // Filter and sort total removals data
@@ -590,41 +737,44 @@ export default function RemovalDashboard() {
   // Calculate total removals
   const totalRemovalsCount = mockTotalRemovals.length
 
+  // Calculate monthly average
+  const monthlyAverage = useMemo(() => {
+    return Math.round(mockMonthlyData.reduce((sum, item) => sum + item.removals, 0) / mockMonthlyData.length)
+  }, [])
+
   // Custom tooltip for the chart
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       const data = mockMonthlyData.find((item) => item.month === label)
       const removals = data?.removals || 0
-      const target = data?.target || 0
-      const efficiency = data?.efficiency || 0
 
       return (
         <Box
           sx={{
             backgroundColor: "rgba(255, 255, 255, 0.98)",
             border: "none",
-            borderRadius: "12px",
-            padding: "1rem",
-            boxShadow: "0 8px 30px rgba(0, 0, 0, 0.12)",
+            borderRadius: "16px",
+            padding: "1.2rem",
+            boxShadow: "0 10px 40px rgba(0, 0, 0, 0.15)",
             maxWidth: "280px",
             position: "relative",
             "&:before": {
-              content: "''",
+              content: '""',
               position: "absolute",
               top: 0,
               left: 0,
               right: 0,
-              height: "4px",
+              height: "6px",
               background: "linear-gradient(90deg, #4A6FFF, #6B8CFF)",
-              borderTopLeftRadius: "10px",
-              borderTopRightRadius: "10px",
+              borderTopLeftRadius: "16px",
+              borderTopRightRadius: "16px",
             },
           }}
         >
           <Typography
             sx={{
               fontWeight: 700,
-              fontSize: "1.1rem",
+              fontSize: "1.2rem",
               marginBottom: "0.75rem",
               color: "#1e293b",
               borderBottom: "1px solid rgba(226, 232, 240, 0.5)",
@@ -666,28 +816,17 @@ export default function RemovalDashboard() {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                marginBottom: "0.5rem",
               }}
             >
-              <Typography sx={{ color: "#475569", fontWeight: 500, fontSize: "0.875rem" }}>Meta:</Typography>
-              <Typography sx={{ fontWeight: 600, color: "#334155", fontSize: "0.875rem" }}>{target}</Typography>
-            </Box>
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <Typography sx={{ color: "#475569", fontWeight: 500, fontSize: "0.875rem" }}>Eficiência:</Typography>
+              <Typography sx={{ color: "#475569", fontWeight: 500, fontSize: "0.875rem" }}>Média Mensal:</Typography>
               <Typography
                 sx={{
                   fontWeight: 700,
                   fontSize: "0.875rem",
-                  color: efficiency >= 100 ? "#2DCE89" : "#F5365C",
+                  color: "#2DCE89",
                 }}
               >
-                {efficiency}%
+                {monthlyAverage}
               </Typography>
             </Box>
           </Box>
@@ -695,6 +834,150 @@ export default function RemovalDashboard() {
       )
     }
     return null
+  }
+
+  // Custom tooltip for team chart
+  const TeamChartTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload
+      return (
+        <Box
+          sx={{
+            backgroundColor: "rgba(255, 255, 255, 0.98)",
+            border: "none",
+            borderRadius: "16px",
+            padding: "1.2rem",
+            boxShadow: "0 10px 40px rgba(0, 0, 0, 0.15)",
+            maxWidth: "280px",
+            position: "relative",
+            "&:before": {
+              content: '""',
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              height: "6px",
+              background: `linear-gradient(90deg, ${data.color}, ${data.color}CC)`,
+              borderTopLeftRadius: "16px",
+              borderTopRightRadius: "16px",
+            },
+          }}
+        >
+          <Typography
+            sx={{
+              fontWeight: 700,
+              fontSize: "1.2rem",
+              marginBottom: "0.75rem",
+              color: "#1e293b",
+              borderBottom: "1px solid rgba(226, 232, 240, 0.5)",
+              paddingBottom: "0.5rem",
+            }}
+          >
+            {`${data.name} (${data.label})`}
+          </Typography>
+
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: "0.5rem",
+              fontSize: "0.875rem",
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center" }}>
+              <Box
+                component="span"
+                sx={{
+                  display: "inline-block",
+                  width: "12px",
+                  height: "12px",
+                  borderRadius: "4px",
+                  marginRight: "0.75rem",
+                  backgroundColor: data.color,
+                }}
+              />
+              <Typography sx={{ color: "#475569", fontWeight: 500 }}>Solturas:</Typography>
+            </Box>
+            <Typography sx={{ fontWeight: 600, color: "#334155" }}>{data.releases}</Typography>
+          </Box>
+
+          <Box sx={{ marginTop: "0.75rem", paddingTop: "0.75rem", borderTop: "1px dashed rgba(226, 232, 240, 0.8)" }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <Typography sx={{ color: "#475569", fontWeight: 500, fontSize: "0.875rem" }}>Veículos:</Typography>
+              <Typography sx={{ fontWeight: 600, color: "#334155", fontSize: "0.875rem" }}>{data.vehicles}</Typography>
+            </Box>
+          </Box>
+        </Box>
+      )
+    }
+    return null
+  }
+
+  // Custom active shape for pie chart
+  const renderActiveShape = (props) => {
+    const RADIAN = Math.PI / 180
+    const { cx, cy, midAngle, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent, value } = props
+    const sin = Math.sin(-RADIAN * midAngle)
+    const cos = Math.cos(-RADIAN * midAngle)
+    const sx = cx + (outerRadius + 10) * cos
+    const sy = cy + (outerRadius + 10) * sin
+    const mx = cx + (outerRadius + 30) * cos
+    const my = cy + (outerRadius + 30) * sin
+    const ex = mx + (cos >= 0 ? 1 : -1) * 22
+    const ey = my
+    const textAnchor = cos >= 0 ? "start" : "end"
+
+    return (
+      <g>
+        <text x={cx} y={cy - 15} textAnchor="middle" fill={fill} fontSize={18} fontWeight="bold">
+          {payload.name}
+        </text>
+        <text x={cx} y={cy + 15} textAnchor="middle" fill="#333" fontSize={16}>
+          {`${value} (${(percent * 100).toFixed(0)}%)`}
+        </text>
+        <Sector
+          cx={cx}
+          cy={cy}
+          innerRadius={innerRadius}
+          outerRadius={outerRadius}
+          startAngle={startAngle}
+          endAngle={endAngle}
+          fill={payload.color}
+          stroke="#fff"
+          strokeWidth={3}
+        />
+        <Sector
+          cx={cx}
+          cy={cy}
+          startAngle={startAngle}
+          endAngle={endAngle}
+          innerRadius={outerRadius + 6}
+          outerRadius={outerRadius + 12}
+          fill={payload.color}
+          stroke={payload.color}
+          strokeWidth={1}
+          strokeOpacity={0.8}
+        />
+        <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={payload.color} fill="none" strokeWidth={2} />
+        <circle cx={ex} cy={ey} r={2} fill={payload.color} stroke="none" />
+        <text x={ex + (cos >= 0 ? 1 : -1) * 12} fill={payload.color} stroke="none" />
+        <text
+          x={ex + (cos >= 0 ? 1 : -1) * 12}
+          y={ey}
+          textAnchor={textAnchor}
+          fill="#333"
+          fontSize={14}
+          fontWeight={500}
+        >{`${value} (${(percent * 100).toFixed(0)}%)`}</text>
+      </g>
+    )
   }
 
   // Custom stat card component
@@ -706,32 +989,44 @@ export default function RemovalDashboard() {
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        borderRadius: "16px",
-        boxShadow: "0 10px 15px rgba(0, 0, 0, 0.1)",
+        borderRadius: "20px",
+        boxShadow: "0 15px 35px rgba(0, 0, 0, 0.1)",
         transition: "all 0.3s ease",
         background: "white",
         position: "relative",
         overflow: "hidden",
         minHeight: { xs: "150px", sm: "180px" },
         "&:hover": {
-          transform: "translateY(-5px)",
-          boxShadow: "0 15px 30px rgba(0, 0, 0, 0.15)",
+          transform: "translateY(-8px)",
+          boxShadow: "0 20px 40px rgba(0, 0, 0, 0.15)",
+        },
+        "&::before": {
+          content: '""',
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "6px",
+          background: `linear-gradient(90deg, ${color}, ${color}99)`,
         },
       }}
     >
       <Box
         sx={{
-          width: { xs: "50px", sm: "60px" },
-          height: { xs: "50px", sm: "60px" },
+          width: { xs: "60px", sm: "70px" },
+          height: { xs: "60px", sm: "70px" },
           borderRadius: "50%",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: `${color}22`,
+          background: `${color}15`,
           marginBottom: "1rem",
+          transition: "all 0.3s ease",
+          animation: "pulse 2s infinite",
+          border: `2px solid ${color}40`,
         }}
       >
-        <Icon sx={{ fontSize: { xs: 24, sm: 30 }, color: color }} />
+        <Icon sx={{ fontSize: { xs: 28, sm: 34 }, color: color }} />
       </Box>
       <Typography
         variant="h3"
@@ -828,16 +1123,19 @@ export default function RemovalDashboard() {
             <BarChart
               data={chartData}
               margin={{ top: 30, right: 30, left: 20, bottom: 60 }}
-              barGap={8}
-              barCategoryGap={30}
+              barGap={12}
+              barCategoryGap={40}
             >
               <defs>
                 <linearGradient id="colorRemovals" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#4A6FFF" stopOpacity={1} />
                   <stop offset="100%" stopColor="#6B8CFF" stopOpacity={0.8} />
                 </linearGradient>
+                <filter id="shadow" height="200%">
+                  <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#4A6FFF" floodOpacity="0.2" />
+                </filter>
               </defs>
-              <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#e2e8f0" strokeOpacity={0.8} />
+              <CartesianGrid vertical={false} strokeDasharray="5 5" stroke="#e2e8f0" strokeOpacity={0.6} />
               <XAxis
                 dataKey="month"
                 tickLine={false}
@@ -858,10 +1156,11 @@ export default function RemovalDashboard() {
               <Bar
                 dataKey="removals"
                 fill="url(#colorRemovals)"
-                radius={[6, 6, 0, 0]}
+                radius={[8, 8, 0, 0]}
                 name="Remoções"
-                animationDuration={1000}
-                barSize={36}
+                animationDuration={1500}
+                barSize={40}
+                filter="url(#shadow)"
               >
                 <LabelList dataKey="removals" position="top" fill="#4A6FFF" fontSize={12} fontWeight={600} />
               </Bar>
@@ -872,7 +1171,20 @@ export default function RemovalDashboard() {
         return (
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData} margin={{ top: 30, right: 30, left: 20, bottom: 60 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeOpacity={0.8} />
+              <defs>
+                <linearGradient id="colorRemovals" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#4A6FFF" stopOpacity={1} />
+                  <stop offset="100%" stopColor="#6B8CFF" stopOpacity={0.8} />
+                </linearGradient>
+                <filter id="glow" height="200%">
+                  <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
+                  <feMerge>
+                    <feMergeNode in="coloredBlur" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+              </defs>
+              <CartesianGrid strokeDasharray="5 5" stroke="#e2e8f0" strokeOpacity={0.6} />
               <XAxis
                 dataKey="month"
                 tickLine={false}
@@ -889,21 +1201,12 @@ export default function RemovalDashboard() {
               <Line
                 type="monotone"
                 dataKey="removals"
-                stroke="#4A6FFF"
-                strokeWidth={3}
+                stroke="url(#colorRemovals)"
+                strokeWidth={4}
                 dot={{ r: 6, fill: "#4A6FFF", strokeWidth: 2, stroke: "#ffffff" }}
                 activeDot={{ r: 8, fill: "#4A6FFF", strokeWidth: 2, stroke: "#ffffff" }}
                 name="Remoções"
-              />
-              <Line
-                type="monotone"
-                dataKey="target"
-                stroke="#FB6340"
-                strokeWidth={3}
-                strokeDasharray="5 5"
-                dot={{ r: 6, fill: "#FB6340", strokeWidth: 2, stroke: "#ffffff" }}
-                activeDot={{ r: 8, fill: "#FB6340", strokeWidth: 2, stroke: "#ffffff" }}
-                name="Meta"
+                filter="url(#glow)"
               />
             </LineChart>
           </ResponsiveContainer>
@@ -912,23 +1215,58 @@ export default function RemovalDashboard() {
         return (
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
+              <defs>
+                {pieChartData.map((entry, index) => (
+                  <filter key={`filter-${index}`} id={`glow-${index}`} height="200%">
+                    <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+                    <feMerge>
+                      <feMergeNode in="coloredBlur" />
+                      <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                  </filter>
+                ))}
+              </defs>
               <Pie
+                activeIndex={activeIndex}
+                activeShape={renderActiveShape}
                 data={pieChartData}
                 cx="50%"
                 cy="50%"
-                labelLine={false}
-                outerRadius={120}
-                innerRadius={60}
+                innerRadius={100}
+                outerRadius={140}
                 fill="#8884d8"
                 dataKey="value"
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                onMouseEnter={onPieEnter}
+                paddingAngle={2}
+                filter={`url(#glow-${activeIndex})`}
               >
                 {pieChartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={entry.color} 
+                    stroke="#fff" 
+                    strokeWidth={2}
+                  />
                 ))}
               </Pie>
-              <Tooltip formatter={(value) => [`${value} remoções`, "Quantidade"]} />
-              <Legend verticalAlign="bottom" layout="horizontal" align="center" wrapperStyle={{ paddingTop: 30 }} />
+              <Legend
+                verticalAlign="bottom"
+                layout="horizontal"
+                align="center"
+                wrapperStyle={{ paddingTop: 30 }}
+                formatter={(value, entry, index) => (
+                  <span style={{ 
+                    color: pieChartData[index].color, 
+                    fontWeight: 600,
+                    fontSize: '14px',
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    backgroundColor: `${pieChartData[index].color}15`
+                  }}>
+                    {value}
+                  </span>
+                )}
+              />
             </PieChart>
           </ResponsiveContainer>
         )
@@ -939,14 +1277,13 @@ export default function RemovalDashboard() {
               <defs>
                 <linearGradient id="colorRemovals" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#4A6FFF" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#4A6FFF" stopOpacity={0} />
+                  <stop offset="95%" stopColor="#4A6FFF" stopOpacity={0.1} />
                 </linearGradient>
-                <linearGradient id="colorTarget" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#FB6340" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#FB6340" stopOpacity={0} />
-                </linearGradient>
+                <filter id="shadow" height="200%">
+                  <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#4A6FFF" floodOpacity="0.2" />
+                </filter>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeOpacity={0.5} />
+              <CartesianGrid strokeDasharray="5 5" stroke="#e2e8f0" strokeOpacity={0.5} />
               <XAxis
                 dataKey="month"
                 tickLine={false}
@@ -964,17 +1301,11 @@ export default function RemovalDashboard() {
                 type="monotone"
                 dataKey="removals"
                 stroke="#4A6FFF"
+                strokeWidth={3}
                 fillOpacity={1}
                 fill="url(#colorRemovals)"
                 name="Remoções"
-              />
-              <Area
-                type="monotone"
-                dataKey="target"
-                stroke="#FB6340"
-                fillOpacity={1}
-                fill="url(#colorTarget)"
-                name="Meta"
+                filter="url(#shadow)"
               />
             </AreaChart>
           </ResponsiveContainer>
@@ -983,6 +1314,369 @@ export default function RemovalDashboard() {
         return null
     }
   }
+
+  // Render team chart based on selected type
+  const renderTeamChart = () => {
+    switch (teamChartType) {
+      case 0: // Bar Chart
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={mockTeamData} margin={{ top: 20, right: 30, left: 20, bottom: 40 }}>
+              <defs>
+                {mockTeamData.map((entry, index) => (
+                  <linearGradient key={`gradient-${index}`} id={`colorTeam${index}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={entry.color} stopOpacity={1} />
+                    <stop offset="100%" stopColor={entry.color} stopOpacity={0.8} />
+                  </linearGradient>
+                ))}
+                <filter id="teamShadow" height="200%">
+                  <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#000000" floodOpacity="0.15" />
+                </filter>
+              </defs>
+              <CartesianGrid strokeDasharray="5 5" vertical={false} stroke="#e2e8f0" strokeOpacity={0.6} />
+              <XAxis
+                dataKey="name"
+                tick={{ fill: "#334155", fontSize: 12, fontWeight: 500 }}
+                tickLine={false}
+                axisLine={{ stroke: "#e2e8f0", strokeWidth: 1 }}
+              />
+              <YAxis
+                tick={{ fill: "#334155", fontSize: 12, fontWeight: 500 }}
+                tickLine={false}
+                axisLine={{ stroke: "#e2e8f0", strokeWidth: 1 }}
+              />
+              <Tooltip content={<TeamChartTooltip />} />
+              <Legend
+                verticalAlign="top"
+                height={36}
+                iconType="circle"
+                iconSize={10}
+                formatter={(value, entry, index) => (
+                  <span
+                    style={{ 
+                      color: mockTeamData[index].color, 
+                      fontWeight: 600,
+                      fontSize: '14px',
+                      padding: '4px 8px',
+                      borderRadius: '4px',
+                      backgroundColor: `${mockTeamData[index].color}15`
+                    }}
+                  >{`${value} (${mockTeamData[index].label})`}</span>
+                )}
+              />
+              <Bar dataKey="releases" name="Solturas" radius={[10, 10, 0, 0]} filter="url(#teamShadow)" barSize={50}>
+                {mockTeamData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={`url(#colorTeam${index})`} />
+                ))}
+                <LabelList dataKey="releases" position="top" fill="#334155" fontSize={14} fontWeight={600} />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        )
+      case 1: // Pie Chart
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <defs>
+                {mockTeamData.map((entry, index) => (
+                  <filter key={`filter-${index}`} id={`teamGlow-${index}`} height="200%">
+                    <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+                    <feMerge>
+                      <feMergeNode in="coloredBlur" />
+                      <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                  </filter>
+                ))}
+              </defs>
+              <Pie
+                data={mockTeamData}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                outerRadius={120}
+                fill="#8884d8"
+                dataKey="releases"
+                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                paddingAngle={2}
+                filter="url(#teamGlow-0)"
+              >
+                {mockTeamData.map((entry, index) => (
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={entry.color} 
+                    stroke="#fff" 
+                    strokeWidth={2}
+                  />
+                ))}
+              </Pie>
+              <Legend
+                verticalAlign="bottom"
+                layout="horizontal"
+                align="center"
+                wrapperStyle={{ paddingTop: 30 }}
+                formatter={(value, entry, index) => (
+                  <span
+                    style={{ 
+                      color: mockTeamData[index].color, 
+                      fontWeight: 600,
+                      fontSize: '14px',
+                      padding: '4px 8px',
+                      borderRadius: '4px',
+                      backgroundColor: `${mockTeamData[index].color}15`
+                    }}
+                  >{`${value} (${mockTeamData[index].label})`}</span>
+                )}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        )
+      case 2: // Donut Chart
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <defs>
+                {mockTeamData.map((entry, index) => (
+                  <linearGradient key={`gradient-${index}`} id={`donutGradient${index}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={entry.color} stopOpacity={1} />
+                    <stop offset="100%" stopColor={`${entry.color}CC`} stopOpacity={0.8} />
+                  </linearGradient>
+                ))}
+                <filter id="donutShadow" height="200%">
+                  <feDropShadow dx="0" dy="4" stdDeviation="8" floodColor="#000000" floodOpacity="0.2" />
+                </filter>
+              </defs>
+              <Pie
+                data={mockTeamData}
+                cx="50%"
+                cy="50%"
+                innerRadius={90}
+                outerRadius={130}
+                fill="#8884d8"
+                paddingAngle={6}
+                dataKey="releases"
+                filter="url(#donutShadow)"
+              >
+                {mockTeamData.map((entry, index) => (
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={`url(#donutGradient${index})`} 
+                    stroke="#fff" 
+                    strokeWidth={3}
+                  />
+                ))}
+                <LabelList 
+                  dataKey="releases" 
+                  position="inside" 
+                  fill="#fff" 
+                  fontSize={16} 
+                  fontWeight={700}
+                  stroke="none"
+                />
+              </Pie>
+              <Tooltip content={<TeamChartTooltip />} />
+              <Legend
+                verticalAlign="bottom"
+                layout="horizontal"
+                align="center"
+                wrapperStyle={{ paddingTop: 30 }}
+                formatter={(value, entry, index) => (
+                  <span
+                    style={{ 
+                      color: mockTeamData[index].color, 
+                      fontWeight: 600,
+                      fontSize: '14px',
+                      padding: '4px 8px',
+                      borderRadius: '4px',
+                      backgroundColor: `${mockTeamData[index].color}15`
+                    }}
+                  >{`${value} (${mockTeamData[index].label})`}</span>
+                )}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        )
+      default:
+        return null
+    }
+  }
+
+  // Render card view for total removals
+  const renderCardView = (removals, handleClick) => {
+    return (
+      <Grid container spacing={2}>
+        {removals.map((removal) => (
+          <Grid item xs={12} sm={6} md={4} key={removal.id}>
+            <Card 
+              sx={{ 
+                borderRadius: '16px', 
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
+                transition: 'all 0.3s ease',
+                cursor: 'pointer',
+                '&:hover': {
+                  transform: 'translateY(-5px)',
+                  boxShadow: '0 8px 30px rgba(0, 0, 0, 0.1)',
+                }
+              }}
+              onClick={() => handleClick(removal)}
+            >
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <Avatar
+                    sx={{
+                      backgroundColor: "rgba(74, 111, 255, 0.1)",
+                      color: "#4A6FFF",
+                      fontWeight: 600,
+                      mr: 1.5
+                    }}
+                  >
+                    {removal.driver.charAt(0)}
+                  </Avatar>
+                  <Box>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                      {removal.driver}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {removal.vehiclePrefix}
+                    </Typography>
+                  </Box>
+                </Box>
+                <Divider sx={{ mb: 2 }} />
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Horário:
+                  </Typography>
+                  <Typography variant="body2" fontWeight={500}>
+                    {removal.departureTime}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Veículo:
+                  </Typography>
+                  <Typography variant="body2" fontWeight={500}>
+                    {removal.vehicle}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Status:
+                  </Typography>
+                  {getStatusChip(removal.status)}
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <LocationOn fontSize="small" color="action" />
+                  <Typography variant="body2" color="text.secondary" noWrap>
+                    {removal.location}
+                  </Typography>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+    );
+  };
+
+  // Render timeline view for total removals
+  const renderTimelineView = (removals, handleClick) => {
+    return (
+      <Box sx={{ position: 'relative', pl: 4 }}>
+        <Box 
+          sx={{ 
+            position: 'absolute', 
+            left: '15px', 
+            top: 0, 
+            bottom: 0, 
+            width: '2px', 
+            backgroundColor: 'rgba(226, 232, 240, 0.8)',
+            zIndex: 0
+          }} 
+        />
+        {removals.map((removal, index) => (
+          <Box 
+            key={removal.id} 
+            sx={{ 
+              position: 'relative', 
+              mb: 3,
+              '&:hover': {
+                '& .MuiPaper-root': {
+                  transform: 'translateY(-3px)',
+                  boxShadow: '0 8px 30px rgba(0, 0, 0, 0.1)',
+                }
+              }
+            }}
+          >
+            <Box 
+              sx={{ 
+                position: 'absolute', 
+                left: '-15px', 
+                top: '20px', 
+                width: '16px', 
+                height: '16px', 
+                borderRadius: '50%', 
+                backgroundColor: removal.status === 'Concluído' ? '#2DCE89' : 
+                                removal.status === 'Em andamento' ? '#4A6FFF' : '#FB6340',
+                border: '3px solid white',
+                boxShadow: '0 0 0 2px rgba(226, 232, 240, 0.8)',
+                zIndex: 1
+              }} 
+            />
+            <Paper 
+              sx={{ 
+                p: 2, 
+                borderRadius: '16px', 
+                transition: 'all 0.3s ease',
+                cursor: 'pointer',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
+              }}
+              onClick={() => handleClick(removal)}
+            >
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                <Typography variant="subtitle1" fontWeight={600}>
+                  {removal.driver}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {removal.departureTime}
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                <Chip 
+                  label={removal.vehiclePrefix} 
+                  size="small" 
+                  sx={{ 
+                    backgroundColor: "rgba(45, 206, 137, 0.1)",
+                    color: "#2DCE89",
+                    fontWeight: 600,
+                  }} 
+                />
+                <Typography variant="body2" color="text.secondary">
+                  {removal.vehicle}
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <LocationOn fontSize="small" color="action" />
+                <Typography variant="body2" color="text.secondary" noWrap>
+                  {removal.location}
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
+                {getStatusChip(removal.status)}
+                <IconButton 
+                  size="small" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleActionMenuOpen(e, removal.id);
+                  }}
+                >
+                  <MoreVert fontSize="small" />
+                </IconButton>
+              </Box>
+            </Paper>
+          </Box>
+        ))}
+      </Box>
+    );
+  };
 
   return (
     <>
@@ -993,6 +1687,10 @@ export default function RemovalDashboard() {
           ${keyframes.pulse}
           ${keyframes.float}
           ${keyframes.gradientShift}
+          ${keyframes.shimmer}
+          ${keyframes.rotate}
+          ${keyframes.bounce}
+          ${keyframes.glow}
         `}
       </style>
       <Box sx={{ display: "flex" }}>
@@ -1033,8 +1731,10 @@ export default function RemovalDashboard() {
                 bottom: 0,
                 left: 0,
                 right: 0,
-                height: "3px",
+                height: "4px",
                 background: "linear-gradient(90deg, #4A6FFF, #6B8CFF, #FB6340)",
+                backgroundSize: "200% 200%",
+                animation: "gradientShift 15s ease infinite",
                 zIndex: 1,
               },
             }}
@@ -1045,31 +1745,79 @@ export default function RemovalDashboard() {
                   <MenuIcon />
                 </IconButton>
               )}
-              <Typography
-                variant="h6"
-                sx={{
-                  fontWeight: 700,
-                  fontSize: { xs: "1.4rem", sm: "1.8rem" },
-                  background: "linear-gradient(90deg, #4A6FFF, #6B8CFF)",
-                  backgroundClip: "text",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  letterSpacing: "-0.5px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.8rem",
-                  animation: "fadeIn 1s ease-out",
-                }}
-              >
-                <TruckIcon
+              <Box sx={{ display: "flex", flexDirection: "column", flexGrow: 1 }}>
+                <Box sx={{ display: "flex", alignItems: "center" }}>
+                  <Box
+                    sx={{
+                      width: "48px",
+                      height: "48px",
+                      borderRadius: "12px",
+                      background: "linear-gradient(135deg, #4A6FFF, #6B8CFF)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      boxShadow: "0 8px 16px rgba(74, 111, 255, 0.25)",
+                      mr: 2,
+                      animation: "float 3s ease-in-out infinite",
+                    }}
+                  >
+                    <TruckIcon sx={{ color: "white", fontSize: "1.8rem" }} />
+                  </Box>
+                  <Typography
+                    variant="h5"
+                    sx={{
+                      fontWeight: 800,
+                      fontSize: { xs: "1.5rem", sm: "2rem" },
+                      background: "linear-gradient(90deg, #4A6FFF, #6B8CFF)",
+                      backgroundClip: "text",
+                      WebkitBackgroundClip: "text",
+                      WebkitTextFillColor: "transparent",
+                      letterSpacing: "-0.5px",
+                      animation: "fadeIn 1s ease-out",
+                    }}
+                  >
+                    Dashboard de Remoção
+                  </Typography>
+                </Box>
+                <Typography
+                  variant="subtitle1"
                   sx={{
-                    color: "#4A6FFF",
-                    fontSize: { xs: "1.8rem", sm: "2.2rem" },
-                    animation: "float 3s ease-in-out infinite",
+                    color: "#64748b",
+                    fontSize: { xs: "0.8rem", sm: "0.9rem" },
+                    ml: { xs: "0", sm: "4.5rem" },
+                    mt: "-0.3rem",
+                    fontWeight: 500,
+                    letterSpacing: "0.5px",
+                    animation: "fadeIn 1.5s ease-out",
                   }}
-                />
-                Dashboard de Remoção
-              </Typography>
+                >
+                  Sistema de monitoramento em tempo real • Atualizado há 5 minutos
+                </Typography>
+              </Box>
+              <Box sx={{ display: "flex", gap: 1 }}>
+                <MuiTooltip title="Notificações">
+                  <IconButton
+                    sx={{
+                      color: "#64748b",
+                      "&:hover": { color: "#4A6FFF" },
+                    }}
+                  >
+                    <Badge badgeContent={3} color="primary">
+                      <Notifications />
+                    </Badge>
+                  </IconButton>
+                </MuiTooltip>
+                <MuiTooltip title="Configurações">
+                  <IconButton
+                    sx={{
+                      color: "#64748b",
+                      "&:hover": { color: "#4A6FFF" },
+                    }}
+                  >
+                    <Settings />
+                  </IconButton>
+                </MuiTooltip>
+              </Box>
             </Toolbar>
           </AppBar>
 
@@ -1145,13 +1893,13 @@ export default function RemovalDashboard() {
                 <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "400ms" : "0ms" }}>
                   <Card
                     sx={{
-                      borderRadius: "16px",
-                      boxShadow: "0 8px 30px rgba(0, 0, 0, 0.08)",
+                      borderRadius: "20px",
+                      boxShadow: "0 10px 40px rgba(0, 0, 0, 0.08)",
                       transition: "all 0.3s ease",
                       overflow: "hidden",
                       "&:hover": {
                         transform: "translateY(-5px)",
-                        boxShadow: "0 12px 40px rgba(0, 0, 0, 0.12)",
+                        boxShadow: "0 15px 50px rgba(0, 0, 0, 0.12)",
                       },
                       background: "linear-gradient(to bottom, #ffffff, #f8fafc)",
                       border: "1px solid rgba(226, 232, 240, 0.8)",
@@ -1162,9 +1910,9 @@ export default function RemovalDashboard() {
                         <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
                           <Box
                             sx={{
-                              width: { xs: "30px", sm: "36px" },
-                              height: { xs: "30px", sm: "36px" },
-                              borderRadius: "10px",
+                              width: { xs: "36px", sm: "42px" },
+                              height: { xs: "36px", sm: "42px" },
+                              borderRadius: "12px",
                               background: "linear-gradient(135deg, #4A6FFF, #6B8CFF)",
                               display: "flex",
                               alignItems: "center",
@@ -1175,7 +1923,7 @@ export default function RemovalDashboard() {
                             <BarChartIcon
                               sx={{
                                 color: "white",
-                                fontSize: { xs: "1.2rem", sm: "1.4rem" },
+                                fontSize: { xs: "1.3rem", sm: "1.5rem" },
                               }}
                             />
                           </Box>
@@ -1183,7 +1931,7 @@ export default function RemovalDashboard() {
                             <Typography
                               sx={{
                                 fontWeight: 700,
-                                fontSize: { xs: "1.1rem", sm: "1.25rem" },
+                                fontSize: { xs: "1.2rem", sm: "1.4rem" },
                                 background: "linear-gradient(90deg, #4A6FFF, #6B8CFF)",
                                 backgroundClip: "text",
                                 WebkitBackgroundClip: "text",
@@ -1195,12 +1943,12 @@ export default function RemovalDashboard() {
                             </Typography>
                             <Typography
                               sx={{
-                                fontSize: { xs: "0.8rem", sm: "0.85rem" },
+                                fontSize: { xs: "0.85rem", sm: "0.9rem" },
                                 color: "#64748b",
                                 fontWeight: 500,
                               }}
                             >
-                              Análise mensal de remoções de veículos
+                              Análise detalhada de remoções por período
                             </Typography>
                           </Box>
                         </Box>
@@ -1245,6 +1993,12 @@ export default function RemovalDashboard() {
                             anchorEl={monthMenuAnchor}
                             open={Boolean(monthMenuAnchor)}
                             onClose={handleMonthMenuClose}
+                            PaperProps={{
+                              sx: {
+                                borderRadius: '12px',
+                                boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1)',
+                              }
+                            }}
                           >
                             <MenuItem
                               onClick={() => handleMonthChange("Todos")}
@@ -1480,10 +2234,7 @@ export default function RemovalDashboard() {
                             <Typography
                               sx={{ fontSize: { xs: "0.8rem", sm: "0.875rem" }, fontWeight: 600, color: "#2DCE89" }}
                             >
-                              Média:{" "}
-                              {Math.round(
-                                chartData.reduce((sum, item) => sum + item.removals, 0) / (chartData.length || 1),
-                              )}
+                              Média Mensal: {monthlyAverage}
                             </Typography>
                           </Box>
                         </Box>
@@ -1493,504 +2244,1071 @@ export default function RemovalDashboard() {
                 </Zoom>
               </Box>
 
+              {/* Team Performance Chart */}
+              <Box component="section" sx={{ mb: 4 }}>
+                <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "500ms" : "0ms" }}>
+                  <Card
+                    sx={{
+                      borderRadius: "20px",
+                      boxShadow: "0 10px 40px rgba(0, 0, 0, 0.08)",
+                      transition: "all 0.3s ease",
+                      overflow: "hidden",
+                      "&:hover": {
+                        transform: "translateY(-5px)",
+                        boxShadow: "0 15px 50px rgba(0, 0, 0, 0.12)",
+                      },
+                      background: "linear-gradient(to bottom, #ffffff, #f8fafc)",
+                      border: "1px solid rgba(226, 232, 240, 0.8)",
+                      position: "relative",
+                      "&::before": {
+                        content: '""',
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: "6px",
+                        background: "linear-gradient(90deg, #FF9F43, #FFB976)",
+                        zIndex: 1,
+                      },
+                    }}
+                  >
+                    <CardHeader
+                      title={
+                        <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                          <Box
+                            sx={{
+                              width: { xs: "36px", sm: "42px" },
+                              height: { xs: "36px", sm: "42px" },
+                              borderRadius: "12px",
+                              background: "linear-gradient(135deg, #FF9F43, #FFB976)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              boxShadow: "0 4px 12px rgba(255, 159, 67, 0.3)",
+                              animation: "pulse 2s infinite",
+                            }}
+                          >
+                            <Timeline
+                              sx={{
+                                color: "white",
+                                fontSize: { xs: "1.3rem", sm: "1.5rem" },
+                              }}
+                            />
+                          </Box>
+                          <Box>
+                            <Typography
+                              sx={{
+                                fontWeight: 700,
+                                fontSize: { xs: "1.2rem", sm: "1.4rem" },
+                                background: "linear-gradient(90deg, #FF9F43, #FFB976)",
+                                backgroundClip: "text",
+                                WebkitBackgroundClip: "text",
+                                WebkitTextFillColor: "transparent",
+                                letterSpacing: "-0.02em",
+                              }}
+                            >
+                              Remoção por Equipe
+                            </Typography>
+                            <Typography
+                              sx={{
+                                fontSize: { xs: "0.85rem", sm: "0.9rem" },
+                                color: "#64748b",
+                                fontWeight: 500,
+                              }}
+                            >
+                              Análise comparativa de solturas por turno
+                            </Typography>
+                          </Box>
+                        </Box>
+                      }
+                      action={
+                        <Box sx={{ display: "flex", gap: "0.5rem" }}>
+                          <IconButton
+                            sx={{
+                              color: "#64748b",
+                              transition: "all 0.2s ease",
+                              backgroundColor: "rgba(241, 245, 249, 0.5)",
+                              "&:hover": {
+                                color: "#FF9F43",
+                                transform: "rotate(15deg)",
+                                backgroundColor: "rgba(241, 245, 249, 0.8)",
+                              },
+                            }}
+                          >
+                            <Download />
+                          </IconButton>
+                          <IconButton
+                            sx={{
+                              color: "#64748b",
+                              transition: "all 0.2s ease",
+                              backgroundColor: "rgba(241, 245, 249, 0.5)",
+                              "&:hover": {
+                                color: "#FF9F43",
+                                transform: "rotate(15deg)",
+                                backgroundColor: "rgba(241, 245, 249, 0.8)",
+                              },
+                            }}
+                          >
+                            <Refresh />
+                          </IconButton>
+                        </Box>
+                      }
+                      sx={{
+                        paddingBottom: "0.75rem",
+                        borderBottom: "1px solid rgba(226, 232, 240, 0.5)",
+                        "& .MuiCardHeader-title": {
+                          fontWeight: 600,
+                          fontSize: "1.125rem",
+                          color: "#334155",
+                        },
+                        "& .MuiCardHeader-action": {
+                          margin: 0,
+                        },
+                      }}
+                    />
+                    <Box sx={{ padding: "0.5rem 1.5rem" }}>
+                      <Tabs
+                        value={teamChartType}
+                        onChange={handleTeamChartTypeChange}
+                        variant="scrollable"
+                        scrollButtons="auto"
+                        sx={{
+                          "& .MuiTabs-indicator": {
+                            backgroundColor: "#FF9F43",
+                            height: "3px",
+                            borderRadius: "3px",
+                          },
+                          "& .MuiTab-root": {
+                            textTransform: "none",
+                            minWidth: { xs: "80px", sm: "120px" },
+                            fontWeight: 500,
+                            color: "#64748b",
+                            fontSize: { xs: "0.8rem", sm: "0.9rem" },
+                            "&.Mui-selected": {
+                              color: "#FF9F43",
+                              fontWeight: 600,
+                            },
+                          },
+                        }}
+                      >
+                        <Tab icon={<BarChartIcon />} label="Barras" iconPosition="start" sx={{ gap: "0.5rem" }} />
+                        <Tab icon={<PieChartIcon />} label="Pizza" iconPosition="start" sx={{ gap: "0.5rem" }} />
+                        <Tab icon={<DonutLarge />} label="Donut" iconPosition="start" sx={{ gap: "0.5rem" }} />
+                      </Tabs>
+                    </Box>
+                    <CardContent sx={{ padding: "1.5rem" }}>
+                      <Box
+                        sx={{
+                          width: "100%",
+                          height: { xs: "250px", sm: "300px" },
+                          position: "relative",
+                        }}
+                      >
+                        {!chartsLoaded && (
+                          <Box
+                            sx={{
+                              position: "absolute",
+                              top: 0,
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              backgroundColor: "rgba(255, 255, 255, 0.7)",
+                              zIndex: 10,
+                              borderRadius: "12px",
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                width: "60px",
+                                height: "60px",
+                                borderRadius: "50%",
+                                background: "linear-gradient(135deg, #FF9F43, #FFB976)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
+                                "&::before": {
+                                  content: "''",
+                                  position: "absolute",
+                                  top: "15px",
+                                  left: "15px",
+                                  right: "15px",
+                                  bottom: "15px",
+                                  background: "white",
+                                  borderRadius: "50%",
+                                  boxShadow: "inset 0 4px 10px rgba(0, 0, 0, 0.05)",
+                                },
+                              }}
+                            />
+                          </Box>
+                        )}
+                        <Fade in={chartsLoaded} timeout={800}>
+                          <Box
+                            sx={{
+                              width: "100%",
+                              height: "100%",
+                            }}
+                          >
+                            {renderTeamChart()}
+                          </Box>
+                        </Fade>
+                      </Box>
+
+                      <Box
+                        sx={{
+                          marginTop: "1rem",
+                          display: "flex",
+                          justifyContent: "space-between",
+                          padding: "1rem",
+                          borderTop: "1px dashed rgba(226, 232, 240, 0.8)",
+                          flexWrap: "wrap",
+                          gap: "1rem",
+                        }}
+                      >
+                        {mockTeamData.map((team, index) => (
+                          <Box
+                            key={team.name}
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "0.5rem",
+                              backgroundColor: `${team.color}15`,
+                              padding: "0.5rem 1rem",
+                              borderRadius: "10px",
+                              transition: "all 0.3s ease",
+                              "&:hover": {
+                                transform: "translateY(-2px)",
+                                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
+                              },
+                            }}
+                          >
+                            {team.icon}
+                            <Box>
+                              <Typography sx={{ fontSize: "0.875rem", fontWeight: 600, color: team.color }}>
+                                {team.name} ({team.label})
+                              </Typography>
+                              <Typography sx={{ fontSize: "0.75rem", color: "#64748b" }}>
+                                {team.releases} solturas • {team.vehicles} veículos
+                              </Typography>
+                            </Box>
+                          </Box>
+                        ))}
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Zoom>
+              </Box>
+
               {/* Tables Section */}
               <Box component="section">
-                <Grid
-                  container
-                  spacing={3}
+                <Box
                   sx={{
-                    width: "100%",
-                    margin: 0,
-                    "& > .MuiGrid-item": {
-                      paddingLeft: "12px",
-                      paddingRight: "12px",
+                    borderRadius: "24px",
+                    background: "#ffffff",
+                    boxShadow: "0 10px 40px rgba(0, 0, 0, 0.03)",
+                    padding: { xs: "1rem", sm: "1.5rem" },
+                    mb: 4,
+                    transition: "all 0.3s ease",
+                    "&:hover": {
+                      boxShadow: "0 15px 50px rgba(0, 0, 0, 0.08)",
                     },
                   }}
                 >
-                  {/* Total Removals Table */}
-                  <Grid item xs={12} md={6}>
-                    <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "700ms" : "0ms" }}>
-                      <Card
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      mb: 3,
+                      flexWrap: { xs: "wrap", md: "nowrap" },
+                      gap: 2,
+                    }}
+                  >
+                    <Typography
+                      variant="h5"
+                      sx={{
+                        fontWeight: 700,
+                        fontSize: { xs: "1.2rem", sm: "1.4rem" },
+                        color: "#334155",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                      }}
+                    >
+                      <ViewList sx={{ color: "#4A6FFF" }} />
+                      Registros de Remoções
+                    </Typography>
+
+                    <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+                      <ToggleButtonGroup
+                        value={viewMode}
+                        exclusive
+                        onChange={handleViewModeChange}
+                        aria-label="view mode"
+                        size="small"
                         sx={{
-                          borderRadius: "16px",
-                          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05)",
-                          transition: "all 0.3s ease",
-                          overflow: "hidden",
-                          height: "100%",
-                          "&:hover": {
-                            transform: "translateY(-5px)",
-                            boxShadow: "0 8px 30px rgba(0, 0, 0, 0.1)",
+                          "& .MuiToggleButton-root": {
+                            border: "1px solid rgba(226, 232, 240, 0.8)",
+                            color: "#64748b",
+                            borderRadius: "8px",
+                            margin: "0 2px",
+                            "&.Mui-selected": {
+                              backgroundColor: "rgba(74, 111, 255, 0.1)",
+                              color: "#4A6FFF",
+                              fontWeight: 600,
+                            },
+                            "&:hover": {
+                              backgroundColor: "rgba(74, 111, 255, 0.05)",
+                            },
                           },
                         }}
                       >
-                        <CardHeader
-                          title={
-                            <Box sx={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                              <Box
-                                sx={{
-                                  width: { xs: "28px", sm: "32px" },
-                                  height: { xs: "28px", sm: "32px" },
-                                  borderRadius: "8px",
-                                  background: "linear-gradient(135deg, #4A6FFF, #6B8CFF)",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  boxShadow: "0 4px 12px rgba(74, 111, 255, 0.2)",
-                                }}
-                              >
-                                <TruckIcon sx={{ color: "white", fontSize: { xs: "1rem", sm: "1.2rem" } }} />
-                              </Box>
-                              <Typography
-                                sx={{
-                                  fontWeight: 600,
-                                  fontSize: { xs: "1rem", sm: "1.1rem" },
-                                  color: "#334155",
-                                }}
-                              >
-                                Total de Remoções
-                              </Typography>
-                              <Chip
-                                label={filteredTotalRemovals.length}
-                                size="small"
-                                sx={{
-                                  backgroundColor: "rgba(74, 111, 255, 0.1)",
-                                  color: "#4A6FFF",
-                                  fontWeight: 600,
-                                  height: "1.5rem",
-                                  fontSize: "0.75rem",
-                                }}
-                              />
-                            </Box>
-                          }
-                          action={
-                            <IconButton
-                              onClick={() => {}}
+                        <ToggleButton value="card" aria-label="card view">
+                          <ViewModule fontSize="small" />
+                        </ToggleButton>
+                        <ToggleButton value="list" aria-label="list view">
+                          <ViewList fontSize="small" />
+                        </ToggleButton>
+                        <ToggleButton value="timeline" aria-label="timeline view">
+                          <ViewDay fontSize="small" />
+                        </ToggleButton>
+                      </ToggleButtonGroup>
+
+                      <Button
+                        variant="outlined"
+                        startIcon={<Tune />}
+                        onClick={handleFilterMenuOpen}
+                        sx={{
+                          borderRadius: "12px",
+                          textTransform: "none",
+                          borderColor: "rgba(226, 232, 240, 0.8)",
+                          color: "#64748b",
+                          fontWeight: 500,
+                          padding: "6px 16px",
+                          "&:hover": {
+                            borderColor: "#4A6FFF",
+                            color: "#4A6FFF",
+                            backgroundColor: "rgba(74, 111, 255, 0.05)",
+                            transform: "translateY(-2px)",
+                          },
+                          transition: "all 0.3s ease",
+                        }}
+                      >
+                        Filtros
+                      </Button>
+                      <Menu
+                        anchorEl={filterMenuAnchor}
+                        open={Boolean(filterMenuAnchor)}
+                        onClose={handleFilterMenuClose}
+                        PaperProps={{
+                          sx: {
+                            width: "280px",
+                            padding: "0.75rem",
+                            borderRadius: "16px",
+                            boxShadow: "0 15px 50px rgba(0, 0, 0, 0.15)",
+                          },
+                        }}
+                      >
+                        <Typography
+                          sx={{
+                            padding: "0.5rem 1rem",
+                            fontWeight: 700,
+                            color: "#334155",
+                            fontSize: "1rem",
+                            borderBottom: "1px solid rgba(226, 232, 240, 0.8)",
+                            marginBottom: "0.75rem",
+                            paddingBottom: "0.75rem",
+                          }}
+                        >
+                          Filtros Avançados
+                        </Typography>
+                        <Box sx={{ padding: "0.5rem 1rem" }}>
+                          <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+                            <InputLabel id="status-filter-label">Status</InputLabel>
+                            <Select
+                              labelId="status-filter-label"
+                              id="status-filter"
+                              value={statusFilter}
+                              label="Status"
+                              onChange={handleStatusFilterChange}
                               sx={{
-                                color: "#64748b",
-                                "&:hover": {
-                                  color: "#4A6FFF",
-                                  backgroundColor: "rgba(241, 245, 249, 0.8)",
+                                borderRadius: "10px",
+                                "& .MuiOutlinedInput-notchedOutline": {
+                                  borderColor: "rgba(226, 232, 240, 0.8)",
+                                },
+                                "&:hover .MuiOutlinedInput-notchedOutline": {
+                                  borderColor: "#4A6FFF",
+                                },
+                                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                                  borderColor: "#4A6FFF",
                                 },
                               }}
                             >
-                              <Refresh />
-                            </IconButton>
-                          }
-                          sx={{
-                            borderBottom: "1px solid rgba(226, 232, 240, 0.5)",
-                            padding: { xs: "0.8rem 1rem", sm: "1rem 1.25rem" },
-                          }}
-                        />
-                        <CardContent sx={{ padding: { xs: "0.5rem 0.8rem", sm: "0.5rem 1rem" } }}>
-                          <TextField
-                            size="small"
-                            placeholder="Buscar remoções..."
-                            fullWidth
-                            value={searchTotal}
-                            onChange={(e) => setSearchTotal(e.target.value)}
-                            sx={{ marginBottom: "1rem" }}
-                            InputProps={{
-                              startAdornment: (
-                                <InputAdornment position="start">
-                                  <Search fontSize="small" />
-                                </InputAdornment>
-                              ),
-                              sx: {
-                                borderRadius: "12px",
-                                backgroundColor: "rgba(241, 245, 249, 0.7)",
-                                transition: "all 0.3s ease",
+                              <MenuItem value="all">Todos</MenuItem>
+                              <MenuItem value="completed">Concluído</MenuItem>
+                              <MenuItem value="in-progress">Em andamento</MenuItem>
+                              <MenuItem value="scheduled">Agendado</MenuItem>
+                            </Select>
+                          </FormControl>
+
+                          <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+                            <InputLabel id="date-filter-label">Período</InputLabel>
+                            <Select
+                              labelId="date-filter-label"
+                              id="date-filter"
+                              value={dateFilter}
+                              label="Período"
+                              onChange={handleDateFilterChange}
+                              sx={{
+                                borderRadius: "10px",
+                                "& .MuiOutlinedInput-notchedOutline": {
+                                  borderColor: "rgba(226, 232, 240, 0.8)",
+                                },
+                                "&:hover .MuiOutlinedInput-notchedOutline": {
+                                  borderColor: "#4A6FFF",
+                                },
+                                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                                  borderColor: "#4A6FFF",
+                                },
+                              }}
+                            >
+                              <MenuItem value="today">Hoje</MenuItem>
+                              <MenuItem value="yesterday">Ontem</MenuItem>
+                              <MenuItem value="week">Esta semana</MenuItem>
+                              <MenuItem value="month">Este mês</MenuItem>
+                              <MenuItem value="custom">Personalizado</MenuItem>
+                            </Select>
+                          </FormControl>
+
+                          <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              sx={{
+                                borderRadius: "10px",
+                                textTransform: "none",
+                                borderColor: "rgba(226, 232, 240, 0.8)",
+                                color: "#64748b",
+                                fontWeight: 500,
+                              }}
+                              onClick={handleFilterMenuClose}
+                            >
+                              Cancelar
+                            </Button>
+                            <Button
+                              variant="contained"
+                              size="small"
+                              sx={{
+                                borderRadius: "10px",
+                                textTransform: "none",
+                                backgroundColor: "#4A6FFF",
+                                fontWeight: 500,
+                                boxShadow: "0 4px 12px rgba(74, 111, 255, 0.2)",
                                 "&:hover": {
-                                  backgroundColor: "rgba(241, 245, 249, 0.9)",
+                                  backgroundColor: "#3A5FEF",
+                                  boxShadow: "0 6px 16px rgba(74, 111, 255, 0.3)",
                                 },
-                                "&.Mui-focused": {
-                                  backgroundColor: "white",
-                                  boxShadow: "0 0 0 2px rgba(74, 111, 255, 0.2)",
-                                },
-                              },
-                            }}
-                          />
-                          <TableContainer>
-                            <Table>
-                              <TableHead>
-                                <TableRow>
-                                  <TableCell
-                                    onClick={() => handleSort("driver")}
-                                    sx={{
-                                      cursor: "pointer",
-                                      fontWeight: 600,
-                                      color: sortField === "driver" ? "#4A6FFF" : "#64748b",
-                                      "&:hover": { color: "#4A6FFF" },
-                                      display: "flex",
-                                      alignItems: "center",
-                                      fontSize: { xs: "0.8rem", sm: "0.875rem" },
-                                    }}
-                                  >
-                                    Motorista
-                                    <SortIndicator field="driver" />
-                                  </TableCell>
-                                  <TableCell
-                                    onClick={() => handleSort("vehiclePrefix")}
-                                    sx={{
-                                      cursor: "pointer",
-                                      fontWeight: 600,
-                                      color: sortField === "vehiclePrefix" ? "#4A6FFF" : "#64748b",
-                                      "&:hover": { color: "#4A6FFF" },
-                                      display: "flex",
-                                      alignItems: "center",
-                                      fontSize: { xs: "0.8rem", sm: "0.875rem" },
-                                    }}
-                                  >
-                                    Prefixo
-                                    <SortIndicator field="vehiclePrefix" />
-                                  </TableCell>
-                                  <TableCell
-                                    onClick={() => handleSort("departureTime")}
-                                    sx={{
-                                      cursor: "pointer",
-                                      fontWeight: 600,
-                                      color: sortField === "departureTime" ? "#4A6FFF" : "#64748b",
-                                      "&:hover": { color: "#4A6FFF" },
-                                      display: "flex",
-                                      alignItems: "center",
-                                      fontSize: { xs: "0.8rem", sm: "0.875rem" },
-                                    }}
-                                  >
-                                    Horário
-                                    <SortIndicator field="departureTime" />
-                                  </TableCell>
-                                  <TableCell
-                                    sx={{
-                                      fontWeight: 600,
-                                      color: "#64748b",
-                                      fontSize: { xs: "0.8rem", sm: "0.875rem" },
-                                    }}
-                                  >
-                                    Status
-                                  </TableCell>
-                                </TableRow>
-                              </TableHead>
-                              <TableBody>
-                                {paginatedTotalRemovals.map((removal) => (
-                                  <TableRow
-                                    key={removal.id}
-                                    sx={{
-                                      "&:hover": {
-                                        backgroundColor: "rgba(241, 245, 249, 0.5)",
-                                      },
-                                      transition: "background-color 0.2s",
-                                      cursor: "pointer",
-                                    }}
-                                    onClick={() => handleOpenModal(removal)}
-                                  >
-                                    <TableCell>
-                                      <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                                        <Avatar
-                                          sx={{
-                                            width: { xs: 28, sm: 32 },
-                                            height: { xs: 28, sm: 32 },
-                                            backgroundColor: "rgba(74, 111, 255, 0.1)",
-                                            color: "#4A6FFF",
-                                            fontWeight: 600,
-                                            fontSize: { xs: "0.8rem", sm: "0.875rem" },
-                                          }}
-                                        >
-                                          {removal.driver.charAt(0)}
-                                        </Avatar>
-                                        <Typography
-                                          sx={{ fontWeight: 500, fontSize: { xs: "0.8rem", sm: "0.875rem" } }}
-                                        >
-                                          {isMobile ? removal.driver.split(" ")[0] : removal.driver}
-                                        </Typography>
-                                      </Box>
-                                    </TableCell>
-                                    <TableCell>
-                                      <Chip
-                                        label={removal.vehiclePrefix}
-                                        size="small"
-                                        sx={{
-                                          backgroundColor: "rgba(45, 206, 137, 0.1)",
-                                          color: "#2DCE89",
-                                          fontWeight: 600,
-                                          height: { xs: "1.4rem", sm: "1.5rem" },
-                                          fontSize: { xs: "0.7rem", sm: "0.75rem" },
-                                        }}
-                                      />
-                                    </TableCell>
-                                    <TableCell sx={{ fontSize: { xs: "0.8rem", sm: "0.875rem" } }}>
-                                      {removal.departureTime}
-                                    </TableCell>
-                                    <TableCell>{getStatusChip(removal.status)}</TableCell>
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
-                          </TableContainer>
-                          <TablePagination
-                            component="div"
-                            count={filteredTotalRemovals.length}
-                            page={totalPage}
-                            onPageChange={handleTotalPageChange}
-                            rowsPerPage={totalRowsPerPage}
-                            onRowsPerPageChange={handleTotalRowsPerPageChange}
-                            rowsPerPageOptions={[5, 10, 25]}
-                            labelRowsPerPage={isMobile ? "" : "Linhas:"}
-                            labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
-                            sx={{
-                              ".MuiTablePagination-actions": {
-                                "& .MuiIconButton-root": {
-                                  color: "#64748b",
-                                  "&:hover": {
+                              }}
+                              onClick={handleFilterMenuClose}
+                            >
+                              Aplicar Filtros
+                            </Button>
+                          </Box>
+                        </Box>
+                      </Menu>
+                    </Box>
+                  </Box>
+
+                  <Grid
+                    container
+                    spacing={3}
+                    sx={{
+                      width: "100%",
+                      margin: 0,
+                      "& > .MuiGrid-item": {
+                        paddingLeft: "12px",
+                        paddingRight: "12px",
+                      },
+                    }}
+                  >
+                    {/* Total Removals Table */}
+                    <Grid item xs={12} md={6}>
+                      <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "700ms" : "0ms" }}>
+                        <Card
+                          sx={{
+                            borderRadius: "20px",
+                            boxShadow: "0 8px 30px rgba(0, 0, 0, 0.05)",
+                            transition: "all 0.3s ease",
+                            overflow: "hidden",
+                            height: "100%",
+                            "&:hover": {
+                              transform: "translateY(-5px)",
+                              boxShadow: "0 12px 40px rgba(0, 0, 0, 0.1)",
+                            },
+                            position: "relative",
+                            "&::before": {
+                              content: '""',
+                              position: "absolute",
+                              top: 0,
+                              left: 0,
+                              right: 0,
+                              height: "5px",
+                              background: "linear-gradient(90deg, #4A6FFF, #6B8CFF)",
+                              zIndex: 1,
+                            },
+                          }}
+                        >
+                          <CardHeader
+                            title={
+                              <Box sx={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                                <Box
+                                  sx={{
+                                    width: { xs: "32px", sm: "36px" },
+                                    height: { xs: "32px", sm: "36px" },
+                                    borderRadius: "10px",
+                                    background: "linear-gradient(135deg, #4A6FFF, #6B8CFF)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    boxShadow: "0 4px 12px rgba(74, 111, 255, 0.2)",
+                                  }}
+                                >
+                                  <TruckIcon sx={{ color: "white", fontSize: { xs: "1.1rem", sm: "1.3rem" } }} />
+                                </Box>
+                                <Typography
+                                  sx={{
+                                    fontWeight: 600,
+                                    fontSize: { xs: "1.1rem", sm: "1.2rem" },
+                                    color: "#334155",
+                                  }}
+                                >
+                                  Total de Remoções
+                                </Typography>
+                                <Chip
+                                  label={filteredTotalRemovals.length}
+                                  size="small"
+                                  sx={{
                                     backgroundColor: "rgba(74, 111, 255, 0.1)",
                                     color: "#4A6FFF",
+                                    fontWeight: 600,
+                                    height: "1.5rem",
+                                    fontSize: "0.75rem",
+                                  }}
+                                />
+                              </Box>
+                            }
+                            action={
+                              <IconButton
+                                onClick={() => {}}
+                                sx={{
+                                  color: "#64748b",
+                                  "&:hover": {
+                                    color: "#4A6FFF",
+                                    backgroundColor: "rgba(241, 245, 249, 0.8)",
                                   },
-                                },
-                              },
-                              ".MuiTablePagination-selectLabel": {
-                                display: { xs: "none", sm: "block" },
-                              },
-                              ".MuiTablePagination-select": {
-                                paddingLeft: { xs: 0, sm: "8px" },
-                              },
+                                }}
+                              >
+                                <Refresh />
+                              </IconButton>
+                            }
+                            sx={{
+                              borderBottom: "1px solid rgba(226, 232, 240, 0.5)",
+                              padding: { xs: "0.8rem 1rem", sm: "1rem 1.25rem" },
                             }}
                           />
-                        </CardContent>
-                      </Card>
-                    </Zoom>
-                  </Grid>
-
-                  {/* Today's Removals Table */}
-                  <Grid item xs={12} md={6}>
-                    <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "800ms" : "0ms" }}>
-                      <Card
-                        sx={{
-                          borderRadius: "16px",
-                          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05)",
-                          transition: "all 0.3s ease",
-                          overflow: "hidden",
-                          height: "100%",
-                          "&:hover": {
-                            transform: "translateY(-5px)",
-                            boxShadow: "0 8px 30px rgba(0, 0, 0, 0.1)",
-                          },
-                        }}
-                      >
-                        <CardHeader
-                          title={
-                            <Box sx={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                              <Box
-                                sx={{
-                                  width: { xs: "28px", sm: "32px" },
-                                  height: { xs: "28px", sm: "32px" },
-                                  borderRadius: "8px",
-                                  background: "linear-gradient(135deg, #FB6340, #FBB140)",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  boxShadow: "0 4px 12px rgba(251, 99, 64, 0.2)",
-                                }}
-                              >
-                                <Today sx={{ color: "white", fontSize: { xs: "1rem", sm: "1.2rem" } }} />
-                              </Box>
-                              <Typography
-                                sx={{
-                                  fontWeight: 600,
-                                  fontSize: { xs: "1rem", sm: "1.1rem" },
-                                  color: "#334155",
-                                }}
-                              >
-                                Remoções de Hoje
-                              </Typography>
-                              <Chip
-                                label={filteredTodayRemovals.length}
-                                size="small"
-                                sx={{
-                                  backgroundColor: "rgba(251, 99, 64, 0.1)",
-                                  color: "#FB6340",
-                                  fontWeight: 600,
-                                  height: "1.5rem",
-                                  fontSize: "0.75rem",
-                                }}
-                              />
-                            </Box>
-                          }
-                          action={
-                            <IconButton
-                              onClick={() => {}}
+                          <CardContent sx={{ padding: { xs: "0.5rem 0.8rem", sm: "0.5rem 1rem" } }}>
+                            <Box
                               sx={{
-                                color: "#64748b",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                                mb: 2,
+                                backgroundColor: "rgba(241, 245, 249, 0.7)",
+                                borderRadius: "16px",
+                                padding: "0.75rem",
+                                border: "1px solid rgba(226, 232, 240, 0.8)",
+                                boxShadow: "0 2px 10px rgba(0, 0, 0, 0.02)",
+                                transition: "all 0.3s ease",
                                 "&:hover": {
-                                  color: "#FB6340",
-                                  backgroundColor: "rgba(241, 245, 249, 0.8)",
+                                  boxShadow: "0 4px 15px rgba(0, 0, 0, 0.05)",
+                                  borderColor: "#4A6FFF50",
                                 },
                               }}
                             >
-                              <Refresh />
-                            </IconButton>
-                          }
-                          sx={{
-                            borderBottom: "1px solid rgba(226, 232, 240, 0.5)",
-                            padding: { xs: "0.8rem 1rem", sm: "1rem 1.25rem" },
-                          }}
-                        />
-                        <CardContent sx={{ padding: { xs: "0.5rem 0.8rem", sm: "0.5rem 1rem" } }}>
-                          <TextField
-                            size="small"
-                            placeholder="Buscar remoções de hoje..."
-                            fullWidth
-                            value={searchToday}
-                            onChange={(e) => setSearchToday(e.target.value)}
-                            sx={{ marginBottom: "1rem" }}
-                            InputProps={{
-                              startAdornment: (
-                                <InputAdornment position="start">
-                                  <Search fontSize="small" />
-                                </InputAdornment>
-                              ),
-                              sx: {
-                                borderRadius: "12px",
-                                backgroundColor: "rgba(241, 245, 249, 0.7)",
-                                transition: "all 0.3s ease",
-                                "&:hover": {
-                                  backgroundColor: "rgba(241, 245, 249, 0.9)",
-                                },
-                                "&.Mui-focused": {
-                                  backgroundColor: "white",
-                                  boxShadow: "0 0 0 2px rgba(251, 99, 64, 0.2)",
-                                },
-                              },
-                            }}
-                          />
-                          <TableContainer>
-                            <Table>
-                              <TableHead>
-                                <TableRow>
-                                  <TableCell
-                                    sx={{
-                                      fontWeight: 600,
-                                      color: "#64748b",
-                                      fontSize: { xs: "0.8rem", sm: "0.875rem" },
-                                    }}
-                                  >
-                                    Motorista
-                                  </TableCell>
-                                  <TableCell
-                                    sx={{
-                                      fontWeight: 600,
-                                      color: "#64748b",
-                                      fontSize: { xs: "0.8rem", sm: "0.875rem" },
-                                    }}
-                                  >
-                                    Prefixo
-                                  </TableCell>
-                                  <TableCell
-                                    sx={{
-                                      fontWeight: 600,
-                                      color: "#64748b",
-                                      fontSize: { xs: "0.8rem", sm: "0.875rem" },
-                                    }}
-                                  >
-                                    Horário
-                                  </TableCell>
-                                  <TableCell
-                                    sx={{
-                                      fontWeight: 600,
-                                      color: "#64748b",
-                                      fontSize: { xs: "0.8rem", sm: "0.875rem" },
-                                    }}
-                                  >
-                                    Status
-                                  </TableCell>
-                                </TableRow>
-                              </TableHead>
-                              <TableBody>
-                                {paginatedTodayRemovals.map((removal) => (
-                                  <TableRow
-                                    key={removal.id}
-                                    sx={{
-                                      "&:hover": {
-                                        backgroundColor: "rgba(241, 245, 249, 0.5)",
-                                      },
-                                      transition: "background-color 0.2s",
-                                      cursor: "pointer",
-                                    }}
-                                    onClick={() => handleOpenModal(removal)}
-                                  >
-                                    <TableCell>
-                                      <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                                        <Avatar
-                                          sx={{
-                                            width: { xs: 28, sm: 32 },
-                                            height: { xs: 28, sm: 32 },
-                                            backgroundColor: "rgba(251, 99, 64, 0.1)",
-                                            color: "#FB6340",
-                                            fontWeight: 600,
-                                            fontSize: { xs: "0.8rem", sm: "0.875rem" },
-                                          }}
-                                        >
-                                          {removal.driver.charAt(0)}
-                                        </Avatar>
-                                        <Typography
-                                          sx={{ fontWeight: 500, fontSize: { xs: "0.8rem", sm: "0.875rem" } }}
-                                        >
-                                          {isMobile ? removal.driver.split(" ")[0] : removal.driver}
-                                        </Typography>
-                                      </Box>
-                                    </TableCell>
-                                    <TableCell>
-                                      <Chip
-                                        label={removal.vehiclePrefix}
-                                        size="small"
+                              <InputBase
+                                placeholder="Buscar remoções..."
+                                value={searchTotal}
+                                onChange={(e) => setSearchTotal(e.target.value)}
+                                sx={{
+                                  ml: 1,
+                                  flex: 1,
+                                  fontSize: "0.875rem",
+                                  color: "#334155",
+                                }}
+                                startAdornment={<Search sx={{ color: "#64748b", mr: 1, fontSize: "1.1rem" }} />}
+                              />
+                              <ButtonGroup
+                                variant="outlined"
+                                size="small"
+                                sx={{
+                                  '& .MuiButtonGroup-grouped': {
+                                    borderColor: 'rgba(226, 232, 240, 0.8)',
+                                    color: '#64748b',
+                                    '&:hover': {
+                                      backgroundColor: 'rgba(74, 111, 255, 0.05)',
+                                      borderColor: '#4A6FFF50',
+                                      color: '#4A6FFF',
+                                    },
+                                  },
+                                }}
+                              >
+                                <Button sx={{ borderRadius: '12px 0 0 12px' }}>
+                                  <Sort fontSize="small" />
+                                </Button>
+                                <Button sx={{ borderRadius: '0 12px 12px 0' }}>
+                                  <FilterList fontSize="small" />
+                                </Button>
+                              </ButtonGroup>
+                            </Box>
+                            
+                            {viewMode === "list" && (
+                              <TableContainer>
+                                <Table>
+                                  <TableHead>
+                                    <TableRow>
+                                      <TableCell
+                                        onClick={() => handleSort("driver")}
                                         sx={{
-                                          backgroundColor: "rgba(251, 99, 64, 0.1)",
-                                          color: "#FB6340",
+                                          cursor: "pointer",
                                           fontWeight: 600,
-                                          height: { xs: "1.4rem", sm: "1.5rem" },
-                                          fontSize: { xs: "0.7rem", sm: "0.75rem" },
+                                          color: sortField === "driver" ? "#4A6FFF" : "#64748b",
+                                          "&:hover": { color: "#4A6FFF" },
+                                          display: "flex",
+                                          alignItems: "center",
+                                          fontSize: { xs: "0.8rem", sm: "0.875rem" },
                                         }}
-                                      />
-                                    </TableCell>
-                                    <TableCell sx={{ fontSize: { xs: "0.8rem", sm: "0.875rem" } }}>
-                                      {removal.departureTime}
-                                    </TableCell>
-                                    <TableCell>{getStatusChip(removal.status)}</TableCell>
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
-                          </TableContainer>
-                          <TablePagination
-                            component="div"
-                            count={filteredTodayRemovals.length}
-                            page={todayPage}
-                            onPageChange={handleTodayPageChange}
-                            rowsPerPage={todayRowsPerPage}
-                            onRowsPerPageChange={handleTodayRowsPerPageChange}
-                            rowsPerPageOptions={[5, 10, 25]}
-                            labelRowsPerPage={isMobile ? "" : "Linhas:"}
-                            labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
-                            sx={{
-                              ".MuiTablePagination-actions": {
-                                "& .MuiIconButton-root": {
-                                  color: "#64748b",
-                                  "&:hover": {
-                                    backgroundColor: "rgba(251, 99, 64, 0.1)",
-                                    color: "#FB6340",
+                                      >
+                                        Motorista
+                                        <SortIndicator field="driver" />
+                                      </TableCell>
+                                      <TableCell
+                                        onClick={() => handleSort("vehiclePrefix")}
+                                        sx={{
+                                          cursor: "pointer",
+                                          fontWeight: 600,
+                                          color: sortField === "vehiclePrefix" ? "#4A6FFF" : "#64748b",
+                                          "&:hover": { color: "#4A6FFF" },
+                                          display: "flex",
+                                          alignItems: "center",
+                                          fontSize: { xs: "0.8rem", sm: "0.875rem" },
+                                        }}
+                                      >
+                                        Prefixo
+                                        <SortIndicator field="vehiclePrefix" />
+                                      </TableCell>
+                                      <TableCell
+                                        onClick={() => handleSort("departureTime")}
+                                        sx={{
+                                          cursor: "pointer",
+                                          fontWeight: 600,
+                                          color: sortField === "departureTime" ? "#4A6FFF" : "#64748b",
+                                          "&:hover": { color: "#4A6FFF" },
+                                          display: "flex",
+                                          alignItems: "center",
+                                          fontSize: { xs: "0.8rem", sm: "0.875rem" },
+                                        }}
+                                      >
+                                        Horário
+                                        <SortIndicator field="departureTime" />
+                                      </TableCell>
+                                      <TableCell
+                                        sx={{
+                                          fontWeight: 600,
+                                          color: "#64748b",
+                                          fontSize: { xs: "0.8rem", sm: "0.875rem" },
+                                        }}
+                                      >
+                                        Status
+                                      </TableCell>
+                                    </TableRow>
+                                  </TableHead>
+                                  <TableBody>
+                                    {paginatedTotalRemovals.map((removal) => (
+                                      <TableRow
+                                        key={removal.id}
+                                        sx={{
+                                          "&:hover": {
+                                            backgroundColor: "rgba(241, 245, 249, 0.5)",
+                                          },
+                                          transition: "background-color 0.2s",
+                                          cursor: "pointer",
+                                        }}
+                                        onClick={() => handleOpenModal(removal)}
+                                      >
+                                        <TableCell>
+                                          <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                                            <Avatar
+                                              sx={{
+                                                width: { xs: 28, sm: 32 },
+                                                height: { xs: 28, sm: 32 },
+                                                backgroundColor: "rgba(74, 111, 255, 0.1)",
+                                                color: "#4A6FFF",
+                                                fontWeight: 600,
+                                                fontSize: { xs: "0.8rem", sm: "0.875rem" },
+                                              }}
+                                            >
+                                              {removal.driver.charAt(0)}
+                                            </Avatar>
+                                            <Typography
+                                              sx={{ fontWeight: 500, fontSize: { xs: "0.8rem", sm: "0.875rem" } }}
+                                            >
+                                              {isMobile ? removal.driver.split(" ")[0] : removal.driver}
+                                            </Typography>
+                                          </Box>
+                                        </TableCell>
+                                        <TableCell>
+                                          <Chip
+                                            label={removal.vehiclePrefix}
+                                            size="small"
+                                            sx={{
+                                              backgroundColor: "rgba(45, 206, 137, 0.1)",
+                                              color: "#2DCE89",
+                                              fontWeight: 600,
+                                              height: { xs: "1.4rem", sm: "1.5rem" },
+                                              fontSize: { xs: "0.7rem", sm: "0.75rem" },
+                                            }}
+                                          />
+                                        </TableCell>
+                                        <TableCell sx={{ fontSize: { xs: "0.8rem", sm: "0.875rem" } }}>
+                                          {removal.departureTime}
+                                        </TableCell>
+                                        <TableCell>{getStatusChip(removal.status)}</TableCell>
+                                      </TableRow>
+                                    ))}
+                                  </TableBody>
+                                </Table>
+                              </TableContainer>
+                            )}
+                            
+                            {viewMode === "card" && renderCardView(paginatedTotalRemovals, handleOpenModal)}
+                            
+                            {viewMode === "timeline" && renderTimelineView(paginatedTotalRemovals, handleOpenModal)}
+                            
+                            <TablePagination
+                              component="div"
+                              count={filteredTotalRemovals.length}
+                              page={totalPage}
+                              onPageChange={handleTotalPageChange}
+                              rowsPerPage={totalRowsPerPage}
+                              onRowsPerPageChange={handleTotalRowsPerPageChange}
+                              rowsPerPageOptions={[5, 10, 25]}
+                              labelRowsPerPage={isMobile ? "" : "Linhas:"}
+                              labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
+                              sx={{
+                                ".MuiTablePagination-actions": {
+                                  "& .MuiIconButton-root": {
+                                    color: "#64748b",
+                                    "&:hover": {
+                                      backgroundColor: "rgba(74, 111, 255, 0.1)",
+                                      color: "#4A6FFF",
+                                    },
                                   },
                                 },
-                              },
-                              ".MuiTablePagination-selectLabel": {
-                                display: { xs: "none", sm: "block" },
-                              },
-                              ".MuiTablePagination-select": {
-                                paddingLeft: { xs: 0, sm: "8px" },
-                              },
+                                ".MuiTablePagination-selectLabel": {
+                                  display: { xs: "none", sm: "block" },
+                                },
+                                ".MuiTablePagination-select": {
+                                  paddingLeft: { xs: 0, sm: "8px" },
+                                },
+                              }}
+                            />
+                          </CardContent>
+                        </Card>
+                      </Zoom>
+                    </Grid>
+
+                    {/* Today's Removals Table */}
+                    <Grid item xs={12} md={6}>
+                      <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "800ms" : "0ms" }}>
+                        <Card
+                          sx={{
+                            borderRadius: "20px",
+                            boxShadow: "0 8px 30px rgba(0, 0, 0, 0.05)",
+                            transition: "all 0.3s ease",
+                            overflow: "hidden",
+                            height: "100%",
+                            "&:hover": {
+                              transform: "translateY(-5px)",
+                              boxShadow: "0 12px 40px rgba(0, 0, 0, 0.1)",
+                            },
+                            position: "relative",
+                            "&::before": {
+                              content: '""',
+                              position: "absolute",
+                              top: 0,
+                              left: 0,
+                              right: 0,
+                              height: "5px",
+                              background: "linear-gradient(90deg, #FB6340, #FBB140)",
+                              zIndex: 1,
+                            },
+                          }}
+                        >
+                          <CardHeader
+                            title={
+                              <Box sx={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                                <Box
+                                  sx={{
+                                    width: { xs: "32px", sm: "36px" },
+                                    height: { xs: "32px", sm: "36px" },
+                                    borderRadius: "10px",
+                                    background: "linear-gradient(135deg, #FB6340, #FBB140)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    boxShadow: "0 4px 12px rgba(251, 99, 64, 0.2)",
+                                  }}
+                                >
+                                  <Today sx={{ color: "white", fontSize: { xs: "1.1rem", sm: "1.3rem" } }} />
+                                </Box>
+                                <Typography
+                                  sx={{
+                                    fontWeight: 600,
+                                    fontSize: { xs: "1.1rem", sm: "1.2rem" },
+                                    color: "#334155",
+                                  }}
+                                >
+                                  Remoções de Hoje
+                                </Typography>
+                                <Chip
+                                  label={filteredTodayRemovals.length}
+                                  size="small"
+                                  sx={{
+                                    backgroundColor: "rgba(251, 99, 64, 0.1)",
+                                    color: "#FB6340",
+                                    fontWeight: 600,
+                                    height: "1.5rem",
+                                    fontSize: "0.75rem",
+                                  }}
+                                />
+                              </Box>
+                            }
+                            action={
+                              <IconButton
+                                onClick={() => {}}
+                                sx={{
+                                  color: "#64748b",
+                                  "&:hover": {
+                                    color: "#FB6340",
+                                    backgroundColor: "rgba(241, 245, 249, 0.8)",
+                                  },
+                                }}
+                              >
+                                <Refresh />
+                              </IconButton>
+                            }
+                            sx={{
+                              borderBottom: "1px solid rgba(226, 232, 240, 0.5)",
+                              padding: { xs: "0.8rem 1rem", sm: "1rem 1.25rem" },
                             }}
                           />
-                        </CardContent>
-                      </Card>
-                    </Zoom>
+                          <CardContent sx={{ padding: { xs: "0.5rem 0.8rem", sm: "0.5rem 1rem" } }}>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                                mb: 2,
+                                backgroundColor: "rgba(241, 245, 249, 0.7)",
+                                borderRadius: "16px",
+                                padding: "0.75rem",
+                                border: "1px solid rgba(226, 232, 240, 0.8)",
+                                boxShadow: "0 2px 10px rgba(0, 0, 0, 0.02)",
+                                transition: "all 0.3s ease",
+                                "&:hover": {
+                                  boxShadow: "0 4px 15px rgba(0, 0, 0, 0.05)",
+                                  borderColor: "#FB634050",
+                                },
+                              }}
+                            >
+                              <InputBase
+                                placeholder="Buscar remoções de hoje..."
+                                value={searchToday}
+                                onChange={(e) => setSearchToday(e.target.value)}
+                                sx={{
+                                  ml: 1,
+                                  flex: 1,
+                                  fontSize: "0.875rem",
+                                  color: "#334155",
+                                }}
+                                startAdornment={<Search sx={{ color: "#64748b", mr: 1, fontSize: "1.1rem" }} />}
+                              />
+                              <ButtonGroup
+                                variant="outlined"
+                                size="small"
+                                sx={{
+                                  '& .MuiButtonGroup-grouped': {
+                                    borderColor: 'rgba(226, 232, 240, 0.8)',
+                                    color: '#64748b',
+                                    '&:hover': {
+                                      backgroundColor: 'rgba(251, 99, 64, 0.05)',
+                                      borderColor: '#FB634050',
+                                      color: '#FB6340',
+                                    },
+                                  },
+                                }}
+                              >
+                                <Button sx={{ borderRadius: '12px 0 0 12px' }}>
+                                  <Sort fontSize="small" />
+                                </Button>
+                                <Button sx={{ borderRadius: '0 12px 12px 0' }}>
+                                  <FilterList fontSize="small" />
+                                </Button>
+                              </ButtonGroup>
+                            </Box>
+                            
+                            {viewMode === "list" && (
+                              <TableContainer>
+                                <Table>
+                                  <TableHead>
+                                    <TableRow>
+                                      <TableCell
+                                        sx={{
+                                          fontWeight: 600,
+                                          color: "#64748b",
+                                          fontSize: { xs: "0.8rem", sm: "0.875rem" },
+                                        }}
+                                      >
+                                        Motorista
+                                      </TableCell>
+                                      <TableCell
+                                        sx={{
+                                          fontWeight: 600,
+                                          color: "#64748b",
+                                          fontSize: { xs: "0.8rem", sm: "0.875rem" },
+                                        }}
+                                      >
+                                        Prefixo
+                                      </TableCell>
+                                      <TableCell
+                                        sx={{
+                                          fontWeight: 600,
+                                          color: "#64748b",
+                                          fontSize: { xs: "0.8rem", sm: "0.875rem" },
+                                        }}
+                                      >
+                                        Horário
+                                      </TableCell>
+                                      <TableCell
+                                        sx={{
+                                          fontWeight: 600,
+                                          color: "#64748b",
+                                          fontSize: { xs: "0.8rem", sm: "0.875rem" },
+                                        }}
+                                      >
+                                        Status
+                                      </TableCell>
+                                    </TableRow>
+                                  </TableHead>
+                                  <TableBody>
+                                    {paginatedTodayRemovals.map((removal) => (
+                                      <TableRow
+                                        key={removal.id}
+                                        sx={{
+                                          "&:hover": {
+                                            backgroundColor: "rgba(241, 245, 249, 0.5)",
+                                          },
+                                          transition: "background-color 0.2s",
+                                          cursor: "pointer",
+                                        }}
+                                        onClick={() => handleOpenModal(removal)}
+                                      >
+                                        <TableCell>
+                                          <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                                            <Avatar
+                                              sx={{
+                                                width: { xs: 28, sm: 32 },
+                                                height: { xs: 28, sm: 32 },
+                                                backgroundColor: "rgba(251, 99, 64, 0.1)",
+                                                color: "#FB6340",
+                                                fontWeight: 600,
+                                                fontSize: { xs: "0.8rem", sm: "0.875rem" },
+                                              }}
+                                            >
+                                              {removal.driver.charAt(0)}
+                                            </Avatar>
+                                            <Typography
+                                              sx={{ fontWeight: 500, fontSize: { xs: "0.8rem", sm: "0.875rem" } }}
+                                            >
+                                              {isMobile ? removal.driver.split(" ")[0] : removal.driver}
+                                            </Typography>
+                                          </Box>
+                                        </TableCell>
+                                        <TableCell>
+                                          <Chip
+                                            label={removal.vehiclePrefix}
+                                            size="small"
+                                            sx={{
+                                              backgroundColor: "rgba(251, 99, 64, 0.1)",
+                                              color: "#FB6340",
+                                              fontWeight: 600,
+                                              height: { xs: "1.4rem", sm: "1.5rem" },
+                                              fontSize: { xs: "0.7rem", sm: "0.75rem" },
+                                            }}
+                                          />
+                                        </TableCell>
+                                        <TableCell sx={{ fontSize: { xs: "0.8rem", sm: "0.875rem" } }}>
+                                          {removal.departureTime}
+                                        </TableCell>
+                                        <TableCell>{getStatusChip(removal.status)}</TableCell>
+                                      </TableRow>
+                                    ))}
+                                  </TableBody>
+                                </Table>
+                              </TableContainer>
+                            )}
+                            
+                            {viewMode === "card" && renderCardView(paginatedTodayRemovals, handleOpenModal)}
+                            
+                            {viewMode === "timeline" && renderTimelineView(paginatedTodayRemovals, handleOpenModal)}
+                            
+                            <TablePagination
+                              component="div"
+                              count={filteredTodayRemovals.length}
+                              page={todayPage}
+                              onPageChange={handleTodayPageChange}
+                              rowsPerPage={todayRowsPerPage}
+                              onRowsPerPageChange={handleTodayRowsPerPageChange}
+                              rowsPerPageOptions={[5, 10, 25]}
+                              labelRowsPerPage={isMobile ? "" : "Linhas:"}
+                              labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
+                              sx={{
+                                ".MuiTablePagination-actions": {
+                                  "& .MuiIconButton-root": {
+                                    color: "#64748b",
+                                    "&:hover": {
+                                      backgroundColor: "rgba(251, 99, 64, 0.1)",
+                                      color: "#FB6340",
+                                    },
+                                  },
+                                },
+                                ".MuiTablePagination-selectLabel": {
+                                  display: { xs: "none", sm: "block" },
+                                },
+                                ".MuiTablePagination-select": {
+                                  paddingLeft: { xs: 0, sm: "8px" },
+                                },
+                              }}
+                            />
+                          </CardContent>
+                        </Card>
+                      </Zoom>
+                    </Grid>
                   </Grid>
-                </Grid>
+                </Box>
               </Box>
             </Container>
           </Box>
@@ -2005,11 +3323,15 @@ export default function RemovalDashboard() {
         fullScreen={isMobile}
         PaperProps={{
           sx: {
-            borderRadius: isMobile ? 0 : "16px",
+            borderRadius: isMobile ? 0 : "20px",
             boxShadow: "0 24px 48px rgba(0, 0, 0, 0.2)",
             overflow: "hidden",
             width: "100%",
           },
+        }}
+        TransitionComponent={Slide}
+        TransitionProps={{
+          direction: "up",
         }}
       >
         {selectedRemoval && (
@@ -2021,11 +3343,23 @@ export default function RemovalDashboard() {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                padding: { xs: "0.6rem 1rem", sm: "0.75rem 1.25rem" },
+                padding: { xs: "0.8rem 1.2rem", sm: "1rem 1.5rem" },
               }}
             >
               <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                <TruckIcon sx={{ fontSize: { xs: "1.3rem", sm: "1.5rem" } }} />
+                <Box
+                  sx={{
+                    width: "36px",
+                    height: "36px",
+                    borderRadius: "10px",
+                    backgroundColor: "rgba(255, 255, 255, 0.2)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <TruckIcon sx={{ fontSize: { xs: "1.3rem", sm: "1.5rem" } }} />
+                </Box>
                 <Typography variant="h6" sx={{ fontWeight: 600, fontSize: { xs: "1rem", sm: "1.1rem" } }}>
                   Detalhes da Remoção
                 </Typography>
@@ -2043,39 +3377,43 @@ export default function RemovalDashboard() {
                 <Close fontSize="small" />
               </IconButton>
             </DialogTitle>
-            <DialogContent sx={{ padding: "1rem" }}>
+            <DialogContent sx={{ padding: "1.5rem" }}>
               <Grid container spacing={2}>
                 <Grid item xs={12}>
                   <Paper
                     elevation={0}
                     sx={{
-                      padding: "1rem",
-                      borderRadius: "12px",
+                      padding: "1.2rem",
+                      borderRadius: "16px",
                       backgroundColor: "rgba(241, 245, 249, 0.5)",
                       border: "1px solid rgba(226, 232, 240, 0.8)",
+                      transition: "all 0.3s ease",
+                      "&:hover": {
+                        boxShadow: "0 8px 30px rgba(0, 0, 0, 0.05)",
+                      },
                     }}
                   >
                     <Typography
                       variant="subtitle1"
                       sx={{
-                        fontWeight: 600,
+                        fontWeight: 700,
                         color: "#334155",
                         marginBottom: "0.75rem",
                         display: "flex",
                         alignItems: "center",
                         gap: "0.5rem",
-                        fontSize: "0.95rem",
+                        fontSize: "1rem",
                       }}
                     >
-                      <Person fontSize="small" /> Informações da Equipe
+                      <Person fontSize="small" sx={{ color: "#4A6FFF" }} /> Informações da Equipe
                     </Typography>
                     <List disablePadding dense>
                       <ListItem disablePadding sx={{ mb: 0.5 }}>
                         <ListItemIcon sx={{ minWidth: "36px" }}>
                           <Avatar
                             sx={{
-                              width: 28,
-                              height: 28,
+                              width: 32,
+                              height: 32,
                               backgroundColor: "rgba(74, 111, 255, 0.1)",
                               color: "#4A6FFF",
                               fontWeight: 600,
@@ -2103,8 +3441,8 @@ export default function RemovalDashboard() {
                         <ListItemIcon sx={{ minWidth: "36px" }}>
                           <Avatar
                             sx={{
-                              width: 28,
-                              height: 28,
+                              width: 32,
+                              height: 32,
                               backgroundColor: "rgba(45, 206, 137, 0.1)",
                               color: "#2DCE89",
                               fontWeight: 600,
@@ -2132,8 +3470,8 @@ export default function RemovalDashboard() {
                         <ListItemIcon sx={{ minWidth: "36px" }}>
                           <Avatar
                             sx={{
-                              width: 28,
-                              height: 28,
+                              width: 32,
+                              height: 32,
                               backgroundColor: "rgba(45, 206, 137, 0.1)",
                               color: "#2DCE89",
                               fontWeight: 600,
@@ -2163,26 +3501,30 @@ export default function RemovalDashboard() {
                   <Paper
                     elevation={0}
                     sx={{
-                      padding: "1rem",
-                      borderRadius: "12px",
+                      padding: "1.2rem",
+                      borderRadius: "16px",
                       backgroundColor: "rgba(241, 245, 249, 0.5)",
                       border: "1px solid rgba(226, 232, 240, 0.8)",
                       height: "100%",
+                      transition: "all 0.3s ease",
+                      "&:hover": {
+                        boxShadow: "0 8px 30px rgba(0, 0, 0, 0.05)",
+                      },
                     }}
                   >
                     <Typography
                       variant="subtitle1"
                       sx={{
-                        fontWeight: 600,
+                        fontWeight: 700,
                         color: "#334155",
                         marginBottom: "0.75rem",
                         display: "flex",
                         alignItems: "center",
                         gap: "0.5rem",
-                        fontSize: "0.95rem",
+                        fontSize: "1rem",
                       }}
                     >
-                      <DirectionsCar fontSize="small" /> Informações do Veículo
+                      <DirectionsCar fontSize="small" sx={{ color: "#4A6FFF" }} /> Informações do Veículo
                     </Typography>
                     <List disablePadding dense>
                       <ListItem disablePadding sx={{ mb: 0.5 }}>
@@ -2227,26 +3569,30 @@ export default function RemovalDashboard() {
                   <Paper
                     elevation={0}
                     sx={{
-                      padding: "1rem",
-                      borderRadius: "12px",
+                      padding: "1.2rem",
+                      borderRadius: "16px",
                       backgroundColor: "rgba(241, 245, 249, 0.5)",
                       border: "1px solid rgba(226, 232, 240, 0.8)",
                       height: "100%",
+                      transition: "all 0.3s ease",
+                      "&:hover": {
+                        boxShadow: "0 8px 30px rgba(0, 0, 0, 0.05)",
+                      },
                     }}
                   >
                     <Typography
                       variant="subtitle1"
                       sx={{
-                        fontWeight: 600,
+                        fontWeight: 700,
                         color: "#334155",
                         marginBottom: "0.75rem",
                         display: "flex",
                         alignItems: "center",
                         gap: "0.5rem",
-                        fontSize: "0.95rem",
+                        fontSize: "1rem",
                       }}
                     >
-                      <Info fontSize="small" /> Detalhes da Operação
+                      <Info fontSize="small" sx={{ color: "#FB6340" }} /> Detalhes da Operação
                     </Typography>
                     <List disablePadding dense>
                       <ListItem disablePadding sx={{ mb: 0.5 }}>
@@ -2291,25 +3637,29 @@ export default function RemovalDashboard() {
                   <Paper
                     elevation={0}
                     sx={{
-                      padding: "1rem",
-                      borderRadius: "12px",
+                      padding: "1.2rem",
+                      borderRadius: "16px",
                       backgroundColor: "rgba(241, 245, 249, 0.5)",
                       border: "1px solid rgba(226, 232, 240, 0.8)",
+                      transition: "all 0.3s ease",
+                      "&:hover": {
+                        boxShadow: "0 8px 30px rgba(0, 0, 0, 0.05)",
+                      },
                     }}
                   >
                     <Typography
                       variant="subtitle1"
                       sx={{
-                        fontWeight: 600,
+                        fontWeight: 700,
                         color: "#334155",
                         marginBottom: "0.75rem",
                         display: "flex",
                         alignItems: "center",
                         gap: "0.5rem",
-                        fontSize: "0.95rem",
+                        fontSize: "1rem",
                       }}
                     >
-                      <LocationOn fontSize="small" /> Local e Observações
+                      <LocationOn fontSize="small" sx={{ color: "#2DCE89" }} /> Local e Observações
                     </Typography>
                     <List disablePadding dense>
                       <ListItem disablePadding sx={{ mb: 0.5 }}>
@@ -2340,13 +3690,13 @@ export default function RemovalDashboard() {
                 </Grid>
               </Grid>
             </DialogContent>
-            <DialogActions sx={{ padding: "0.75rem 1.25rem", borderTop: "1px solid rgba(226, 232, 240, 0.8)" }}>
+            <DialogActions sx={{ padding: "1rem 1.5rem", borderTop: "1px solid rgba(226, 232, 240, 0.8)" }}>
               <Button
                 onClick={handleCloseModal}
                 variant="outlined"
-                size="small"
+                size="medium"
                 sx={{
-                  borderRadius: "8px",
+                  borderRadius: "12px",
                   textTransform: "none",
                   fontWeight: 500,
                   borderColor: "rgba(226, 232, 240, 0.8)",
@@ -2355,16 +3705,19 @@ export default function RemovalDashboard() {
                     borderColor: "#4A6FFF",
                     color: "#4A6FFF",
                     backgroundColor: "rgba(74, 111, 255, 0.05)",
+                    transform: "translateY(-2px)",
                   },
+                  transition: "all 0.3s ease",
                 }}
               >
                 Fechar
               </Button>
               <Button
                 variant="contained"
-                size="small"
+                size="medium"
+                startIcon={<Print />}
                 sx={{
-                  borderRadius: "8px",
+                  borderRadius: "12px",
                   textTransform: "none",
                   fontWeight: 500,
                   backgroundColor: "#4A6FFF",
@@ -2372,7 +3725,9 @@ export default function RemovalDashboard() {
                   "&:hover": {
                     backgroundColor: "#3A5FEF",
                     boxShadow: "0 6px 16px rgba(74, 111, 255, 0.3)",
+                    transform: "translateY(-2px)",
                   },
+                  transition: "all 0.3s ease",
                 }}
               >
                 Gerar Relatório
@@ -2381,6 +3736,42 @@ export default function RemovalDashboard() {
           </>
         )}
       </Dialog>
+
+      {/* Action Menu */}
+      <Menu
+        anchorEl={actionMenuAnchor}
+        open={Boolean(actionMenuAnchor)}
+        onClose={handleActionMenuClose}
+        PaperProps={{
+          sx: {
+            borderRadius: "12px",
+            boxShadow: "0 10px 40px rgba(0, 0, 0, 0.1)",
+            padding: "0.5rem",
+          },
+        }}
+      >
+        <MenuItem onClick={handleActionMenuClose} sx={{ borderRadius: "8px" }}>
+          <Visibility fontSize="small" sx={{ mr: 1 }} />
+          Ver detalhes
+        </MenuItem>
+        <MenuItem onClick={handleActionMenuClose} sx={{ borderRadius: "8px" }}>
+          <Edit fontSize="small" sx={{ mr: 1 }} />
+          Editar
+        </MenuItem>
+        <MenuItem onClick={handleActionMenuClose} sx={{ borderRadius: "8px" }}>
+          <Print fontSize="small" sx={{ mr: 1 }} />
+          Imprimir
+        </MenuItem>
+        <MenuItem onClick={handleActionMenuClose} sx={{ borderRadius: "8px" }}>
+          <Share fontSize="small" sx={{ mr: 1 }} />
+          Compartilhar
+        </MenuItem>
+        <Divider sx={{ my: 0.5 }} />
+        <MenuItem onClick={handleActionMenuClose} sx={{ borderRadius: "8px", color: "#F5365C" }}>
+          <Delete fontSize="small" sx={{ mr: 1 }} />
+          Excluir
+        </MenuItem>
+      </Menu>
     </>
   )
 }
