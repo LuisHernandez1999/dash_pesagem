@@ -61,10 +61,11 @@ import {
   InputBase,
   Snackbar,
   Alert,
-  LinearProgress,
-  Backdrop,
   alpha,
   TextField,
+  Badge,
+  Checkbox,
+  Autocomplete,
 } from "@mui/material"
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns"
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers"
@@ -73,12 +74,10 @@ import {
   PieChart as PieChartIcon,
   ShowChart as LineChartIcon,
   AreaChart as AreaChartIcon,
-  ExpandMore,
   DirectionsCar,
   CheckCircle,
   Cancel,
   Today,
-  CalendarMonth,
   Refresh,
   ArrowUpward,
   ArrowDownward,
@@ -93,8 +92,6 @@ import {
   MoreVert,
   Share,
   Print,
-  Visibility,
-  Edit,
   Delete,
   Group,
   Route,
@@ -106,7 +103,7 @@ import {
   LinkedIn,
   WhatsApp,
   Email,
-  Dashboard,
+  Search,
 } from "@mui/icons-material"
 import Sidebar from "@/components/sidebar"
 
@@ -201,7 +198,7 @@ const keyframes = {
       }
       to {
         transform: translateX(0);
-        opacity: 1;
+        opacity: 1
       }
     }
   `,
@@ -667,6 +664,175 @@ const getAreaChartData = () => {
   }))
 }
 
+// Modificar o componente SearchInput para aumentar a largura
+const SearchInput = ({ icon: Icon, placeholder, value, onChange, removals }) => {
+  // Criar lista de sugestões baseadas nos dados existentes
+  const suggestions = useMemo(() => {
+    const driverNames = [...new Set(removals.map((r) => r.driver))]
+    const vehiclePrefixes = [...new Set(removals.map((r) => r.vehiclePrefix))]
+    return [...driverNames, ...vehiclePrefixes]
+  }, [removals])
+
+  return (
+    <Autocomplete
+      freeSolo
+      options={suggestions}
+      value={value}
+      onChange={(_, newValue) => onChange({ target: { value: newValue || "" } })}
+      onInputChange={(_, newInputValue) => onChange({ target: { value: newInputValue } })}
+      sx={{
+        flex: 1,
+        width: "100%", // Aumentar a largura para ocupar todo o espaço disponível
+      }}
+      renderInput={(params) => (
+        <Paper
+          elevation={0}
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            flex: 1,
+            borderRadius: "20px",
+            border: `2px solid ${themeColors.divider}`,
+            overflow: "hidden",
+            transition: "all 0.3s ease",
+            background: themeColors.background.paper,
+            height: "52px",
+            width: "100%", // Garantir que ocupe toda a largura
+            "&:hover": {
+              boxShadow: `0 4px 12px ${alpha(themeColors.primary.main, 0.15)}`,
+              borderColor: themeColors.primary.main,
+            },
+            "&:focus-within": {
+              boxShadow: `0 4px 12px ${alpha(themeColors.primary.main, 0.2)}`,
+              borderColor: themeColors.primary.main,
+              animation: `${keyframes.glow} 2s infinite ease-in-out`,
+            },
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              p: 1.5,
+              pl: 2,
+              color: themeColors.primary.main,
+            }}
+          >
+            <Icon sx={{ fontSize: 22 }} />
+          </Box>
+          <InputBase
+            {...params.InputProps}
+            placeholder={placeholder}
+            sx={{
+              flex: 1,
+              fontSize: "1rem",
+              color: themeColors.text.primary,
+              py: 1,
+              px: 1,
+              width: "100%",
+              "& input": {
+                padding: "8px 0",
+                transition: "all 0.2s ease",
+              },
+              "& input::placeholder": {
+                color: themeColors.text.disabled,
+                opacity: 1,
+              },
+            }}
+            inputProps={{
+              ...params.inputProps,
+              style: { paddingLeft: 0 },
+            }}
+          />
+          {value && (
+            <IconButton
+              size="small"
+              onClick={() => onChange({ target: { value: "" } })}
+              sx={{ mr: 1, color: themeColors.text.secondary }}
+            >
+              <Close fontSize="small" />
+            </IconButton>
+          )}
+        </Paper>
+      )}
+      ListboxProps={{
+        sx: {
+          maxHeight: "300px",
+          borderRadius: "12px",
+          boxShadow: "0 10px 40px rgba(0, 0, 0, 0.1)",
+          mt: 1,
+          "& .MuiAutocomplete-option": {
+            padding: "10px 16px",
+            borderRadius: "8px",
+            margin: "2px 4px",
+            transition: "all 0.2s ease",
+            "&:hover": {
+              backgroundColor: alpha(themeColors.primary.main, 0.1),
+            },
+            "&.Mui-focused": {
+              backgroundColor: alpha(themeColors.primary.main, 0.15),
+            },
+          },
+        },
+      }}
+    />
+  )
+}
+
+// Substituir o componente DatePickerInput por um ícone que abre o seletor de data
+const DatePickerInput = () => (
+  <LocalizationProvider dateAdapter={AdapterDateFns}>
+    <Box sx={{ display: "flex", alignItems: "center" }}>
+      <DatePicker
+        value={selectedDate}
+        onChange={(newDate) => setSelectedDate(newDate)}
+        renderInput={() => null}
+        PopperProps={{
+          placement: "bottom-end",
+          sx: {
+            "& .MuiPaper-root": {
+              borderRadius: "16px",
+              boxShadow: "0 10px 40px rgba(0, 0, 0, 0.1)",
+              overflow: "hidden",
+            },
+          },
+        }}
+      />
+      <IconButton
+        onClick={() => document.querySelector(".MuiPickersPopper-root")?.click()}
+        sx={{
+          backgroundColor: alpha(themeColors.primary.main, 0.1),
+          color: themeColors.primary.main,
+          borderRadius: "12px",
+          padding: "10px",
+          transition: "all 0.3s ease",
+          "&:hover": {
+            backgroundColor: alpha(themeColors.primary.main, 0.2),
+            transform: "translateY(-2px)",
+          },
+        }}
+      ></IconButton>
+      {selectedDate && (
+        <Chip
+          label={selectedDate.toLocaleDateString()}
+          size="small"
+          onDelete={() => setSelectedDate(null)}
+          sx={{
+            ml: 1,
+            borderRadius: "12px",
+            backgroundColor: alpha(themeColors.primary.main, 0.1),
+            color: themeColors.primary.main,
+            fontWeight: 500,
+            height: "28px",
+            animation: `${keyframes.fadeIn} 0.3s ease-out`,
+          }}
+        />
+      )}
+    </Box>
+  </LocalizationProvider>
+)
+
 export default function RemovalDashboard() {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
@@ -708,6 +874,7 @@ export default function RemovalDashboard() {
   const [snackbarSeverity, setSnackbarSeverity] = useState("success")
   const [shareMenuAnchor, setShareMenuAnchor] = useState(null)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [teamFilter, setTeamFilter] = useState("all")
 
   const [removals, setRemovals] = useState(mockAllRemovals)
 
@@ -732,35 +899,23 @@ export default function RemovalDashboard() {
 
   // Load data on component mount with animated progress
   useEffect(() => {
-    const loadData = async () => {
-      // Simulate API call with progress
-      const totalSteps = 5
-      const stepTime = 400
+    let isMounted = true
 
-      for (let step = 1; step <= totalSteps; step++) {
-        await new Promise((resolve) => setTimeout(resolve, stepTime))
-        setLoadingProgress(step * (100 / totalSteps))
-      }
+    // Definir os dados diretamente sem animação de carregamento
+    setStatsData({
+      totalVehicles: 120,
+      activeVehicles: 85,
+      inactiveVehicles: 35,
+      releasedToday: 12,
+    })
 
-      // Set mock stats data
-      setStatsData({
-        totalVehicles: 120,
-        activeVehicles: 85,
-        inactiveVehicles: 35,
-        releasedToday: 12,
-      })
+    // Definir que os gráficos estão carregados
+    setChartsLoaded(true)
+    setLoading(false)
 
-      // Finish initial loading animation
-      await new Promise((resolve) => setTimeout(resolve, 500))
-      setInitialLoading(false)
-
-      setLoading(false)
-
-      // Simulate charts loading with a slight delay
-      setTimeout(() => setChartsLoaded(true), 500)
+    return () => {
+      isMounted = false
     }
-
-    loadData()
   }, [])
 
   // Handle sidebar collapse
@@ -989,13 +1144,20 @@ export default function RemovalDashboard() {
     return removals
       .filter(
         (removal) =>
-          (driverSearch === "" || removal.driver.toLowerCase().includes(driverSearch.toLowerCase())) &&
-          (prefixSearch === "" || removal.vehiclePrefix.toLowerCase().includes(prefixSearch.toLowerCase())) &&
+          // Busca unificada em múltiplos campos
+          (driverSearch === "" ||
+            removal.driver.toLowerCase().includes(driverSearch.toLowerCase()) ||
+            removal.vehiclePrefix.toLowerCase().includes(driverSearch.toLowerCase())) &&
           (selectedDate === null || removal.date === selectedDate?.toISOString().split("T")[0]) &&
+          // Filtro por status
           (statusFilter === "all" ||
             (statusFilter === "completed" && removal.status === "Concluído") ||
             (statusFilter === "in-progress" && removal.status === "Em andamento") ||
-            (statusFilter === "scheduled" && removal.status === "Agendado")),
+            (statusFilter === "scheduled" && removal.status === "Agendado") ||
+            // Filtro por equipe
+            (statusFilter === "team-1" && removal.team === "Equipe 1") ||
+            (statusFilter === "team-2" && removal.team === "Equipe 2") ||
+            (statusFilter === "team-3" && removal.team === "Equipe 3")),
       )
       .sort((a, b) => {
         const factor = sortDirection === "asc" ? 1 : -1
@@ -1012,7 +1174,7 @@ export default function RemovalDashboard() {
         }
         return 0
       })
-  }, [driverSearch, prefixSearch, selectedDate, statusFilter, sortField, sortDirection, removals])
+  }, [driverSearch, selectedDate, statusFilter, sortField, sortDirection, removals])
 
   // Get paginated data
   const paginatedRemovals = filteredRemovals.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
@@ -1696,186 +1858,10 @@ export default function RemovalDashboard() {
     }
   }
 
-  // Initial loading screen component
-  const InitialLoadingScreen = () => (
-    <Backdrop
-      sx={{
-        color: "#fff",
-        zIndex: 9999,
-        flexDirection: "column",
-        background: `linear-gradient(135deg, ${themeColors.primary.dark} 0%, ${themeColors.primary.main} 100%)`,
-      }}
-      open={initialLoading}
-    >
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          textAlign: "center",
-          maxWidth: "80%",
-        }}
-      >
-        <Box
-          sx={{
-            width: 120,
-            height: 120,
-            borderRadius: "50%",
-            backgroundColor: "rgba(255, 255, 255, 0.08)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            mb: 4,
-            position: "relative",
-            boxShadow: "0 0 30px rgba(255, 255, 255, 0.1)",
-          }}
-        >
-          <DirectionsCar
-            sx={{
-              fontSize: 60,
-              color: "rgba(255, 255, 255, 0.9)",
-              filter: "drop-shadow(0 0 8px rgba(255, 255, 255, 0.5))",
-            }}
-          />
-          <Box
-            sx={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              borderRadius: "50%",
-              border: "3px solid rgba(255, 255, 255, 0.2)",
-              borderTopColor: "rgba(255, 255, 255, 0.8)",
-              animation: `${keyframes.rotate} 1.5s linear infinite`,
-            }}
-          />
-        </Box>
-
-        <Typography
-          variant="h4"
-          sx={{
-            fontWeight: 700,
-            mb: 2,
-            letterSpacing: "0.5px",
-            textShadow: "0 2px 10px rgba(0, 0, 0, 0.2)",
-          }}
-        >
-          Carregando Dashboard
-        </Typography>
-
-        <Typography
-          variant="body1"
-          sx={{
-            mb: 4,
-            opacity: 0.8,
-            maxWidth: "400px",
-            lineHeight: 1.6,
-          }}
-        >
-          Preparando dados e visualizações para o sistema de gerenciamento de remoções
-        </Typography>
-
-        <Box sx={{ width: "300px", mb: 2 }}>
-          <LinearProgress
-            variant="determinate"
-            value={loadingProgress}
-            sx={{
-              height: 8,
-              borderRadius: 4,
-              backgroundColor: "rgba(255, 255, 255, 0.1)",
-              "& .MuiLinearProgress-bar": {
-                borderRadius: 4,
-                backgroundColor: "rgba(255, 255, 255, 0.9)",
-                boxShadow: "0 0 10px rgba(255, 255, 255, 0.5)",
-              },
-            }}
-          />
-        </Box>
-
-        <Typography variant="body2" sx={{ opacity: 0.7 }}>
-          {loadingProgress.toFixed(0)}% completo
-        </Typography>
-      </Box>
-    </Backdrop>
-  )
-
-  // 4. Improve the SearchInput component styling and functionality
-  // Replace the SearchInput component with this improved version:
-  const SearchInput = ({ icon: Icon, placeholder, value, onChange }) => (
-    <Paper
-      elevation={0}
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        flex: 1,
-        borderRadius: "20px",
-        border: `1px solid ${themeColors.divider}`,
-        overflow: "hidden",
-        transition: "all 0.3s ease",
-        background: themeColors.background.paper,
-        height: "48px", // Increased height
-        "&:hover": {
-          boxShadow: `0 4px 12px ${alpha(themeColors.primary.main, 0.1)}`,
-          borderColor: themeColors.primary.main,
-        },
-        "&:focus-within": {
-          boxShadow: `0 4px 12px ${alpha(themeColors.primary.main, 0.15)}`,
-          borderColor: themeColors.primary.main,
-          animation: `${keyframes.glow} 2s infinite ease-in-out`,
-        },
-      }}
-    >
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          p: 1.5,
-          pl: 2,
-          color: themeColors.text.secondary,
-        }}
-      >
-        <Icon sx={{ fontSize: 20 }} />
-      </Box>
-      <InputBase
-        placeholder={placeholder}
-        value={value}
-        onChange={onChange}
-        sx={{
-          flex: 1,
-          fontSize: "1rem",
-          color: themeColors.text.primary,
-          py: 1,
-          px: 1,
-          width: "100%",
-          "& input": {
-            padding: "8px 0",
-            transition: "all 0.2s ease",
-          },
-          "& input::placeholder": {
-            color: themeColors.text.disabled,
-            opacity: 1,
-          },
-        }}
-      />
-      {value && (
-        <IconButton
-          size="small"
-          onClick={() => onChange({ target: { value: "" } })}
-          sx={{ mr: 1, color: themeColors.text.secondary }}
-        >
-          <Close fontSize="small" />
-        </IconButton>
-      )}
-    </Paper>
-  )
-
   // Custom date picker component
   const DatePickerInput = () => (
-    <Box sx={{ display: "flex", alignItems: "center" }}>
-      <LocalizationProvider dateAdapter={AdapterDateFns}>
+    <LocalizationProvider dateAdapter={AdapterDateFns}>
+      <Box sx={{ display: "flex", alignItems: "center" }}>
         <DatePicker
           value={selectedDate}
           onChange={(newDate) => setSelectedDate(newDate)}
@@ -1891,37 +1877,25 @@ export default function RemovalDashboard() {
             },
           }}
         />
-        <Paper
-          elevation={0}
-          sx={{
-            "&:hover": {
-              boxShadow: `0 4px 12px ${alpha(themeColors.primary.main, 0.1)}`,
-              borderColor: themeColors.primary.main,
+
+        {selectedDate && (
+          <Chip
+            label={selectedDate.toLocaleDateString()}
+            size="small"
+            onDelete={() => setSelectedDate(null)}
+            sx={{
+              ml: 1,
+              borderRadius: "12px",
+              backgroundColor: alpha(themeColors.primary.main, 0.1),
               color: themeColors.primary.main,
-              transform: "translateY(-2px)",
-            },
-            animation: selectedDate ? `${keyframes.pulse} 3s infinite ease-in-out` : "none",
-          }}
-          onClick={() => document.querySelector(".MuiPickersPopper-root")?.click()}
-        ></Paper>
-      </LocalizationProvider>
-      {selectedDate && (
-        <Chip
-          label={selectedDate.toLocaleDateString()}
-          size="small"
-          onDelete={() => setSelectedDate(null)}
-          sx={{
-            ml: 1,
-            borderRadius: "12px",
-            backgroundColor: alpha(themeColors.primary.main, 0.1),
-            color: themeColors.primary.main,
-            fontWeight: 500,
-            height: "28px",
-            animation: `${keyframes.fadeIn} 0.3s ease-out`,
-          }}
-        />
-      )}
-    </Box>
+              fontWeight: 500,
+              height: "28px",
+              animation: `${keyframes.fadeIn} 0.3s ease-out`,
+            }}
+          />
+        )}
+      </Box>
+    </LocalizationProvider>
   )
 
   return (
@@ -1943,10 +1917,6 @@ export default function RemovalDashboard() {
           ${keyframes.heartbeat}
         `}
       </style>
-
-      {/* Initial Loading Screen */}
-      <InitialLoadingScreen />
-
       {/* Main Content */}
       <Box sx={{ display: "flex" }}>
         {/* Sidebar */}
@@ -1970,7 +1940,8 @@ export default function RemovalDashboard() {
             transition: "all 0.3s ease",
           }}
         >
-          {/* Header */}
+          {/* 3. Modificar as cores do header para serem mais harmônicas */}
+          {/* 3. Modificar as cores do header para serem mais harmônicas */}
           <AppBar
             position="sticky"
             sx={{
@@ -1988,67 +1959,63 @@ export default function RemovalDashboard() {
                   <MenuIcon />
                 </IconButton>
               )}
-              <Box sx={{ display: "flex", flexDirection: "column", flexGrow: 1 }}>
+              {/* 1. Enhance the page title with better styling and icon */}
+              {/* Find the AppBar section and replace the title Box with this improved version: */}
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  flexGrow: 1,
+                }}
+              >
                 <Box sx={{ display: "flex", alignItems: "center" }}>
                   <Box
                     sx={{
-                      width: "40px",
-                      height: "40px",
-                      borderRadius: "8px",
-                      background: themeColors.primary.main,
+                      width: "52px",
+                      height: "52px",
+                      borderRadius: "14px",
+                      background: `linear-gradient(135deg, ${themeColors.primary.main} 0%, ${themeColors.primary.light} 100%)`,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                       mr: 2,
-                      animation: `${keyframes.pulse} 2s ease-in-out infinite`,
+                      boxShadow: `0 6px 16px ${alpha(themeColors.primary.main, 0.4)}`,
+                      animation: `${keyframes.pulse} 2s ease-in-out infinite, ${keyframes.glow} 3s infinite ease-in-out`,
                     }}
                   >
-                    <Dashboard sx={{ color: "white", fontSize: "1.5rem" }} />
+                    <DirectionsCar sx={{ color: "white", fontSize: "2rem" }} />
                   </Box>
                   <Typography
                     variant="h5"
                     sx={{
-                      fontWeight: 600,
-                      fontSize: { xs: "1.25rem", sm: "1.5rem" },
+                      fontWeight: 800,
+                      fontSize: { xs: "1.35rem", sm: "1.8rem" },
                       color: themeColors.text.primary,
+                      letterSpacing: "-0.02em",
+                      background: `linear-gradient(135deg, ${themeColors.primary.dark} 0%, ${themeColors.primary.main} 100%)`,
+                      WebkitBackgroundClip: "text",
+                      WebkitTextFillColor: "transparent",
+                      textShadow: "0px 2px 4px rgba(0,0,0,0.05)",
                     }}
                   >
-                    Dashboard de Remoções
+                    Controle de Remoção
                   </Typography>
                 </Box>
                 <Typography
                   variant="subtitle1"
                   sx={{
                     color: themeColors.text.secondary,
-                    fontSize: { xs: "0.8rem", sm: "0.9rem" },
+                    fontSize: { xs: "0.85rem", sm: "0.95rem" },
                     ml: { xs: "0", sm: "4.5rem" },
                     mt: "-0.3rem",
-                    fontWeight: 400,
+                    fontWeight: 500,
                   }}
                 >
-                  Todos os registros de remoções
+                  Gerenciamento de veículos e equipes
                 </Typography>
               </Box>
               <Box sx={{ display: "flex", gap: 1 }}>
-                <Button
-                  variant="outlined"
-                  startIcon={<FileDownload />}
-                  sx={{
-                    borderRadius: "12px",
-                    textTransform: "none",
-                    borderColor: themeColors.divider,
-                    color: themeColors.text.secondary,
-                    fontWeight: 500,
-                    "&:hover": {
-                      borderColor: themeColors.primary.main,
-                      color: themeColors.primary.main,
-                      backgroundColor: alpha(themeColors.primary.main, 0.05),
-                    },
-                    display: { xs: "none", sm: "flex" },
-                  }}
-                >
-                  Exportar
-                </Button>
+                
                 <IconButton
                   sx={{
                     color: themeColors.text.secondary,
@@ -2059,6 +2026,15 @@ export default function RemovalDashboard() {
                 </IconButton>
               </Box>
             </Toolbar>
+            {/* 2. Add a divider below the header */}
+            {/* Add this right after the closing </Toolbar> tag in the AppBar section: */}
+            <Divider
+              sx={{
+                height: "3px",
+                background: `linear-gradient(90deg, ${alpha(themeColors.primary.main, 0.8)}, ${alpha(themeColors.primary.light, 0.8)}, ${alpha(themeColors.primary.main, 0.8)})`,
+                boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+              }}
+            />
           </AppBar>
 
           {/* Main Content */}
@@ -2190,39 +2166,6 @@ export default function RemovalDashboard() {
                       }
                       action={
                         <Box sx={{ display: "flex", gap: "0.5rem" }}>
-                          <Button
-                            variant="outlined"
-                            size="small"
-                            startIcon={<CalendarMonth />}
-                            endIcon={<ExpandMore />}
-                            onClick={handleMonthMenuOpen}
-                            sx={{
-                              height: "2rem",
-                              textTransform: "none",
-                              borderRadius: "12px",
-                              transition: "all 0.3s ease",
-                              fontWeight: 500,
-                              padding: "0 0.75rem",
-                              borderColor: themeColors.divider,
-                              color: themeColors.text.secondary,
-                              display: { xs: "none", sm: "flex" },
-                              "&:hover": {
-                                borderColor: themeColors.primary.main,
-                                color: themeColors.primary.main,
-                              },
-                            }}
-                          >
-                            {selectedMonth}
-                          </Button>
-                          <IconButton
-                            onClick={handleMonthMenuOpen}
-                            sx={{
-                              display: { xs: "flex", sm: "none" },
-                              color: themeColors.text.secondary,
-                            }}
-                          >
-                            <CalendarMonth />
-                          </IconButton>
                           <Menu
                             anchorEl={monthMenuAnchor}
                             open={Boolean(monthMenuAnchor)}
@@ -2310,7 +2253,6 @@ export default function RemovalDashboard() {
                       >
                         <Tab icon={<BarChartIcon />} label="Barras" iconPosition="start" sx={{ gap: "0.5rem" }} />
                         <Tab icon={<LineChartIcon />} label="Linhas" iconPosition="start" sx={{ gap: "0.5rem" }} />
-                        <Tab icon={<PieChartIcon />} label="Pizza" iconPosition="start" sx={{ gap: "0.5rem" }} />
                         <Tab icon={<AreaChartIcon />} label="Área" iconPosition="start" sx={{ gap: "0.5rem" }} />
                       </Tabs>
                     </Box>
@@ -2370,7 +2312,9 @@ export default function RemovalDashboard() {
               </Box>
 
               {/* Team Performance Chart */}
-              <Box component="section" sx={{ mb: 3 }}>
+
+              <Box sx={{ display: "flex", gap: 3, flexWrap: { xs: "wrap", md: "nowrap" }, mb: 4 }}>
+                {/* Team Performance Chart - Now half width */}
                 <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "500ms" : "0ms" }}>
                   <Card
                     sx={{
@@ -2383,6 +2327,7 @@ export default function RemovalDashboard() {
                         transform: "translateY(-4px)",
                       },
                       background: themeColors.background.card,
+                      width: { xs: "100%", md: "50%" },
                     }}
                   >
                     <CardHeader
@@ -2505,6 +2450,195 @@ export default function RemovalDashboard() {
                     </CardContent>
                   </Card>
                 </Zoom>
+
+                {/* 2. Add the Status Pie Chart on the right side */}
+                <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "600ms" : "0ms" }}>
+                  <Card
+                    sx={{
+                      borderRadius: "16px",
+                      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
+                      transition: "all 0.3s ease",
+                      overflow: "hidden",
+                      "&:hover": {
+                        boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)",
+                        transform: "translateY(-4px)",
+                      },
+                      background: themeColors.background.card,
+                      width: { xs: "100%", md: "50%" },
+                    }}
+                  >
+                    <CardHeader
+                      title={
+                        <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                          <Box
+                            sx={{
+                              width: { xs: "32px", sm: "36px" },
+                              height: { xs: "32px", sm: "36px" },
+                              borderRadius: "12px",
+                              background: themeColors.success.main,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              animation: `${keyframes.pulse} 2s ease-in-out infinite`,
+                            }}
+                          >
+                            <PieChartIcon
+                              sx={{
+                                color: "white",
+                                fontSize: { xs: "1.1rem", sm: "1.3rem" },
+                              }}
+                            />
+                          </Box>
+                          <Box>
+                            <Typography
+                              sx={{
+                                fontWeight: 600,
+                                fontSize: { xs: "1.1rem", sm: "1.2rem" },
+                                color: themeColors.text.primary,
+                              }}
+                            >
+                              Status
+                            </Typography>
+                            <Typography
+                              sx={{
+                                fontSize: { xs: "0.8rem", sm: "0.85rem" },
+                                color: themeColors.text.secondary,
+                                fontWeight: 400,
+                              }}
+                            >
+                              Distribuição por status
+                            </Typography>
+                          </Box>
+                        </Box>
+                      }
+                      action={
+                        <IconButton
+                          sx={{
+                            color: themeColors.text.secondary,
+                            "&:hover": { color: themeColors.success.main },
+                          }}
+                        >
+                          <Refresh />
+                        </IconButton>
+                      }
+                      sx={{
+                        paddingBottom: "0.75rem",
+                        borderBottom: `1px solid ${themeColors.divider}`,
+                        "& .MuiCardHeader-title": {
+                          fontWeight: 600,
+                          fontSize: "1.125rem",
+                          color: themeColors.text.primary,
+                        },
+                        "& .MuiCardHeader-action": {
+                          margin: 0,
+                        },
+                      }}
+                    />
+                    <CardContent sx={{ padding: "1.5rem" }}>
+                      <Box
+                        sx={{
+                          width: "100%",
+                          position: "relative",
+                          height: "300px",
+                        }}
+                      >
+                        {!chartsLoaded && (
+                          <Box
+                            sx={{
+                              position: "absolute",
+                              top: 0,
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              backgroundColor: alpha(themeColors.background.paper, 0.7),
+                              zIndex: 10,
+                              borderRadius: "12px",
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                width: "40px",
+                                height: "40px",
+                                borderRadius: "50%",
+                                background: themeColors.success.main,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
+                                animation: `${keyframes.pulse} 1.5s ease-in-out infinite`,
+                              }}
+                            />
+                          </Box>
+                        )}
+                        <Fade in={chartsLoaded} timeout={800}>
+                          <Box
+                            sx={{
+                              width: "100%",
+                              height: "100%",
+                            }}
+                          >
+                            <ResponsiveContainer width="100%" height="100%">
+                              <PieChart>
+                                <defs>
+                                  {pieChartData.map((entry, index) => (
+                                    <filter key={`filter-${index}`} id={`glow-${index}`} height="200%">
+                                      <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+                                      <feMerge>
+                                        <feMergeNode in="coloredBlur" />
+                                        <feMergeNode in="SourceGraphic" />
+                                      </feMerge>
+                                    </filter>
+                                  ))}
+                                </defs>
+                                <Pie
+                                  activeIndex={activeIndex}
+                                  activeShape={renderActiveShape}
+                                  data={pieChartData}
+                                  cx="50%"
+                                  cy="50%"
+                                  innerRadius={80}
+                                  outerRadius={110}
+                                  fill="#8884d8"
+                                  dataKey="value"
+                                  onMouseEnter={onPieEnter}
+                                  paddingAngle={2}
+                                  filter={`url(#glow-${activeIndex})`}
+                                >
+                                  {pieChartData.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={entry.color} stroke="#fff" strokeWidth={2} />
+                                  ))}
+                                </Pie>
+                                <Legend
+                                  verticalAlign="bottom"
+                                  layout="horizontal"
+                                  align="center"
+                                  wrapperStyle={{ paddingTop: 30 }}
+                                  formatter={(value, entry, index) => (
+                                    <span
+                                      style={{
+                                        color: pieChartData[index].color,
+                                        fontWeight: 600,
+                                        fontSize: "14px",
+                                        padding: "4px 8px",
+                                        borderRadius: "4px",
+                                        backgroundColor: alpha(pieChartData[index].color, 0.1),
+                                      }}
+                                    >
+                                      {value}
+                                    </span>
+                                  )}
+                                />
+                              </PieChart>
+                            </ResponsiveContainer>
+                          </Box>
+                        </Fade>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Zoom>
               </Box>
 
               {/* Unified Table Section */}
@@ -2597,24 +2731,6 @@ export default function RemovalDashboard() {
                       }
                       action={
                         <Box sx={{ display: "flex", gap: "0.5rem" }}>
-                          <Button
-                            variant="outlined"
-                            startIcon={<FileDownload />}
-                            sx={{
-                              borderRadius: "12px",
-                              textTransform: "none",
-                              borderColor: themeColors.divider,
-                              color: themeColors.text.secondary,
-                              fontWeight: 500,
-                              "&:hover": {
-                                borderColor: themeColors.primary.main,
-                                color: themeColors.primary.main,
-                              },
-                              display: { xs: "none", sm: "flex" },
-                            }}
-                          >
-                            Exportar
-                          </Button>
                           <IconButton
                             sx={{
                               color: themeColors.text.secondary,
@@ -2640,20 +2756,201 @@ export default function RemovalDashboard() {
                     />
                     <CardContent sx={{ padding: "1.5rem" }}>
                       {/* Search and Filter Section */}
-                      <Box sx={{ mb: 3, display: "flex", gap: 2, flexWrap: { xs: "wrap", md: "nowrap" } }}>
-                        <SearchInput
-                          icon={Person}
-                          placeholder="Buscar por motorista..."
-                          value={driverSearch}
-                          onChange={(e) => setDriverSearch(e.target.value)}
-                        />
-                        <SearchInput
-                          icon={DirectionsCar}
-                          placeholder="Buscar por prefixo de veículo..."
-                          value={prefixSearch}
-                          onChange={(e) => setPrefixSearch(e.target.value)}
-                        />
-                        <DatePickerInput />
+
+                      <Box sx={{ mb: 3, display: "flex", flexDirection: "column", gap: 2 }}>
+                        <Paper
+                          elevation={0}
+                          sx={{
+                            p: 2,
+                            borderRadius: "16px",
+                            border: `1px solid ${themeColors.divider}`,
+                            background: alpha(themeColors.background.paper, 0.8),
+                            backdropFilter: "blur(8px)",
+                          }}
+                        >
+                          <Typography
+                            variant="subtitle1"
+                            sx={{
+                              fontWeight: 600,
+                              mb: 2,
+                              color: themeColors.text.primary,
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 1,
+                            }}
+                          >
+                            <Search fontSize="small" /> Pesquisa Avançada
+                          </Typography>
+
+                          {/* Modificar o layout da seção de pesquisa para dar mais espaço ao autocomplete */}
+                          <Box sx={{ display: "flex", gap: 2, flexWrap: { xs: "wrap", md: "nowrap" }, mb: 2 }}>
+                            <Box sx={{ flex: 1, width: "100%" }}>
+                              <SearchInput
+                                icon={Search}
+                                placeholder="Buscar por matrícula, motorista ou prefixo..."
+                                value={driverSearch}
+                                onChange={(e) => {
+                                  setDriverSearch(e.target.value)
+                                  setPrefixSearch(e.target.value)
+                                }}
+                                removals={removals}
+                              />
+                            </Box>
+                            <LocalizationProvider dateAdapter={AdapterDateFns}>
+                              <Box sx={{ display: "flex", alignItems: "center" }}>
+                                <DatePicker
+                                  value={selectedDate}
+                                  onChange={(newDate) => setSelectedDate(newDate)}
+                                  renderInput={() => null}
+                                  PopperProps={{
+                                    placement: "bottom-end",
+                                    sx: {
+                                      "& .MuiPaper-root": {
+                                        borderRadius: "16px",
+                                        boxShadow: "0 10px 40px rgba(0, 0, 0, 0.1)",
+                                        overflow: "hidden",
+                                      },
+                                    },
+                                  }}
+                                />
+
+                                {selectedDate && (
+                                  <Chip
+                                    label={selectedDate.toLocaleDateString()}
+                                    size="small"
+                                    onDelete={() => setSelectedDate(null)}
+                                    sx={{
+                                      ml: 1,
+                                      borderRadius: "12px",
+                                      backgroundColor: alpha(themeColors.primary.main, 0.1),
+                                      color: themeColors.primary.main,
+                                      fontWeight: 500,
+                                      height: "28px",
+                                      animation: `${keyframes.fadeIn} 0.3s ease-out`,
+                                    }}
+                                  />
+                                )}
+                              </Box>
+                            </LocalizationProvider>
+                          </Box>
+
+                          <Box sx={{ mb: 2 }}>
+                            <Typography
+                              variant="subtitle2"
+                              sx={{
+                                fontWeight: 600,
+                                mb: 1.5,
+                                color: themeColors.text.secondary,
+                                fontSize: "0.85rem",
+                              }}
+                            >
+                              Filtros:
+                            </Typography>
+
+                            <Grid container spacing={2}>
+                              <Grid item xs={12} md={6}>
+                                <Typography
+                                  variant="body2"
+                                  sx={{
+                                    fontWeight: 600,
+                                    mb: 1,
+                                    color: themeColors.text.secondary,
+                                    fontSize: "0.8rem",
+                                  }}
+                                >
+                                  Por Equipe:
+                                </Typography>
+                                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                                  {["Todas", "Equipe 1 (Matutino)", "Equipe 2 (Vespertino)", "Equipe 3 (Noturno)"].map(
+                                    (team, index) => (
+                                      <Chip
+                                        key={team}
+                                        label={team}
+                                        clickable
+                                        onClick={() => {
+                                          // Update only the team filter
+                                          if (index === 0) {
+                                            setTeamFilter("all")
+                                          } else {
+                                            setTeamFilter(`team-${index}`)
+                                          }
+                                        }}
+                                        sx={{
+                                          borderRadius: "12px",
+                                          fontWeight: 500,
+                                          backgroundColor:
+                                            teamFilter === (index === 0 ? "all" : `team-${index}`)
+                                              ? alpha(themeColors.success.main, 0.1)
+                                              : alpha(themeColors.background.default, 0.5),
+                                          color:
+                                            teamFilter === (index === 0 ? "all" : `team-${index}`)
+                                              ? themeColors.success.main
+                                              : themeColors.text.secondary,
+                                          border: `1px solid ${
+                                            teamFilter === (index === 0 ? "all" : `team-${index}`)
+                                              ? themeColors.success.main
+                                              : themeColors.divider
+                                          }`,
+                                          "&:hover": {
+                                            backgroundColor: alpha(themeColors.success.main, 0.1),
+                                            color: themeColors.success.main,
+                                          },
+                                          transition: "all 0.2s ease",
+                                        }}
+                                      />
+                                    ),
+                                  )}
+                                </Box>
+                              </Grid>
+
+                              <Grid item xs={12} md={6}>
+                                <Typography
+                                  variant="body2"
+                                  sx={{
+                                    fontWeight: 600,
+                                    mb: 1,
+                                    color: themeColors.text.secondary,
+                                    fontSize: "0.8rem",
+                                  }}
+                                >
+                                  Por Status:
+                                </Typography>
+                                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                                  {[
+                                    { id: "all", label: "Todos", color: themeColors.text.secondary },
+                                    { id: "completed", label: "Concluído", color: themeColors.success.main },
+                                    { id: "in-progress", label: "Em andamento", color: themeColors.primary.main },
+                                    { id: "scheduled", label: "Agendado", color: themeColors.warning.main },
+                                  ].map((status) => (
+                                    <Chip
+                                      key={status.id}
+                                      label={status.label}
+                                      clickable
+                                      onClick={() => setStatusFilter(status.id)}
+                                      sx={{
+                                        borderRadius: "12px",
+                                        fontWeight: 500,
+                                        backgroundColor:
+                                          statusFilter === status.id
+                                            ? alpha(status.color, 0.1)
+                                            : alpha(themeColors.background.default, 0.5),
+                                        color: statusFilter === status.id ? status.color : themeColors.text.secondary,
+                                        border: `1px solid ${
+                                          statusFilter === status.id ? status.color : themeColors.divider
+                                        }`,
+                                        "&:hover": {
+                                          backgroundColor: alpha(status.color, 0.1),
+                                          color: status.color,
+                                        },
+                                        transition: "all 0.2s ease",
+                                      }}
+                                    />
+                                  ))}
+                                </Box>
+                              </Grid>
+                            </Grid>
+                          </Box>
+                        </Paper>
                       </Box>
 
                       {/* Table */}
@@ -2844,8 +3141,6 @@ export default function RemovalDashboard() {
           </Box>
         </Box>
       </Box>
-
-      {/* Removal Details Modal */}
       <Dialog
         open={modalOpen}
         onClose={handleCloseModal}
@@ -3412,8 +3707,7 @@ export default function RemovalDashboard() {
           </>
         )}
       </Dialog>
-
-      {/* Action Menu */}
+      ;
       <Menu
         anchorEl={actionMenuAnchor}
         open={Boolean(actionMenuAnchor)}
@@ -3426,18 +3720,6 @@ export default function RemovalDashboard() {
           },
         }}
       >
-        <MenuItem onClick={handleActionMenuClose} sx={{ borderRadius: "8px" }}>
-          <Visibility fontSize="small" sx={{ mr: 1 }} />
-          Ver detalhes
-        </MenuItem>
-        <MenuItem onClick={handleActionMenuClose} sx={{ borderRadius: "8px" }}>
-          <Edit fontSize="small" sx={{ mr: 1 }} />
-          Editar
-        </MenuItem>
-        <MenuItem onClick={handleShareMenuOpen} sx={{ borderRadius: "8px" }}>
-          <Share fontSize="small" sx={{ mr: 1 }} />
-          Compartilhar
-        </MenuItem>
         <MenuItem
           onClick={handleDeleteConfirmOpen}
           sx={{
@@ -3448,8 +3730,7 @@ export default function RemovalDashboard() {
           Excluir
         </MenuItem>
       </Menu>
-
-      {/* Delete Confirmation Dialog */}
+      ;
       <Dialog
         open={deleteConfirmOpen}
         onClose={handleDeleteConfirmClose}
@@ -3471,8 +3752,7 @@ export default function RemovalDashboard() {
           </Button>
         </DialogActions>
       </Dialog>
-
-      {/* Share Menu */}
+      ;
       <Menu
         anchorEl={shareMenuAnchor}
         open={Boolean(shareMenuAnchor)}
@@ -3506,8 +3786,7 @@ export default function RemovalDashboard() {
           Email
         </MenuItem>
       </Menu>
-
-      {/* Snackbar */}
+      ;
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={3000}
@@ -3518,10 +3797,7 @@ export default function RemovalDashboard() {
           {snackbarMessage}
         </Alert>
       </Snackbar>
-
-      {/* 6. Add the new modal for adding a release */}
-      {/* Add this at the end of the component, before the closing return tag: */}
-      {/* Add Release Modal */}
+      ;
       <Dialog
         open={addModalOpen}
         onClose={handleCloseAddModal}
@@ -3539,27 +3815,18 @@ export default function RemovalDashboard() {
           direction: "up",
         }}
       >
+        {/* 5. Improve the add modal styling */}
+        {/* Find the DialogTitle in the Add Release Modal and enhance it: */}
         <DialogTitle
           sx={{
-            background: `linear-gradient(135deg, ${themeColors.success.main} 0%, ${themeColors.success.light} 100%)`,
+            background: themeColors.primary.main,
             color: "white",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            padding: "1rem 1.5rem",
+            padding: "1.2rem 1.8rem",
             position: "relative",
             overflow: "hidden",
-            "&::after": {
-              content: '""',
-              position: "absolute",
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: "4px",
-              background: "rgba(255, 255, 255, 0.2)",
-              animation: `${keyframes.shimmer} 2s infinite linear`,
-              backgroundSize: "200% 100%",
-            },
           }}
         >
           <Box sx={{ display: "flex", alignItems: "center" }}>
@@ -3568,15 +3835,14 @@ export default function RemovalDashboard() {
                 backgroundColor: "rgba(255, 255, 255, 0.2)",
                 color: "white",
                 fontWeight: 600,
-                width: 36,
-                height: 36,
-                mr: 1.5,
-                animation: `${keyframes.pulse} 2s infinite ease-in-out`,
+                width: 42,
+                height: 42,
+                mr: 2,
               }}
             >
-              <DirectionsCar />
+              <DirectionsCar sx={{ fontSize: "1.5rem" }} />
             </Avatar>
-            <Typography variant="h6" sx={{ fontWeight: 700, fontSize: "1.1rem" }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, fontSize: "1.3rem" }}>
               Adicionar Nova Soltura
             </Typography>
           </Box>
@@ -3585,10 +3851,9 @@ export default function RemovalDashboard() {
             sx={{
               color: "white",
               padding: "0.5rem",
+              backgroundColor: "rgba(255, 255, 255, 0.1)",
               "&:hover": {
                 backgroundColor: "rgba(255, 255, 255, 0.2)",
-                transform: "rotate(90deg)",
-                transition: "transform 0.3s ease",
               },
             }}
           >
@@ -3599,207 +3864,473 @@ export default function RemovalDashboard() {
           <Grid container spacing={3}>
             {/* Driver Information */}
             <Grid item xs={12}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: themeColors.text.primary }}>
-                Informações do Motorista
-              </Typography>
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Nome do Motorista"
-                    variant="outlined"
-                    value={newRemoval.driver}
-                    onChange={(e) => handleNewRemovalChange("driver", e.target.value)}
-                    InputProps={{
-                      sx: {
-                        borderRadius: "12px",
-                      },
-                    }}
-                  />
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 2.5,
+                  borderRadius: "16px",
+                  border: `1px solid ${alpha(themeColors.success.main, 0.3)}`,
+                  background: alpha(themeColors.success.main, 0.03),
+                  position: "relative",
+                  overflow: "hidden",
+                  "&::before": {
+                    content: '""',
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "5px",
+                    height: "100%",
+                    background: themeColors.success.main,
+                  },
+                }}
+              >
+                <Typography
+                  variant="subtitle1"
+                  sx={{
+                    fontWeight: 700,
+                    mb: 2.5,
+                    color: themeColors.success.dark,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    pl: 1,
+                  }}
+                >
+                  <Person /> Informações do Motorista
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Nome do Motorista"
+                      variant="outlined"
+                      value={newRemoval.driver}
+                      onChange={(e) => handleNewRemovalChange("driver", e.target.value)}
+                      InputProps={{
+                        sx: {
+                          borderRadius: "12px",
+                          background: "white",
+                          boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
+                        },
+                        startAdornment: (
+                          <Person sx={{ color: themeColors.text.secondary, mr: 1, fontSize: "1.2rem" }} />
+                        ),
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Matrícula do Motorista"
+                      variant="outlined"
+                      value={newRemoval.driverId}
+                      onChange={(e) => handleNewRemovalChange("driverId", e.target.value)}
+                      InputProps={{
+                        sx: {
+                          borderRadius: "12px",
+                          background: "white",
+                          boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
+                        },
+                        startAdornment: <Badge sx={{ color: themeColors.text.secondary, mr: 1, fontSize: "1.2rem" }} />,
+                      }}
+                    />
+                  </Grid>
                 </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Matrícula do Motorista"
-                    variant="outlined"
-                    value={newRemoval.driverId}
-                    onChange={(e) => handleNewRemovalChange("driverId", e.target.value)}
-                    InputProps={{
-                      sx: {
+              </Paper>
+            </Grid>
+
+            {/* Team Selection */}
+            <Grid item xs={12}>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 2.5,
+                  borderRadius: "16px",
+                  border: `1px solid ${alpha(themeColors.warning.main, 0.3)}`,
+                  background: alpha(themeColors.warning.main, 0.03),
+                  position: "relative",
+                  overflow: "hidden",
+                  "&::before": {
+                    content: '""',
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "5px",
+                    height: "100%",
+                    background: themeColors.warning.main,
+                  },
+                }}
+              >
+                <Typography
+                  variant="subtitle1"
+                  sx={{
+                    fontWeight: 700,
+                    mb: 2.5,
+                    color: themeColors.warning.dark,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    pl: 1,
+                  }}
+                >
+                  <Group /> Seleção de Equipe
+                </Typography>
+
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, pl: 1 }}>
+                  {[
+                    { id: "team1", label: "Equipe 1 (Matutino)", icon: <WbSunny sx={{ fontSize: "1.2rem" }} /> },
+                    { id: "team2", label: "Equipe 2 (Vespertino)", icon: <Brightness5 sx={{ fontSize: "1.2rem" }} /> },
+                    { id: "team3", label: "Equipe 3 (Noturno)", icon: <Brightness3 sx={{ fontSize: "1.2rem" }} /> },
+                  ].map((team) => (
+                    <Box
+                      key={team.id}
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        p: 1.5,
                         borderRadius: "12px",
-                      },
-                    }}
-                  />
-                </Grid>
-              </Grid>
+                        border: `1px solid ${themeColors.divider}`,
+                        background: "white",
+                        cursor: "pointer",
+                        transition: "all 0.2s ease",
+                        boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
+                        "&:hover": {
+                          borderColor: themeColors.warning.main,
+                          background: alpha(themeColors.warning.main, 0.05),
+                        },
+                      }}
+                    >
+                      <Checkbox
+                        checked={newRemoval.team === team.id}
+                        onChange={() => handleNewRemovalChange("team", team.id)}
+                        sx={{
+                          color: themeColors.warning.main,
+                          "&.Mui-checked": {
+                            color: themeColors.warning.main,
+                          },
+                        }}
+                      />
+                      {team.icon}
+                      <Typography sx={{ fontWeight: 500 }}>{team.label}</Typography>
+                    </Box>
+                  ))}
+                </Box>
+              </Paper>
             </Grid>
 
             {/* Collectors Information */}
             <Grid item xs={12}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: themeColors.text.primary }}>
-                Informações dos Coletores (até 3)
-              </Typography>
-              <Grid container spacing={2}>
-                {[0, 1, 2].map((index) => (
-                  <Grid item xs={12} key={index}>
-                    <Grid container spacing={2}>
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          fullWidth
-                          label={`Nome do Coletor ${index + 1}`}
-                          variant="outlined"
-                          value={newRemoval.collectors[index]}
-                          onChange={(e) => handleNewRemovalChange("collectors", e.target.value, index)}
-                          InputProps={{
-                            sx: {
-                              borderRadius: "12px",
-                            },
-                          }}
-                        />
-                      </Grid>
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          fullWidth
-                          label={`Matrícula do Coletor ${index + 1}`}
-                          variant="outlined"
-                          value={newRemoval.collectorsIds[index]}
-                          onChange={(e) => handleNewRemovalChange("collectorsIds", e.target.value, index)}
-                          InputProps={{
-                            sx: {
-                              borderRadius: "12px",
-                            },
-                          }}
-                        />
-                      </Grid>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 2.5,
+                  borderRadius: "16px",
+                  border: `1px solid ${alpha(themeColors.primary.main, 0.3)}`,
+                  background: alpha(themeColors.primary.main, 0.03),
+                  position: "relative",
+                  overflow: "hidden",
+                  "&::before": {
+                    content: '""',
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "5px",
+                    height: "100%",
+                    background: themeColors.primary.main,
+                  },
+                }}
+              >
+                <Typography
+                  variant="subtitle1"
+                  sx={{
+                    fontWeight: 700,
+                    mb: 2.5,
+                    color: themeColors.primary.dark,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    pl: 1,
+                  }}
+                >
+                  <Group /> Informações dos Coletores
+                </Typography>
+
+                <Grid container spacing={2}>
+                  {[0, 1, 2].map((index) => (
+                    <Grid item xs={12} key={index}>
+                      <Box
+                        sx={{
+                          p: 2,
+                          borderRadius: "12px",
+                          border: `1px dashed ${themeColors.divider}`,
+                          background: "white",
+                          mb: 1,
+                        }}
+                      >
+                        <Typography sx={{ fontWeight: 600, mb: 1.5, color: themeColors.text.primary }}>
+                          Coletor {index + 1}
+                        </Typography>
+                        <Grid container spacing={2}>
+                          <Grid item xs={12} sm={6}>
+                            <TextField
+                              fullWidth
+                              label="Nome do Coletor"
+                              variant="outlined"
+                              value={newRemoval.collectors[index]}
+                              onChange={(e) => handleNewRemovalChange("collectors", e.target.value, index)}
+                              InputProps={{
+                                sx: {
+                                  borderRadius: "12px",
+                                  boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
+                                },
+                                startAdornment: (
+                                  <Person sx={{ color: themeColors.text.secondary, mr: 1, fontSize: "1.2rem" }} />
+                                ),
+                              }}
+                            />
+                          </Grid>
+                          <Grid item xs={12} sm={6}>
+                            <TextField
+                              fullWidth
+                              label="Matrícula do Coletor"
+                              variant="outlined"
+                              value={newRemoval.collectorsIds[index]}
+                              onChange={(e) => handleNewRemovalChange("collectorsIds", e.target.value, index)}
+                              InputProps={{
+                                sx: {
+                                  borderRadius: "12px",
+                                  boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
+                                },
+                                startAdornment: (
+                                  <Badge sx={{ color: themeColors.text.secondary, mr: 1, fontSize: "1.2rem" }} />
+                                ),
+                              }}
+                            />
+                          </Grid>
+                        </Grid>
+                      </Box>
                     </Grid>
-                  </Grid>
-                ))}
-              </Grid>
+                  ))}
+                </Grid>
+              </Paper>
             </Grid>
 
             {/* Vehicle and Route Information */}
             <Grid item xs={12}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: themeColors.text.primary }}>
-                Informações do Veículo e Rota
-              </Typography>
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6} md={3}>
-                  <TextField
-                    select
-                    fullWidth
-                    label="Garagem"
-                    variant="outlined"
-                    value={newRemoval.garage}
-                    onChange={(e) => handleNewRemovalChange("garage", e.target.value)}
-                    InputProps={{
-                      sx: {
-                        borderRadius: "12px",
-                      },
-                    }}
-                  >
-                    {["PA1", "PA2", "PA3", "PA4"].map((option) => (
-                      <MenuItem key={option} value={option}>
-                        {option}
-                      </MenuItem>
-                    ))}
-                  </TextField>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 2.5,
+                  borderRadius: "16px",
+                  border: `1px solid ${alpha(themeColors.error.main, 0.3)}`,
+                  background: alpha(themeColors.error.main, 0.03),
+                  position: "relative",
+                  overflow: "hidden",
+                  "&::before": {
+                    content: '""',
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "5px",
+                    height: "100%",
+                    background: themeColors.error.main,
+                  },
+                }}
+              >
+                <Typography
+                  variant="subtitle1"
+                  sx={{
+                    fontWeight: 700,
+                    mb: 2.5,
+                    color: themeColors.error.dark,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    pl: 1,
+                  }}
+                >
+                  <DirectionsCar /> Informações do Veículo e Rota
+                </Typography>
+
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <TextField
+                      select
+                      fullWidth
+                      label="Garagem"
+                      variant="outlined"
+                      value={newRemoval.garage}
+                      onChange={(e) => handleNewRemovalChange("garage", e.target.value)}
+                      InputProps={{
+                        sx: {
+                          borderRadius: "12px",
+                          background: "white",
+                          boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
+                        },
+                        startAdornment: (
+                          <Warehouse sx={{ color: themeColors.text.secondary, mr: 1, fontSize: "1.2rem" }} />
+                        ),
+                      }}
+                    >
+                      {["PA1", "PA2", "PA3", "PA4"].map((option) => (
+                        <MenuItem key={option} value={option}>
+                          {option}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <TextField
+                      fullWidth
+                      label="Prefixo do Veículo"
+                      variant="outlined"
+                      value={newRemoval.vehiclePrefix}
+                      onChange={(e) => handleNewRemovalChange("vehiclePrefix", e.target.value)}
+                      InputProps={{
+                        sx: {
+                          borderRadius: "12px",
+                          background: "white",
+                          boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
+                        },
+                        startAdornment: (
+                          <DirectionsCar sx={{ color: themeColors.text.secondary, mr: 1, fontSize: "1.2rem" }} />
+                        ),
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Rota"
+                      variant="outlined"
+                      value={newRemoval.route}
+                      onChange={(e) => handleNewRemovalChange("route", e.target.value)}
+                      InputProps={{
+                        sx: {
+                          borderRadius: "12px",
+                          background: "white",
+                          boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
+                        },
+                        startAdornment: <Route sx={{ color: themeColors.text.secondary, mr: 1, fontSize: "1.2rem" }} />,
+                      }}
+                    />
+                  </Grid>
                 </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <TextField
-                    fullWidth
-                    label="Prefixo do Veículo"
-                    variant="outlined"
-                    value={newRemoval.vehiclePrefix}
-                    onChange={(e) => handleNewRemovalChange("vehiclePrefix", e.target.value)}
-                    InputProps={{
-                      sx: {
-                        borderRadius: "12px",
-                      },
-                    }}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6} md={6}>
-                  <TextField
-                    fullWidth
-                    label="Rota"
-                    variant="outlined"
-                    value={newRemoval.route}
-                    onChange={(e) => handleNewRemovalChange("route", e.target.value)}
-                    InputProps={{
-                      sx: {
-                        borderRadius: "12px",
-                      },
-                    }}
-                  />
-                </Grid>
-              </Grid>
+              </Paper>
             </Grid>
 
             {/* Time and Status Information */}
             <Grid item xs={12}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: themeColors.text.primary }}>
-                Horário e Status
-              </Typography>
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6} md={4}>
-                  <TextField
-                    fullWidth
-                    label="Horário de Saída"
-                    variant="outlined"
-                    type="time"
-                    value={newRemoval.departureTime}
-                    onChange={(e) => handleNewRemovalChange("departureTime", e.target.value)}
-                    InputProps={{
-                      sx: {
-                        borderRadius: "12px",
-                      },
-                    }}
-                    InputLabelProps={{
-                      shrink: true,
-                    }}
-                  />
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 2.5,
+                  borderRadius: "16px",
+                  border: `1px solid ${alpha(themeColors.info.main, 0.3)}`,
+                  background: alpha(themeColors.info.main, 0.03),
+                  position: "relative",
+                  overflow: "hidden",
+                  "&::before": {
+                    content: '""',
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "5px",
+                    height: "100%",
+                    background: themeColors.info.main,
+                  },
+                }}
+              >
+                <Typography
+                  variant="subtitle1"
+                  sx={{
+                    fontWeight: 700,
+                    mb: 2.5,
+                    color: themeColors.info.dark,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    pl: 1,
+                  }}
+                >
+                  <CalendarToday /> Horário e Status
+                </Typography>
+
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6} md={4}>
+                    <TextField
+                      fullWidth
+                      label="Horário de Saída"
+                      variant="outlined"
+                      type="time"
+                      value={newRemoval.departureTime}
+                      onChange={(e) => handleNewRemovalChange("departureTime", e.target.value)}
+                      InputProps={{
+                        sx: {
+                          borderRadius: "12px",
+                          background: "white",
+                          boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
+                        },
+                        startAdornment: <Today sx={{ color: themeColors.text.secondary, mr: 1, fontSize: "1.2rem" }} />,
+                      }}
+                      InputLabelProps={{
+                        shrink: true,
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={4}>
+                    <TextField
+                      select
+                      fullWidth
+                      label="Status"
+                      variant="outlined"
+                      value={newRemoval.status}
+                      onChange={(e) => handleNewRemovalChange("status", e.target.value)}
+                      InputProps={{
+                        sx: {
+                          borderRadius: "12px",
+                          background: "white",
+                          boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
+                        },
+                        startAdornment: (
+                          <Timeline sx={{ color: themeColors.text.secondary, mr: 1, fontSize: "1.2rem" }} />
+                        ),
+                      }}
+                    >
+                      {["Agendado", "Em andamento", "Concluído"].map((option) => (
+                        <MenuItem key={option} value={option}>
+                          {option}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={4}>
+                    <TextField
+                      fullWidth
+                      label="Horário de Chegada"
+                      variant="outlined"
+                      type="time"
+                      value={newRemoval.arrivalTime}
+                      onChange={(e) => handleNewRemovalChange("arrivalTime", e.target.value)}
+                      disabled={newRemoval.status !== "Concluído"}
+                      InputProps={{
+                        sx: {
+                          borderRadius: "12px",
+                          background: "white",
+                          boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
+                        },
+                        startAdornment: (
+                          <CalendarToday sx={{ color: themeColors.text.secondary, mr: 1, fontSize: "1.2rem" }} />
+                        ),
+                      }}
+                      InputLabelProps={{
+                        shrink: true,
+                      }}
+                    />
+                  </Grid>
                 </Grid>
-                <Grid item xs={12} sm={6} md={4}>
-                  <TextField
-                    select
-                    fullWidth
-                    label="Status"
-                    variant="outlined"
-                    value={newRemoval.status}
-                    onChange={(e) => handleNewRemovalChange("status", e.target.value)}
-                    InputProps={{
-                      sx: {
-                        borderRadius: "12px",
-                      },
-                    }}
-                  >
-                    {["Agendado", "Em andamento", "Concluído"].map((option) => (
-                      <MenuItem key={option} value={option}>
-                        {option}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                </Grid>
-                <Grid item xs={12} sm={6} md={4}>
-                  <TextField
-                    fullWidth
-                    label="Horário de Chegada"
-                    variant="outlined"
-                    type="time"
-                    value={newRemoval.arrivalTime}
-                    onChange={(e) => handleNewRemovalChange("arrivalTime", e.target.value)}
-                    disabled={newRemoval.status !== "Concluído"}
-                    InputProps={{
-                      sx: {
-                        borderRadius: "12px",
-                      },
-                    }}
-                    InputLabelProps={{
-                      shrink: true,
-                    }}
-                  />
-                </Grid>
-              </Grid>
+              </Paper>
             </Grid>
           </Grid>
         </DialogContent>
