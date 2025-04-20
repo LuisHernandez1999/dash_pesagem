@@ -73,7 +73,6 @@ import {
   BarChart as BarChartIcon,
   PieChart as PieChartIcon,
   ShowChart as LineChartIcon,
-  AreaChart as AreaChartIcon,
   DirectionsCar,
   CheckCircle,
   Cancel,
@@ -96,7 +95,6 @@ import {
   Group,
   Route,
   Warehouse,
-  FileDownload,
   CalendarToday,
   Facebook,
   Twitter,
@@ -1153,11 +1151,12 @@ export default function RemovalDashboard() {
           (statusFilter === "all" ||
             (statusFilter === "completed" && removal.status === "Concluído") ||
             (statusFilter === "in-progress" && removal.status === "Em andamento") ||
-            (statusFilter === "scheduled" && removal.status === "Agendado") ||
-            // Filtro por equipe
-            (statusFilter === "team-1" && removal.team === "Equipe 1") ||
-            (statusFilter === "team-2" && removal.team === "Equipe 2") ||
-            (statusFilter === "team-3" && removal.team === "Equipe 3")),
+            (statusFilter === "scheduled" && removal.status === "Agendado")) &&
+          // Filtro por equipe
+          (teamFilter === "all" ||
+            (teamFilter === "team-1" && removal.team === "Equipe 1") ||
+            (teamFilter === "team-2" && removal.team === "Equipe 2") ||
+            (teamFilter === "team-3" && removal.team === "Equipe 3")),
       )
       .sort((a, b) => {
         const factor = sortDirection === "asc" ? 1 : -1
@@ -1174,7 +1173,7 @@ export default function RemovalDashboard() {
         }
         return 0
       })
-  }, [driverSearch, selectedDate, statusFilter, sortField, sortDirection, removals])
+  }, [driverSearch, selectedDate, statusFilter, teamFilter, sortField, sortDirection, removals])
 
   // Get paginated data
   const paginatedRemovals = filteredRemovals.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
@@ -2015,7 +2014,6 @@ export default function RemovalDashboard() {
                 </Typography>
               </Box>
               <Box sx={{ display: "flex", gap: 1 }}>
-                
                 <IconButton
                   sx={{
                     color: themeColors.text.secondary,
@@ -2253,7 +2251,6 @@ export default function RemovalDashboard() {
                       >
                         <Tab icon={<BarChartIcon />} label="Barras" iconPosition="start" sx={{ gap: "0.5rem" }} />
                         <Tab icon={<LineChartIcon />} label="Linhas" iconPosition="start" sx={{ gap: "0.5rem" }} />
-                        <Tab icon={<AreaChartIcon />} label="Área" iconPosition="start" sx={{ gap: "0.5rem" }} />
                       </Tabs>
                     </Box>
                     <CardContent sx={{ padding: "1.5rem" }}>
@@ -2768,8 +2765,6 @@ export default function RemovalDashboard() {
                             backdropFilter: "blur(8px)",
                           }}
                         >
-                          
-
                           {/* Modificar o layout da seção de pesquisa para dar mais espaço ao autocomplete */}
                           <Box sx={{ display: "flex", gap: 2, flexWrap: { xs: "wrap", md: "nowrap" }, mb: 2 }}>
                             <Box sx={{ flex: 1, width: "100%" }}>
@@ -3807,7 +3802,7 @@ export default function RemovalDashboard() {
         {/* Find the DialogTitle in the Add Release Modal and enhance it: */}
         <DialogTitle
           sx={{
-            background: themeColors.primary.main,
+            background: `linear-gradient(135deg, ${alpha(themeColors.primary.main, 0.9)} 0%, ${alpha(themeColors.primary.main, 0.8)} 100%)`,
             color: "white",
             display: "flex",
             alignItems: "center",
@@ -3857,8 +3852,8 @@ export default function RemovalDashboard() {
                 sx={{
                   p: 2.5,
                   borderRadius: "16px",
-                  border: `1px solid ${alpha(themeColors.success.main, 0.3)}`,
-                  background: alpha(themeColors.success.main, 0.03),
+                  border: `1px solid ${alpha(themeColors.success.main, 0.2)}`,
+                  background: alpha(themeColors.success.main, 0.02),
                   position: "relative",
                   overflow: "hidden",
                   "&::before": {
@@ -3868,7 +3863,7 @@ export default function RemovalDashboard() {
                     left: 0,
                     width: "5px",
                     height: "100%",
-                    background: themeColors.success.main,
+                    background: alpha(themeColors.success.main, 0.7),
                   },
                 }}
               >
@@ -3934,8 +3929,8 @@ export default function RemovalDashboard() {
                 sx={{
                   p: 2.5,
                   borderRadius: "16px",
-                  border: `1px solid ${alpha(themeColors.warning.main, 0.3)}`,
-                  background: alpha(themeColors.warning.main, 0.03),
+                  border: `1px solid ${alpha(themeColors.warning.main, 0.2)}`,
+                  background: alpha(themeColors.warning.main, 0.02),
                   position: "relative",
                   overflow: "hidden",
                   "&::before": {
@@ -3945,7 +3940,7 @@ export default function RemovalDashboard() {
                     left: 0,
                     width: "5px",
                     height: "100%",
-                    background: themeColors.warning.main,
+                    background: alpha(themeColors.warning.main, 0.7),
                   },
                 }}
               >
@@ -4014,8 +4009,8 @@ export default function RemovalDashboard() {
                 sx={{
                   p: 2.5,
                   borderRadius: "16px",
-                  border: `1px solid ${alpha(themeColors.primary.main, 0.3)}`,
-                  background: alpha(themeColors.primary.main, 0.03),
+                  border: `1px solid ${alpha(themeColors.primary.main, 0.2)}`,
+                  background: alpha(themeColors.primary.main, 0.02),
                   position: "relative",
                   overflow: "hidden",
                   "&::before": {
@@ -4025,7 +4020,7 @@ export default function RemovalDashboard() {
                     left: 0,
                     width: "5px",
                     height: "100%",
-                    background: themeColors.primary.main,
+                    background: alpha(themeColors.primary.main, 0.7),
                   },
                 }}
               >
@@ -4111,8 +4106,8 @@ export default function RemovalDashboard() {
                 sx={{
                   p: 2.5,
                   borderRadius: "16px",
-                  border: `1px solid ${alpha(themeColors.error.main, 0.3)}`,
-                  background: alpha(themeColors.error.main, 0.03),
+                  border: `1px solid ${alpha(themeColors.error.main, 0.2)}`,
+                  background: alpha(themeColors.error.main, 0.02),
                   position: "relative",
                   overflow: "hidden",
                   "&::before": {
@@ -4122,7 +4117,7 @@ export default function RemovalDashboard() {
                     left: 0,
                     width: "5px",
                     height: "100%",
-                    background: themeColors.error.main,
+                    background: alpha(themeColors.error.main, 0.7),
                   },
                 }}
               >
@@ -4215,8 +4210,8 @@ export default function RemovalDashboard() {
                 sx={{
                   p: 2.5,
                   borderRadius: "16px",
-                  border: `1px solid ${alpha(themeColors.info.main, 0.3)}`,
-                  background: alpha(themeColors.info.main, 0.03),
+                  border: `1px solid ${alpha(themeColors.info.main, 0.2)}`,
+                  background: alpha(themeColors.info.main, 0.02),
                   position: "relative",
                   overflow: "hidden",
                   "&::before": {
@@ -4226,7 +4221,7 @@ export default function RemovalDashboard() {
                     left: 0,
                     width: "5px",
                     height: "100%",
-                    background: themeColors.info.main,
+                    background: alpha(themeColors.info.main, 0.7),
                   },
                 }}
               >
@@ -4359,11 +4354,11 @@ export default function RemovalDashboard() {
               borderRadius: "12px",
               textTransform: "none",
               fontWeight: 500,
-              backgroundColor: themeColors.success.main,
-              boxShadow: `0 4px 12px ${alpha(themeColors.success.main, 0.2)}`,
+              backgroundColor: alpha(themeColors.success.main, 0.9),
+              boxShadow: `0 4px 12px ${alpha(themeColors.success.main, 0.15)}`,
               "&:hover": {
-                backgroundColor: themeColors.success.dark,
-                boxShadow: `0 6px 16px ${alpha(themeColors.success.main, 0.3)}`,
+                backgroundColor: themeColors.success.main,
+                boxShadow: `0 6px 16px ${alpha(themeColors.success.main, 0.2)}`,
               },
             }}
           >
