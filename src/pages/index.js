@@ -2768,19 +2768,7 @@ export default function RemovalDashboard() {
                             backdropFilter: "blur(8px)",
                           }}
                         >
-                          <Typography
-                            variant="subtitle1"
-                            sx={{
-                              fontWeight: 600,
-                              mb: 2,
-                              color: themeColors.text.primary,
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 1,
-                            }}
-                          >
-                            <Search fontSize="small" /> Pesquisa Avançada
-                          </Typography>
+                          
 
                           {/* Modificar o layout da seção de pesquisa para dar mais espaço ao autocomplete */}
                           <Box sx={{ display: "flex", gap: 2, flexWrap: { xs: "wrap", md: "nowrap" }, mb: 2 }}>
