@@ -275,61 +275,15 @@ const themeColors = {
   divider: "rgba(226, 232, 240, 0.8)",
 }
 
-// Mock data for the dashboard
-const mockMonthlyData = [
-  { month: "Jan", removals: 45, target: 40, efficiency: 112.5 },
-  { month: "Fev", removals: 52, target: 45, efficiency: 115.6 },
-  { month: "Mar", removals: 48, target: 50, efficiency: 96.0 },
-  { month: "Abr", removals: 70, target: 55, efficiency: 127.3 },
-  { month: "Mai", removals: 65, target: 60, efficiency: 108.3 },
-  { month: "Jun", removals: 75, target: 65, efficiency: 115.4 },
-  { month: "Jul", removals: 80, target: 70, efficiency: 114.3 },
-  { month: "Ago", removals: 90, target: 75, efficiency: 120.0 },
-  { month: "Set", removals: 85, target: 80, efficiency: 106.3 },
-  { month: "Out", removals: 95, target: 85, efficiency: 111.8 },
-  { month: "Nov", removals: 100, target: 90, efficiency: 111.1 },
-  { month: "Dez", removals: 110, target: 95, efficiency: 115.8 },
-]
-
-// Mock data for team performance
-const mockTeamData = [
-  {
-    name: "Equipe 1",
-    label: "Matutino",
-    releases: 42,
-    color: themeColors.warning.main,
-    icon: <WbSunny />,
-    vehicles: 15,
-    hours: 8,
-  },
-  {
-    name: "Equipe 2",
-    label: "Vespertino",
-    releases: 38,
-    color: themeColors.primary.main,
-    icon: <Brightness5 />,
-    vehicles: 12,
-    hours: 8,
-  },
-  {
-    name: "Equipe 3",
-    label: "Noturno",
-    releases: 25,
-    color: themeColors.text.secondary,
-    icon: <Brightness3 />,
-    vehicles: 8,
-    hours: 8,
-  },
-]
-
-// Combined mock data for all removals
+// Update the mockAllRemovals data to ensure all records have proper dates
+// and change "Concluído" to "Finalizado" and remove "Agendado" status
 const mockAllRemovals = [
   {
     id: 1,
     driver: "Carlos Silva",
     vehiclePrefix: "VR-1234",
     departureTime: "08:15",
-    status: "Concluído",
+    status: "Finalizado",
     location: "Av. Paulista, 1000",
     vehicle: "Caminhão Reboque",
     arrivalTime: "09:30",
@@ -346,7 +300,7 @@ const mockAllRemovals = [
     driver: "Ana Oliveira",
     vehiclePrefix: "VR-5678",
     departureTime: "09:30",
-    status: "Concluído",
+    status: "Finalizado",
     location: "Rua Augusta, 500",
     vehicle: "Guincho Leve",
     arrivalTime: "10:45",
@@ -363,7 +317,7 @@ const mockAllRemovals = [
     driver: "Roberto Santos",
     vehiclePrefix: "VR-9012",
     departureTime: "10:45",
-    status: "Concluído",
+    status: "Finalizado",
     location: "Av. Brigadeiro Faria Lima, 3000",
     vehicle: "Caminhão Plataforma",
     arrivalTime: "12:00",
@@ -372,7 +326,7 @@ const mockAllRemovals = [
     team: "Equipe 1",
     garage: "Garagem Leste",
     collectors: ["Paulo Mendes", "Fernanda Costa"],
-    date: "2023-05-15",
+    date: "2023-05-16",
     route: "Rota 22 - Zona Oeste",
   },
   {
@@ -380,7 +334,7 @@ const mockAllRemovals = [
     driver: "Juliana Costa",
     vehiclePrefix: "VR-3456",
     departureTime: "11:20",
-    status: "Concluído",
+    status: "Finalizado",
     location: "Rua Oscar Freire, 700",
     vehicle: "Guincho Pesado",
     arrivalTime: "12:35",
@@ -397,7 +351,7 @@ const mockAllRemovals = [
     driver: "Marcos Pereira",
     vehiclePrefix: "VR-7890",
     departureTime: "13:00",
-    status: "Concluído",
+    status: "Finalizado",
     location: "Av. Rebouças, 1500",
     vehicle: "Caminhão Reboque",
     arrivalTime: "14:15",
@@ -406,7 +360,7 @@ const mockAllRemovals = [
     team: "Equipe 2",
     garage: "Garagem Oeste",
     collectors: ["Ricardo Oliveira", "Mariana Santos"],
-    date: "2023-05-16",
+    date: "2023-05-17",
     route: "Rota 12 - Zona Sul",
   },
   {
@@ -414,7 +368,7 @@ const mockAllRemovals = [
     driver: "Fernanda Lima",
     vehiclePrefix: "VR-2345",
     departureTime: "14:15",
-    status: "Concluído",
+    status: "Finalizado",
     location: "Av. Paulista, 2000",
     vehicle: "Guincho Leve",
     arrivalTime: "15:30",
@@ -423,7 +377,7 @@ const mockAllRemovals = [
     team: "Equipe 1",
     garage: "Garagem Sul",
     collectors: ["Bruno Costa", "Camila Alves"],
-    date: "2023-05-16",
+    date: "2023-05-17",
     route: "Rota 08 - Centro",
   },
   {
@@ -431,7 +385,7 @@ const mockAllRemovals = [
     driver: "Ricardo Alves",
     vehiclePrefix: "VR-6789",
     departureTime: "15:30",
-    status: "Concluído",
+    status: "Finalizado",
     location: "Rua da Consolação, 800",
     vehicle: "Caminhão Plataforma",
     arrivalTime: "16:45",
@@ -440,7 +394,7 @@ const mockAllRemovals = [
     team: "Equipe 3",
     garage: "Garagem Leste",
     collectors: ["Daniel Martins", "Juliana Rocha"],
-    date: "2023-05-17",
+    date: "2023-05-18",
     route: "Rota 18 - Centro",
   },
   {
@@ -448,7 +402,7 @@ const mockAllRemovals = [
     driver: "Patrícia Gomes",
     vehiclePrefix: "VR-0123",
     departureTime: "16:45",
-    status: "Concluído",
+    status: "Finalizado",
     location: "Av. Brigadeiro Luís Antônio, 1200",
     vehicle: "Guincho Pesado",
     arrivalTime: "18:00",
@@ -457,7 +411,7 @@ const mockAllRemovals = [
     team: "Equipe 2",
     garage: "Garagem Norte",
     collectors: ["Rodrigo Lima", "Beatriz Sousa"],
-    date: "2023-05-17",
+    date: "2023-05-18",
     route: "Rota 09 - Zona Sul",
   },
   {
@@ -465,7 +419,7 @@ const mockAllRemovals = [
     driver: "Eduardo Martins",
     vehiclePrefix: "VR-4567",
     departureTime: "08:00",
-    status: "Concluído",
+    status: "Finalizado",
     location: "Av. Santo Amaro, 1000",
     vehicle: "Caminhão Reboque",
     arrivalTime: "09:15",
@@ -474,7 +428,7 @@ const mockAllRemovals = [
     team: "Equipe 1",
     garage: "Garagem Oeste",
     collectors: ["Felipe Dias", "Larissa Oliveira"],
-    date: "2023-05-17",
+    date: "2023-05-19",
     route: "Rota 14 - Zona Sul",
   },
   {
@@ -482,7 +436,7 @@ const mockAllRemovals = [
     driver: "Camila Rocha",
     vehiclePrefix: "VR-8901",
     departureTime: "09:15",
-    status: "Concluído",
+    status: "Finalizado",
     location: "Rua Haddock Lobo, 600",
     vehicle: "Guincho Leve",
     arrivalTime: "10:30",
@@ -491,7 +445,7 @@ const mockAllRemovals = [
     team: "Equipe 3",
     garage: "Garagem Sul",
     collectors: ["Gustavo Pereira", "Natália Costa"],
-    date: "2023-05-18",
+    date: "2023-05-19",
     route: "Rota 03 - Centro",
   },
   {
@@ -499,7 +453,7 @@ const mockAllRemovals = [
     driver: "Gustavo Dias",
     vehiclePrefix: "VR-2345",
     departureTime: "10:30",
-    status: "Concluído",
+    status: "Finalizado",
     location: "Av. Nove de Julho, 2000",
     vehicle: "Caminhão Plataforma",
     arrivalTime: "11:45",
@@ -508,7 +462,7 @@ const mockAllRemovals = [
     team: "Equipe 2",
     garage: "Garagem Leste",
     collectors: ["Marcelo Silva", "Isabela Santos"],
-    date: "2023-05-18",
+    date: "2023-05-20",
     route: "Rota 07 - Centro",
   },
   {
@@ -516,7 +470,7 @@ const mockAllRemovals = [
     driver: "Luciana Ferreira",
     vehiclePrefix: "VR-6789",
     departureTime: "11:45",
-    status: "Concluído",
+    status: "Finalizado",
     location: "Av. Paulista, 500",
     vehicle: "Guincho Pesado",
     arrivalTime: "13:00",
@@ -525,7 +479,7 @@ const mockAllRemovals = [
     team: "Equipe 1",
     garage: "Garagem Norte",
     collectors: ["André Oliveira", "Renata Lima"],
-    date: "2023-05-18",
+    date: "2023-05-20",
     route: "Rota 08 - Centro",
   },
   {
@@ -542,7 +496,7 @@ const mockAllRemovals = [
     team: "Equipe 1",
     garage: "Garagem Norte",
     collectors: ["João Pereira", "Miguel Santos"],
-    date: "2023-05-19",
+    date: "2023-05-21",
     route: "Rota 15 - Zona Sul",
   },
   {
@@ -559,7 +513,7 @@ const mockAllRemovals = [
     team: "Equipe 2",
     garage: "Garagem Sul",
     collectors: ["Roberto Almeida", "Carla Dias"],
-    date: "2023-05-19",
+    date: "2023-05-21",
     route: "Rota 08 - Centro",
   },
   {
@@ -567,7 +521,7 @@ const mockAllRemovals = [
     driver: "Roberto Santos",
     vehiclePrefix: "VR-9012",
     departureTime: "10:45",
-    status: "Agendado",
+    status: "Em andamento",
     location: "Av. Brigadeiro Faria Lima, 3000",
     vehicle: "Caminhão Plataforma",
     arrivalTime: "-",
@@ -576,7 +530,7 @@ const mockAllRemovals = [
     team: "Equipe 1",
     garage: "Garagem Leste",
     collectors: ["Paulo Mendes", "Fernanda Costa"],
-    date: "2023-05-19",
+    date: "2023-05-21",
     route: "Rota 22 - Zona Oeste",
   },
   {
@@ -584,7 +538,7 @@ const mockAllRemovals = [
     driver: "Juliana Costa",
     vehiclePrefix: "VR-3456",
     departureTime: "11:20",
-    status: "Agendado",
+    status: "Em andamento",
     location: "Rua Oscar Freire, 700",
     vehicle: "Guincho Pesado",
     arrivalTime: "-",
@@ -593,7 +547,7 @@ const mockAllRemovals = [
     team: "Equipe 3",
     garage: "Garagem Norte",
     collectors: ["Lucas Ferreira", "Amanda Silva"],
-    date: "2023-05-19",
+    date: "2023-05-22",
     route: "Rota 05 - Zona Norte",
   },
   {
@@ -601,7 +555,7 @@ const mockAllRemovals = [
     driver: "Marcos Pereira",
     vehiclePrefix: "VR-7890",
     departureTime: "13:00",
-    status: "Agendado",
+    status: "Em andamento",
     location: "Av. Rebouças, 1500",
     vehicle: "Caminhão Reboque",
     arrivalTime: "-",
@@ -610,9 +564,32 @@ const mockAllRemovals = [
     team: "Equipe 2",
     garage: "Garagem Oeste",
     collectors: ["Ricardo Oliveira", "Mariana Santos"],
-    date: "2023-05-19",
+    date: "2023-05-22",
     route: "Rota 12 - Zona Sul",
   },
+]
+
+// Mock data for monthly removals
+const mockMonthlyData = [
+  { month: "Janeiro", removals: 120 },
+  { month: "Fevereiro", removals: 95 },
+  { month: "Março", removals: 140 },
+  { month: "Abril", removals: 110 },
+  { month: "Maio", removals: 150 },
+  { month: "Junho", removals: 130 },
+  { month: "Julho", removals: 160 },
+  { month: "Agosto", removals: 145 },
+  { month: "Setembro", removals: 125 },
+  { month: "Outubro", removals: 155 },
+  { month: "Novembro", removals: 135 },
+  { month: "Dezembro", removals: 170 },
+]
+
+// Mock data for team performance
+const mockTeamData = [
+  { name: "Equipe 1", label: "Matutino", releases: 55, color: themeColors.primary.main },
+  { name: "Equipe 2", label: "Vespertino", releases: 48, color: themeColors.warning.main },
+  { name: "Equipe 3", label: "Noturno", releases: 62, color: themeColors.success.main },
 ]
 
 // Calculate driver with most removals
@@ -639,18 +616,17 @@ const getDriverWithMostRemovals = () => {
   return { driver: topDriver, count: maxCount, vehiclePrefix: topVehicle }
 }
 
-// Pie chart data
+// Update the Pie chart data function to only include "Finalizado" and "Em andamento"
 const getPieChartData = () => {
-  const statusCounts = { Concluído: 0, "Em andamento": 0, Agendado: 0 }
+  const statusCounts = { Finalizado: 0, "Em andamento": 0 }
 
   mockAllRemovals.forEach((removal) => {
     statusCounts[removal.status]++
   })
 
   return [
-    { name: "Concluído", value: statusCounts["Concluído"], color: themeColors.success.main },
+    { name: "Finalizado", value: statusCounts["Finalizado"], color: themeColors.success.main },
     { name: "Em andamento", value: statusCounts["Em andamento"], color: themeColors.primary.main },
-    { name: "Agendado", value: statusCounts["Agendado"], color: themeColors.warning.main },
   ]
 }
 
@@ -843,7 +819,7 @@ export default function RemovalDashboard() {
   const [selectedMonth, setSelectedMonth] = useState("Todos")
   const [monthMenuAnchor, setMonthMenuAnchor] = useState(null)
   const [page, setPage] = useState(0)
-  const [rowsPerPage, setRowsPerPage] = useState(10)
+  const [rowsPerPage, setRowsPerPage] = useState(5)
   const [sortField, setSortField] = useState("departureTime")
   const [sortDirection, setSortDirection] = useState("asc")
   const [chartsLoaded, setChartsLoaded] = useState(false)
@@ -873,11 +849,13 @@ export default function RemovalDashboard() {
   const [shareMenuAnchor, setShareMenuAnchor] = useState(null)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [teamFilter, setTeamFilter] = useState("all")
+  const [setDeleteConfirmClose, setSetDeleteConfirmClose] = useState(false)
 
   const [removals, setRemovals] = useState(mockAllRemovals)
 
   // 1. Add state for the new modal
   const [addModalOpen, setAddModalOpen] = useState(false)
+  // Update the default status in the newRemoval state
   const [newRemoval, setNewRemoval] = useState({
     driver: "",
     driverId: "",
@@ -887,7 +865,7 @@ export default function RemovalDashboard() {
     route: "",
     vehiclePrefix: "",
     departureTime: "",
-    status: "Agendado",
+    status: "Em andamento",
     arrivalTime: "",
   })
 
@@ -1018,7 +996,7 @@ export default function RemovalDashboard() {
   }
 
   const handleDeleteConfirmClose = () => {
-    setDeleteConfirmOpen(false)
+    setDeleteConfirmClose(false)
   }
 
   // Handle delete action
@@ -1087,7 +1065,7 @@ export default function RemovalDashboard() {
       route: "",
       vehiclePrefix: "",
       departureTime: "",
-      status: "Agendado",
+      status: "Em andamento",
       arrivalTime: "",
     })
   }
@@ -1147,11 +1125,11 @@ export default function RemovalDashboard() {
             removal.driver.toLowerCase().includes(driverSearch.toLowerCase()) ||
             removal.vehiclePrefix.toLowerCase().includes(driverSearch.toLowerCase())) &&
           (selectedDate === null || removal.date === selectedDate?.toISOString().split("T")[0]) &&
-          // Filtro por status
+          // Update the filter function to handle the new status values
+          // Find the filteredRemovals function and update the status filter part:
           (statusFilter === "all" ||
-            (statusFilter === "completed" && removal.status === "Concluído") ||
-            (statusFilter === "in-progress" && removal.status === "Em andamento") ||
-            (statusFilter === "scheduled" && removal.status === "Agendado")) &&
+            (statusFilter === "completed" && removal.status === "Finalizado") ||
+            (statusFilter === "in-progress" && removal.status === "Em andamento")) &&
           // Filtro por equipe
           (teamFilter === "all" ||
             (teamFilter === "team-1" && removal.team === "Equipe 1") ||
@@ -1506,12 +1484,12 @@ export default function RemovalDashboard() {
     </Card>
   )
 
-  // Get status chip based on status
+  // Update the getStatusChip function to handle only "Finalizado" and "Em andamento"
   const getStatusChip = (status) => {
-    if (status === "Concluído") {
+    if (status === "Finalizado") {
       return (
         <Chip
-          label="Concluído"
+          label="Finalizado"
           sx={{
             backgroundColor: alpha(themeColors.success.main, 0.1),
             color: themeColors.success.main,
@@ -1525,7 +1503,7 @@ export default function RemovalDashboard() {
           size="small"
         />
       )
-    } else if (status === "Em andamento") {
+    } else {
       return (
         <Chip
           label="Em andamento"
@@ -1537,23 +1515,6 @@ export default function RemovalDashboard() {
             transition: "all 0.3s ease",
             "&:hover": {
               backgroundColor: alpha(themeColors.primary.main, 0.2),
-            },
-          }}
-          size="small"
-        />
-      )
-    } else {
-      return (
-        <Chip
-          label="Agendado"
-          sx={{
-            backgroundColor: alpha(themeColors.warning.main, 0.1),
-            color: themeColors.warning.main,
-            fontWeight: 600,
-            borderRadius: "12px",
-            transition: "all 0.3s ease",
-            "&:hover": {
-              backgroundColor: alpha(themeColors.warning.main, 0.2),
             },
           }}
           size="small"
@@ -2102,7 +2063,806 @@ export default function RemovalDashboard() {
                 </Box>
               </Box>
 
-              {/* Chart Section */}
+              {/* Unified Table Section */}
+              <Box component="section">
+                <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "600ms" : "0ms" }}>
+                  <Card
+                    sx={{
+                      borderRadius: "16px",
+                      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
+                      transition: "all 0.3s ease",
+                      overflow: "hidden",
+                      "&:hover": {
+                        boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)",
+                        transform: "translateY(-4px)",
+                      },
+                      background: themeColors.background.card,
+                      mb: 4,
+                    }}
+                  >
+                    <CardHeader
+                      // 3. Modify the TableHeader section to add the "Add Release" button
+                      // Find the CardHeader in the Unified Table Section and replace the title with:
+                      title={
+                        <Box
+                          sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}
+                        >
+                          <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                            <Box
+                              sx={{
+                                width: { xs: "32px", sm: "36px" },
+                                height: { xs: "32px", sm: "36px" },
+                                borderRadius: "12px",
+                                background: themeColors.primary.main,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                animation: `${keyframes.pulse} 2s ease-in-out infinite`,
+                              }}
+                            >
+                              <ViewList
+                                sx={{
+                                  color: "white",
+                                  fontSize: { xs: "1.1rem", sm: "1.3rem" },
+                                }}
+                              />
+                            </Box>
+                            <Box>
+                              <Typography
+                                sx={{
+                                  fontWeight: 600,
+                                  fontSize: { xs: "1.1rem", sm: "1.2rem" },
+                                  color: themeColors.text.primary,
+                                }}
+                              >
+                                Registros de Remoções
+                              </Typography>
+                              <Typography
+                                sx={{
+                                  fontSize: { xs: "0.8rem", sm: "0.85rem" },
+                                  color: themeColors.text.secondary,
+                                  fontWeight: 400,
+                                }}
+                              >
+                                Todos os registros de remoções
+                              </Typography>
+                            </Box>
+                          </Box>
+                          <Button
+                            variant="contained"
+                            startIcon={<DirectionsCar />}
+                            onClick={handleOpenAddModal}
+                            sx={{
+                              borderRadius: "12px",
+                              textTransform: "none",
+                              fontWeight: 600,
+                              backgroundColor: themeColors.success.main,
+                              boxShadow: `0 4px 12px ${alpha(themeColors.success.main, 0.2)}`,
+                              "&:hover": {
+                                backgroundColor: themeColors.success.dark,
+                                boxShadow: `0 6px 16px ${alpha(themeColors.success.main, 0.3)}`,
+                                transform: "translateY(-2px)",
+                              },
+                              transition: "all 0.3s ease",
+                              animation: `${keyframes.pulse} 3s infinite ease-in-out`,
+                            }}
+                          >
+                            Adicionar Soltura
+                          </Button>
+                        </Box>
+                      }
+                      action={
+                        <Box sx={{ display: "flex", gap: "0.5rem" }}>
+                          <IconButton
+                            sx={{
+                              color: themeColors.text.secondary,
+                              "&:hover": { color: themeColors.primary.main },
+                            }}
+                          >
+                            <Refresh />
+                          </IconButton>
+                        </Box>
+                      }
+                      sx={{
+                        paddingBottom: "0.75rem",
+                        borderBottom: `1px solid ${themeColors.divider}`,
+                        "& .MuiCardHeader-title": {
+                          fontWeight: 600,
+                          fontSize: "1.125rem",
+                          color: themeColors.text.primary,
+                        },
+                        "& .MuiCardHeader-action": {
+                          margin: 0,
+                        },
+                      }}
+                    />
+                    <CardContent sx={{ padding: "1.5rem" }}>
+                      {/* Search and Filter Section */}
+
+                      <Box sx={{ mb: 3, display: "flex", flexDirection: "column", gap: 2 }}>
+                        <Paper
+                          elevation={0}
+                          sx={{
+                            p: 2,
+                            borderRadius: "16px",
+                            border: `1px solid ${themeColors.divider}`,
+                            background: alpha(themeColors.background.paper, 0.8),
+                            backdropFilter: "blur(8px)",
+                          }}
+                        >
+                          {/* Modificar o layout da seção de pesquisa para dar mais espaço ao autocomplete */}
+                          <Box sx={{ display: "flex", gap: 2, flexWrap: { xs: "wrap", md: "nowrap" }, mb: 2 }}>
+                            <Box sx={{ flex: 1, width: "100%" }}>
+                              <SearchInput
+                                icon={Search}
+                                placeholder="Buscar por matrícula, motorista ou prefixo..."
+                                value={driverSearch}
+                                onChange={(e) => {
+                                  setDriverSearch(e.target.value)
+                                  setPrefixSearch(e.target.value)
+                                }}
+                                removals={removals}
+                              />
+                            </Box>
+                            <LocalizationProvider dateAdapter={AdapterDateFns}>
+                              <Box sx={{ display: "flex", alignItems: "center" }}>
+                                <DatePicker
+                                  value={selectedDate}
+                                  onChange={(newDate) => setSelectedDate(newDate)}
+                                  renderInput={() => null}
+                                  PopperProps={{
+                                    placement: "bottom-end",
+                                    sx: {
+                                      "& .MuiPaper-root": {
+                                        borderRadius: "16px",
+                                        boxShadow: "0 10px 40px rgba(0, 0, 0, 0.1)",
+                                        overflow: "hidden",
+                                      },
+                                    },
+                                  }}
+                                />
+
+                                {selectedDate && (
+                                  <Chip
+                                    label={selectedDate.toLocaleDateString()}
+                                    size="small"
+                                    onDelete={() => setSelectedDate(null)}
+                                    sx={{
+                                      ml: 1,
+                                      borderRadius: "12px",
+                                      backgroundColor: alpha(themeColors.primary.main, 0.1),
+                                      color: themeColors.primary.main,
+                                      fontWeight: 500,
+                                      height: "28px",
+                                      animation: `${keyframes.fadeIn} 0.3s ease-out`,
+                                    }}
+                                  />
+                                )}
+                              </Box>
+                            </LocalizationProvider>
+                          </Box>
+
+                          <Box sx={{ mb: 2 }}>
+                            <Typography
+                              variant="subtitle2"
+                              sx={{
+                                fontWeight: 600,
+                                mb: 1.5,
+                                color: themeColors.text.secondary,
+                                fontSize: "0.85rem",
+                              }}
+                            >
+                              Filtros:
+                            </Typography>
+                            {/* Update the status filter options in the filter section
+                            // Find the status filter chips and replace with: */}
+                            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                              {[
+                                { id: "all", label: "Todos", color: themeColors.text.secondary },
+                                { id: "completed", label: "Finalizado", color: themeColors.success.main },
+                                { id: "in-progress", label: "Em andamento", color: themeColors.primary.main },
+                              ].map((status) => (
+                                <Chip
+                                  key={status.id}
+                                  label={status.label}
+                                  clickable
+                                  onClick={() => setStatusFilter(status.id)}
+                                  sx={{
+                                    borderRadius: "12px",
+                                    fontWeight: 500,
+                                    backgroundColor:
+                                      statusFilter === status.id
+                                        ? alpha(status.color, 0.1)
+                                        : alpha(themeColors.background.default, 0.5),
+                                    color: statusFilter === status.id ? status.color : themeColors.text.secondary,
+                                    border: `1px solid ${
+                                      statusFilter === status.id ? status.color : themeColors.divider
+                                    }`,
+                                    "&:hover": {
+                                      backgroundColor: alpha(status.color, 0.1),
+                                      color: status.color,
+                                    },
+                                    transition: "all 0.2s ease",
+                                  }}
+                                />
+                              ))}
+                            </Box>
+
+                            <Grid container spacing={2}>
+                              <Grid item xs={12} md={6}>
+                                <Typography
+                                  variant="body2"
+                                  sx={{
+                                    fontWeight: 600,
+                                    mb: 1,
+                                    color: themeColors.text.secondary,
+                                    fontSize: "0.8rem",
+                                  }}
+                                >
+                                  Por Equipe:
+                                </Typography>
+                                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                                  {["Todas", "Equipe 1 (Matutino)", "Equipe 2 (Vespertino)", "Equipe 3 (Noturno)"].map(
+                                    (team, index) => (
+                                      <Chip
+                                        key={team}
+                                        label={team}
+                                        clickable
+                                        onClick={() => {
+                                          // Update only the team filter
+                                          if (index === 0) {
+                                            setTeamFilter("all")
+                                          } else {
+                                            setTeamFilter(`team-${index}`)
+                                          }
+                                        }}
+                                        sx={{
+                                          borderRadius: "12px",
+                                          fontWeight: 500,
+                                          backgroundColor:
+                                            teamFilter === (index === 0 ? "all" : `team-${index}`)
+                                              ? alpha(themeColors.success.main, 0.1)
+                                              : alpha(themeColors.background.default, 0.5),
+                                          color:
+                                            teamFilter === (index === 0 ? "all" : `team-${index}`)
+                                              ? themeColors.success.main
+                                              : themeColors.text.secondary,
+                                          border: `1px solid ${
+                                            teamFilter === (index === 0 ? "all" : `team-${index}`)
+                                              ? themeColors.success.main
+                                              : themeColors.divider
+                                          }`,
+                                          "&:hover": {
+                                            backgroundColor: alpha(themeColors.success.main, 0.1),
+                                            color: themeColors.success.main,
+                                          },
+                                          transition: "all 0.2s ease",
+                                        }}
+                                      />
+                                    ),
+                                  )}
+                                </Box>
+                              </Grid>
+                            </Grid>
+                          </Box>
+                        </Paper>
+                      </Box>
+
+                      {/* Table */}
+                      <TableContainer>
+                        <Table>
+                          <TableHead>
+                            <TableRow>
+                              <TableCell
+                                onClick={() => handleSort("driver")}
+                                sx={{
+                                  cursor: "pointer",
+                                  fontWeight: 600,
+                                  color: sortField === "driver" ? themeColors.primary.main : themeColors.text.secondary,
+                                  "&:hover": { color: themeColors.primary.main },
+                                  borderBottom: `1px solid ${themeColors.divider}`,
+                                  py: 1.5,
+                                }}
+                              >
+                                Motorista
+                                <SortIndicator field="driver" />
+                              </TableCell>
+                              <TableCell
+                                onClick={() => handleSort("vehiclePrefix")}
+                                sx={{
+                                  cursor: "pointer",
+                                  fontWeight: 600,
+                                  color:
+                                    sortField === "vehiclePrefix"
+                                      ? themeColors.primary.main
+                                      : themeColors.text.secondary,
+                                  "&:hover": { color: themeColors.primary.main },
+                                  borderBottom: `1px solid ${themeColors.divider}`,
+                                  py: 1.5,
+                                }}
+                              >
+                                Prefixo
+                                <SortIndicator field="vehiclePrefix" />
+                              </TableCell>
+                              <TableCell
+                                onClick={() => handleSort("departureTime")}
+                                sx={{
+                                  cursor: "pointer",
+                                  fontWeight: 600,
+                                  color:
+                                    sortField === "departureTime"
+                                      ? themeColors.primary.main
+                                      : themeColors.text.secondary,
+                                  "&:hover": { color: themeColors.primary.main },
+                                  borderBottom: `1px solid ${themeColors.divider}`,
+                                  py: 1.5,
+                                }}
+                              >
+                                Horário
+                                <SortIndicator field="departureTime" />
+                              </TableCell>
+                              <TableCell
+                                onClick={() => handleSort("team")}
+                                sx={{
+                                  cursor: "pointer",
+                                  fontWeight: 600,
+                                  color: sortField === "team" ? themeColors.primary.main : themeColors.text.secondary,
+                                  "&:hover": { color: themeColors.primary.main },
+                                  borderBottom: `1px solid ${themeColors.divider}`,
+                                  py: 1.5,
+                                }}
+                              >
+                                Equipe
+                                <SortIndicator field="team" />
+                              </TableCell>
+                              <TableCell
+                                onClick={() => handleSort("status")}
+                                sx={{
+                                  cursor: "pointer",
+                                  fontWeight: 600,
+                                  color: sortField === "status" ? themeColors.primary.main : themeColors.text.secondary,
+                                  "&:hover": { color: themeColors.primary.main },
+                                  borderBottom: `1px solid ${themeColors.divider}`,
+                                  py: 1.5,
+                                }}
+                              >
+                                Status
+                                <SortIndicator field="status" />
+                              </TableCell>
+                              <TableCell
+                                sx={{
+                                  fontWeight: 600,
+                                  color: themeColors.text.secondary,
+                                  borderBottom: `1px solid ${themeColors.divider}`,
+                                  py: 1.5,
+                                  textAlign: "center",
+                                }}
+                              >
+                                Ações
+                              </TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {paginatedRemovals.map((removal) => (
+                              <TableRow
+                                key={removal.id}
+                                sx={{
+                                  "&:hover": {
+                                    backgroundColor: alpha(themeColors.background.default, 0.5),
+                                  },
+                                  transition: "background-color 0.2s",
+                                  cursor: "pointer",
+                                }}
+                                onClick={() => handleOpenModal(removal)}
+                              >
+                                <TableCell>
+                                  <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                                    <Avatar
+                                      sx={{
+                                        width: 32,
+                                        height: 32,
+                                        backgroundColor: alpha(themeColors.primary.main, 0.1),
+                                        color: themeColors.primary.main,
+                                        fontWeight: 600,
+                                      }}
+                                    >
+                                      {removal.driver.charAt(0)}
+                                    </Avatar>
+                                    <Typography sx={{ fontWeight: 500 }}>
+                                      {isMobile ? removal.driver.split(" ")[0] : removal.driver}
+                                    </Typography>
+                                  </Box>
+                                </TableCell>
+                                <TableCell>
+                                  <Chip
+                                    label={removal.vehiclePrefix}
+                                    size="small"
+                                    sx={{
+                                      backgroundColor: alpha(themeColors.success.main, 0.1),
+                                      color: themeColors.success.main,
+                                      fontWeight: 600,
+                                      height: "1.5rem",
+                                      borderRadius: "12px",
+                                    }}
+                                  />
+                                </TableCell>
+                                <TableCell>{removal.departureTime}</TableCell>
+                                <TableCell>{removal.team}</TableCell>
+                                <TableCell>{getStatusChip(removal.status)}</TableCell>
+                                <TableCell align="center">
+                                  <IconButton
+                                    size="small"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      handleActionMenuOpen(e, removal.id)
+                                    }}
+                                  >
+                                    <MoreVert fontSize="small" />
+                                  </IconButton>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+
+                      <TablePagination
+                        component="div"
+                        count={filteredRemovals.length}
+                        page={page}
+                        onPageChange={handlePageChange}
+                        rowsPerPage={rowsPerPage}
+                        onRowsPerPageChange={handleRowsPerPageChange}
+                        rowsPerPageOptions={[5, 10, 25, 50]}
+                        labelRowsPerPage="Linhas por página:"
+                        labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
+                        sx={{
+                          ".MuiTablePagination-actions": {
+                            "& .MuiIconButton-root": {
+                              color: themeColors.text.secondary,
+                              "&:hover": {
+                                backgroundColor: alpha(themeColors.primary.main, 0.1),
+                                color: themeColors.primary.main,
+                              },
+                            },
+                          },
+                        }}
+                      />
+                    </CardContent>
+                  </Card>
+                </Zoom>
+              </Box>
+
+              {/* Team Performance and Status Charts */}
+              <Box sx={{ display: "flex", gap: 3, flexWrap: { xs: "wrap", md: "nowrap" }, mb: 4 }}>
+                {/* Team Performance Chart - Now half width */}
+                <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "500ms" : "0ms" }}>
+                  <Card
+                    sx={{
+                      borderRadius: "16px",
+                      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
+                      transition: "all 0.3s ease",
+                      overflow: "hidden",
+                      "&:hover": {
+                        boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)",
+                        transform: "translateY(-4px)",
+                      },
+                      background: themeColors.background.card,
+                      width: { xs: "100%", md: "50%" },
+                    }}
+                  >
+                    <CardHeader
+                      title={
+                        <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                          <Box
+                            sx={{
+                              width: { xs: "32px", sm: "36px" },
+                              height: { xs: "32px", sm: "36px" },
+                              borderRadius: "12px",
+                              background: themeColors.warning.main,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              animation: `${keyframes.pulse} 2s ease-in-out infinite`,
+                            }}
+                          >
+                            <Timeline
+                              sx={{
+                                color: "white",
+                                fontSize: { xs: "1.1rem", sm: "1.3rem" },
+                              }}
+                            />
+                          </Box>
+                          <Box>
+                            <Typography
+                              sx={{
+                                fontWeight: 600,
+                                fontSize: { xs: "1.1rem", sm: "1.2rem" },
+                                color: themeColors.text.primary,
+                              }}
+                            >
+                              Equipes
+                            </Typography>
+                            <Typography
+                              sx={{
+                                fontSize: { xs: "0.8rem", sm: "0.85rem" },
+                                color: themeColors.text.secondary,
+                                fontWeight: 400,
+                              }}
+                            >
+                              Análise comparativa por turno
+                            </Typography>
+                          </Box>
+                        </Box>
+                      }
+                      action={
+                        <IconButton
+                          sx={{
+                            color: themeColors.text.secondary,
+                            "&:hover": { color: themeColors.warning.main },
+                          }}
+                        >
+                          <Refresh />
+                        </IconButton>
+                      }
+                      sx={{
+                        paddingBottom: "0.75rem",
+                        borderBottom: `1px solid ${themeColors.divider}`,
+                        "& .MuiCardHeader-title": {
+                          fontWeight: 600,
+                          fontSize: "1.125rem",
+                          color: themeColors.text.primary,
+                        },
+                        "& .MuiCardHeader-action": {
+                          margin: 0,
+                        },
+                      }}
+                    />
+                    <CardContent sx={{ padding: "1.5rem" }}>
+                      <Box
+                        sx={{
+                          width: "100%",
+                          position: "relative",
+                          height: "300px",
+                        }}
+                      >
+                        {!chartsLoaded && (
+                          <Box
+                            sx={{
+                              position: "absolute",
+                              top: 0,
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              backgroundColor: alpha(themeColors.background.paper, 0.7),
+                              zIndex: 10,
+                              borderRadius: "12px",
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                width: "40px",
+                                height: "40px",
+                                borderRadius: "50%",
+                                background: themeColors.warning.main,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
+                                animation: `${keyframes.pulse} 1.5s ease-in-out infinite`,
+                              }}
+                            />
+                          </Box>
+                        )}
+                        <Fade in={chartsLoaded} timeout={800}>
+                          <Box
+                            sx={{
+                              width: "100%",
+                              height: "100%",
+                            }}
+                          >
+                            {renderTeamChart()}
+                          </Box>
+                        </Fade>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Zoom>
+
+                {/* Status Pie Chart */}
+                <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "600ms" : "0ms" }}>
+                  <Card
+                    sx={{
+                      borderRadius: "16px",
+                      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
+                      transition: "all 0.3s ease",
+                      overflow: "hidden",
+                      "&:hover": {
+                        boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)",
+                        transform: "translateY(-4px)",
+                      },
+                      background: themeColors.background.card,
+                      width: { xs: "100%", md: "50%" },
+                    }}
+                  >
+                    <CardHeader
+                      title={
+                        <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                          <Box
+                            sx={{
+                              width: { xs: "32px", sm: "36px" },
+                              height: { xs: "32px", sm: "36px" },
+                              borderRadius: "12px",
+                              background: themeColors.success.main,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              animation: `${keyframes.pulse} 2s ease-in-out infinite`,
+                            }}
+                          >
+                            <PieChartIcon
+                              sx={{
+                                color: "white",
+                                fontSize: { xs: "1.1rem", sm: "1.3rem" },
+                              }}
+                            />
+                          </Box>
+                          <Box>
+                            <Typography
+                              sx={{
+                                fontWeight: 600,
+                                fontSize: { xs: "1.1rem", sm: "1.2rem" },
+                                color: themeColors.text.primary,
+                              }}
+                            >
+                              Status
+                            </Typography>
+                            <Typography
+                              sx={{
+                                fontSize: { xs: "0.8rem", sm: "0.85rem" },
+                                color: themeColors.text.secondary,
+                                fontWeight: 400,
+                              }}
+                            >
+                              Distribuição por status
+                            </Typography>
+                          </Box>
+                        </Box>
+                      }
+                      action={
+                        <IconButton
+                          sx={{
+                            color: themeColors.text.secondary,
+                            "&:hover": { color: themeColors.success.main },
+                          }}
+                        >
+                          <Refresh />
+                        </IconButton>
+                      }
+                      sx={{
+                        paddingBottom: "0.75rem",
+                        borderBottom: `1px solid ${themeColors.divider}`,
+                        "& .MuiCardHeader-title": {
+                          fontWeight: 600,
+                          fontSize: "1.125rem",
+                          color: themeColors.text.primary,
+                        },
+                        "& .MuiCardHeader-action": {
+                          margin: 0,
+                        },
+                      }}
+                    />
+                    <CardContent sx={{ padding: "1.5rem" }}>
+                      <Box
+                        sx={{
+                          width: "100%",
+                          position: "relative",
+                          height: "300px",
+                        }}
+                      >
+                        {!chartsLoaded && (
+                          <Box
+                            sx={{
+                              position: "absolute",
+                              top: 0,
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              backgroundColor: alpha(themeColors.background.paper, 0.7),
+                              zIndex: 10,
+                              borderRadius: "12px",
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                width: "40px",
+                                height: "40px",
+                                borderRadius: "50%",
+                                background: themeColors.success.main,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
+                                animation: `${keyframes.pulse} 1.5s ease-in-out infinite`,
+                              }}
+                            />
+                          </Box>
+                        )}
+                        <Fade in={chartsLoaded} timeout={800}>
+                          <Box
+                            sx={{
+                              width: "100%",
+                              height: "100%",
+                            }}
+                          >
+                            <ResponsiveContainer width="100%" height="100%">
+                              <PieChart>
+                                <defs>
+                                  {pieChartData.map((entry, index) => (
+                                    <filter key={`filter-${index}`} id={`glow-${index}`} height="200%">
+                                      <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+                                      <feMerge>
+                                        <feMergeNode in="coloredBlur" />
+                                        <feMergeNode in="SourceGraphic" />
+                                      </feMerge>
+                                    </filter>
+                                  ))}
+                                </defs>
+                                <Pie
+                                  activeIndex={activeIndex}
+                                  activeShape={renderActiveShape}
+                                  data={pieChartData}
+                                  cx="50%"
+                                  cy="50%"
+                                  innerRadius={80}
+                                  outerRadius={110}
+                                  fill="#8884d8"
+                                  dataKey="value"
+                                  onMouseEnter={onPieEnter}
+                                  paddingAngle={2}
+                                  filter={`url(#glow-${activeIndex})`}
+                                >
+                                  {pieChartData.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={entry.color} stroke="#fff" strokeWidth={2} />
+                                  ))}
+                                </Pie>
+                                <Legend
+                                  verticalAlign="bottom"
+                                  layout="horizontal"
+                                  align="center"
+                                  wrapperStyle={{ paddingTop: 30 }}
+                                  formatter={(value, entry, index) => (
+                                    <span
+                                      style={{
+                                        color: pieChartData[index].color,
+                                        fontWeight: 600,
+                                        fontSize: "14px",
+                                        padding: "4px 8px",
+                                        borderRadius: "4px",
+                                        backgroundColor: alpha(pieChartData[index].color, 0.1),
+                                      }}
+                                    >
+                                      {value}
+                                    </span>
+                                  )}
+                                />
+                              </PieChart>
+                            </ResponsiveContainer>
+                          </Box>
+                        </Fade>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Zoom>
+              </Box>
+
+              {/* Monthly Distribution Chart - Now at the bottom */}
               <Box component="section" sx={{ mb: 3 }}>
                 <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "400ms" : "0ms" }}>
                   <Card
@@ -2303,819 +3063,6 @@ export default function RemovalDashboard() {
                           </Box>
                         </Fade>
                       </Box>
-                    </CardContent>
-                  </Card>
-                </Zoom>
-              </Box>
-
-              {/* Team Performance Chart */}
-
-              <Box sx={{ display: "flex", gap: 3, flexWrap: { xs: "wrap", md: "nowrap" }, mb: 4 }}>
-                {/* Team Performance Chart - Now half width */}
-                <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "500ms" : "0ms" }}>
-                  <Card
-                    sx={{
-                      borderRadius: "16px",
-                      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
-                      transition: "all 0.3s ease",
-                      overflow: "hidden",
-                      "&:hover": {
-                        boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)",
-                        transform: "translateY(-4px)",
-                      },
-                      background: themeColors.background.card,
-                      width: { xs: "100%", md: "50%" },
-                    }}
-                  >
-                    <CardHeader
-                      title={
-                        <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                          <Box
-                            sx={{
-                              width: { xs: "32px", sm: "36px" },
-                              height: { xs: "32px", sm: "36px" },
-                              borderRadius: "12px",
-                              background: themeColors.warning.main,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              animation: `${keyframes.pulse} 2s ease-in-out infinite`,
-                            }}
-                          >
-                            <Timeline
-                              sx={{
-                                color: "white",
-                                fontSize: { xs: "1.1rem", sm: "1.3rem" },
-                              }}
-                            />
-                          </Box>
-                          <Box>
-                            <Typography
-                              sx={{
-                                fontWeight: 600,
-                                fontSize: { xs: "1.1rem", sm: "1.2rem" },
-                                color: themeColors.text.primary,
-                              }}
-                            >
-                              Equipes
-                            </Typography>
-                            <Typography
-                              sx={{
-                                fontSize: { xs: "0.8rem", sm: "0.85rem" },
-                                color: themeColors.text.secondary,
-                                fontWeight: 400,
-                              }}
-                            >
-                              Análise comparativa por turno
-                            </Typography>
-                          </Box>
-                        </Box>
-                      }
-                      action={
-                        <IconButton
-                          sx={{
-                            color: themeColors.text.secondary,
-                            "&:hover": { color: themeColors.warning.main },
-                          }}
-                        >
-                          <Refresh />
-                        </IconButton>
-                      }
-                      sx={{
-                        paddingBottom: "0.75rem",
-                        borderBottom: `1px solid ${themeColors.divider}`,
-                        "& .MuiCardHeader-title": {
-                          fontWeight: 600,
-                          fontSize: "1.125rem",
-                          color: themeColors.text.primary,
-                        },
-                        "& .MuiCardHeader-action": {
-                          margin: 0,
-                        },
-                      }}
-                    />
-                    <CardContent sx={{ padding: "1.5rem" }}>
-                      <Box
-                        sx={{
-                          width: "100%",
-                          position: "relative",
-                          height: "300px",
-                        }}
-                      >
-                        {!chartsLoaded && (
-                          <Box
-                            sx={{
-                              position: "absolute",
-                              top: 0,
-                              left: 0,
-                              right: 0,
-                              bottom: 0,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              backgroundColor: alpha(themeColors.background.paper, 0.7),
-                              zIndex: 10,
-                              borderRadius: "12px",
-                            }}
-                          >
-                            <Box
-                              sx={{
-                                width: "40px",
-                                height: "40px",
-                                borderRadius: "50%",
-                                background: themeColors.warning.main,
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
-                                animation: `${keyframes.pulse} 1.5s ease-in-out infinite`,
-                              }}
-                            />
-                          </Box>
-                        )}
-                        <Fade in={chartsLoaded} timeout={800}>
-                          <Box
-                            sx={{
-                              width: "100%",
-                              height: "100%",
-                            }}
-                          >
-                            {renderTeamChart()}
-                          </Box>
-                        </Fade>
-                      </Box>
-                    </CardContent>
-                  </Card>
-                </Zoom>
-
-                {/* 2. Add the Status Pie Chart on the right side */}
-                <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "600ms" : "0ms" }}>
-                  <Card
-                    sx={{
-                      borderRadius: "16px",
-                      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
-                      transition: "all 0.3s ease",
-                      overflow: "hidden",
-                      "&:hover": {
-                        boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)",
-                        transform: "translateY(-4px)",
-                      },
-                      background: themeColors.background.card,
-                      width: { xs: "100%", md: "50%" },
-                    }}
-                  >
-                    <CardHeader
-                      title={
-                        <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                          <Box
-                            sx={{
-                              width: { xs: "32px", sm: "36px" },
-                              height: { xs: "32px", sm: "36px" },
-                              borderRadius: "12px",
-                              background: themeColors.success.main,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              animation: `${keyframes.pulse} 2s ease-in-out infinite`,
-                            }}
-                          >
-                            <PieChartIcon
-                              sx={{
-                                color: "white",
-                                fontSize: { xs: "1.1rem", sm: "1.3rem" },
-                              }}
-                            />
-                          </Box>
-                          <Box>
-                            <Typography
-                              sx={{
-                                fontWeight: 600,
-                                fontSize: { xs: "1.1rem", sm: "1.2rem" },
-                                color: themeColors.text.primary,
-                              }}
-                            >
-                              Status
-                            </Typography>
-                            <Typography
-                              sx={{
-                                fontSize: { xs: "0.8rem", sm: "0.85rem" },
-                                color: themeColors.text.secondary,
-                                fontWeight: 400,
-                              }}
-                            >
-                              Distribuição por status
-                            </Typography>
-                          </Box>
-                        </Box>
-                      }
-                      action={
-                        <IconButton
-                          sx={{
-                            color: themeColors.text.secondary,
-                            "&:hover": { color: themeColors.success.main },
-                          }}
-                        >
-                          <Refresh />
-                        </IconButton>
-                      }
-                      sx={{
-                        paddingBottom: "0.75rem",
-                        borderBottom: `1px solid ${themeColors.divider}`,
-                        "& .MuiCardHeader-title": {
-                          fontWeight: 600,
-                          fontSize: "1.125rem",
-                          color: themeColors.text.primary,
-                        },
-                        "& .MuiCardHeader-action": {
-                          margin: 0,
-                        },
-                      }}
-                    />
-                    <CardContent sx={{ padding: "1.5rem" }}>
-                      <Box
-                        sx={{
-                          width: "100%",
-                          position: "relative",
-                          height: "300px",
-                        }}
-                      >
-                        {!chartsLoaded && (
-                          <Box
-                            sx={{
-                              position: "absolute",
-                              top: 0,
-                              left: 0,
-                              right: 0,
-                              bottom: 0,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              backgroundColor: alpha(themeColors.background.paper, 0.7),
-                              zIndex: 10,
-                              borderRadius: "12px",
-                            }}
-                          >
-                            <Box
-                              sx={{
-                                width: "40px",
-                                height: "40px",
-                                borderRadius: "50%",
-                                background: themeColors.success.main,
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
-                                animation: `${keyframes.pulse} 1.5s ease-in-out infinite`,
-                              }}
-                            />
-                          </Box>
-                        )}
-                        <Fade in={chartsLoaded} timeout={800}>
-                          <Box
-                            sx={{
-                              width: "100%",
-                              height: "100%",
-                            }}
-                          >
-                            <ResponsiveContainer width="100%" height="100%">
-                              <PieChart>
-                                <defs>
-                                  {pieChartData.map((entry, index) => (
-                                    <filter key={`filter-${index}`} id={`glow-${index}`} height="200%">
-                                      <feGaussianBlur stdDeviation="3" result="coloredBlur" />
-                                      <feMerge>
-                                        <feMergeNode in="coloredBlur" />
-                                        <feMergeNode in="SourceGraphic" />
-                                      </feMerge>
-                                    </filter>
-                                  ))}
-                                </defs>
-                                <Pie
-                                  activeIndex={activeIndex}
-                                  activeShape={renderActiveShape}
-                                  data={pieChartData}
-                                  cx="50%"
-                                  cy="50%"
-                                  innerRadius={80}
-                                  outerRadius={110}
-                                  fill="#8884d8"
-                                  dataKey="value"
-                                  onMouseEnter={onPieEnter}
-                                  paddingAngle={2}
-                                  filter={`url(#glow-${activeIndex})`}
-                                >
-                                  {pieChartData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.color} stroke="#fff" strokeWidth={2} />
-                                  ))}
-                                </Pie>
-                                <Legend
-                                  verticalAlign="bottom"
-                                  layout="horizontal"
-                                  align="center"
-                                  wrapperStyle={{ paddingTop: 30 }}
-                                  formatter={(value, entry, index) => (
-                                    <span
-                                      style={{
-                                        color: pieChartData[index].color,
-                                        fontWeight: 600,
-                                        fontSize: "14px",
-                                        padding: "4px 8px",
-                                        borderRadius: "4px",
-                                        backgroundColor: alpha(pieChartData[index].color, 0.1),
-                                      }}
-                                    >
-                                      {value}
-                                    </span>
-                                  )}
-                                />
-                              </PieChart>
-                            </ResponsiveContainer>
-                          </Box>
-                        </Fade>
-                      </Box>
-                    </CardContent>
-                  </Card>
-                </Zoom>
-              </Box>
-
-              {/* Unified Table Section */}
-              <Box component="section">
-                <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "600ms" : "0ms" }}>
-                  <Card
-                    sx={{
-                      borderRadius: "16px",
-                      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
-                      transition: "all 0.3s ease",
-                      overflow: "hidden",
-                      "&:hover": {
-                        boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)",
-                        transform: "translateY(-4px)",
-                      },
-                      background: themeColors.background.card,
-                      mb: 4,
-                    }}
-                  >
-                    <CardHeader
-                      // 3. Modify the TableHeader section to add the "Add Release" button
-                      // Find the CardHeader in the Unified Table Section and replace the title with:
-                      title={
-                        <Box
-                          sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}
-                        >
-                          <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                            <Box
-                              sx={{
-                                width: { xs: "32px", sm: "36px" },
-                                height: { xs: "32px", sm: "36px" },
-                                borderRadius: "12px",
-                                background: themeColors.primary.main,
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                animation: `${keyframes.pulse} 2s ease-in-out infinite`,
-                              }}
-                            >
-                              <ViewList
-                                sx={{
-                                  color: "white",
-                                  fontSize: { xs: "1.1rem", sm: "1.3rem" },
-                                }}
-                              />
-                            </Box>
-                            <Box>
-                              <Typography
-                                sx={{
-                                  fontWeight: 600,
-                                  fontSize: { xs: "1.1rem", sm: "1.2rem" },
-                                  color: themeColors.text.primary,
-                                }}
-                              >
-                                Registros de Remoções
-                              </Typography>
-                              <Typography
-                                sx={{
-                                  fontSize: { xs: "0.8rem", sm: "0.85rem" },
-                                  color: themeColors.text.secondary,
-                                  fontWeight: 400,
-                                }}
-                              >
-                                Todos os registros de remoções
-                              </Typography>
-                            </Box>
-                          </Box>
-                          <Button
-                            variant="contained"
-                            startIcon={<DirectionsCar />}
-                            onClick={handleOpenAddModal}
-                            sx={{
-                              borderRadius: "12px",
-                              textTransform: "none",
-                              fontWeight: 600,
-                              backgroundColor: themeColors.success.main,
-                              boxShadow: `0 4px 12px ${alpha(themeColors.success.main, 0.2)}`,
-                              "&:hover": {
-                                backgroundColor: themeColors.success.dark,
-                                boxShadow: `0 6px 16px ${alpha(themeColors.success.main, 0.3)}`,
-                                transform: "translateY(-2px)",
-                              },
-                              transition: "all 0.3s ease",
-                              animation: `${keyframes.pulse} 3s infinite ease-in-out`,
-                            }}
-                          >
-                            Adicionar Soltura
-                          </Button>
-                        </Box>
-                      }
-                      action={
-                        <Box sx={{ display: "flex", gap: "0.5rem" }}>
-                          <IconButton
-                            sx={{
-                              color: themeColors.text.secondary,
-                              "&:hover": { color: themeColors.primary.main },
-                            }}
-                          >
-                            <Refresh />
-                          </IconButton>
-                        </Box>
-                      }
-                      sx={{
-                        paddingBottom: "0.75rem",
-                        borderBottom: `1px solid ${themeColors.divider}`,
-                        "& .MuiCardHeader-title": {
-                          fontWeight: 600,
-                          fontSize: "1.125rem",
-                          color: themeColors.text.primary,
-                        },
-                        "& .MuiCardHeader-action": {
-                          margin: 0,
-                        },
-                      }}
-                    />
-                    <CardContent sx={{ padding: "1.5rem" }}>
-                      {/* Search and Filter Section */}
-
-                      <Box sx={{ mb: 3, display: "flex", flexDirection: "column", gap: 2 }}>
-                        <Paper
-                          elevation={0}
-                          sx={{
-                            p: 2,
-                            borderRadius: "16px",
-                            border: `1px solid ${themeColors.divider}`,
-                            background: alpha(themeColors.background.paper, 0.8),
-                            backdropFilter: "blur(8px)",
-                          }}
-                        >
-                          {/* Modificar o layout da seção de pesquisa para dar mais espaço ao autocomplete */}
-                          <Box sx={{ display: "flex", gap: 2, flexWrap: { xs: "wrap", md: "nowrap" }, mb: 2 }}>
-                            <Box sx={{ flex: 1, width: "100%" }}>
-                              <SearchInput
-                                icon={Search}
-                                placeholder="Buscar por matrícula, motorista ou prefixo..."
-                                value={driverSearch}
-                                onChange={(e) => {
-                                  setDriverSearch(e.target.value)
-                                  setPrefixSearch(e.target.value)
-                                }}
-                                removals={removals}
-                              />
-                            </Box>
-                            <LocalizationProvider dateAdapter={AdapterDateFns}>
-                              <Box sx={{ display: "flex", alignItems: "center" }}>
-                                <DatePicker
-                                  value={selectedDate}
-                                  onChange={(newDate) => setSelectedDate(newDate)}
-                                  renderInput={() => null}
-                                  PopperProps={{
-                                    placement: "bottom-end",
-                                    sx: {
-                                      "& .MuiPaper-root": {
-                                        borderRadius: "16px",
-                                        boxShadow: "0 10px 40px rgba(0, 0, 0, 0.1)",
-                                        overflow: "hidden",
-                                      },
-                                    },
-                                  }}
-                                />
-
-                                {selectedDate && (
-                                  <Chip
-                                    label={selectedDate.toLocaleDateString()}
-                                    size="small"
-                                    onDelete={() => setSelectedDate(null)}
-                                    sx={{
-                                      ml: 1,
-                                      borderRadius: "12px",
-                                      backgroundColor: alpha(themeColors.primary.main, 0.1),
-                                      color: themeColors.primary.main,
-                                      fontWeight: 500,
-                                      height: "28px",
-                                      animation: `${keyframes.fadeIn} 0.3s ease-out`,
-                                    }}
-                                  />
-                                )}
-                              </Box>
-                            </LocalizationProvider>
-                          </Box>
-
-                          <Box sx={{ mb: 2 }}>
-                            <Typography
-                              variant="subtitle2"
-                              sx={{
-                                fontWeight: 600,
-                                mb: 1.5,
-                                color: themeColors.text.secondary,
-                                fontSize: "0.85rem",
-                              }}
-                            >
-                              Filtros:
-                            </Typography>
-
-                            <Grid container spacing={2}>
-                              <Grid item xs={12} md={6}>
-                                <Typography
-                                  variant="body2"
-                                  sx={{
-                                    fontWeight: 600,
-                                    mb: 1,
-                                    color: themeColors.text.secondary,
-                                    fontSize: "0.8rem",
-                                  }}
-                                >
-                                  Por Equipe:
-                                </Typography>
-                                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                                  {["Todas", "Equipe 1 (Matutino)", "Equipe 2 (Vespertino)", "Equipe 3 (Noturno)"].map(
-                                    (team, index) => (
-                                      <Chip
-                                        key={team}
-                                        label={team}
-                                        clickable
-                                        onClick={() => {
-                                          // Update only the team filter
-                                          if (index === 0) {
-                                            setTeamFilter("all")
-                                          } else {
-                                            setTeamFilter(`team-${index}`)
-                                          }
-                                        }}
-                                        sx={{
-                                          borderRadius: "12px",
-                                          fontWeight: 500,
-                                          backgroundColor:
-                                            teamFilter === (index === 0 ? "all" : `team-${index}`)
-                                              ? alpha(themeColors.success.main, 0.1)
-                                              : alpha(themeColors.background.default, 0.5),
-                                          color:
-                                            teamFilter === (index === 0 ? "all" : `team-${index}`)
-                                              ? themeColors.success.main
-                                              : themeColors.text.secondary,
-                                          border: `1px solid ${
-                                            teamFilter === (index === 0 ? "all" : `team-${index}`)
-                                              ? themeColors.success.main
-                                              : themeColors.divider
-                                          }`,
-                                          "&:hover": {
-                                            backgroundColor: alpha(themeColors.success.main, 0.1),
-                                            color: themeColors.success.main,
-                                          },
-                                          transition: "all 0.2s ease",
-                                        }}
-                                      />
-                                    ),
-                                  )}
-                                </Box>
-                              </Grid>
-
-                              <Grid item xs={12} md={6}>
-                                <Typography
-                                  variant="body2"
-                                  sx={{
-                                    fontWeight: 600,
-                                    mb: 1,
-                                    color: themeColors.text.secondary,
-                                    fontSize: "0.8rem",
-                                  }}
-                                >
-                                  Por Status:
-                                </Typography>
-                                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                                  {[
-                                    { id: "all", label: "Todos", color: themeColors.text.secondary },
-                                    { id: "completed", label: "Concluído", color: themeColors.success.main },
-                                    { id: "in-progress", label: "Em andamento", color: themeColors.primary.main },
-                                    { id: "scheduled", label: "Agendado", color: themeColors.warning.main },
-                                  ].map((status) => (
-                                    <Chip
-                                      key={status.id}
-                                      label={status.label}
-                                      clickable
-                                      onClick={() => setStatusFilter(status.id)}
-                                      sx={{
-                                        borderRadius: "12px",
-                                        fontWeight: 500,
-                                        backgroundColor:
-                                          statusFilter === status.id
-                                            ? alpha(status.color, 0.1)
-                                            : alpha(themeColors.background.default, 0.5),
-                                        color: statusFilter === status.id ? status.color : themeColors.text.secondary,
-                                        border: `1px solid ${
-                                          statusFilter === status.id ? status.color : themeColors.divider
-                                        }`,
-                                        "&:hover": {
-                                          backgroundColor: alpha(status.color, 0.1),
-                                          color: status.color,
-                                        },
-                                        transition: "all 0.2s ease",
-                                      }}
-                                    />
-                                  ))}
-                                </Box>
-                              </Grid>
-                            </Grid>
-                          </Box>
-                        </Paper>
-                      </Box>
-
-                      {/* Table */}
-                      <TableContainer>
-                        <Table>
-                          <TableHead>
-                            <TableRow>
-                              <TableCell
-                                onClick={() => handleSort("driver")}
-                                sx={{
-                                  cursor: "pointer",
-                                  fontWeight: 600,
-                                  color: sortField === "driver" ? themeColors.primary.main : themeColors.text.secondary,
-                                  "&:hover": { color: themeColors.primary.main },
-                                  borderBottom: `1px solid ${themeColors.divider}`,
-                                  py: 1.5,
-                                }}
-                              >
-                                Motorista
-                                <SortIndicator field="driver" />
-                              </TableCell>
-                              <TableCell
-                                onClick={() => handleSort("vehiclePrefix")}
-                                sx={{
-                                  cursor: "pointer",
-                                  fontWeight: 600,
-                                  color:
-                                    sortField === "vehiclePrefix"
-                                      ? themeColors.primary.main
-                                      : themeColors.text.secondary,
-                                  "&:hover": { color: themeColors.primary.main },
-                                  borderBottom: `1px solid ${themeColors.divider}`,
-                                  py: 1.5,
-                                }}
-                              >
-                                Prefixo
-                                <SortIndicator field="vehiclePrefix" />
-                              </TableCell>
-                              <TableCell
-                                onClick={() => handleSort("departureTime")}
-                                sx={{
-                                  cursor: "pointer",
-                                  fontWeight: 600,
-                                  color:
-                                    sortField === "departureTime"
-                                      ? themeColors.primary.main
-                                      : themeColors.text.secondary,
-                                  "&:hover": { color: themeColors.primary.main },
-                                  borderBottom: `1px solid ${themeColors.divider}`,
-                                  py: 1.5,
-                                }}
-                              >
-                                Horário
-                                <SortIndicator field="departureTime" />
-                              </TableCell>
-                              <TableCell
-                                onClick={() => handleSort("team")}
-                                sx={{
-                                  cursor: "pointer",
-                                  fontWeight: 600,
-                                  color: sortField === "team" ? themeColors.primary.main : themeColors.text.secondary,
-                                  "&:hover": { color: themeColors.primary.main },
-                                  borderBottom: `1px solid ${themeColors.divider}`,
-                                  py: 1.5,
-                                }}
-                              >
-                                Equipe
-                                <SortIndicator field="team" />
-                              </TableCell>
-                              <TableCell
-                                onClick={() => handleSort("status")}
-                                sx={{
-                                  cursor: "pointer",
-                                  fontWeight: 600,
-                                  color: sortField === "status" ? themeColors.primary.main : themeColors.text.secondary,
-                                  "&:hover": { color: themeColors.primary.main },
-                                  borderBottom: `1px solid ${themeColors.divider}`,
-                                  py: 1.5,
-                                }}
-                              >
-                                Status
-                                <SortIndicator field="status" />
-                              </TableCell>
-                              <TableCell
-                                sx={{
-                                  fontWeight: 600,
-                                  color: themeColors.text.secondary,
-                                  borderBottom: `1px solid ${themeColors.divider}`,
-                                  py: 1.5,
-                                  textAlign: "center",
-                                }}
-                              >
-                                Ações
-                              </TableCell>
-                            </TableRow>
-                          </TableHead>
-                          <TableBody>
-                            {paginatedRemovals.map((removal) => (
-                              <TableRow
-                                key={removal.id}
-                                sx={{
-                                  "&:hover": {
-                                    backgroundColor: alpha(themeColors.background.default, 0.5),
-                                  },
-                                  transition: "background-color 0.2s",
-                                  cursor: "pointer",
-                                }}
-                                onClick={() => handleOpenModal(removal)}
-                              >
-                                <TableCell>
-                                  <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                                    <Avatar
-                                      sx={{
-                                        width: 32,
-                                        height: 32,
-                                        backgroundColor: alpha(themeColors.primary.main, 0.1),
-                                        color: themeColors.primary.main,
-                                        fontWeight: 600,
-                                      }}
-                                    >
-                                      {removal.driver.charAt(0)}
-                                    </Avatar>
-                                    <Typography sx={{ fontWeight: 500 }}>
-                                      {isMobile ? removal.driver.split(" ")[0] : removal.driver}
-                                    </Typography>
-                                  </Box>
-                                </TableCell>
-                                <TableCell>
-                                  <Chip
-                                    label={removal.vehiclePrefix}
-                                    size="small"
-                                    sx={{
-                                      backgroundColor: alpha(themeColors.success.main, 0.1),
-                                      color: themeColors.success.main,
-                                      fontWeight: 600,
-                                      height: "1.5rem",
-                                      borderRadius: "12px",
-                                    }}
-                                  />
-                                </TableCell>
-                                <TableCell>{removal.departureTime}</TableCell>
-                                <TableCell>{removal.team}</TableCell>
-                                <TableCell>{getStatusChip(removal.status)}</TableCell>
-                                <TableCell align="center">
-                                  <IconButton
-                                    size="small"
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      handleActionMenuOpen(e, removal.id)
-                                    }}
-                                  >
-                                    <MoreVert fontSize="small" />
-                                  </IconButton>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </TableContainer>
-
-                      <TablePagination
-                        component="div"
-                        count={filteredRemovals.length}
-                        page={page}
-                        onPageChange={handlePageChange}
-                        rowsPerPage={rowsPerPage}
-                        onRowsPerPageChange={handleRowsPerPageChange}
-                        rowsPerPageOptions={[5, 10, 25, 50]}
-                        labelRowsPerPage="Linhas por página:"
-                        labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
-                        sx={{
-                          ".MuiTablePagination-actions": {
-                            "& .MuiIconButton-root": {
-                              color: themeColors.text.secondary,
-                              "&:hover": {
-                                backgroundColor: alpha(themeColors.primary.main, 0.1),
-                                color: themeColors.primary.main,
-                              },
-                            },
-                          },
-                        }}
-                      />
                     </CardContent>
                   </Card>
                 </Zoom>
@@ -3524,11 +3471,9 @@ export default function RemovalDashboard() {
                       p: 2,
                       borderRadius: "16px",
                       backgroundColor:
-                        selectedRemoval.status === "Concluído"
+                        selectedRemoval.status === "Finalizado"
                           ? alpha(themeColors.success.main, 0.1)
-                          : selectedRemoval.status === "Em andamento"
-                            ? alpha(themeColors.primary.main, 0.1)
-                            : alpha(themeColors.warning.main, 0.1),
+                          : alpha(themeColors.primary.main, 0.1),
                       width: "100%",
                     }}
                   >
@@ -3542,22 +3487,20 @@ export default function RemovalDashboard() {
                         gap: 1,
                       }}
                     >
-                      {selectedRemoval.status === "Concluído" ? (
+                      {/* Update the status icon in the detail modal */}
+                      {selectedRemoval.status === "Finalizado" ? (
                         <CheckCircle sx={{ color: themeColors.success.main }} />
-                      ) : selectedRemoval.status === "Em andamento" ? (
-                        <Timeline sx={{ color: themeColors.primary.main }} />
                       ) : (
-                        <CalendarToday sx={{ color: themeColors.warning.main }} />
+                        <Timeline sx={{ color: themeColors.primary.main }} />
                       )}
                       <Typography
                         sx={{
                           fontWeight: 700,
+                          /* Update the status color in the detail modal */
                           color:
-                            selectedRemoval.status === "Concluído"
+                            selectedRemoval.status === "Finalizado"
                               ? themeColors.success.main
-                              : selectedRemoval.status === "Em andamento"
-                                ? themeColors.primary.main
-                                : themeColors.warning.main,
+                              : themeColors.primary.main,
                           fontSize: "1.1rem",
                         }}
                       >
@@ -4263,6 +4206,8 @@ export default function RemovalDashboard() {
                     />
                   </Grid>
                   <Grid item xs={12} sm={6} md={4}>
+                    {/* Update the status options in the add modal
+                    // Find the status dropdown in the add modal and replace with: */}
                     <TextField
                       select
                       fullWidth
@@ -4281,7 +4226,7 @@ export default function RemovalDashboard() {
                         ),
                       }}
                     >
-                      {["Agendado", "Em andamento", "Concluído"].map((option) => (
+                      {["Em andamento", "Finalizado"].map((option) => (
                         <MenuItem key={option} value={option}>
                           {option}
                         </MenuItem>
@@ -4296,7 +4241,8 @@ export default function RemovalDashboard() {
                       type="time"
                       value={newRemoval.arrivalTime}
                       onChange={(e) => handleNewRemovalChange("arrivalTime", e.target.value)}
-                      disabled={newRemoval.status !== "Concluído"}
+                      /* Update the status check in the modal for arrival time */
+                      disabled={newRemoval.status !== "Finalizado"}
                       InputProps={{
                         sx: {
                           borderRadius: "12px",
