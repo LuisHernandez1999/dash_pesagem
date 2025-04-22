@@ -761,32 +761,20 @@ const DatePickerInput = () => (
       <DatePicker
         value={selectedDate}
         onChange={(newDate) => setSelectedDate(newDate)}
-        renderInput={() => null}
-        PopperProps={{
-          placement: "bottom-end",
-          sx: {
-            "& .MuiPaper-root": {
-              borderRadius: "16px",
-              boxShadow: "0 10px 40px rgba(0, 0, 0, 0.1)",
-              overflow: "hidden",
-            },
-          },
-        }}
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            variant="outlined"
+            size="small"
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                borderRadius: "12px",
+                backgroundColor: "white",
+              },
+            }}
+          />
+        )}
       />
-      <IconButton
-        onClick={() => document.querySelector(".MuiPickersPopper-root")?.click()}
-        sx={{
-          backgroundColor: alpha(themeColors.primary.main, 0.1),
-          color: themeColors.primary.main,
-          borderRadius: "12px",
-          padding: "10px",
-          transition: "all 0.3s ease",
-          "&:hover": {
-            backgroundColor: alpha(themeColors.primary.main, 0.2),
-            transform: "translateY(-2px)",
-          },
-        }}
-      ></IconButton>
       {selectedDate && (
         <Chip
           label={selectedDate.toLocaleDateString()}
@@ -996,7 +984,7 @@ export default function RemovalDashboard() {
   }
 
   const handleDeleteConfirmClose = () => {
-    setDeleteConfirmClose(false)
+    setSetDeleteConfirmClose(false)
   }
 
   // Handle delete action
@@ -1825,17 +1813,19 @@ export default function RemovalDashboard() {
         <DatePicker
           value={selectedDate}
           onChange={(newDate) => setSelectedDate(newDate)}
-          renderInput={() => null}
-          PopperProps={{
-            placement: "bottom-end",
-            sx: {
-              "& .MuiPaper-root": {
-                borderRadius: "16px",
-                boxShadow: "0 10px 40px rgba(0, 0, 0, 0.1)",
-                overflow: "hidden",
-              },
-            },
-          }}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              variant="outlined"
+              size="small"
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: "12px",
+                  backgroundColor: "white",
+                },
+              }}
+            />
+          )}
         />
 
         {selectedDate && (
@@ -2205,40 +2195,26 @@ export default function RemovalDashboard() {
                               />
                             </Box>
                             <LocalizationProvider dateAdapter={AdapterDateFns}>
-                              <Box sx={{ display: "flex", alignItems: "center" }}>
-                                <DatePicker
-                                  value={selectedDate}
-                                  onChange={(newDate) => setSelectedDate(newDate)}
-                                  renderInput={() => null}
-                                  PopperProps={{
-                                    placement: "bottom-end",
-                                    sx: {
-                                      "& .MuiPaper-root": {
-                                        borderRadius: "16px",
-                                        boxShadow: "0 10px 40px rgba(0, 0, 0, 0.1)",
-                                        overflow: "hidden",
-                                      },
-                                    },
-                                  }}
-                                />
-
-                                {selectedDate && (
-                                  <Chip
-                                    label={selectedDate.toLocaleDateString()}
+                              <DatePicker
+                                label="Filtrar por data"
+                                value={selectedDate}
+                                onChange={(newDate) => setSelectedDate(newDate)}
+                                renderInput={(params) => (
+                                  <TextField
+                                    {...params}
+                                    variant="outlined"
                                     size="small"
-                                    onDelete={() => setSelectedDate(null)}
                                     sx={{
-                                      ml: 1,
-                                      borderRadius: "12px",
-                                      backgroundColor: alpha(themeColors.primary.main, 0.1),
-                                      color: themeColors.primary.main,
-                                      fontWeight: 500,
-                                      height: "28px",
-                                      animation: `${keyframes.fadeIn} 0.3s ease-out`,
+                                      minWidth: "180px",
+                                      "& .MuiOutlinedInput-root": {
+                                        borderRadius: "12px",
+                                        backgroundColor: "white",
+                                        height: "52px",
+                                      },
                                     }}
                                   />
                                 )}
-                              </Box>
+                              />
                             </LocalizationProvider>
                           </Box>
 
@@ -2254,41 +2230,51 @@ export default function RemovalDashboard() {
                             >
                               Filtros:
                             </Typography>
-                            {/* Update the status filter options in the filter section
-                            // Find the status filter chips and replace with: */}
-                            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                              {[
-                                { id: "all", label: "Todos", color: themeColors.text.secondary },
-                                { id: "completed", label: "Finalizado", color: themeColors.success.main },
-                                { id: "in-progress", label: "Em andamento", color: themeColors.primary.main },
-                              ].map((status) => (
-                                <Chip
-                                  key={status.id}
-                                  label={status.label}
-                                  clickable
-                                  onClick={() => setStatusFilter(status.id)}
-                                  sx={{
-                                    borderRadius: "12px",
-                                    fontWeight: 500,
-                                    backgroundColor:
-                                      statusFilter === status.id
-                                        ? alpha(status.color, 0.1)
-                                        : alpha(themeColors.background.default, 0.5),
-                                    color: statusFilter === status.id ? status.color : themeColors.text.secondary,
-                                    border: `1px solid ${
-                                      statusFilter === status.id ? status.color : themeColors.divider
-                                    }`,
-                                    "&:hover": {
-                                      backgroundColor: alpha(status.color, 0.1),
-                                      color: status.color,
-                                    },
-                                    transition: "all 0.2s ease",
-                                  }}
-                                />
-                              ))}
-                            </Box>
-
                             <Grid container spacing={2}>
+                              <Grid item xs={12} md={6}>
+                                <Typography
+                                  variant="body2"
+                                  sx={{
+                                    fontWeight: 600,
+                                    mb: 1,
+                                    color: themeColors.text.secondary,
+                                    fontSize: "0.8rem",
+                                  }}
+                                >
+                                  Por Status:
+                                </Typography>
+                                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                                  {[
+                                    { id: "all", label: "Todos", color: themeColors.text.secondary },
+                                    { id: "completed", label: "Finalizado", color: themeColors.success.main },
+                                    { id: "in-progress", label: "Em andamento", color: themeColors.primary.main },
+                                  ].map((status) => (
+                                    <Chip
+                                      key={status.id}
+                                      label={status.label}
+                                      clickable
+                                      onClick={() => setStatusFilter(status.id)}
+                                      sx={{
+                                        borderRadius: "12px",
+                                        fontWeight: 500,
+                                        backgroundColor:
+                                          statusFilter === status.id
+                                            ? alpha(status.color, 0.1)
+                                            : alpha(themeColors.background.default, 0.5),
+                                        color: statusFilter === status.id ? status.color : themeColors.text.secondary,
+                                        border: `1px solid ${
+                                          statusFilter === status.id ? status.color : themeColors.divider
+                                        }`,
+                                        "&:hover": {
+                                          backgroundColor: alpha(status.color, 0.1),
+                                          color: status.color,
+                                        },
+                                        transition: "all 0.2s ease",
+                                      }}
+                                    />
+                                  ))}
+                                </Box>
+                              </Grid>
                               <Grid item xs={12} md={6}>
                                 <Typography
                                   variant="body2"
