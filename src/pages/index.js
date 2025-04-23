@@ -275,378 +275,164 @@ const themeColors = {
   divider: "rgba(226, 232, 240, 0.8)",
 }
 
-// Update the mockAllRemovals data to ensure all records have proper dates
-// and change "Concluído" to "Finalizado" and remove "Agendado" status
-const mockAllRemovals = [
-  {
-    id: 1,
-    driver: "Carlos Silva",
-    vehiclePrefix: "VR-1234",
-    departureTime: "08:15",
-    status: "Finalizado",
-    location: "Av. Paulista, 1000",
-    vehicle: "Caminhão Reboque",
-    arrivalTime: "09:30",
-    distance: "12.5 km",
-    notes: "Veículo abandonado",
-    team: "Equipe 1",
-    garage: "Garagem Norte",
-    collectors: ["João Pereira", "Miguel Santos"],
-    date: "2023-05-15",
-    route: "Rota 15 - Zona Sul",
-  },
-  {
-    id: 2,
-    driver: "Ana Oliveira",
-    vehiclePrefix: "VR-5678",
-    departureTime: "09:30",
-    status: "Finalizado",
-    location: "Rua Augusta, 500",
-    vehicle: "Guincho Leve",
-    arrivalTime: "10:45",
-    distance: "8.2 km",
-    notes: "Estacionamento proibido",
-    team: "Equipe 2",
-    garage: "Garagem Sul",
-    collectors: ["Roberto Almeida", "Carla Dias"],
-    date: "2023-05-15",
-    route: "Rota 08 - Centro",
-  },
-  {
-    id: 3,
-    driver: "Roberto Santos",
-    vehiclePrefix: "VR-9012",
-    departureTime: "10:45",
-    status: "Finalizado",
-    location: "Av. Brigadeiro Faria Lima, 3000",
-    vehicle: "Caminhão Plataforma",
-    arrivalTime: "12:00",
-    distance: "15.7 km",
-    notes: "Veículo em local de carga/descarga",
-    team: "Equipe 1",
-    garage: "Garagem Leste",
-    collectors: ["Paulo Mendes", "Fernanda Costa"],
-    date: "2023-05-16",
-    route: "Rota 22 - Zona Oeste",
-  },
-  {
-    id: 4,
-    driver: "Juliana Costa",
-    vehiclePrefix: "VR-3456",
-    departureTime: "11:20",
-    status: "Finalizado",
-    location: "Rua Oscar Freire, 700",
-    vehicle: "Guincho Pesado",
-    arrivalTime: "12:35",
-    distance: "6.8 km",
-    notes: "Bloqueando garagem",
-    team: "Equipe 3",
-    garage: "Garagem Norte",
-    collectors: ["Lucas Ferreira", "Amanda Silva"],
-    date: "2023-05-16",
-    route: "Rota 05 - Zona Norte",
-  },
-  {
-    id: 5,
-    driver: "Marcos Pereira",
-    vehiclePrefix: "VR-7890",
-    departureTime: "13:00",
-    status: "Finalizado",
-    location: "Av. Rebouças, 1500",
-    vehicle: "Caminhão Reboque",
-    arrivalTime: "14:15",
-    distance: "10.3 km",
-    notes: "Veículo em faixa exclusiva",
-    team: "Equipe 2",
-    garage: "Garagem Oeste",
-    collectors: ["Ricardo Oliveira", "Mariana Santos"],
-    date: "2023-05-17",
-    route: "Rota 12 - Zona Sul",
-  },
-  {
-    id: 6,
-    driver: "Fernanda Lima",
-    vehiclePrefix: "VR-2345",
-    departureTime: "14:15",
-    status: "Finalizado",
-    location: "Av. Paulista, 2000",
-    vehicle: "Guincho Leve",
-    arrivalTime: "15:30",
-    distance: "7.5 km",
-    notes: "Estacionamento em local proibido",
-    team: "Equipe 1",
-    garage: "Garagem Sul",
-    collectors: ["Bruno Costa", "Camila Alves"],
-    date: "2023-05-17",
-    route: "Rota 08 - Centro",
-  },
-  {
-    id: 7,
-    driver: "Ricardo Alves",
-    vehiclePrefix: "VR-6789",
-    departureTime: "15:30",
-    status: "Finalizado",
-    location: "Rua da Consolação, 800",
-    vehicle: "Caminhão Plataforma",
-    arrivalTime: "16:45",
-    distance: "9.2 km",
-    notes: "Veículo abandonado",
-    team: "Equipe 3",
-    garage: "Garagem Leste",
-    collectors: ["Daniel Martins", "Juliana Rocha"],
-    date: "2023-05-18",
-    route: "Rota 18 - Centro",
-  },
-  {
-    id: 8,
-    driver: "Patrícia Gomes",
-    vehiclePrefix: "VR-0123",
-    departureTime: "16:45",
-    status: "Finalizado",
-    location: "Av. Brigadeiro Luís Antônio, 1200",
-    vehicle: "Guincho Pesado",
-    arrivalTime: "18:00",
-    distance: "11.8 km",
-    notes: "Bloqueando ciclovia",
-    team: "Equipe 2",
-    garage: "Garagem Norte",
-    collectors: ["Rodrigo Lima", "Beatriz Sousa"],
-    date: "2023-05-18",
-    route: "Rota 09 - Zona Sul",
-  },
-  {
-    id: 9,
-    driver: "Eduardo Martins",
-    vehiclePrefix: "VR-4567",
-    departureTime: "08:00",
-    status: "Finalizado",
-    location: "Av. Santo Amaro, 1000",
-    vehicle: "Caminhão Reboque",
-    arrivalTime: "09:15",
-    distance: "8.7 km",
-    notes: "Veículo em ponto de ônibus",
-    team: "Equipe 1",
-    garage: "Garagem Oeste",
-    collectors: ["Felipe Dias", "Larissa Oliveira"],
-    date: "2023-05-19",
-    route: "Rota 14 - Zona Sul",
-  },
-  {
-    id: 10,
-    driver: "Camila Rocha",
-    vehiclePrefix: "VR-8901",
-    departureTime: "09:15",
-    status: "Finalizado",
-    location: "Rua Haddock Lobo, 600",
-    vehicle: "Guincho Leve",
-    arrivalTime: "10:30",
-    distance: "5.4 km",
-    notes: "Estacionamento em local proibido",
-    team: "Equipe 3",
-    garage: "Garagem Sul",
-    collectors: ["Gustavo Pereira", "Natália Costa"],
-    date: "2023-05-19",
-    route: "Rota 03 - Centro",
-  },
-  {
-    id: 11,
-    driver: "Gustavo Dias",
-    vehiclePrefix: "VR-2345",
-    departureTime: "10:30",
-    status: "Finalizado",
-    location: "Av. Nove de Julho, 2000",
-    vehicle: "Caminhão Plataforma",
-    arrivalTime: "11:45",
-    distance: "13.2 km",
-    notes: "Veículo em faixa exclusiva",
-    team: "Equipe 2",
-    garage: "Garagem Leste",
-    collectors: ["Marcelo Silva", "Isabela Santos"],
-    date: "2023-05-20",
-    route: "Rota 07 - Centro",
-  },
-  {
-    id: 12,
-    driver: "Luciana Ferreira",
-    vehiclePrefix: "VR-6789",
-    departureTime: "11:45",
-    status: "Finalizado",
-    location: "Av. Paulista, 500",
-    vehicle: "Guincho Pesado",
-    arrivalTime: "13:00",
-    distance: "7.9 km",
-    notes: "Bloqueando entrada de garagem",
-    team: "Equipe 1",
-    garage: "Garagem Norte",
-    collectors: ["André Oliveira", "Renata Lima"],
-    date: "2023-05-20",
-    route: "Rota 08 - Centro",
-  },
-  {
-    id: 13,
-    driver: "Carlos Silva",
-    vehiclePrefix: "VR-1234",
-    departureTime: "08:15",
-    status: "Em andamento",
-    location: "Av. Paulista, 1000",
-    vehicle: "Caminhão Reboque",
-    arrivalTime: "-",
-    distance: "12.5 km",
-    notes: "Veículo abandonado",
-    team: "Equipe 1",
-    garage: "Garagem Norte",
-    collectors: ["João Pereira", "Miguel Santos"],
-    date: "2023-05-21",
-    route: "Rota 15 - Zona Sul",
-  },
-  {
-    id: 14,
-    driver: "Ana Oliveira",
-    vehiclePrefix: "VR-5678",
-    departureTime: "09:30",
-    status: "Em andamento",
-    location: "Rua Augusta, 500",
-    vehicle: "Guincho Leve",
-    arrivalTime: "-",
-    distance: "8.2 km",
-    notes: "Estacionamento proibido",
-    team: "Equipe 2",
-    garage: "Garagem Sul",
-    collectors: ["Roberto Almeida", "Carla Dias"],
-    date: "2023-05-21",
-    route: "Rota 08 - Centro",
-  },
-  {
-    id: 15,
-    driver: "Roberto Santos",
-    vehiclePrefix: "VR-9012",
-    departureTime: "10:45",
-    status: "Em andamento",
-    location: "Av. Brigadeiro Faria Lima, 3000",
-    vehicle: "Caminhão Plataforma",
-    arrivalTime: "-",
-    distance: "15.7 km",
-    notes: "Veículo em local de carga/descarga",
-    team: "Equipe 1",
-    garage: "Garagem Leste",
-    collectors: ["Paulo Mendes", "Fernanda Costa"],
-    date: "2023-05-21",
-    route: "Rota 22 - Zona Oeste",
-  },
-  {
-    id: 16,
-    driver: "Juliana Costa",
-    vehiclePrefix: "VR-3456",
-    departureTime: "11:20",
-    status: "Em andamento",
-    location: "Rua Oscar Freire, 700",
-    vehicle: "Guincho Pesado",
-    arrivalTime: "-",
-    distance: "6.8 km",
-    notes: "Bloqueando garagem",
-    team: "Equipe 3",
-    garage: "Garagem Norte",
-    collectors: ["Lucas Ferreira", "Amanda Silva"],
-    date: "2023-05-22",
-    route: "Rota 05 - Zona Norte",
-  },
-  {
-    id: 17,
-    driver: "Marcos Pereira",
-    vehiclePrefix: "VR-7890",
-    departureTime: "13:00",
-    status: "Em andamento",
-    location: "Av. Rebouças, 1500",
-    vehicle: "Caminhão Reboque",
-    arrivalTime: "-",
-    distance: "10.3 km",
-    notes: "Veículo em faixa exclusiva",
-    team: "Equipe 2",
-    garage: "Garagem Oeste",
-    collectors: ["Ricardo Oliveira", "Mariana Santos"],
-    date: "2023-05-22",
-    route: "Rota 12 - Zona Sul",
-  },
-]
-
-// Mock data for monthly removals
-const mockMonthlyData = [
-  { month: "Janeiro", removals: 120 },
-  { month: "Fevereiro", removals: 95 },
-  { month: "Março", removals: 140 },
-  { month: "Abril", removals: 110 },
-  { month: "Maio", removals: 150 },
-  { month: "Junho", removals: 130 },
-  { month: "Julho", removals: 160 },
-  { month: "Agosto", removals: 145 },
-  { month: "Setembro", removals: 125 },
-  { month: "Outubro", removals: 155 },
-  { month: "Novembro", removals: 135 },
-  { month: "Dezembro", removals: 170 },
-]
-
-// Mock data for team performance
-const mockTeamData = [
-  { name: "Equipe 1", label: "Matutino", releases: 55, color: themeColors.primary.main },
-  { name: "Equipe 2", label: "Vespertino", releases: 48, color: themeColors.warning.main },
-  { name: "Equipe 3", label: "Noturno", releases: 62, color: themeColors.success.main },
-]
-
-// Calculate driver with most removals
-const getDriverWithMostRemovals = () => {
-  const driverCounts = {}
-  mockAllRemovals.forEach((removal) => {
-    driverCounts[removal.driver] = (driverCounts[removal.driver] || 0) + 1
-  })
-
-  let maxCount = 0
-  let topDriver = ""
-  let topVehicle = ""
-
-  Object.entries(driverCounts).forEach(([driver, count]) => {
-    if (count > maxCount) {
-      maxCount = count
-      topDriver = driver
-      // Find the vehicle prefix for this driver
-      const driverRemoval = mockAllRemovals.find((r) => r.driver === driver)
-      topVehicle = driverRemoval ? driverRemoval.vehiclePrefix : ""
+// API service para buscar dados
+const apiService = {
+  // Função para buscar todas as remoções
+  fetchRemovals: async () => {
+    try {
+      // Aqui seria a chamada real para a API
+      // const response = await fetch('/api/removals');
+      // return await response.json();
+      
+      // Simulando um delay de rede
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Retornando um array vazio por enquanto
+      return [];
+    } catch (error) {
+      console.error("Erro ao buscar remoções:", error);
+      return [];
     }
-  })
-
-  return { driver: topDriver, count: maxCount, vehiclePrefix: topVehicle }
-}
-
-// Update the Pie chart data function to only include "Finalizado" and "Em andamento"
-const getPieChartData = () => {
-  const statusCounts = { Finalizado: 0, "Em andamento": 0 }
-
-  mockAllRemovals.forEach((removal) => {
-    statusCounts[removal.status]++
-  })
-
-  return [
-    { name: "Finalizado", value: statusCounts["Finalizado"], color: themeColors.success.main },
-    { name: "Em andamento", value: statusCounts["Em andamento"], color: themeColors.primary.main },
-  ]
-}
-
-// Area chart data
-const getAreaChartData = () => {
-  return mockMonthlyData.map((item) => ({
-    month: item.month,
-    removals: item.removals,
-  }))
-}
+  },
+  
+  // Função para buscar dados mensais
+  fetchMonthlyData: async () => {
+    try {
+      // Aqui seria a chamada real para a API
+      // const response = await fetch('/api/monthly-data');
+      // return await response.json();
+      
+      // Simulando um delay de rede
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // Retornando um array vazio por enquanto
+      return [];
+    } catch (error) {
+      console.error("Erro ao buscar dados mensais:", error);
+      return [];
+    }
+  },
+  
+  // Função para buscar dados de equipes
+  fetchTeamData: async () => {
+    try {
+      // Aqui seria a chamada real para a API
+      // const response = await fetch('/api/team-data');
+      // return await response.json();
+      
+      // Simulando um delay de rede
+      await new Promise(resolve => setTimeout(resolve, 600));
+      
+      // Retornando um array vazio por enquanto
+      return [];
+    } catch (error) {
+      console.error("Erro ao buscar dados de equipes:", error);
+      return [];
+    }
+  },
+  
+  // Função para buscar estatísticas
+  fetchStats: async () => {
+    try {
+      // Aqui seria a chamada real para a API
+      // const response = await fetch('/api/stats');
+      // return await response.json();
+      
+      // Simulando um delay de rede
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Retornando objeto vazio por enquanto
+      return {
+        totalVehicles: 0,
+        activeVehicles: 0,
+        inactiveVehicles: 0,
+        releasedToday: 0
+      };
+    } catch (error) {
+      console.error("Erro ao buscar estatísticas:", error);
+      return {
+        totalVehicles: 0,
+        activeVehicles: 0,
+        inactiveVehicles: 0,
+        releasedToday: 0
+      };
+    }
+  },
+  
+  // Função para adicionar uma nova remoção
+  addRemoval: async (removalData) => {
+    try {
+      // Aqui seria a chamada real para a API
+      // const response = await fetch('/api/removals', {
+      //   method: 'POST',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //   },
+      //   body: JSON.stringify(removalData),
+      // });
+      // return await response.json();
+      
+      // Simulando um delay de rede
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Simulando um ID gerado pelo servidor
+      return {
+        ...removalData,
+        id: Math.floor(Math.random() * 10000)
+      };
+    } catch (error) {
+      console.error("Erro ao adicionar remoção:", error);
+      throw error;
+    }
+  },
+  
+  // Função para excluir uma remoção
+  deleteRemoval: async (id) => {
+    try {
+      // Aqui seria a chamada real para a API
+      // await fetch(`/api/removals/${id}`, {
+      //   method: 'DELETE',
+      // });
+      
+      // Simulando um delay de rede
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      return true;
+    } catch (error) {
+      console.error("Erro ao excluir remoção:", error);
+      throw error;
+    }
+  },
+  
+  // Função para atualizar uma remoção
+  updateRemoval: async (id, removalData) => {
+    try {
+      // Aqui seria a chamada real para a API
+      // const response = await fetch(`/api/removals/${id}`, {
+      //   method: 'PUT',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //   },
+      //   body: JSON.stringify(removalData),
+      // });
+      // return await response.json();
+      
+      // Simulando um delay de rede
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      return {
+        ...removalData,
+        id
+      };
+    } catch (error) {
+      console.error("Erro ao atualizar remoção:", error);
+      throw error;
+    }
+  }
+};
 
 // Modificar o componente SearchInput para aumentar a largura
-const SearchInput = ({ icon: Icon, placeholder, value, onChange, removals }) => {
-  // Criar lista de sugestões baseadas nos dados existentes
-  const suggestions = useMemo(() => {
-    const driverNames = [...new Set(removals.map((r) => r.driver))]
-    const vehiclePrefixes = [...new Set(removals.map((r) => r.vehiclePrefix))]
-    return [...driverNames, ...vehiclePrefixes]
-  }, [removals])
-
+const SearchInput = ({ icon: Icon, placeholder, value, onChange, suggestions = [] }) => {
   return (
     <Autocomplete
       freeSolo
@@ -754,47 +540,6 @@ const SearchInput = ({ icon: Icon, placeholder, value, onChange, removals }) => 
   )
 }
 
-// Substituir o componente DatePickerInput por um ícone que abre o seletor de data
-const DatePickerInput = () => (
-  <LocalizationProvider dateAdapter={AdapterDateFns}>
-    <Box sx={{ display: "flex", alignItems: "center" }}>
-      <DatePicker
-        value={selectedDate}
-        onChange={(newDate) => setSelectedDate(newDate)}
-        renderInput={(params) => (
-          <TextField
-            {...params}
-            variant="outlined"
-            size="small"
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                borderRadius: "12px",
-                backgroundColor: "white",
-              },
-            }}
-          />
-        )}
-      />
-      {selectedDate && (
-        <Chip
-          label={selectedDate.toLocaleDateString()}
-          size="small"
-          onDelete={() => setSelectedDate(null)}
-          sx={{
-            ml: 1,
-            borderRadius: "12px",
-            backgroundColor: alpha(themeColors.primary.main, 0.1),
-            color: themeColors.primary.main,
-            fontWeight: 500,
-            height: "28px",
-            animation: `${keyframes.fadeIn} 0.3s ease-out`,
-          }}
-        />
-      )}
-    </Box>
-  </LocalizationProvider>
-)
-
 export default function RemovalDashboard() {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
@@ -839,7 +584,10 @@ export default function RemovalDashboard() {
   const [teamFilter, setTeamFilter] = useState("all")
   const [setDeleteConfirmClose, setSetDeleteConfirmClose] = useState(false)
 
-  const [removals, setRemovals] = useState(mockAllRemovals)
+  // Estados para armazenar dados da API
+  const [removals, setRemovals] = useState([])
+  const [monthlyData, setMonthlyData] = useState([])
+  const [teamData, setTeamData] = useState([])
 
   // 1. Add state for the new modal
   const [addModalOpen, setAddModalOpen] = useState(false)
@@ -857,29 +605,97 @@ export default function RemovalDashboard() {
     arrivalTime: "",
   })
 
-  const topDriver = getDriverWithMostRemovals()
-  const pieChartData = getPieChartData()
-  const areaChartData = getAreaChartData()
-
-  // Load data on component mount with animated progress
-  useEffect(() => {
-    let isMounted = true
-
-    // Definir os dados diretamente sem animação de carregamento
-    setStatsData({
-      totalVehicles: 120,
-      activeVehicles: 85,
-      inactiveVehicles: 35,
-      releasedToday: 12,
+  // Função para buscar dados do motorista com mais remoções
+  const getDriverWithMostRemovals = () => {
+    const driverCounts = {}
+    removals.forEach((removal) => {
+      driverCounts[removal.driver] = (driverCounts[removal.driver] || 0) + 1
     })
 
-    // Definir que os gráficos estão carregados
-    setChartsLoaded(true)
-    setLoading(false)
+    let maxCount = 0
+    let topDriver = ""
+    let topVehicle = ""
 
-    return () => {
-      isMounted = false
+    Object.entries(driverCounts).forEach(([driver, count]) => {
+      if (count > maxCount) {
+        maxCount = count
+        topDriver = driver
+        // Find the vehicle prefix for this driver
+        const driverRemoval = removals.find((r) => r.driver === driver)
+        topVehicle = driverRemoval ? driverRemoval.vehiclePrefix : ""
+      }
+    })
+
+    return { driver: topDriver, count: maxCount, vehiclePrefix: topVehicle }
+  }
+
+  // Função para obter dados do gráfico de pizza
+  const getPieChartData = () => {
+    const statusCounts = { Finalizado: 0, "Em andamento": 0 }
+
+    removals.forEach((removal) => {
+      statusCounts[removal.status] = (statusCounts[removal.status] || 0) + 1
+    })
+
+    return [
+      { name: "Finalizado", value: statusCounts["Finalizado"], color: themeColors.success.main },
+      { name: "Em andamento", value: statusCounts["Em andamento"], color: themeColors.primary.main },
+    ]
+  }
+
+  // Função para obter dados do gráfico de área
+  const getAreaChartData = () => {
+    return monthlyData.map((item) => ({
+      month: item.month,
+      removals: item.removals,
+    }))
+  }
+
+  // Calcular dados derivados
+  const topDriver = useMemo(() => getDriverWithMostRemovals(), [removals])
+  const pieChartData = useMemo(() => getPieChartData(), [removals])
+  const areaChartData = useMemo(() => getAreaChartData(), [monthlyData])
+
+  // Função para carregar todos os dados necessários
+  const loadAllData = async () => {
+    setLoading(true);
+    setInitialLoading(true);
+    
+    try {
+      // Carregar dados em paralelo
+      const [removalsData, monthlyDataResult, teamDataResult, statsDataResult] = await Promise.all([
+        apiService.fetchRemovals(),
+        apiService.fetchMonthlyData(),
+        apiService.fetchTeamData(),
+        apiService.fetchStats()
+      ]);
+      
+      // Atualizar estados com os dados recebidos
+      setRemovals(removalsData);
+      setMonthlyData(monthlyDataResult);
+      setTeamData(teamDataResult);
+      setStatsData(statsDataResult);
+      
+      // Marcar carregamento como concluído
+      setChartsLoaded(true);
+      setLoading(false);
+      setInitialLoading(false);
+    } catch (error) {
+      console.error("Erro ao carregar dados:", error);
+      // Mostrar mensagem de erro
+      setSnackbarMessage("Erro ao carregar dados. Tente novamente.");
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
+      
+      // Mesmo com erro, marcar carregamento como concluído
+      setLoading(false);
+      setInitialLoading(false);
     }
+  };
+
+  // Load data on component mount
+  useEffect(() => {
+    loadAllData();
   }, [])
 
   // Handle sidebar collapse
@@ -984,23 +800,37 @@ export default function RemovalDashboard() {
   }
 
   const handleDeleteConfirmClose = () => {
-    setSetDeleteConfirmClose(false)
+    setDeleteConfirmOpen(false)
   }
 
   // Handle delete action
-  const handleDelete = () => {
-    // Filter out the selected row
-    const updatedRemovals = removals.filter((removal) => removal.id !== selectedRowId)
-    setRemovals(updatedRemovals)
+  const handleDelete = async () => {
+    try {
+      setLoading(true);
+      
+      // Chamar API para excluir
+      await apiService.deleteRemoval(selectedRowId);
+      
+      // Atualizar estado local
+      const updatedRemovals = removals.filter((removal) => removal.id !== selectedRowId);
+      setRemovals(updatedRemovals);
 
-    // Show success message
-    setSnackbarMessage("Registro removido com sucesso!")
-    setSnackbarSeverity("success")
-    setSnackbarOpen(true)
+      // Show success message
+      setSnackbarMessage("Registro removido com sucesso!");
+      setSnackbarSeverity("success");
+      setSnackbarOpen(true);
 
-    // Close dialog
-    handleDeleteConfirmClose()
-    setSelectedRowId(null)
+      // Close dialog
+      handleDeleteConfirmClose();
+      setSelectedRowId(null);
+    } catch (error) {
+      console.error("Erro ao excluir:", error);
+      setSnackbarMessage("Erro ao excluir registro. Tente novamente.");
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
+    } finally {
+      setLoading(false);
+    }
   }
 
   // Handle share menu
@@ -1075,32 +905,49 @@ export default function RemovalDashboard() {
     }
   }
 
-  const handleAddRemoval = () => {
-    // Create a new removal with a unique ID
-    const newId = Math.max(...removals.map((r) => r.id)) + 1
-    const newRemovalEntry = {
-      ...newRemoval,
-      id: newId,
-      date: new Date().toISOString().split("T")[0],
-      team: "Equipe 1",
-      location: "Nova Localização",
-      vehicle: "Caminhão Reboque",
-      distance: "0 km",
-      notes: "",
-      // Filter out empty collectors
-      collectors: newRemoval.collectors.filter((c) => c.trim() !== ""),
+  const handleAddRemoval = async () => {
+    try {
+      setLoading(true);
+      
+      // Preparar dados para envio
+      const newRemovalData = {
+        ...newRemoval,
+        date: new Date().toISOString().split("T")[0],
+        team: "Equipe 1",
+        location: "Nova Localização",
+        vehicle: "Caminhão Reboque",
+        distance: "0 km",
+        notes: "",
+        // Filter out empty collectors
+        collectors: newRemoval.collectors.filter((c) => c.trim() !== ""),
+      };
+      
+      // Chamar API para adicionar
+      const addedRemoval = await apiService.addRemoval(newRemovalData);
+      
+      // Atualizar estado local
+      setRemovals((prev) => [addedRemoval, ...prev]);
+
+      // Show success message
+      setSnackbarMessage("Soltura adicionada com sucesso!");
+      setSnackbarSeverity("success");
+      setSnackbarOpen(true);
+
+      // Close modal
+      handleCloseAddModal();
+    } catch (error) {
+      console.error("Erro ao adicionar:", error);
+      setSnackbarMessage("Erro ao adicionar soltura. Tente novamente.");
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
+    } finally {
+      setLoading(false);
     }
+  }
 
-    // Add to the removals list
-    setRemovals((prev) => [newRemovalEntry, ...prev])
-
-    // Show success message
-    setSnackbarMessage("Soltura adicionada com sucesso!")
-    setSnackbarSeverity("success")
-    setSnackbarOpen(true)
-
-    // Close modal
-    handleCloseAddModal()
+  // Função para atualizar dados
+  const handleRefreshData = () => {
+    loadAllData();
   }
 
   // Filter and sort removals data
@@ -1110,11 +957,11 @@ export default function RemovalDashboard() {
         (removal) =>
           // Busca unificada em múltiplos campos
           (driverSearch === "" ||
-            removal.driver.toLowerCase().includes(driverSearch.toLowerCase()) ||
-            removal.vehiclePrefix.toLowerCase().includes(driverSearch.toLowerCase())) &&
+            removal.driver?.toLowerCase().includes(driverSearch.toLowerCase()) ||
+            removal.vehiclePrefix?.toLowerCase().includes(driverSearch.toLowerCase())  ||
+            removal.vehiclePrefix?.toLowerCase().includes(driverSearch.toLowerCase())) &&
           (selectedDate === null || removal.date === selectedDate?.toISOString().split("T")[0]) &&
           // Update the filter function to handle the new status values
-          // Find the filteredRemovals function and update the status filter part:
           (statusFilter === "all" ||
             (statusFilter === "completed" && removal.status === "Finalizado") ||
             (statusFilter === "in-progress" && removal.status === "Em andamento")) &&
@@ -1147,23 +994,31 @@ export default function RemovalDashboard() {
   // Filter chart data based on selected month
   const chartData = useMemo(() => {
     if (selectedMonth === "Todos") {
-      return mockMonthlyData
+      return monthlyData
     }
-    return mockMonthlyData.filter((data) => data.month === selectedMonth)
-  }, [selectedMonth])
+    return monthlyData.filter((data) => data.month === selectedMonth)
+  }, [selectedMonth, monthlyData])
 
   // Calculate total removals
   const totalRemovalsCount = removals.length
 
   // Calculate monthly average
   const monthlyAverage = useMemo(() => {
-    return Math.round(mockMonthlyData.reduce((sum, item) => sum + item.removals, 0) / mockMonthlyData.length)
-  }, [])
+    if (monthlyData.length === 0) return 0;
+    return Math.round(monthlyData.reduce((sum, item) => sum + item.removals, 0) / monthlyData.length)
+  }, [monthlyData])
+
+  // Obter sugestões para o campo de busca
+  const searchSuggestions = useMemo(() => {
+    const driverNames = [...new Set(removals.map((r) => r.driver).filter(Boolean))];
+    const vehiclePrefixes = [...new Set(removals.map((r) => r.vehiclePrefix).filter(Boolean))];
+    return [...driverNames, ...vehiclePrefixes];
+  }, [removals]);
 
   // Custom tooltip for the chart
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
-      const data = mockMonthlyData.find((item) => item.month === label)
+      const data = monthlyData.find((item) => item.month === label)
       const removals = data?.removals || 0
 
       return (
@@ -1743,9 +1598,9 @@ export default function RemovalDashboard() {
       case 0: // Bar Chart
         return (
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={mockTeamData} margin={{ top: 20, right: 30, left: 20, bottom: 40 }}>
+            <BarChart data={teamData} margin={{ top: 20, right: 30, left: 20, bottom: 40 }}>
               <defs>
-                {mockTeamData.map((entry, index) => (
+                {teamData.map((entry, index) => (
                   <linearGradient key={`gradient-${index}`} id={`colorTeam${index}`} x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor={entry.color} stopOpacity={1} />
                     <stop offset="100%" stopColor={entry.color} stopOpacity={0.8} />
@@ -1776,18 +1631,18 @@ export default function RemovalDashboard() {
                 formatter={(value, entry, index) => (
                   <span
                     style={{
-                      color: mockTeamData[index].color,
+                      color: teamData[index]?.color,
                       fontWeight: 600,
                       fontSize: "14px",
                       padding: "4px 8px",
                       borderRadius: "4px",
-                      backgroundColor: alpha(mockTeamData[index].color, 0.1),
+                      backgroundColor: alpha(teamData[index]?.color || themeColors.primary.main, 0.1),
                     }}
-                  >{`${value} (${mockTeamData[index].label})`}</span>
+                  >{`${value} (${teamData[index]?.label || ''})`}</span>
                 )}
               />
               <Bar dataKey="releases" name="Solturas" radius={[10, 10, 0, 0]} filter="url(#teamShadow)" barSize={50}>
-                {mockTeamData.map((entry, index) => (
+                {teamData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={`url(#colorTeam${index})`} />
                 ))}
                 <LabelList
@@ -1970,6 +1825,7 @@ export default function RemovalDashboard() {
                     color: themeColors.text.secondary,
                     "&:hover": { color: themeColors.primary.main },
                   }}
+                  onClick={handleRefreshData}
                 >
                   <Refresh />
                 </IconButton>
@@ -2148,6 +2004,7 @@ export default function RemovalDashboard() {
                               color: themeColors.text.secondary,
                               "&:hover": { color: themeColors.primary.main },
                             }}
+                            onClick={handleRefreshData}
                           >
                             <Refresh />
                           </IconButton>
@@ -2191,7 +2048,7 @@ export default function RemovalDashboard() {
                                   setDriverSearch(e.target.value)
                                   setPrefixSearch(e.target.value)
                                 }}
-                                removals={removals}
+                                suggestions={searchSuggestions}
                               />
                             </Box>
                             <LocalizationProvider dateAdapter={AdapterDateFns}>
@@ -2429,65 +2286,75 @@ export default function RemovalDashboard() {
                             </TableRow>
                           </TableHead>
                           <TableBody>
-                            {paginatedRemovals.map((removal) => (
-                              <TableRow
-                                key={removal.id}
-                                sx={{
-                                  "&:hover": {
-                                    backgroundColor: alpha(themeColors.background.default, 0.5),
-                                  },
-                                  transition: "background-color 0.2s",
-                                  cursor: "pointer",
-                                }}
-                                onClick={() => handleOpenModal(removal)}
-                              >
-                                <TableCell>
-                                  <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                                    <Avatar
+                            {paginatedRemovals.length > 0 ? (
+                              paginatedRemovals.map((removal) => (
+                                <TableRow
+                                  key={removal.id}
+                                  sx={{
+                                    "&:hover": {
+                                      backgroundColor: alpha(themeColors.background.default, 0.5),
+                                    },
+                                    transition: "background-color 0.2s",
+                                    cursor: "pointer",
+                                  }}
+                                  onClick={() => handleOpenModal(removal)}
+                                >
+                                  <TableCell>
+                                    <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                                      <Avatar
+                                        sx={{
+                                          width: 32,
+                                          height: 32,
+                                          backgroundColor: alpha(themeColors.primary.main, 0.1),
+                                          color: themeColors.primary.main,
+                                          fontWeight: 600,
+                                        }}
+                                      >
+                                        {removal.driver?.charAt(0) || "?"}
+                                      </Avatar>
+                                      <Typography sx={{ fontWeight: 500 }}>
+                                        {isMobile ? removal.driver?.split(" ")[0] || "-" : removal.driver || "-"}
+                                      </Typography>
+                                    </Box>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Chip
+                                      label={removal.vehiclePrefix || "-"}
+                                      size="small"
                                       sx={{
-                                        width: 32,
-                                        height: 32,
-                                        backgroundColor: alpha(themeColors.primary.main, 0.1),
-                                        color: themeColors.primary.main,
+                                        backgroundColor: alpha(themeColors.success.main, 0.1),
+                                        color: themeColors.success.main,
                                         fontWeight: 600,
+                                        height: "1.5rem",
+                                        borderRadius: "12px",
+                                      }}
+                                    />
+                                  </TableCell>
+                                  <TableCell>{removal.departureTime || "-"}</TableCell>
+                                  <TableCell>{removal.team || "-"}</TableCell>
+                                  <TableCell>{getStatusChip(removal.status)}</TableCell>
+                                  <TableCell align="center">
+                                    <IconButton
+                                      size="small"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        handleActionMenuOpen(e, removal.id)
                                       }}
                                     >
-                                      {removal.driver.charAt(0)}
-                                    </Avatar>
-                                    <Typography sx={{ fontWeight: 500 }}>
-                                      {isMobile ? removal.driver.split(" ")[0] : removal.driver}
-                                    </Typography>
-                                  </Box>
-                                </TableCell>
-                                <TableCell>
-                                  <Chip
-                                    label={removal.vehiclePrefix}
-                                    size="small"
-                                    sx={{
-                                      backgroundColor: alpha(themeColors.success.main, 0.1),
-                                      color: themeColors.success.main,
-                                      fontWeight: 600,
-                                      height: "1.5rem",
-                                      borderRadius: "12px",
-                                    }}
-                                  />
-                                </TableCell>
-                                <TableCell>{removal.departureTime}</TableCell>
-                                <TableCell>{removal.team}</TableCell>
-                                <TableCell>{getStatusChip(removal.status)}</TableCell>
-                                <TableCell align="center">
-                                  <IconButton
-                                    size="small"
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      handleActionMenuOpen(e, removal.id)
-                                    }}
-                                  >
-                                    <MoreVert fontSize="small" />
-                                  </IconButton>
+                                      <MoreVert fontSize="small" />
+                                    </IconButton>
+                                  </TableCell>
+                                </TableRow>
+                              ))
+                            ) : (
+                              <TableRow>
+                                <TableCell colSpan={6} align="center" sx={{ py: 3 }}>
+                                  <Typography variant="body1" sx={{ color: themeColors.text.secondary }}>
+                                    {loading ? "Carregando dados..." : "Nenhum registro encontrado"}
+                                  </Typography>
                                 </TableCell>
                               </TableRow>
-                            ))}
+                            )}
                           </TableBody>
                         </Table>
                       </TableContainer>
@@ -2587,6 +2454,7 @@ export default function RemovalDashboard() {
                             color: themeColors.text.secondary,
                             "&:hover": { color: themeColors.warning.main },
                           }}
+                          onClick={handleRefreshData}
                         >
                           <Refresh />
                         </IconButton>
@@ -2650,7 +2518,22 @@ export default function RemovalDashboard() {
                               height: "100%",
                             }}
                           >
-                            {renderTeamChart()}
+                            {teamData.length > 0 ? (
+                              renderTeamChart()
+                            ) : (
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  height: "100%",
+                                }}
+                              >
+                                <Typography sx={{ color: themeColors.text.secondary }}>
+                                  Nenhum dado de equipe disponível
+                                </Typography>
+                              </Box>
+                            )}
                           </Box>
                         </Fade>
                       </Box>
@@ -2724,6 +2607,7 @@ export default function RemovalDashboard() {
                             color: themeColors.text.secondary,
                             "&:hover": { color: themeColors.success.main },
                           }}
+                          onClick={handleRefreshData}
                         >
                           <Refresh />
                         </IconButton>
@@ -2787,59 +2671,74 @@ export default function RemovalDashboard() {
                               height: "100%",
                             }}
                           >
-                            <ResponsiveContainer width="100%" height="100%">
-                              <PieChart>
-                                <defs>
-                                  {pieChartData.map((entry, index) => (
-                                    <filter key={`filter-${index}`} id={`glow-${index}`} height="200%">
-                                      <feGaussianBlur stdDeviation="3" result="coloredBlur" />
-                                      <feMerge>
-                                        <feMergeNode in="coloredBlur" />
-                                        <feMergeNode in="SourceGraphic" />
-                                      </feMerge>
-                                    </filter>
-                                  ))}
-                                </defs>
-                                <Pie
-                                  activeIndex={activeIndex}
-                                  activeShape={renderActiveShape}
-                                  data={pieChartData}
-                                  cx="50%"
-                                  cy="50%"
-                                  innerRadius={80}
-                                  outerRadius={110}
-                                  fill="#8884d8"
-                                  dataKey="value"
-                                  onMouseEnter={onPieEnter}
-                                  paddingAngle={2}
-                                  filter={`url(#glow-${activeIndex})`}
-                                >
-                                  {pieChartData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.color} stroke="#fff" strokeWidth={2} />
-                                  ))}
-                                </Pie>
-                                <Legend
-                                  verticalAlign="bottom"
-                                  layout="horizontal"
-                                  align="center"
-                                  wrapperStyle={{ paddingTop: 30 }}
-                                  formatter={(value, entry, index) => (
-                                    <span
-                                      style={{
-                                        color: pieChartData[index].color,
-                                        fontWeight: 600,
-                                        fontSize: "14px",
-                                        padding: "4px 8px",
-                                        borderRadius: "4px",
-                                        backgroundColor: alpha(pieChartData[index].color, 0.1),
-                                      }}
-                                    >
-                                      {value}
-                                    </span>
-                                  )}
-                                />
-                              </PieChart>
-                            </ResponsiveContainer>
+                            {pieChartData.length > 0 && pieChartData.some(item => item.value > 0) ? (
+                              <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                  <defs>
+                                    {pieChartData.map((entry, index) => (
+                                      <filter key={`filter-${index}`} id={`glow-${index}`} height="200%">
+                                        <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+                                        <feMerge>
+                                          <feMergeNode in="coloredBlur" />
+                                          <feMergeNode in="SourceGraphic" />
+                                        </feMerge>
+                                      </filter>
+                                    ))}
+                                  </defs>
+                                  <Pie
+                                    activeIndex={activeIndex}
+                                    activeShape={renderActiveShape}
+                                    data={pieChartData}
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={80}
+                                    outerRadius={110}
+                                    fill="#8884d8"
+                                    dataKey="value"
+                                    onMouseEnter={onPieEnter}
+                                    paddingAngle={2}
+                                    filter={`url(#glow-${activeIndex})`}
+                                  >
+                                    {pieChartData.map((entry, index) => (
+                                      <Cell key={`cell-${index}`} fill={entry.color} stroke="#fff" strokeWidth={2} />
+                                    ))}
+                                  </Pie>
+                                  <Legend
+                                    verticalAlign="bottom"
+                                    layout="horizontal"
+                                    align="center"
+                                    wrapperStyle={{ paddingTop: 30 }}
+                                    formatter={(value, entry, index) => (
+                                      <span
+                                        style={{
+                                          color: pieChartData[index].color,
+                                          fontWeight: 600,
+                                          fontSize: "14px",
+                                          padding: "4px 8px",
+                                          borderRadius: "4px",
+                                          backgroundColor: alpha(pieChartData[index].color, 0.1),
+                                        }}
+                                      >
+                                        {value}
+                                      </span>
+                                    )}
+                                  />
+                                </PieChart>
+                              </ResponsiveContainer>
+                            ) : (
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  height: "100%",
+                                }}
+                              >
+                                <Typography sx={{ color: themeColors.text.secondary }}>
+                                  Nenhum dado de status disponível
+                                </Typography>
+                              </Box>
+                            )}
                           </Box>
                         </Fade>
                       </Box>
@@ -2910,51 +2809,15 @@ export default function RemovalDashboard() {
                       }
                       action={
                         <Box sx={{ display: "flex", gap: "0.5rem" }}>
-                          <Menu
-                            anchorEl={monthMenuAnchor}
-                            open={Boolean(monthMenuAnchor)}
-                            onClose={handleMonthMenuClose}
-                            PaperProps={{
-                              sx: {
-                                borderRadius: "12px",
-                                boxShadow: "0 10px 40px rgba(0, 0, 0, 0.1)",
-                              },
+                          <IconButton
+                            onClick={handleRefreshData}
+                            sx={{
+                              color: themeColors.text.secondary,
+                              "&:hover": { color: themeColors.primary.main },
                             }}
                           >
-                            <MenuItem
-                              onClick={() => handleMonthChange("Todos")}
-                              sx={{
-                                fontSize: "0.875rem",
-                                transition: "all 0.2s ease",
-                                backgroundColor:
-                                  selectedMonth === "Todos" ? alpha(themeColors.primary.main, 0.1) : "transparent",
-                                fontWeight: selectedMonth === "Todos" ? 600 : 400,
-                                "&:hover": {
-                                  backgroundColor: alpha(themeColors.primary.main, 0.1),
-                                },
-                              }}
-                            >
-                              Todos
-                            </MenuItem>
-                            {mockMonthlyData.map((data) => (
-                              <MenuItem
-                                key={data.month}
-                                onClick={() => handleMonthChange(data.month)}
-                                sx={{
-                                  fontSize: "0.875rem",
-                                  transition: "all 0.2s ease",
-                                  backgroundColor:
-                                    selectedMonth === data.month ? alpha(themeColors.primary.main, 0.1) : "transparent",
-                                  fontWeight: selectedMonth === data.month ? 600 : 400,
-                                  "&:hover": {
-                                    backgroundColor: alpha(themeColors.primary.main, 0.1),
-                                  },
-                                }}
-                              >
-                                {data.month}
-                              </MenuItem>
-                            ))}
-                          </Menu>
+                            <Refresh />
+                          </IconButton>
                         </Box>
                       }
                       sx={{
@@ -3045,7 +2908,22 @@ export default function RemovalDashboard() {
                               height: "100%",
                             }}
                           >
-                            {renderChart()}
+                            {monthlyData.length > 0 ? (
+                              renderChart()
+                            ) : (
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  height: "100%",
+                                }}
+                              >
+                                <Typography sx={{ color: themeColors.text.secondary }}>
+                                  Nenhum dado mensal disponível
+                                </Typography>
+                              </Box>
+                            )}
                           </Box>
                         </Fade>
                       </Box>
@@ -3164,7 +3042,7 @@ export default function RemovalDashboard() {
                         animation: `${keyframes.fadeIn} 0.5s ease-out`,
                       }}
                     >
-                      {selectedRemoval.driver}
+                      {selectedRemoval.driver || "Não informado"}
                     </Typography>
                     <Typography
                       sx={{
@@ -3230,7 +3108,7 @@ export default function RemovalDashboard() {
                         fontSize: "1.1rem",
                       }}
                     >
-                      {selectedRemoval.collectors?.join(", ")}
+                      {selectedRemoval.collectors?.join(", ") || "Não informado"}
                     </Typography>
                     <Typography
                       sx={{
@@ -3293,7 +3171,7 @@ export default function RemovalDashboard() {
                       <Typography
                         sx={{ fontWeight: 700, color: themeColors.text.primary, fontSize: "1rem", textAlign: "center" }}
                       >
-                        {selectedRemoval.vehiclePrefix}
+                        {selectedRemoval.vehiclePrefix || "Não informado"}
                       </Typography>
                       <Typography sx={{ color: themeColors.text.secondary, fontSize: "0.75rem", mt: 0.5 }}>
                         Prefixo
@@ -3339,7 +3217,7 @@ export default function RemovalDashboard() {
                       <Typography
                         sx={{ fontWeight: 700, color: themeColors.text.primary, fontSize: "1rem", textAlign: "center" }}
                       >
-                        {selectedRemoval.team}
+                        {selectedRemoval.team || "Não informado"}
                       </Typography>
                       <Typography sx={{ color: themeColors.text.secondary, fontSize: "0.75rem", mt: 0.5 }}>
                         Equipe
@@ -3385,7 +3263,7 @@ export default function RemovalDashboard() {
                       <Typography
                         sx={{ fontWeight: 700, color: themeColors.text.primary, fontSize: "1rem", textAlign: "center" }}
                       >
-                        {selectedRemoval.route}
+                        {selectedRemoval.route || "Não informado"}
                       </Typography>
                       <Typography sx={{ color: themeColors.text.secondary, fontSize: "0.75rem", mt: 0.5 }}>
                         Rota
@@ -3431,7 +3309,7 @@ export default function RemovalDashboard() {
                       <Typography
                         sx={{ fontWeight: 700, color: themeColors.text.primary, fontSize: "1rem", textAlign: "center" }}
                       >
-                        {selectedRemoval.garage}
+                        {selectedRemoval.garage || "Não informado"}
                       </Typography>
                       <Typography sx={{ color: themeColors.text.secondary, fontSize: "0.75rem", mt: 0.5 }}>
                         Garagem
@@ -3490,7 +3368,7 @@ export default function RemovalDashboard() {
                           fontSize: "1.1rem",
                         }}
                       >
-                        {selectedRemoval.status}
+                        {selectedRemoval.status || "Não informado"}
                       </Typography>
                     </Box>
                   </Box>
@@ -3522,13 +3400,13 @@ export default function RemovalDashboard() {
                         Localização:
                       </Typography>
                       <Typography sx={{ fontWeight: 500, color: themeColors.text.primary, fontSize: "0.85rem" }}>
-                        {selectedRemoval.location}
+                        {selectedRemoval.location || "Não informado"}
                       </Typography>
                     </Box>
                     <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
                       <Typography sx={{ color: themeColors.text.secondary, fontSize: "0.85rem" }}>Veículo:</Typography>
                       <Typography sx={{ fontWeight: 500, color: themeColors.text.primary, fontSize: "0.85rem" }}>
-                        {selectedRemoval.vehicle}
+                        {selectedRemoval.vehicle || "Não informado"}
                       </Typography>
                     </Box>
                     <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
@@ -3536,13 +3414,13 @@ export default function RemovalDashboard() {
                         Distância:
                       </Typography>
                       <Typography sx={{ fontWeight: 500, color: themeColors.text.primary, fontSize: "0.85rem" }}>
-                        {selectedRemoval.distance}
+                        {selectedRemoval.distance || "Não informado"}
                       </Typography>
                     </Box>
                     <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                       <Typography sx={{ color: themeColors.text.secondary, fontSize: "0.85rem" }}>Data:</Typography>
                       <Typography sx={{ fontWeight: 500, color: themeColors.text.primary, fontSize: "0.85rem" }}>
-                        {new Date(selectedRemoval.date).toLocaleDateString()}
+                        {selectedRemoval.date ? new Date(selectedRemoval.date).toLocaleDateString() : "Não informado"}
                       </Typography>
                     </Box>
                   </Paper>
@@ -3619,7 +3497,7 @@ export default function RemovalDashboard() {
           </>
         )}
       </Dialog>
-      ;
+      
       <Menu
         anchorEl={actionMenuAnchor}
         open={Boolean(actionMenuAnchor)}
@@ -3642,7 +3520,7 @@ export default function RemovalDashboard() {
           Excluir
         </MenuItem>
       </Menu>
-      ;
+      
       <Dialog
         open={deleteConfirmOpen}
         onClose={handleDeleteConfirmClose}
@@ -3664,7 +3542,7 @@ export default function RemovalDashboard() {
           </Button>
         </DialogActions>
       </Dialog>
-      ;
+      
       <Menu
         anchorEl={shareMenuAnchor}
         open={Boolean(shareMenuAnchor)}
@@ -3698,7 +3576,7 @@ export default function RemovalDashboard() {
           Email
         </MenuItem>
       </Menu>
-      ;
+      
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={3000}
@@ -3709,7 +3587,7 @@ export default function RemovalDashboard() {
           {snackbarMessage}
         </Alert>
       </Snackbar>
-      ;
+      
       <Dialog
         open={addModalOpen}
         onClose={handleCloseAddModal}
@@ -3727,8 +3605,6 @@ export default function RemovalDashboard() {
           direction: "up",
         }}
       >
-        {/* 5. Improve the add modal styling */}
-        {/* Find the DialogTitle in the Add Release Modal and enhance it: */}
         <DialogTitle
           sx={{
             background: `linear-gradient(135deg, ${alpha(themeColors.primary.main, 0.9)} 0%, ${alpha(themeColors.primary.main, 0.8)} 100%)`,
@@ -4192,8 +4068,6 @@ export default function RemovalDashboard() {
                     />
                   </Grid>
                   <Grid item xs={12} sm={6} md={4}>
-                    {/* Update the status options in the add modal
-                    // Find the status dropdown in the add modal and replace with: */}
                     <TextField
                       select
                       fullWidth
@@ -4227,7 +4101,6 @@ export default function RemovalDashboard() {
                       type="time"
                       value={newRemoval.arrivalTime}
                       onChange={(e) => handleNewRemovalChange("arrivalTime", e.target.value)}
-                      /* Update the status check in the modal for arrival time */
                       disabled={newRemoval.status !== "Finalizado"}
                       InputProps={{
                         sx: {
