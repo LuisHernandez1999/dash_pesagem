@@ -453,15 +453,15 @@ export default function RemovalDashboard() {
   // Update the default status in the newRemoval state
   const [newRemoval, setNewRemoval] = useState({
     motorista: "",
-    tipo_equipe: ["Equipe1(Matutino)", "Equipe2(Vespertino)", "Equipe3 (Noturno)"],
+    tipo_equipe: ["Equipe1(Matutino)", "Equipe2(Vespertino)", "Equipe3(Noturno)"],
     veiculo: "",
     frequencia: "Diária",
     garagem: "PA1",
     celular: "",
     lider: "",
-    hora_entrega_chave: "",
-    hora_saida_frota: "",
-    hora_chegada: "",
+    hora_entrega_chave: new Date().toISOString().slice(0, 16),
+    hora_saida_frota: new Date().toISOString().slice(0, 16),
+    hora_chegada: new Date().toISOString().slice(0, 16),
     turno: "Matutino",
     tipo_servico: "Coleta",
     status_frota: "Em andamento",
@@ -473,6 +473,7 @@ export default function RemovalDashboard() {
   // Vamos modificar a função loadAllData para garantir que os dados sejam processados corretamente
 
   const loadAllData = async () => {
+    console.log("Iniciando carregamento de dados...")
     setLoading(true)
     setInitialLoading(true)
 
@@ -516,16 +517,43 @@ export default function RemovalDashboard() {
 
       // Formatar dados de solturas para o formato esperado pela UI
       const formattedRemovals = Array.isArray(solturasData)
-        ? solturasData.map((soltura, index) => ({
+      ? solturasData.map((soltura, index) => {
+          // Verificar a estrutura dos dados de motorista
+          console.log("Dados de motorista:", soltura.motorista);
+          
+          // Verificar a estrutura dos dados de coletores
+          console.log("Dados de coletores:", soltura.coletores);
+          
+          return {
             id: index + 1,
-            driver: soltura.motorista || "Não informado",
-            driverId: soltura.matricula_motorista || "",
+            // Garantir que o nome do motorista seja exibido corretamente
+            driver: typeof soltura.motorista === 'object' 
+              ? soltura.motorista.nome || "Não informado" 
+              : soltura.motorista || "Não informado",
+              
+            driverId: typeof soltura.motorista === 'object'
+              ? soltura.motorista.matricula || ""
+              : soltura.matricula_motorista || "",
+              
+            // Garantir que os nomes dos coletores sejam extraídos corretamente
             collectors: Array.isArray(soltura.coletores)
-              ? soltura.coletores.map((c) => c.nome || "").filter(Boolean)
+              ? soltura.coletores.map(c => {
+                  if (typeof c === 'object') {
+                    return c.nome || "Não informado";
+                  }
+                  return c || "Não informado";
+                }).filter(Boolean)
               : [],
+              
             collectorsIds: Array.isArray(soltura.coletores)
-              ? soltura.coletores.map((c) => c.matricula || "").filter(Boolean)
+              ? soltura.coletores.map(c => {
+                  if (typeof c === 'object') {
+                    return c.matricula || "";
+                  }
+                  return "";
+                }).filter(Boolean)
               : [],
+              
             garage: soltura.garagem || "PA1",
             route: soltura.rota || "",
             vehiclePrefix: soltura.prefixo || "",
@@ -543,11 +571,9 @@ export default function RemovalDashboard() {
             vehicle: soltura.veiculo || "Caminhão Reboque",
             distance: "0 km",
             notes: "",
-          }))
-        : []
-
-      console.log("Remoções formatadas:", formattedRemovals)
-
+          };
+        })
+      : [];
       // Formatar dados de equipes para o gráfico
       const formattedTeamData = equipesDiaResult?.dadosEquipes
         ? equipesDiaResult.dadosEquipes.map((item, index) => ({
@@ -815,9 +841,9 @@ export default function RemovalDashboard() {
       garagem: "PA1",
       celular: "",
       lider: "",
-      hora_entrega_chave: "",
-      hora_saida_frota: "",
-      hora_chegada: "",
+      hora_entrega_chave: new Date().toISOString().slice(0, 16),
+      hora_saida_frota: new Date().toISOString().slice(0, 16),
+      hora_chegada: new Date().toISOString().slice(0, 16),
       turno: "Matutino",
       tipo_servico: "Coleta",
       status_frota: "Em andamento",
@@ -848,8 +874,16 @@ export default function RemovalDashboard() {
     try {
       setLoading(true)
 
+      // Adicionar logs para ver o que está sendo enviado
+      console.log("Dados sendo enviados para o backend:", newRemoval)
+      console.log("Motorista selecionado:", newRemoval.motorista)
+      console.log("Coletores selecionados:", newRemoval.coletores)
+
       // Chamar API para adicionar
       const result = await cadastrarSoltura(newRemoval)
+
+      // Log da resposta do backend
+      console.log("Resposta do backend:", result)
 
       if (result.error) {
         throw new Error(result.error)
@@ -1609,7 +1643,7 @@ export default function RemovalDashboard() {
   // Vamos adicionar dados de exemplo para garantir que a interface funcione mesmo sem dados da API
 
   // Adicione estes dados de exemplo logo após a definição dos estados
-
+ 
 
   // Modifique o useEffect para usar dados de exemplo se a API falhar
   useEffect(() => {
@@ -1981,6 +2015,7 @@ export default function RemovalDashboard() {
                         >
                           {/* Modificar o layout da seção de pesquisa para dar mais espaço ao autocomplete */}
                           <Box sx={{ display: "flex", gap: 2, flexWrap: { xs: "wrap", md: "nowrap" }, mb: 2 }}>
+                            {/* 1. Corrigir o input de pesquisa para usar motorista.nome da mesma forma que o autocomplete: */}
                             <Box sx={{ flex: 1, width: "100%" }}>
                               <SearchInput
                                 icon={Search}
@@ -2242,23 +2277,27 @@ export default function RemovalDashboard() {
                                   onClick={() => handleOpenModal(removal)}
                                 >
                                   <TableCell>
-                                    <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                                      <Avatar
-                                        sx={{
-                                          width: 32,
-                                          height: 32,
-                                          backgroundColor: alpha(themeColors.primary.main, 0.1),
-                                          color: themeColors.primary.main,
-                                          fontWeight: 600,
-                                        }}
-                                      >
-                                        {removal.driver?.charAt(0) || "?"}
-                                      </Avatar>
-                                      <Typography sx={{ fontWeight: 500 }}>
-                                        {isMobile ? removal.driver?.split(" ")[0] || "-" : removal.driver || "-"}
-                                      </Typography>
-                                    </Box>
-                                  </TableCell>
+  <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+    <Avatar
+      sx={{
+        width: 32,
+        height: 32,
+        backgroundColor: alpha(themeColors.primary.main, 0.1),
+        color: themeColors.primary.main,
+        fontWeight: 600,
+      }}
+    >
+      {/* Garantir que o primeiro caractere do nome do motorista seja exibido */}
+      {typeof removal.driver === 'string' && removal.driver.charAt(0) || "?"}
+    </Avatar>
+    <Typography sx={{ fontWeight: 500 }}>
+      {/* Exibir o nome do motorista corretamente */}
+      {isMobile 
+        ? (typeof removal.driver === 'string' ? removal.driver.split(" ")[0] : "-") 
+        : (typeof removal.driver === 'string' ? removal.driver : "-")}
+    </Typography>
+  </Box>
+</TableCell>
                                   <TableCell>
                                     <Chip
                                       label={removal.vehiclePrefix || "-"}
@@ -3637,6 +3676,8 @@ export default function RemovalDashboard() {
                       onChange={(_, newValue) => {
                         handleNewRemovalChange("motorista", newValue?.nome || "")
                         handleNewRemovalChange("matricula_motorista", newValue?.matricula || "")
+                        // Add logging to see what's being sent
+                        console.log("Motorista selecionado:", newValue)
                       }}
                       renderInput={(params) => (
                         <TextField
@@ -3650,6 +3691,20 @@ export default function RemovalDashboard() {
                               borderRadius: "12px",
                               background: "white",
                               boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
+                              "& .MuiAutocomplete-input": {
+                                padding: "12px 8px !important", // Aumentar o padding para dar mais espaço
+                                fontSize: "1rem",
+                              },
+                              "& .MuiOutlinedInput-notchedOutline": {
+                                borderColor: alpha(themeColors.success.main, 0.3),
+                              },
+                              "&:hover .MuiOutlinedInput-notchedOutline": {
+                                borderColor: themeColors.success.main,
+                              },
+                              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                                borderColor: themeColors.success.main,
+                                borderWidth: "2px",
+                              },
                             },
                             startAdornment: (
                               <Person sx={{ color: themeColors.text.secondary, mr: 1, fontSize: "1.2rem" }} />
@@ -3657,6 +3712,12 @@ export default function RemovalDashboard() {
                           }}
                         />
                       )}
+                      ListboxProps={{
+                        style: {
+                          maxHeight: "300px",
+                          width: "400px", // Aumentar significativamente a largura da lista dropdown
+                        },
+                      }}
                     />
                   </Grid>
                   <Grid item xs={12} sm={6}>
@@ -3830,6 +3891,9 @@ export default function RemovalDashboard() {
                                     }
                                   : null
                                 handleNewRemovalChange("coletores", updatedColetores)
+                                // Add logging
+                                console.log("Coletor selecionado:", newValue)
+                                console.log("Lista atualizada de coletores:", updatedColetores)
                               }}
                               renderInput={(params) => (
                                 <TextField
@@ -3842,6 +3906,20 @@ export default function RemovalDashboard() {
                                     sx: {
                                       borderRadius: "12px",
                                       boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
+                                      "& .MuiAutocomplete-input": {
+                                        padding: "12px 8px !important", // Aumentar o padding para dar mais espaço
+                                        fontSize: "1rem",
+                                      },
+                                      "& .MuiOutlinedInput-notchedOutline": {
+                                        borderColor: alpha(themeColors.primary.main, 0.3),
+                                      },
+                                      "&:hover .MuiOutlinedInput-notchedOutline": {
+                                        borderColor: themeColors.primary.main,
+                                      },
+                                      "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                                        borderColor: themeColors.primary.main,
+                                        borderWidth: "2px",
+                                      },
                                     },
                                     startAdornment: (
                                       <Person sx={{ color: themeColors.text.secondary, mr: 1, fontSize: "1.2rem" }} />
@@ -3849,6 +3927,12 @@ export default function RemovalDashboard() {
                                   }}
                                 />
                               )}
+                              ListboxProps={{
+                                style: {
+                                  maxHeight: "300px",
+                                  width: "400px", // Aumentar significativamente a largura da lista dropdown
+                                },
+                              }}
                             />
                           </Grid>
                         </Grid>
@@ -4011,12 +4095,34 @@ export default function RemovalDashboard() {
                 </Typography>
 
                 <Grid container spacing={2}>
+                  {/* 3. Corrigir o formato de data/hora nos campos do formulário: */}
+                  <Grid item xs={12} sm={6} md={4}>
+                    <TextField
+                      fullWidth
+                      label="Horário de Entrega da Chave"
+                      variant="outlined"
+                      type="datetime-local"
+                      value={newRemoval.hora_entrega_chave}
+                      onChange={(e) => handleNewRemovalChange("hora_entrega_chave", e.target.value)}
+                      InputProps={{
+                        sx: {
+                          borderRadius: "12px",
+                          background: "white",
+                          boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
+                        },
+                        startAdornment: <Today sx={{ color: themeColors.text.secondary, mr: 1, fontSize: "1.2rem" }} />,
+                      }}
+                      InputLabelProps={{
+                        shrink: true,
+                      }}
+                    />
+                  </Grid>
                   <Grid item xs={12} sm={6} md={4}>
                     <TextField
                       fullWidth
                       label="Horário de Saída"
                       variant="outlined"
-                      type="time"
+                      type="datetime-local"
                       value={newRemoval.hora_saida_frota}
                       onChange={(e) => handleNewRemovalChange("hora_saida_frota", e.target.value)}
                       InputProps={{
@@ -4034,36 +4140,10 @@ export default function RemovalDashboard() {
                   </Grid>
                   <Grid item xs={12} sm={6} md={4}>
                     <TextField
-                      select
-                      fullWidth
-                      label="Status"
-                      variant="outlined"
-                      value={newRemoval.status_frota}
-                      onChange={(e) => handleNewRemovalChange("status_frota", e.target.value)}
-                      InputProps={{
-                        sx: {
-                          borderRadius: "12px",
-                          background: "white",
-                          boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
-                        },
-                        startAdornment: (
-                          <Timeline sx={{ color: themeColors.text.secondary, mr: 1, fontSize: "1.2rem" }} />
-                        ),
-                      }}
-                    >
-                      {["Em andamento", "Finalizado"].map((option) => (
-                        <MenuItem key={option} value={option}>
-                          {option}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={4}>
-                    <TextField
                       fullWidth
                       label="Horário de Chegada"
                       variant="outlined"
-                      type="time"
+                      type="datetime-local"
                       value={newRemoval.hora_chegada}
                       onChange={(e) => handleNewRemovalChange("hora_chegada", e.target.value)}
                       disabled={newRemoval.status_frota !== "Finalizado"}

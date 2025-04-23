@@ -132,7 +132,9 @@ export const getColaboradoresListaColetores = async () => {
   }
 }
 
-// Na função getSolturasDetalhada, modifique o retorno para garantir que sempre retorne um array
+
+
+
 export const getSolturasDetalhada = async () => {
   //// sera usado pra tabela de solturas
   try {
@@ -141,105 +143,160 @@ export const getSolturasDetalhada = async () => {
         "Content-Type": "application/json",
       },
     })
-
-    // Verificar se a resposta é um array
-    if (Array.isArray(response.data)) {
-      const solturasDetalhadas = response.data.map((soltura) => ({
-        motorista: soltura.motorista?.nome || "",
-        matricula_motorista: soltura.motorista?.matricula || "",
-        tipo_equipe: soltura.tipo_equipe || "",
-        coletores: Array.isArray(soltura.coletores) ? soltura.coletores : [],
-        data: soltura.data || new Date().toISOString().split("T")[0],
+    
+    // Verificar a estrutura dos dados recebidos
+    console.log("Dados brutos da API:", response.data);
+    
+    const solturasDetalhadas = response.data.map((soltura) => {
+      // Verificar a estrutura de cada soltura
+      console.log("Estrutura de soltura:", soltura);
+      
+      return {
+        // Verificar se motorista é um objeto e extrair o nome corretamente
+        motorista: soltura.motorista && typeof soltura.motorista === 'object' 
+          ? soltura.motorista.nome || "Não informado" 
+          : soltura.motorista || "Não informado",
+        
+        // Extrair a matrícula do motorista se disponível
+        matricula_motorista: soltura.motorista && typeof soltura.motorista === 'object'
+          ? soltura.motorista.matricula || ""
+          : soltura.matricula_motorista || "",
+        
+        tipo_equipe: soltura.tipo_equipe,
+        
+        // Garantir que coletores seja sempre um array e extrair os nomes corretamente
+        coletores: Array.isArray(soltura.coletores) 
+          ? soltura.coletores.map(coletor => {
+              if (typeof coletor === 'object') {
+                return {
+                  nome: coletor.nome || "Não informado",
+                  matricula: coletor.matricula || ""
+                };
+              }
+              return { nome: coletor || "Não informado", matricula: "" };
+            }) 
+          : [],
+          
+        data: soltura.data,
         prefixo: soltura.prefixo || "",
-        frequencia: soltura.frequencia || "",
-        setores: soltura.setores || "",
-        celular: soltura.celular || "",
-        lider: soltura.lider || "",
-        hora_entrega_chave: soltura.hora_entrega_chave || "",
-        hora_saida_frota: soltura.hora_saida_frota || "",
-        tipo_servico: soltura.tipo_servico || "",
-        turno: soltura.turno || "",
-        rota: soltura.rota || "",
-        status_frota: soltura.status_frota || "Em andamento",
-      }))
+        frequencia: soltura.frequencia,
+        setores: soltura.setores,
+        celular: soltura.celular,
+        lider: soltura.lider,
+        hora_entrega_chave: soltura.hora_entrega_chave || null,
+        hora_saida_frota: soltura.hora_saida_frota || null,
+        tipo_servico: soltura.tipo_servico,
+        turno: soltura.turno,
+        rota: soltura.rota,
+        status_frota: soltura.status_frota,
+      };
+    });
+    
+    console.log("Dados formatados:", solturasDetalhadas);
 
-      return solturasDetalhadas
-    } else {
-      console.error("Resposta da API não é um array:", response.data)
-      return []
-    }
+    return solturasDetalhadas;
   } catch (error) {
-    console.error("Erro ao buscar solturas detalhadas:", error)
-    return []
+    if (error.response) {
+      console.error("Erro ao buscar solturas detalhadas:", error.response.data)
+      return { error: error.response.data }
+    } else {
+      console.error("Erro inesperado:", error.message)
+      return { error: "Erro inesperado ao buscar solturas detalhadas" }
+    }
   }
 }
 
-// Nas outras funções, vamos garantir que retornem valores padrão em caso de erro
+
 export const getTotalDeRemocaoSoltasNoDia = async () => {
+  //// pra  ultima card
   try {
     const response = await axios.get(`${API_URL}api/soltura/exibir_total_de_remocoes_no_dia/`, {
       headers: {
         "Content-Type": "application/json",
       },
     })
-    const totalDeRemocoes = response.data.total_remocoes || 0
+    const totalDeRemocoes = response.data.total_remocoes 
 
     return { totalDeRemocoes }
   } catch (error) {
-    console.error("Erro ao buscar o total de remoções no dia:", error)
-    return { totalDeRemocoes: 0 }
+    if (error.response) {
+      console.error("Erro ao buscar o total de remoções no dia:", error.response.data)
+      return { error: error.response.data }
+    } else {
+      console.error("Erro inesperado:", error.message)
+      return { error: "Erro inesperado ao buscar o total de remoções no dia" }
+    }
   }
 }
 
 export const getContagemRemocaoAtivos = async () => {
+  //// pra segunda card
   try {
     const response = await axios.get(`${API_URL}api/veiculos/contagem_remocao_ativos/`, {
       headers: {
         "Content-Type": "application/json",
       },
     })
-    const countRemocaoAtivos = response.data.count_remocao_ativos || 0
+    const countRemocaoAtivos = response.data.count_remocao_ativos 
 
     return { countRemocaoAtivos }
   } catch (error) {
-    console.error("Erro ao buscar a contagem de remoções ativas:", error)
-    return { countRemocaoAtivos: 0 }
+    if (error.response) {
+      console.error("Erro ao buscar a contagem de remoções ativas:", error.response.data)
+      return { error: error.response.data }
+    } else {
+      console.error("Erro inesperado:", error.message)
+      return { error: "Erro inesperado ao buscar a contagem de remoções ativas" }
+    }
   }
 }
 
 export const getContagemRemocaoInativos = async () => {
+  ///// pra terceira card
   try {
     const response = await axios.get(`${API_URL}api/veiculos/conatagem_romcao_inativos/`, {
       headers: {
         "Content-Type": "application/json",
       },
     })
-    const countRemocaoInativos = response.data.count_remocao_inativos || 0
+    const countRemocaoInativos = response.data.count_remocao_inativos 
 
     return { countRemocaoInativos }
   } catch (error) {
-    console.error("Erro ao buscar a contagem de remoções inativas:", error)
-    return { countRemocaoInativos: 0 }
+    if (error.response) {
+      console.error("Erro ao buscar a contagem de remoções inativas:", error.response.data)
+      return { error: error.response.data }
+    } else {
+      console.error("Erro inesperado:", error.message)
+      return { error: "Erro inesperado ao buscar a contagem de remoções inativas" }
+    }
   }
 }
 
 export const getContagemTotalRemocao = async () => {
+  ////// pra primeira card
   try {
     const response = await axios.get(`${API_URL}api/veiculos/total_frota_remocao/`, {
       headers: {
         "Content-Type": "application/json",
       },
     })
-    const totalRemocao = response.data.total_remocao || 0
+    const totalRemocao = response.data.total_remocao 
 
     return { totalRemocao }
   } catch (error) {
-    console.error("Erro ao buscar a contagem total de remoções:", error)
-    return { totalRemocao: 0 }
+    if (error.response) {
+      console.error("Erro ao buscar a contagem total de remoções:", error.response.data)
+      return { error: error.response.data }
+    } else {
+      console.error("Erro inesperado:", error.message)
+      return { error: "Erro inesperado ao buscar a contagem total de remoções" }
+    }
   }
 }
 
 export const getQuantidadeSolturaEquipesDia = async () => {
+  //// pro elemento Equipes:Análise comparativa por turno
   try {
     const response = await axios.get(`${API_URL}api/quantidade_soltura_equipes/`, {
       headers: {
@@ -249,22 +306,28 @@ export const getQuantidadeSolturaEquipesDia = async () => {
 
     if (response.data && response.data.dados) {
       const dadosEquipes = response.data.dados.map((item) => ({
-        tipoEquipe: item.tipo_equipe || "",
-        quantidade: item.quantidade || 0,
+        tipoEquipe: item.tipo_equipe,
+        quantidade: item.quantidade,
       }))
       return { dadosEquipes }
     } else {
-      return { dadosEquipes: [] }
+      return { error: "Nenhum dado encontrado para a quantidade de solturas por equipe no dia" }
     }
   } catch (error) {
-    console.error("Erro ao buscar quantidade de solturas por equipe no dia:", error)
-    return { dadosEquipes: [] }
+    if (error.response) {
+      console.error("Erro ao buscar quantidade de solturas por equipe no dia:", error.response.data)
+      return { error: error.response.data }
+    } else {
+      console.error("Erro inesperado:", error.message)
+      return { error: "Erro inesperado ao buscar quantidade de solturas por equipe no dia" }
+    }
   }
 }
 
 export const getMediaMensalDeSolturas = async () => {
   try {
     const response = await axios.get(`${API_URL}api/soltura/remocao_por_mes/`, {
+      //// sera usado na media de remoções por mes que aaparece no grafico de remoções por mes
       headers: {
         "Content-Type": "application/json",
       },
@@ -275,15 +338,21 @@ export const getMediaMensalDeSolturas = async () => {
 
       return { mediaMensal }
     } else {
-      return { mediaMensal: 0 }
+      return { error: "Média mensal de solturas não encontrada ou formato inesperado" }
     }
   } catch (error) {
-    console.error("Erro ao buscar média mensal de solturas:", error)
-    return { mediaMensal: 0 }
+    if (error.response) {
+      console.error("Erro ao buscar média mensal de solturas:", error.response.data)
+      return { error: error.response.data }
+    } else {
+      console.error("Erro inesperado:", error.message)
+      return { error: "Erro inesperado ao buscar média mensal de solturas" }
+    }
   }
 }
 
 export const getRemocoesPorMes = async () => {
+  ///// será usada pro grafico de remoçoes por mes
   try {
     const response = await axios.get(`${API_URL}api/soltura/solturas_de_remocao_por_mes/`, {
       headers: {
@@ -299,10 +368,15 @@ export const getRemocoesPorMes = async () => {
 
       return { remocoes }
     } else {
-      return { remocoes: [] }
+      return { error: "Dados de remoções por mês não encontrados ou em formato inválido" }
     }
   } catch (error) {
-    console.error("Erro ao buscar remoções por mês:", error)
-    return { remocoes: [] }
+    if (error.response) {
+      console.error("Erro ao buscar remoções por mês:", error.response.data)
+      return { error: error.response.data }
+    } else {
+      console.error("Erro inesperado:", error.message)
+      return { error: "Erro inesperado ao buscar remoções por mês" }
+    }
   }
 }
