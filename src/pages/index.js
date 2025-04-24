@@ -60,9 +60,6 @@ import {
   Snackbar,
   Alert,
   alpha,
-  TextField,
-  Badge,
-  Checkbox,
   Autocomplete,
 } from "@mui/material"
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns"
@@ -83,8 +80,6 @@ import {
   Timeline,
   Menu as MenuIcon,
   WbSunny,
-  Brightness3,
-  Brightness5,
   ViewList,
   MoreVert,
   Share,
@@ -93,7 +88,6 @@ import {
   Group,
   Route,
   Warehouse,
-  CalendarToday,
   Facebook,
   Twitter,
   LinkedIn,
@@ -103,10 +97,6 @@ import {
 } from "@mui/icons-material"
 import Sidebar from "@/components/sidebar"
 import {
-  cadastrarSoltura,
-  getVeiculosListaAtivos,
-  getColaboradoresListaMotoristasAtivos,
-  getColaboradoresListaColetores,
   getSolturasDetalhada,
   getTotalDeRemocaoSoltasNoDia,
   getContagemRemocaoAtivos,
@@ -444,34 +434,8 @@ export default function RemovalDashboard() {
   const [removals, setRemovals] = useState([])
   const [monthlyData, setMonthlyData] = useState([])
   const [teamData, setTeamData] = useState([])
-  const [veiculosAtivos, setVeiculosAtivos] = useState([])
-  const [motoristasAtivos, setMotoristasAtivos] = useState([])
-  const [coletoresAtivos, setColetoresAtivos] = useState([])
-
-  // 1. Add state for the new modal
-  const [addModalOpen, setAddModalOpen] = useState(false)
-  // Update the default status in the newRemoval state
-  const [newRemoval, setNewRemoval] = useState({
-    motorista: "",
-    tipo_equipe: ["Equipe1(Matutino)", "Equipe2(Vespertino)", "Equipe3(Noturno)"],
-    veiculo: "",
-    frequencia: "Diária",
-    garagem: "PA1",
-    celular: "",
-    lider: "",
-    hora_entrega_chave: new Date().toISOString().slice(0, 16),
-    hora_saida_frota: new Date().toISOString().slice(0, 16),
-    hora_chegada: new Date().toISOString().slice(0, 16),
-    turno: "Matutino",
-    tipo_servico: "Coleta",
-    status_frota: "Em andamento",
-    rota: "",
-    coletores: [],
-    data: new Date().toISOString().split("T")[0],
-  })
 
   // Vamos modificar a função loadAllData para garantir que os dados sejam processados corretamente
-
   const loadAllData = async () => {
     console.log("Iniciando carregamento de dados...")
     setLoading(true)
@@ -488,9 +452,6 @@ export default function RemovalDashboard() {
         equipesDiaResult,
         remocoesPorMesResult,
         mediaMensalResult,
-        veiculosAtivosResult,
-        motoristasAtivosResult,
-        coletoresAtivosResult,
       ] = await Promise.all([
         getSolturasDetalhada(),
         getContagemTotalRemocao(),
@@ -500,9 +461,6 @@ export default function RemovalDashboard() {
         getQuantidadeSolturaEquipesDia(),
         getRemocoesPorMes(),
         getMediaMensalDeSolturas(),
-        getVeiculosListaAtivos(),
-        getColaboradoresListaMotoristasAtivos(),
-        getColaboradoresListaColetores(),
       ])
 
       console.log("Dados carregados:", {
@@ -517,63 +475,69 @@ export default function RemovalDashboard() {
 
       // Formatar dados de solturas para o formato esperado pela UI
       const formattedRemovals = Array.isArray(solturasData)
-      ? solturasData.map((soltura, index) => {
-          // Verificar a estrutura dos dados de motorista
-          console.log("Dados de motorista:", soltura.motorista);
-          
-          // Verificar a estrutura dos dados de coletores
-          console.log("Dados de coletores:", soltura.coletores);
-          
-          return {
-            id: index + 1,
-            // Garantir que o nome do motorista seja exibido corretamente
-            driver: typeof soltura.motorista === 'object' 
-              ? soltura.motorista.nome || "Não informado" 
-              : soltura.motorista || "Não informado",
-              
-            driverId: typeof soltura.motorista === 'object'
-              ? soltura.motorista.matricula || ""
-              : soltura.matricula_motorista || "",
-              
-            // Garantir que os nomes dos coletores sejam extraídos corretamente
-            collectors: Array.isArray(soltura.coletores)
-              ? soltura.coletores.map(c => {
-                  if (typeof c === 'object') {
-                    return c.nome || "Não informado";
-                  }
-                  return c || "Não informado";
-                }).filter(Boolean)
-              : [],
-              
-            collectorsIds: Array.isArray(soltura.coletores)
-              ? soltura.coletores.map(c => {
-                  if (typeof c === 'object') {
-                    return c.matricula || "";
-                  }
-                  return "";
-                }).filter(Boolean)
-              : [],
-              
-            garage: soltura.garagem || "PA1",
-            route: soltura.rota || "",
-            vehiclePrefix: soltura.prefixo || "",
-            departureTime: soltura.hora_saida_frota || "",
-            status: soltura.status_frota === "Em andamento" ? "Em andamento" : "Finalizado",
-            arrivalTime: soltura.hora_chegada || "",
-            date: soltura.data || new Date().toISOString().split("T")[0],
-            team: soltura.tipo_equipe || "",
-            location:
-              typeof soltura.setores === "string"
-                ? soltura.setores
-                : Array.isArray(soltura.setores)
-                  ? soltura.setores.join(", ")
-                  : "Não informado",
-            vehicle: soltura.veiculo || "Caminhão Reboque",
-            distance: "0 km",
-            notes: "",
-          };
-        })
-      : [];
+        ? solturasData.map((soltura, index) => {
+            // Verificar a estrutura dos dados de motorista
+            console.log("Dados de motorista:", soltura.motorista)
+
+            // Verificar a estrutura dos dados de coletores
+            console.log("Dados de coletores:", soltura.coletores)
+
+            return {
+              id: index + 1,
+              // Garantir que o nome do motorista seja exibido corretamente
+              driver:
+                typeof soltura.motorista === "object"
+                  ? soltura.motorista.nome || "Não informado"
+                  : soltura.motorista || "Não informado",
+
+              driverId:
+                typeof soltura.motorista === "object"
+                  ? soltura.motorista.matricula || ""
+                  : soltura.matricula_motorista || "",
+
+              // Garantir que os nomes dos coletores sejam extraídos corretamente
+              collectors: Array.isArray(soltura.coletores)
+                ? soltura.coletores
+                    .map((c) => {
+                      if (typeof c === "object") {
+                        return c.nome || "Não informado"
+                      }
+                      return c || "Não informado"
+                    })
+                    .filter(Boolean)
+                : [],
+
+              collectorsIds: Array.isArray(soltura.coletores)
+                ? soltura.coletores
+                    .map((c) => {
+                      if (typeof c === "object") {
+                        return c.matricula || ""
+                      }
+                      return ""
+                    })
+                    .filter(Boolean)
+                : [],
+
+              garage: soltura.garagem || "PA1",
+              route: soltura.rota || "",
+              vehiclePrefix: soltura.prefixo || "",
+              departureTime: soltura.hora_saida_frota || "",
+              status: soltura.status_frota === "Em andamento" ? "Em andamento" : "Finalizado",
+              arrivalTime: soltura.hora_chegada || "",
+              date: soltura.data || new Date().toISOString().split("T")[0],
+              team: soltura.tipo_equipe || "",
+              location:
+                typeof soltura.setores === "string"
+                  ? soltura.setores
+                  : Array.isArray(soltura.setores)
+                    ? soltura.setores.join(", ")
+                    : "Não informado",
+              vehicle: soltura.veiculo || "Caminhão Reboque",
+              distance: "0 km",
+              notes: "",
+            }
+          })
+        : []
       // Formatar dados de equipes para o gráfico
       const formattedTeamData = equipesDiaResult?.dadosEquipes
         ? equipesDiaResult.dadosEquipes.map((item, index) => ({
@@ -620,19 +584,6 @@ export default function RemovalDashboard() {
         inactiveVehicles: remocaoInativosResult?.countRemocaoInativos || 0,
         releasedToday: remocoesDiaResult?.totalDeRemocoes || 0,
       })
-
-      // Armazenar listas para os formulários
-      if (veiculosAtivosResult?.veiculos) {
-        setVeiculosAtivos(veiculosAtivosResult.veiculos)
-      }
-
-      if (motoristasAtivosResult?.motoristas) {
-        setMotoristasAtivos(motoristasAtivosResult.motoristas)
-      }
-
-      if (coletoresAtivosResult?.coletores) {
-        setColetoresAtivos(coletoresAtivosResult.coletores)
-      }
 
       // Marcar carregamento como concluído
       setChartsLoaded(true)
@@ -824,89 +775,6 @@ export default function RemovalDashboard() {
   // Handle snackbar close
   const handleSnackbarClose = () => {
     setSnackbarOpen(false)
-  }
-
-  // 2. Add handlers for the new modal
-  const handleOpenAddModal = () => {
-    setAddModalOpen(true)
-  }
-
-  const handleCloseAddModal = () => {
-    setAddModalOpen(false)
-    setNewRemoval({
-      motorista: "",
-      tipo_equipe: ["Equipe1 (Matutino)", "Equipe2(Vespertino)", "Equipe3(Noturno)"],
-      veiculo: "",
-      frequencia: "Diária",
-      garagem: "PA1",
-      celular: "",
-      lider: "",
-      hora_entrega_chave: new Date().toISOString().slice(0, 16),
-      hora_saida_frota: new Date().toISOString().slice(0, 16),
-      hora_chegada: new Date().toISOString().slice(0, 16),
-      turno: "Matutino",
-      tipo_servico: "Coleta",
-      status_frota: "Em andamento",
-      rota: "",
-      coletores: [],
-      data: new Date().toISOString().split("T")[0],
-    })
-  }
-
-  const handleNewRemovalChange = (field, value, index = null) => {
-    if (index !== null) {
-      // For array fields like collectors
-      setNewRemoval((prev) => {
-        const updated = { ...prev }
-        updated[field][index] = value
-        return updated
-      })
-    } else {
-      // For simple fields
-      setNewRemoval((prev) => ({
-        ...prev,
-        [field]: value,
-      }))
-    }
-  }
-
-  const handleAddRemoval = async () => {
-    try {
-      setLoading(true)
-
-      // Adicionar logs para ver o que está sendo enviado
-      console.log("Dados sendo enviados para o backend:", newRemoval)
-      console.log("Motorista selecionado:", newRemoval.motorista)
-      console.log("Coletores selecionados:", newRemoval.coletores)
-
-      // Chamar API para adicionar
-      const result = await cadastrarSoltura(newRemoval)
-
-      // Log da resposta do backend
-      console.log("Resposta do backend:", result)
-
-      if (result.error) {
-        throw new Error(result.error)
-      }
-
-      // Recarregar dados após adicionar
-      await loadAllData()
-
-      // Show success message
-      setSnackbarMessage("Soltura adicionada com sucesso!")
-      setSnackbarSeverity("success")
-      setSnackbarOpen(true)
-
-      // Close modal
-      handleCloseAddModal()
-    } catch (error) {
-      console.error("Erro ao adicionar:", error)
-      setSnackbarMessage("Erro ao adicionar soltura. Tente novamente.")
-      setSnackbarSeverity("error")
-      setSnackbarOpen(true)
-    } finally {
-      setLoading(false)
-    }
   }
 
   // Função para atualizar dados
@@ -1597,9 +1465,6 @@ export default function RemovalDashboard() {
   }
 
   // Custom date picker component
-  // Vamos corrigir o componente DatePicker para resolver o aviso sobre renderInput
-
-  // Substitua o componente DatePickerInput
   const DatePickerInput = () => (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box sx={{ display: "flex", alignItems: "center" }}>
@@ -1640,11 +1505,6 @@ export default function RemovalDashboard() {
     </LocalizationProvider>
   )
 
-  // Vamos adicionar dados de exemplo para garantir que a interface funcione mesmo sem dados da API
-
-  // Adicione estes dados de exemplo logo após a definição dos estados
- 
-
   // Modifique o useEffect para usar dados de exemplo se a API falhar
   useEffect(() => {
     const fetchData = async () => {
@@ -1655,21 +1515,13 @@ export default function RemovalDashboard() {
         setTimeout(() => {
           if (removals.length === 0) {
             console.log("Usando dados de exemplo porque a API não retornou dados")
-            setRemovals(exampleData.removals)
-            setTeamData(exampleData.teamData)
-            setMonthlyData(exampleData.monthlyData)
-            setStatsData(exampleData.statsData)
             setChartsLoaded(true)
           }
         }, 1000)
       } catch (error) {
         console.error("Erro ao carregar dados:", error)
 
-        // Em caso de erro, use os dados de exemplo
-        setRemovals(exampleData.removals)
-        setTeamData(exampleData.teamData)
-        setMonthlyData(exampleData.monthlyData)
-        setStatsData(exampleData.statsData)
+        // Em caso de erro, marcar carregamento como concluído
         setChartsLoaded(true)
         setLoading(false)
         setInitialLoading(false)
@@ -1721,8 +1573,7 @@ export default function RemovalDashboard() {
             transition: "all 0.3s ease",
           }}
         >
-          {/* 3. Modificar as cores do header para serem mais harmônicas */}
-          {/* 3. Modificar as cores do header para serem mais harmônicas */}
+          {/* Header */}
           <AppBar
             position="sticky"
             sx={{
@@ -1740,8 +1591,6 @@ export default function RemovalDashboard() {
                   <MenuIcon />
                 </IconButton>
               )}
-              {/* 1. Enhance the page title with better styling and icon */}
-              {/* Find the AppBar section and replace the title Box with this improved version: */}
               <Box
                 sx={{
                   display: "flex",
@@ -1807,8 +1656,6 @@ export default function RemovalDashboard() {
                 </IconButton>
               </Box>
             </Toolbar>
-            {/* 2. Add a divider below the header */}
-            {/* Add this right after the closing </Toolbar> tag in the AppBar section: */}
             <Divider
               sx={{
                 height: "3px",
@@ -1903,8 +1750,6 @@ export default function RemovalDashboard() {
                     }}
                   >
                     <CardHeader
-                      // 3. Modify the TableHeader section to add the "Add Release" button
-                      // Find the CardHeader in the Unified Table Section and replace the title with:
                       title={
                         <Box
                           sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}
@@ -1950,27 +1795,6 @@ export default function RemovalDashboard() {
                               </Typography>
                             </Box>
                           </Box>
-                          <Button
-                            variant="contained"
-                            startIcon={<DirectionsCar />}
-                            onClick={handleOpenAddModal}
-                            sx={{
-                              borderRadius: "12px",
-                              textTransform: "none",
-                              fontWeight: 600,
-                              backgroundColor: themeColors.success.main,
-                              boxShadow: `0 4px 12px ${alpha(themeColors.success.main, 0.2)}`,
-                              "&:hover": {
-                                backgroundColor: themeColors.success.dark,
-                                boxShadow: `0 6px 16px ${alpha(themeColors.success.main, 0.3)}`,
-                                transform: "translateY(-2px)",
-                              },
-                              transition: "all 0.3s ease",
-                              animation: `${keyframes.pulse} 3s infinite ease-in-out`,
-                            }}
-                          >
-                            Adicionar Soltura
-                          </Button>
                         </Box>
                       }
                       action={
@@ -2277,27 +2101,31 @@ export default function RemovalDashboard() {
                                   onClick={() => handleOpenModal(removal)}
                                 >
                                   <TableCell>
-  <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-    <Avatar
-      sx={{
-        width: 32,
-        height: 32,
-        backgroundColor: alpha(themeColors.primary.main, 0.1),
-        color: themeColors.primary.main,
-        fontWeight: 600,
-      }}
-    >
-      {/* Garantir que o primeiro caractere do nome do motorista seja exibido */}
-      {typeof removal.driver === 'string' && removal.driver.charAt(0) || "?"}
-    </Avatar>
-    <Typography sx={{ fontWeight: 500 }}>
-      {/* Exibir o nome do motorista corretamente */}
-      {isMobile 
-        ? (typeof removal.driver === 'string' ? removal.driver.split(" ")[0] : "-") 
-        : (typeof removal.driver === 'string' ? removal.driver : "-")}
-    </Typography>
-  </Box>
-</TableCell>
+                                    <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                                      <Avatar
+                                        sx={{
+                                          width: 32,
+                                          height: 32,
+                                          backgroundColor: alpha(themeColors.primary.main, 0.1),
+                                          color: themeColors.primary.main,
+                                          fontWeight: 600,
+                                        }}
+                                      >
+                                        {/* Garantir que o primeiro caractere do nome do motorista seja exibido */}
+                                        {(typeof removal.driver === "string" && removal.driver.charAt(0)) || "?"}
+                                      </Avatar>
+                                      <Typography sx={{ fontWeight: 500 }}>
+                                        {/* Exibir o nome do motorista corretamente */}
+                                        {isMobile
+                                          ? typeof removal.driver === "string"
+                                            ? removal.driver.split(" ")[0]
+                                            : "-"
+                                          : typeof removal.driver === "string"
+                                            ? removal.driver
+                                            : "-"}
+                                      </Typography>
+                                    </Box>
+                                  </TableCell>
                                   <TableCell>
                                     <Chip
                                       label={removal.vehiclePrefix || "-"}
@@ -3568,654 +3396,6 @@ export default function RemovalDashboard() {
           {snackbarMessage}
         </Alert>
       </Snackbar>
-
-      <Dialog
-        open={addModalOpen}
-        onClose={handleCloseAddModal}
-        maxWidth="md"
-        PaperProps={{
-          sx: {
-            borderRadius: "24px",
-            boxShadow: "0 24px 48px rgba(0, 0, 0, 0.2)",
-            overflow: "hidden",
-            background: "linear-gradient(to bottom, #ffffff, #f8fafc)",
-          },
-        }}
-        TransitionComponent={Slide}
-        TransitionProps={{
-          direction: "up",
-        }}
-      >
-        <DialogTitle
-          sx={{
-            background: `linear-gradient(135deg, ${alpha(themeColors.primary.main, 0.9)} 0%, ${alpha(themeColors.primary.main, 0.8)} 100%)`,
-            color: "white",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "1.2rem 1.8rem",
-            position: "relative",
-            overflow: "hidden",
-          }}
-        >
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <Avatar
-              sx={{
-                backgroundColor: "rgba(255, 255, 255, 0.2)",
-                color: "white",
-                fontWeight: 600,
-                width: 42,
-                height: 42,
-                mr: 2,
-              }}
-            >
-              <DirectionsCar sx={{ fontSize: "1.5rem" }} />
-            </Avatar>
-            <Typography variant="h6" sx={{ fontWeight: 600, fontSize: "1.3rem" }}>
-              Adicionar Nova Soltura
-            </Typography>
-          </Box>
-          <IconButton
-            onClick={handleCloseAddModal}
-            sx={{
-              color: "white",
-              padding: "0.5rem",
-              backgroundColor: "rgba(255, 255, 255, 0.1)",
-              "&:hover": {
-                backgroundColor: "rgba(255, 255, 255, 0.2)",
-              },
-            }}
-          >
-            <Close fontSize="small" />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent sx={{ padding: "1.5rem" }}>
-          <Grid container spacing={3}>
-            {/* Driver Information */}
-            <Grid item xs={12}>
-              <Paper
-                elevation={0}
-                sx={{
-                  p: 2.5,
-                  borderRadius: "16px",
-                  border: `1px solid ${alpha(themeColors.success.main, 0.2)}`,
-                  background: alpha(themeColors.success.main, 0.02),
-                  position: "relative",
-                  overflow: "hidden",
-                  "&::before": {
-                    content: '""',
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    width: "5px",
-                    height: "100%",
-                    background: alpha(themeColors.success.main, 0.7),
-                  },
-                }}
-              >
-                <Typography
-                  variant="subtitle1"
-                  sx={{
-                    fontWeight: 700,
-                    mb: 2.5,
-                    color: themeColors.success.dark,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1,
-                    pl: 1,
-                  }}
-                >
-                  <Person /> Informações do Motorista
-                </Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
-                    <Autocomplete
-                      options={motoristasAtivos}
-                      getOptionLabel={(option) => option.nome || ""}
-                      value={motoristasAtivos.find((m) => m.nome === newRemoval.motorista) || null}
-                      onChange={(_, newValue) => {
-                        handleNewRemovalChange("motorista", newValue?.nome || "")
-                        handleNewRemovalChange("matricula_motorista", newValue?.matricula || "")
-                        // Add logging to see what's being sent
-                        console.log("Motorista selecionado:", newValue)
-                      }}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          fullWidth
-                          label="Nome do Motorista"
-                          variant="outlined"
-                          InputProps={{
-                            ...params.InputProps,
-                            sx: {
-                              borderRadius: "12px",
-                              background: "white",
-                              boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
-                              "& .MuiAutocomplete-input": {
-                                padding: "12px 8px !important", // Aumentar o padding para dar mais espaço
-                                fontSize: "1rem",
-                              },
-                              "& .MuiOutlinedInput-notchedOutline": {
-                                borderColor: alpha(themeColors.success.main, 0.3),
-                              },
-                              "&:hover .MuiOutlinedInput-notchedOutline": {
-                                borderColor: themeColors.success.main,
-                              },
-                              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                                borderColor: themeColors.success.main,
-                                borderWidth: "2px",
-                              },
-                            },
-                            startAdornment: (
-                              <Person sx={{ color: themeColors.text.secondary, mr: 1, fontSize: "1.2rem" }} />
-                            ),
-                          }}
-                        />
-                      )}
-                      ListboxProps={{
-                        style: {
-                          maxHeight: "300px",
-                          width: "400px", // Aumentar significativamente a largura da lista dropdown
-                        },
-                      }}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      label="Celular"
-                      variant="outlined"
-                      value={newRemoval.celular}
-                      onChange={(e) => handleNewRemovalChange("celular", e.target.value)}
-                      InputProps={{
-                        sx: {
-                          borderRadius: "12px",
-                          background: "white",
-                          boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
-                        },
-                        startAdornment: <Badge sx={{ color: themeColors.text.secondary, mr: 1, fontSize: "1.2rem" }} />,
-                      }}
-                    />
-                  </Grid>
-                </Grid>
-              </Paper>
-            </Grid>
-
-            {/* Team Selection */}
-            <Grid item xs={12}>
-              <Paper
-                elevation={0}
-                sx={{
-                  p: 2.5,
-                  borderRadius: "16px",
-                  border: `1px solid ${alpha(themeColors.warning.main, 0.2)}`,
-                  background: alpha(themeColors.warning.main, 0.02),
-                  position: "relative",
-                  overflow: "hidden",
-                  "&::before": {
-                    content: '""',
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    width: "5px",
-                    height: "100%",
-                    background: alpha(themeColors.warning.main, 0.7),
-                  },
-                }}
-              >
-                <Typography
-                  variant="subtitle1"
-                  sx={{
-                    fontWeight: 700,
-                    mb: 2.5,
-                    color: themeColors.warning.dark,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1,
-                    pl: 1,
-                  }}
-                >
-                  <Group /> Seleção de Equipe
-                </Typography>
-
-                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, pl: 1 }}>
-                  {[
-                    { id: "Equipe 1", label: "Equipe1(Matutino)", icon: <WbSunny sx={{ fontSize: "1.2rem" }} /> },
-                    {
-                      id: "Equipe 2",
-                      label: "Equipe2(Vespertino)",
-                      icon: <Brightness5 sx={{ fontSize: "1.2rem" }} />,
-                    },
-                    { id: "Equipe 3", label: "Equipe3(Noturno)", icon: <Brightness3 sx={{ fontSize: "1.2rem" }} /> },
-                  ].map((team) => (
-                    <Box
-                      key={team.id}
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                        p: 1.5,
-                        borderRadius: "12px",
-                        border: `1px solid ${themeColors.divider}`,
-                        background: "white",
-                        cursor: "pointer",
-                        transition: "all 0.2s ease",
-                        boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
-                        "&:hover": {
-                          borderColor: themeColors.warning.main,
-                          background: alpha(themeColors.warning.main, 0.05),
-                        },
-                      }}
-                    >
-                      <Checkbox
-                        checked={newRemoval.tipo_equipe === team.id}
-                        onChange={() => handleNewRemovalChange("tipo_equipe", team.id)}
-                        sx={{
-                          color: themeColors.warning.main,
-                          "&.Mui-checked": {
-                            color: themeColors.warning.main,
-                          },
-                        }}
-                      />
-                      {team.icon}
-                      <Typography sx={{ fontWeight: 500 }}>{team.label}</Typography>
-                    </Box>
-                  ))}
-                </Box>
-              </Paper>
-            </Grid>
-
-            {/* Collectors Information */}
-            <Grid item xs={12}>
-              <Paper
-                elevation={0}
-                sx={{
-                  p: 2.5,
-                  borderRadius: "16px",
-                  border: `1px solid ${alpha(themeColors.primary.main, 0.2)}`,
-                  background: alpha(themeColors.primary.main, 0.02),
-                  position: "relative",
-                  overflow: "hidden",
-                  "&::before": {
-                    content: '""',
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    width: "5px",
-                    height: "100%",
-                    background: alpha(themeColors.primary.main, 0.7),
-                  },
-                }}
-              >
-                <Typography
-                  variant="subtitle1"
-                  sx={{
-                    fontWeight: 700,
-                    mb: 2.5,
-                    color: themeColors.primary.dark,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1,
-                    pl: 1,
-                  }}
-                >
-                  <Group /> Informações dos Coletores
-                </Typography>
-
-                <Grid container spacing={2}>
-                  {[0, 1, 2].map((index) => (
-                    <Grid item xs={12} key={index}>
-                      <Box
-                        sx={{
-                          p: 2,
-                          borderRadius: "12px",
-                          border: `1px dashed ${themeColors.divider}`,
-                          background: "white",
-                          mb: 1,
-                        }}
-                      >
-                        <Typography sx={{ fontWeight: 600, mb: 1.5, color: themeColors.text.primary }}>
-                          Coletor {index + 1}
-                        </Typography>
-                        <Grid container spacing={2}>
-                          <Grid item xs={12}>
-                            <Autocomplete
-                              options={coletoresAtivos}
-                              getOptionLabel={(option) => option.nome || ""}
-                              onChange={(_, newValue) => {
-                                const updatedColetores = [...(newRemoval.coletores || [])]
-                                updatedColetores[index] = newValue
-                                  ? {
-                                      nome: newValue.nome,
-                                      matricula: newValue.matricula,
-                                    }
-                                  : null
-                                handleNewRemovalChange("coletores", updatedColetores)
-                                // Add logging
-                                console.log("Coletor selecionado:", newValue)
-                                console.log("Lista atualizada de coletores:", updatedColetores)
-                              }}
-                              renderInput={(params) => (
-                                <TextField
-                                  {...params}
-                                  fullWidth
-                                  label="Nome do Coletor"
-                                  variant="outlined"
-                                  InputProps={{
-                                    ...params.InputProps,
-                                    sx: {
-                                      borderRadius: "12px",
-                                      boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
-                                      "& .MuiAutocomplete-input": {
-                                        padding: "12px 8px !important", // Aumentar o padding para dar mais espaço
-                                        fontSize: "1rem",
-                                      },
-                                      "& .MuiOutlinedInput-notchedOutline": {
-                                        borderColor: alpha(themeColors.primary.main, 0.3),
-                                      },
-                                      "&:hover .MuiOutlinedInput-notchedOutline": {
-                                        borderColor: themeColors.primary.main,
-                                      },
-                                      "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                                        borderColor: themeColors.primary.main,
-                                        borderWidth: "2px",
-                                      },
-                                    },
-                                    startAdornment: (
-                                      <Person sx={{ color: themeColors.text.secondary, mr: 1, fontSize: "1.2rem" }} />
-                                    ),
-                                  }}
-                                />
-                              )}
-                              ListboxProps={{
-                                style: {
-                                  maxHeight: "300px",
-                                  width: "400px", // Aumentar significativamente a largura da lista dropdown
-                                },
-                              }}
-                            />
-                          </Grid>
-                        </Grid>
-                      </Box>
-                    </Grid>
-                  ))}
-                </Grid>
-              </Paper>
-            </Grid>
-
-            {/* Vehicle and Route Information */}
-            <Grid item xs={12}>
-              <Paper
-                elevation={0}
-                sx={{
-                  p: 2.5,
-                  borderRadius: "16px",
-                  border: `1px solid ${alpha(themeColors.error.main, 0.2)}`,
-                  background: alpha(themeColors.error.main, 0.02),
-                  position: "relative",
-                  overflow: "hidden",
-                  "&::before": {
-                    content: '""',
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    width: "5px",
-                    height: "100%",
-                    background: alpha(themeColors.error.main, 0.7),
-                  },
-                }}
-              >
-                <Typography
-                  variant="subtitle1"
-                  sx={{
-                    fontWeight: 700,
-                    mb: 2.5,
-                    color: themeColors.error.dark,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1,
-                    pl: 1,
-                  }}
-                >
-                  <DirectionsCar /> Informações do Veículo e Rota
-                </Typography>
-
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6} md={3}>
-                    <TextField
-                      select
-                      fullWidth
-                      label="Garagem"
-                      variant="outlined"
-                      value={newRemoval.garagem}
-                      onChange={(e) => handleNewRemovalChange("garagem", e.target.value)}
-                      InputProps={{
-                        sx: {
-                          borderRadius: "12px",
-                          background: "white",
-                          boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
-                        },
-                        startAdornment: (
-                          <Warehouse sx={{ color: themeColors.text.secondary, mr: 1, fontSize: "1.2rem" }} />
-                        ),
-                      }}
-                    >
-                      {["PA1", "PA2", "PA3", "PA4"].map((option) => (
-                        <MenuItem key={option} value={option}>
-                          {option}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
-                    <Autocomplete
-                      options={veiculosAtivos}
-                      getOptionLabel={(option) => option.prefixo || ""}
-                      value={veiculosAtivos.find((v) => v.prefixo === newRemoval.veiculo) || null}
-                      onChange={(_, newValue) => {
-                        handleNewRemovalChange("veiculo", newValue?.prefixo || "")
-                      }}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          fullWidth
-                          label="Prefixo do Veículo"
-                          variant="outlined"
-                          InputProps={{
-                            ...params.InputProps,
-                            sx: {
-                              borderRadius: "12px",
-                              background: "white",
-                              boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
-                            },
-                            startAdornment: (
-                              <DirectionsCar sx={{ color: themeColors.text.secondary, mr: 1, fontSize: "1.2rem" }} />
-                            ),
-                          }}
-                        />
-                      )}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={6}>
-                    <TextField
-                      fullWidth
-                      label="Rota"
-                      variant="outlined"
-                      value={newRemoval.rota}
-                      onChange={(e) => handleNewRemovalChange("rota", e.target.value)}
-                      InputProps={{
-                        sx: {
-                          borderRadius: "12px",
-                          background: "white",
-                          boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
-                        },
-                        startAdornment: <Route sx={{ color: themeColors.text.secondary, mr: 1, fontSize: "1.2rem" }} />,
-                      }}
-                    />
-                  </Grid>
-                </Grid>
-              </Paper>
-            </Grid>
-
-            {/* Time and Status Information */}
-            <Grid item xs={12}>
-              <Paper
-                elevation={0}
-                sx={{
-                  p: 2.5,
-                  borderRadius: "16px",
-                  border: `1px solid ${alpha(themeColors.info.main, 0.2)}`,
-                  background: alpha(themeColors.info.main, 0.02),
-                  position: "relative",
-                  overflow: "hidden",
-                  "&::before": {
-                    content: '""',
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    width: "5px",
-                    height: "100%",
-                    background: alpha(themeColors.info.main, 0.7),
-                  },
-                }}
-              >
-                <Typography
-                  variant="subtitle1"
-                  sx={{
-                    fontWeight: 700,
-                    mb: 2.5,
-                    color: themeColors.info.dark,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1,
-                    pl: 1,
-                  }}
-                >
-                  <CalendarToday /> Horário e Status
-                </Typography>
-
-                <Grid container spacing={2}>
-                  {/* 3. Corrigir o formato de data/hora nos campos do formulário: */}
-                  <Grid item xs={12} sm={6} md={4}>
-                    <TextField
-                      fullWidth
-                      label="Horário de Entrega da Chave"
-                      variant="outlined"
-                      type="datetime-local"
-                      value={newRemoval.hora_entrega_chave}
-                      onChange={(e) => handleNewRemovalChange("hora_entrega_chave", e.target.value)}
-                      InputProps={{
-                        sx: {
-                          borderRadius: "12px",
-                          background: "white",
-                          boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
-                        },
-                        startAdornment: <Today sx={{ color: themeColors.text.secondary, mr: 1, fontSize: "1.2rem" }} />,
-                      }}
-                      InputLabelProps={{
-                        shrink: true,
-                      }}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={4}>
-                    <TextField
-                      fullWidth
-                      label="Horário de Saída"
-                      variant="outlined"
-                      type="datetime-local"
-                      value={newRemoval.hora_saida_frota}
-                      onChange={(e) => handleNewRemovalChange("hora_saida_frota", e.target.value)}
-                      InputProps={{
-                        sx: {
-                          borderRadius: "12px",
-                          background: "white",
-                          boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
-                        },
-                        startAdornment: <Today sx={{ color: themeColors.text.secondary, mr: 1, fontSize: "1.2rem" }} />,
-                      }}
-                      InputLabelProps={{
-                        shrink: true,
-                      }}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={4}>
-                    <TextField
-                      fullWidth
-                      label="Horário de Chegada"
-                      variant="outlined"
-                      type="datetime-local"
-                      value={newRemoval.hora_chegada}
-                      onChange={(e) => handleNewRemovalChange("hora_chegada", e.target.value)}
-                      disabled={newRemoval.status_frota !== "Finalizado"}
-                      InputProps={{
-                        sx: {
-                          borderRadius: "12px",
-                          background: "white",
-                          boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
-                        },
-                        startAdornment: (
-                          <CalendarToday sx={{ color: themeColors.text.secondary, mr: 1, fontSize: "1.2rem" }} />
-                        ),
-                      }}
-                      InputLabelProps={{
-                        shrink: true,
-                      }}
-                    />
-                  </Grid>
-                </Grid>
-              </Paper>
-            </Grid>
-          </Grid>
-        </DialogContent>
-        <DialogActions
-          sx={{
-            padding: "1rem 1.5rem",
-            borderTop: `1px solid ${themeColors.divider}`,
-            justifyContent: "space-between",
-            background: alpha(themeColors.background.default, 0.5),
-          }}
-        >
-          <Button
-            onClick={handleCloseAddModal}
-            variant="outlined"
-            size="medium"
-            startIcon={<Close />}
-            sx={{
-              borderRadius: "12px",
-              textTransform: "none",
-              fontWeight: 500,
-              borderColor: themeColors.divider,
-              color: themeColors.text.secondary,
-              "&:hover": {
-                borderColor: themeColors.primary.main,
-                color: themeColors.primary.main,
-                backgroundColor: alpha(themeColors.primary.main, 0.05),
-              },
-            }}
-          >
-            Cancelar
-          </Button>
-          <Button
-            variant="contained"
-            size="medium"
-            startIcon={<DirectionsCar />}
-            onClick={handleAddRemoval}
-            sx={{
-              borderRadius: "12px",
-              textTransform: "none",
-              fontWeight: 500,
-              backgroundColor: alpha(themeColors.success.main, 0.9),
-              boxShadow: `0 4px 12px ${alpha(themeColors.success.main, 0.15)}`,
-              "&:hover": {
-                backgroundColor: themeColors.success.main,
-                boxShadow: `0 6px 16px ${alpha(themeColors.success.main, 0.2)}`,
-              },
-            }}
-          >
-            Adicionar Soltura
-          </Button>
-        </DialogActions>
-      </Dialog>
     </>
   )
 }
