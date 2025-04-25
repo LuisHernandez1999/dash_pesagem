@@ -106,6 +106,7 @@ import {
   getMediaMensalDeSolturas,
   getRemocoesPorMes,
 } from "../service/dashboard"
+import PADistributionChart from "../components/pa"
 
 // Animation keyframes
 const keyframes = {
@@ -2550,6 +2551,136 @@ export default function RemovalDashboard() {
                             )}
                           </Box>
                         </Fade>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Zoom>
+              </Box>
+              {/* PA Distribution Chart */}
+              <Box component="section" sx={{ mb: 4 }}>
+                <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "700ms" : "0ms" }}>
+                  <Card
+                    sx={{
+                      borderRadius: "16px",
+                      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
+                      transition: "all 0.3s ease",
+                      overflow: "hidden",
+                      "&:hover": {
+                        boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)",
+                        transform: "translateY(-4px)",
+                      },
+                      background: themeColors.background.card,
+                    }}
+                  >
+                    <CardHeader
+                      title={
+                        <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                          <Box
+                            sx={{
+                              width: { xs: "32px", sm: "36px" },
+                              height: { xs: "32px", sm: "36px" },
+                              borderRadius: "12px",
+                              background: themeColors.info.main,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              animation: `${keyframes.pulse} 2s ease-in-out infinite`,
+                            }}
+                          >
+                            <Warehouse
+                              sx={{
+                                color: "white",
+                                fontSize: { xs: "1.1rem", sm: "1.3rem" },
+                              }}
+                            />
+                          </Box>
+                          <Box>
+                            <Typography
+                              sx={{
+                                fontWeight: 600,
+                                fontSize: { xs: "1.1rem", sm: "1.2rem" },
+                                color: themeColors.text.primary,
+                              }}
+                            >
+                              Distribuição por Garagem
+                            </Typography>
+                            <Typography
+                              sx={{
+                                fontSize: { xs: "0.8rem", sm: "0.85rem" },
+                                color: themeColors.text.secondary,
+                                fontWeight: 400,
+                              }}
+                            >
+                              Análise de veículos por PA
+                            </Typography>
+                          </Box>
+                        </Box>
+                      }
+                      action={
+                        <IconButton
+                          sx={{
+                            color: themeColors.text.secondary,
+                            "&:hover": { color: themeColors.info.main },
+                          }}
+                          onClick={handleRefreshData}
+                        >
+                          <Refresh />
+                        </IconButton>
+                      }
+                      sx={{
+                        paddingBottom: "0.75rem",
+                        borderBottom: `1px solid ${themeColors.divider}`,
+                        "& .MuiCardHeader-title": {
+                          fontWeight: 600,
+                          fontSize: "1.125rem",
+                          color: themeColors.text.primary,
+                        },
+                        "& .MuiCardHeader-action": {
+                          margin: 0,
+                        },
+                      }}
+                    />
+                    <CardContent sx={{ padding: "1.5rem" }}>
+                      <Box
+                        sx={{
+                          width: "100%",
+                          position: "relative",
+                          height: "350px",
+                        }}
+                      >
+                        {!chartsLoaded ? (
+                          <Box
+                            sx={{
+                              position: "absolute",
+                              top: 0,
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              backgroundColor: alpha(themeColors.background.paper, 0.7),
+                              zIndex: 10,
+                              borderRadius: "12px",
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                width: "40px",
+                                height: "40px",
+                                borderRadius: "50%",
+                                background: themeColors.info.main,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
+                                animation: `${keyframes.pulse} 1.5s ease-in-out infinite`,
+                              }}
+                            />
+                          </Box>
+                        ) : (
+                          <PADistributionChart chartsLoaded={chartsLoaded} themeColors={themeColors} />
+                        )}
                       </Box>
                     </CardContent>
                   </Card>
