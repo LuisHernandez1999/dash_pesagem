@@ -61,6 +61,7 @@ import {
   Alert,
   alpha,
   Autocomplete,
+  TextField, // Import TextField from Material-UI
 } from "@mui/material"
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns"
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers"
@@ -94,6 +95,7 @@ import {
   WhatsApp,
   Email,
   Search,
+  Edit
 } from "@mui/icons-material"
 import Sidebar from "@/components/sidebar"
 import {
@@ -107,7 +109,11 @@ import {
   getRemocoesPorMes,
 } from "../service/dashboard"
 import PADistributionChart from "../components/pa"
-
+// Adicionar a importação do componente RegisterModal no início do arquivo
+// Adicionar após as outras importações (aproximadamente linha 100)
+import RegisterModal from "../components/cadastro_soltura"
+import EditModal from "../components/edit_soltura"
+import DetailModal from "../components/deatil"
 // Animation keyframes
 const keyframes = {
   fadeIn: `
@@ -409,6 +415,7 @@ export default function RemovalDashboard() {
     inactiveVehicles: 0,
     releasedToday: 0,
   })
+  
   const [chartType, setChartType] = useState(0)
   const [teamChartType, setTeamChartType] = useState(0) // Default to bar chart
   const [modalOpen, setModalOpen] = useState(false)
@@ -430,6 +437,22 @@ export default function RemovalDashboard() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [teamFilter, setTeamFilter] = useState("all")
   const [setDeleteConfirmClose, setSetDeleteConfirmClose] = useState(false)
+  const [detailModalOpen, setDetailModalOpen] = useState(false)
+  const [editModalOpen, setEditModalOpen] = useState(false)
+  const [registerModalOpen, setRegisterModalOpen] = useState(false)
+  const [registerFormData, setRegisterFormData] = useState({
+    driver: "",
+    driverId: "",
+    team: "Equipe1(Matutino)",
+    vehiclePrefix: "",
+    shift: "Manhã",
+    collectors: ["", "", ""],
+    vehicleType: "Caminhão Reboque",
+    garage: "PA1",
+    route: "",
+    leaders: ["", ""],
+    leaderPhones: ["", ""],
+  })
 
   // Estados para armazenar dados da API
   const [removals, setRemovals] = useState([])
@@ -566,6 +589,8 @@ export default function RemovalDashboard() {
 
       console.log("Dados mensais formatados:", formattedMonthlyData)
 
+      
+
       // Atualizar estados com os dados recebidos
       setRemovals(formattedRemovals)
       setMonthlyData(formattedMonthlyData)
@@ -617,6 +642,8 @@ export default function RemovalDashboard() {
   const handleMonthMenuOpen = (event) => {
     setMonthMenuAnchor(event.currentTarget)
   }
+
+  
 
   const handleMonthMenuClose = () => {
     setMonthMenuAnchor(null)
@@ -686,7 +713,41 @@ export default function RemovalDashboard() {
   const handleTeamChartTypeChange = (event, newValue) => {
     setTeamChartType(newValue)
   }
+  
+  const handleEditClick = () => {
+    const removalToEdit = removals.find((removal) => removal.id === selectedRowId)
+    if (removalToEdit) {
+      setSelectedRemoval(removalToEdit)
+      setEditModalOpen(true)
+      setActionMenuAnchor(null)
+    }
+  }
 
+  // Handle save edit
+  const handleSaveEdit = (editedData) => {
+    try {
+      // Update the removal in the state
+      const updatedRemovals = removals.map((removal) =>
+        removal.id === selectedRemoval.id ? { ...removal, ...editedData } : removal,
+      )
+      setRemovals(updatedRemovals)
+
+      // Show success message
+      setSnackbarMessage("Registro atualizado com sucesso!")
+      setSnackbarSeverity("success")
+      setSnackbarOpen(true)
+
+      // Close modal
+      setEditModalOpen(false)
+    } catch (error) {
+      console.error("Erro ao atualizar:", error)
+      setSnackbarMessage("Erro ao atualizar registro. Tente novamente.")
+      setSnackbarSeverity("error")
+      setSnackbarOpen(true)
+    }
+  }
+
+  
   // Handle modal open
   const handleOpenModal = (removal) => {
     setSelectedRemoval(removal)
@@ -712,7 +773,16 @@ export default function RemovalDashboard() {
   const handleDeleteConfirmClose = () => {
     setDeleteConfirmOpen(false)
   }
+  
+  const handleOpenModalDetail = (removal) => {
+    setSelectedRemoval(removal)
+    setDetailModalOpen(true)
+  }
 
+  // Handle modal close
+  const handleCloseModalDetail = () => {
+    setDetailModalOpen(false)
+  }
   // Handle delete action
   const handleDelete = async () => {
     try {
@@ -754,7 +824,8 @@ export default function RemovalDashboard() {
   const handleShareMenuClose = () => {
     setShareMenuAnchor(null)
   }
-
+  
+  
   // Handle share action
   const handleShare = (platform) => {
     const removal = removals.find((r) => r.id === selectedRowId)
@@ -1532,6 +1603,83 @@ export default function RemovalDashboard() {
     fetchData()
   }, [])
 
+  const handleRegisterFormChange = (field, value, index = null) => {
+    if (index !== null) {
+      // Para campos com múltiplos valores (collectors, leaders, leaderPhones)
+      setRegisterFormData((prev) => {
+        const newValues = [...prev[field]]
+        newValues[index] = value
+        return { ...prev, [field]: newValues }
+      })
+    } else {
+      // Para campos simples
+      setRegisterFormData((prev) => ({ ...prev, [field]: value }))
+    }
+  }
+
+  // Adicionar a função para lidar com o envio do formulário
+  // Adicionar após a função handleRegisterFormChange
+  const handleRegisterSubmit = async () => {
+    try {
+      setLoading(true)
+
+      // Aqui seria a chamada real para a API de cadastro
+      // Como não temos uma função específica para cadastrar, vamos simular
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
+      // Adicionar o novo registro ao estado local
+      const newRemoval = {
+        id: removals.length + 1,
+        driver: registerFormData.driver,
+        driverId: registerFormData.driverId,
+        collectors: registerFormData.collectors.filter(Boolean),
+        collectorsIds: [],
+        garage: registerFormData.garage,
+        route: registerFormData.route,
+        vehiclePrefix: registerFormData.vehiclePrefix,
+        departureTime: new Date().toLocaleTimeString(),
+        status: "Em andamento",
+        arrivalTime: "",
+        date: new Date().toISOString().split("T")[0],
+        team: registerFormData.team,
+        location: "",
+        vehicle: registerFormData.vehicleType,
+        distance: "0 km",
+        notes: "",
+      }
+
+      setRemovals((prev) => [newRemoval, ...prev])
+
+      // Mostrar mensagem de sucesso
+      setSnackbarMessage("Soltura cadastrada com sucesso!")
+      setSnackbarSeverity("success")
+      setSnackbarOpen(true)
+
+      // Fechar modal e resetar formulário
+      setRegisterModalOpen(false)
+      setRegisterFormData({
+        driver: "",
+        driverId: "",
+        team: "Equipe1(Matutino)",
+        vehiclePrefix: "",
+        shift: "Manhã",
+        collectors: ["", "", ""],
+        vehicleType: "Caminhão Reboque",
+        garage: "PA1",
+        route: "",
+        leaders: ["", ""],
+        leaderPhones: ["", ""],
+      })
+    } catch (error) {
+      console.error("Erro ao cadastrar soltura:", error)
+      setSnackbarMessage("Erro ao cadastrar soltura. Tente novamente.")
+      setSnackbarSeverity("error")
+      setSnackbarOpen(true)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <>
       <style>
@@ -1799,7 +1947,25 @@ export default function RemovalDashboard() {
                         </Box>
                       }
                       action={
-                        <Box sx={{ display: "flex", gap: "0.5rem" }}>
+                        <Box sx={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                          <Button
+                            variant="contained"
+                            startIcon={<DirectionsCar />}
+                            onClick={() => setRegisterModalOpen(true)}
+                            sx={{
+                              borderRadius: "12px",
+                              textTransform: "none",
+                              fontWeight: 600,
+                              backgroundColor: themeColors.primary.main,
+                              boxShadow: `0 4px 12px ${alpha(themeColors.primary.main, 0.2)}`,
+                              "&:hover": {
+                                backgroundColor: themeColors.primary.dark,
+                                boxShadow: `0 6px 16px ${alpha(themeColors.primary.main, 0.3)}`,
+                              },
+                            }}
+                          >
+                            Cadastrar Soltura
+                          </Button>
                           <IconButton
                             sx={{
                               color: themeColors.text.secondary,
@@ -2673,8 +2839,7 @@ export default function RemovalDashboard() {
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
-                                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
-                                animation: `${keyframes.pulse} 1.5s ease-in-out infinite`,
+                                boxShadow: "0 4px 20px rgba(0, 0, 0,",
                               }}
                             />
                           </Box>
@@ -3450,16 +3615,25 @@ export default function RemovalDashboard() {
           },
         }}
       >
-        <MenuItem
-          onClick={handleDeleteConfirmOpen}
-          sx={{
-            borderRadius: "8px",
-          }}
-        >
-          <Delete fontSize="small" sx={{ mr: 1 }} />
-          Excluir
-        </MenuItem>
-      </Menu>
+          <MenuItem
+            onClick={handleEditClick}
+            sx={{
+              borderRadius: "8px",
+            }}
+          >
+            <Edit fontSize="small" sx={{ mr: 1 }} />
+            Editar
+          </MenuItem>
+          <MenuItem
+            onClick={handleDeleteConfirmOpen}
+            sx={{
+              borderRadius: "8px",
+            }}
+          >
+            <Delete fontSize="small" sx={{ mr: 1 }} />
+            Excluir
+          </MenuItem>
+        </Menu>
 
       <Dialog
         open={deleteConfirmOpen}
@@ -3527,6 +3701,290 @@ export default function RemovalDashboard() {
           {snackbarMessage}
         </Alert>
       </Snackbar>
+      <Dialog
+        open={registerModalOpen}
+        onClose={() => setRegisterModalOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: "24px",
+            boxShadow: "0 24px 48px rgba(0, 0, 0, 0.2)",
+            overflow: "hidden",
+            background: "linear-gradient(to bottom, #ffffff, #f8fafc)",
+          },
+        }}
+        TransitionComponent={Slide}
+        TransitionProps={{
+          direction: "up",
+        }}
+      >
+        <DialogTitle
+          sx={{
+            background: `linear-gradient(135deg, ${themeColors.primary.main} 0%, ${themeColors.primary.light} 100%)`,
+            color: "white",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "1rem 1.5rem",
+            position: "relative",
+            overflow: "hidden",
+            "&::after": {
+              content: '""',
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: "4px",
+              background: "rgba(255, 255, 255, 0.2)",
+              animation: `${keyframes.shimmer} 2s infinite linear`,
+              backgroundSize: "200% 100%",
+            },
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <Avatar
+              sx={{
+                backgroundColor: "rgba(255, 255, 255, 0.2)",
+                color: "white",
+                fontWeight: 600,
+                width: 36,
+                height: 36,
+                mr: 1.5,
+                animation: `${keyframes.pulse} 2s infinite ease-in-out`,
+              }}
+            >
+              <DirectionsCar />
+            </Avatar>
+            <Typography variant="h6" sx={{ fontWeight: 700, fontSize: "1.1rem" }}>
+              Cadastrar Soltura
+            </Typography>
+          </Box>
+          <IconButton
+            onClick={() => setRegisterModalOpen(false)}
+            sx={{
+              color: "white",
+              padding: "0.5rem",
+              "&:hover": {
+                backgroundColor: "rgba(255, 255, 255, 0.2)",
+                transform: "rotate(90deg)",
+                transition: "transform 0.3s ease",
+              },
+            }}
+          >
+            <Close fontSize="small" />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ padding: "1.5rem" }}>
+          <Stack spacing={2.5}>
+            <TextField
+              label="Nome do Motorista"
+              fullWidth
+              variant="outlined"
+              size="small"
+              value={registerFormData.driver}
+              onChange={(e) => handleRegisterFormChange("driver", e.target.value)}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: "12px",
+                  backgroundColor: "white",
+                },
+              }}
+            />
+            <TextField
+              label="Matrícula do Motorista"
+              fullWidth
+              variant="outlined"
+              size="small"
+              value={registerFormData.driverId}
+              onChange={(e) => handleRegisterFormChange("driverId", e.target.value)}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: "12px",
+                  backgroundColor: "white",
+                },
+              }}
+            />
+            <TextField
+              label="Prefixo do Veículo"
+              fullWidth
+              variant="outlined"
+              size="small"
+              value={registerFormData.vehiclePrefix}
+              onChange={(e) => handleRegisterFormChange("vehiclePrefix", e.target.value)}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: "12px",
+                  backgroundColor: "white",
+                },
+              }}
+            />
+            <Autocomplete
+              disablePortal
+              options={["Equipe1(Matutino)", "Equipe2(Vespertino)", "Equipe3(Noturno)"]}
+              value={registerFormData.team}
+              onChange={(_, newValue) => handleRegisterFormChange("team", newValue)}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Equipe"
+                  variant="outlined"
+                  size="small"
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "12px",
+                      backgroundColor: "white",
+                    },
+                  }}
+                />
+              )}
+            />
+            <Typography variant="subtitle2" sx={{ fontWeight: 600, color: themeColors.text.secondary }}>
+              Coletores:
+            </Typography>
+            {Array.from({ length: 3 }).map((_, index) => (
+              <TextField
+                key={index}
+                label={`Coletor ${index + 1}`}
+                fullWidth
+                variant="outlined"
+                size="small"
+                value={registerFormData.collectors[index] || ""}
+                onChange={(e) => handleRegisterFormChange("collectors", e.target.value, index)}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: "12px",
+                    backgroundColor: "white",
+                  },
+                }}
+              />
+            ))}
+            <Autocomplete
+              disablePortal
+              options={["Caminhão Reboque", "Van", "Outro"]}
+              value={registerFormData.vehicleType}
+              onChange={(_, newValue) => handleRegisterFormChange("vehicleType", newValue)}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Tipo de Veículo"
+                  variant="outlined"
+                  size="small"
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "12px",
+                      backgroundColor: "white",
+                    },
+                  }}
+                />
+              )}
+            />
+            <TextField
+              label="Garagem"
+              fullWidth
+              variant="outlined"
+              size="small"
+              value={registerFormData.garage}
+              onChange={(e) => handleRegisterFormChange("garage", e.target.value)}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: "12px",
+                  backgroundColor: "white",
+                },
+              }}
+            />
+            <TextField
+              label="Rota"
+              fullWidth
+              variant="outlined"
+              size="small"
+              value={registerFormData.route}
+              onChange={(e) => handleRegisterFormChange("route", e.target.value)}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: "12px",
+                  backgroundColor: "white",
+                },
+              }}
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions
+          sx={{
+            padding: "1rem 1.5rem",
+            borderTop: `1px solid ${themeColors.divider}`,
+            justifyContent: "space-between",
+            background: alpha(themeColors.background.default, 0.5),
+          }}
+        >
+          <Button
+            onClick={() => setRegisterModalOpen(false)}
+            variant="outlined"
+            size="medium"
+            startIcon={<Close />}
+            sx={{
+              borderRadius: "12px",
+              textTransform: "none",
+              fontWeight: 500,
+              borderColor: themeColors.divider,
+              color: themeColors.text.secondary,
+              "&:hover": {
+                borderColor: themeColors.primary.main,
+                color: themeColors.primary.main,
+                backgroundColor: alpha(themeColors.primary.main, 0.05),
+              },
+            }}
+          >
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleRegisterSubmit}
+            variant="contained"
+            size="medium"
+            startIcon={<CheckCircle />}
+            sx={{
+              borderRadius: "12px",
+              textTransform: "none",
+              fontWeight: 500,
+              backgroundColor: themeColors.primary.main,
+              boxShadow: `0 4px 12px ${alpha(themeColors.primary.main, 0.2)}`,
+              "&:hover": {
+                backgroundColor: themeColors.primary.dark,
+                boxShadow: `0 6px 16px ${alpha(themeColors.primary.main, 0.3)}`,
+              },
+            }}
+          >
+            Cadastrar
+          </Button>
+        </DialogActions>
+      </Dialog>
+      {/* Adicionar o componente RegisterModal no final do componente, antes do último fechamento de tag */}
+      {/* Adicionar antes do último </> (aproximadamente linha 2900) */}
+      <DetailModal
+          open={detailModalOpen}
+          onClose={handleCloseModal}
+          removal={selectedRemoval}
+          onEdit={handleEditClick}
+          themeColors={themeColors}
+          keyframes={keyframes}
+        />
+      <EditModal
+        open={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        data={selectedRemoval}
+        onSave={handleSaveEdit}
+        themeColors={themeColors}
+        keyframes={keyframes}
+      />
+      <RegisterModal
+        open={registerModalOpen}
+        onClose={() => setRegisterModalOpen(false)}
+        formData={registerFormData}
+        onChange={handleRegisterFormChange}
+        onSubmit={handleRegisterSubmit}
+        themeColors={themeColors}
+        loading={loading}
+      />
     </>
   )
 }
