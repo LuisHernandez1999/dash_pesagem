@@ -61,7 +61,8 @@ import {
   Alert,
   alpha,
   Autocomplete,
-  TextField, // Import TextField from Material-UI
+  TextField,
+  // Import TextField from Material-UI
 } from "@mui/material"
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns"
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers"
@@ -81,7 +82,6 @@ import {
   Timeline,
   Menu as MenuIcon,
   WbSunny,
-  ViewList,
   MoreVert,
   Share,
   Print,
@@ -95,7 +95,8 @@ import {
   WhatsApp,
   Email,
   Search,
-  Edit
+  Edit,
+  LocalShipping,
 } from "@mui/icons-material"
 import Sidebar from "@/components/sidebar"
 import {
@@ -109,6 +110,7 @@ import {
   getRemocoesPorMes,
 } from "../service/dashboard"
 import PADistributionChart from "../components/pa"
+import VehicleDistributionChart from "../components/distru_trucks"
 // Adicionar a importação do componente RegisterModal no início do arquivo
 // Adicionar após as outras importações (aproximadamente linha 100)
 import RegisterModal from "../components/cadastro_soltura"
@@ -230,6 +232,18 @@ const keyframes = {
       70% { transform: scale(1); }
     }
   `,
+  flashHighlight: `
+  @keyframes flashHighlight {
+    0%, 100% { 
+      transform: scale(1);
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.08);
+    }
+    50% { 
+      transform: scale(1.05);
+      box-shadow: 0 0 50px rgba(255, 193, 7, 0.6);
+    }
+  }
+`,
 }
 
 // Theme colors
@@ -415,7 +429,7 @@ export default function RemovalDashboard() {
     inactiveVehicles: 0,
     releasedToday: 0,
   })
-  
+
   const [chartType, setChartType] = useState(0)
   const [teamChartType, setTeamChartType] = useState(0) // Default to bar chart
   const [modalOpen, setModalOpen] = useState(false)
@@ -439,6 +453,7 @@ export default function RemovalDashboard() {
   const [setDeleteConfirmClose, setSetDeleteConfirmClose] = useState(false)
   const [detailModalOpen, setDetailModalOpen] = useState(false)
   const [editModalOpen, setEditModalOpen] = useState(false)
+  const [refreshStats, setRefreshStats] = useState(false)
   const [registerModalOpen, setRegisterModalOpen] = useState(false)
   const [registerFormData, setRegisterFormData] = useState({
     driver: "",
@@ -589,8 +604,6 @@ export default function RemovalDashboard() {
 
       console.log("Dados mensais formatados:", formattedMonthlyData)
 
-      
-
       // Atualizar estados com os dados recebidos
       setRemovals(formattedRemovals)
       setMonthlyData(formattedMonthlyData)
@@ -642,8 +655,6 @@ export default function RemovalDashboard() {
   const handleMonthMenuOpen = (event) => {
     setMonthMenuAnchor(event.currentTarget)
   }
-
-  
 
   const handleMonthMenuClose = () => {
     setMonthMenuAnchor(null)
@@ -713,7 +724,7 @@ export default function RemovalDashboard() {
   const handleTeamChartTypeChange = (event, newValue) => {
     setTeamChartType(newValue)
   }
-  
+
   const handleEditClick = () => {
     const removalToEdit = removals.find((removal) => removal.id === selectedRowId)
     if (removalToEdit) {
@@ -747,7 +758,6 @@ export default function RemovalDashboard() {
     }
   }
 
-  
   // Handle modal open
   const handleOpenModal = (removal) => {
     setSelectedRemoval(removal)
@@ -773,7 +783,7 @@ export default function RemovalDashboard() {
   const handleDeleteConfirmClose = () => {
     setDeleteConfirmOpen(false)
   }
-  
+
   const handleOpenModalDetail = (removal) => {
     setSelectedRemoval(removal)
     setDetailModalOpen(true)
@@ -814,6 +824,13 @@ export default function RemovalDashboard() {
     }
   }
 
+  useEffect(() => {
+    if (refreshStats) {
+      // Aqui você pode resetar o estado de refresh após um ciclo de renderização
+      setRefreshStats(false)
+    }
+  }, [refreshStats])
+
   // Handle share menu
   const handleShareMenuOpen = (event) => {
     event.stopPropagation()
@@ -824,8 +841,7 @@ export default function RemovalDashboard() {
   const handleShareMenuClose = () => {
     setShareMenuAnchor(null)
   }
-  
-  
+
   // Handle share action
   const handleShare = (platform) => {
     const removal = removals.find((r) => r.id === selectedRowId)
@@ -1164,14 +1180,16 @@ export default function RemovalDashboard() {
   }
 
   // Custom stat card component - redesigned to be more modern and clean
-  const StatCard = ({ title, value, icon: Icon, color }) => (
+  const CustomStatCard = ({ title, value, icon: Icon, color, highlight, onRefresh }) => (
     <Card
       sx={{
         position: "relative",
         overflow: "hidden",
         borderRadius: "24px",
-        boxShadow: "0 10px 30px rgba(0, 0, 0, 0.08)",
-        background: `linear-gradient(135deg, white 0%, #fafafa 100%)`,
+        boxShadow: highlight ? `0 0 30px ${color}` : "0 10px 30px rgba(0, 0, 0, 0.08)",
+        background: highlight
+          ? `linear-gradient(135deg, ${alpha(color, 0.3)} 0%, white 100%)`
+          : `linear-gradient(135deg, white 0%, #fafafa 100%)`,
         height: "100%",
         transition: "all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
         "&:hover": {
@@ -1188,7 +1206,10 @@ export default function RemovalDashboard() {
           background: `linear-gradient(90deg, ${color}, ${alpha(color, 0.5)})`,
           zIndex: 1,
         },
-        animation: `${keyframes.fadeIn} 0.6s ease-out, ${keyframes.float} 4s ease-in-out infinite`,
+        animation: highlight
+          ? `${keyframes.flashHighlight} 0.7s ease-in-out 5, ${keyframes.float} 4s ease-in-out infinite`
+          : `${keyframes.fadeIn} 0.6s ease-out, ${keyframes.float} 4s ease-in-out infinite`,
+        transform: highlight ? "scale(1.05)" : "scale(1)",
       }}
     >
       <Box
@@ -1199,24 +1220,30 @@ export default function RemovalDashboard() {
           width: "60px",
           height: "60px",
           borderRadius: "50%",
-          background: `linear-gradient(135deg, ${alpha(color, 0.12)} 0%, ${alpha(color, 0.06)} 100%)`,
+          background: highlight
+            ? `linear-gradient(135deg, ${color} 0%, ${alpha(color, 0.7)} 100%)`
+            : `linear-gradient(135deg, ${alpha(color, 0.12)} 0%, ${alpha(color, 0.06)} 100%)`,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          animation: `${keyframes.pulse} 3s ease-in-out infinite`,
+          animation: highlight
+            ? `${keyframes.pulse} 0.5s ease-in-out infinite`
+            : `${keyframes.pulse} 3s ease-in-out infinite`,
         }}
       >
-        <Icon sx={{ fontSize: 30, color: color }} />
+        <Icon sx={{ fontSize: 30, color: highlight ? "white" : color }} />
       </Box>
-      <CardContent sx={{ p: 3, pt: 4 }}>
+      <CardContent sx={{ p: 3, pt: 4, pb: 5 }}>
         <Typography
           variant="h3"
           sx={{
             fontWeight: 700,
             fontSize: { xs: "2rem", sm: "2.5rem" },
-            color: themeColors.text.primary,
+            color: highlight ? color : themeColors.text.primary,
             mb: 1,
-            animation: `${keyframes.slideInUp} 0.5s ease-out`,
+            animation: highlight
+              ? `${keyframes.heartbeat} 0.5s ease-in-out infinite`
+              : `${keyframes.slideInUp} 0.5s ease-out`,
           }}
         >
           {value}
@@ -1244,9 +1271,88 @@ export default function RemovalDashboard() {
             backgroundSize: "200% 100%",
           }}
         />
+        {onRefresh && (
+          <IconButton
+            onClick={onRefresh}
+            size="small"
+            sx={{
+              position: "absolute",
+              bottom: "10px",
+              right: "10px",
+              backgroundColor: alpha(color, 0.1),
+              color: color,
+              width: "32px",
+              height: "32px",
+              transition: "all 0.3s ease",
+              "&:hover": {
+                backgroundColor: alpha(color, 0.2),
+                transform: "rotate(180deg)",
+              },
+            }}
+          >
+            <Refresh fontSize="small" />
+          </IconButton>
+        )}
       </CardContent>
     </Card>
   )
+
+  // Funções para atualizar cards individuais
+  const refreshTotalVehicles = async () => {
+    try {
+      setStatsData((prev) => ({ ...prev, totalVehicles: null })) // Opcional: definir como null para mostrar carregamento
+      const result = await getContagemTotalRemocao()
+      setStatsData((prev) => ({
+        ...prev,
+        totalVehicles: result?.totalRemocao || prev.totalVehicles,
+      }))
+      setHighlightedStat("totalVehicles")
+    } catch (error) {
+      console.error("Erro ao atualizar total de veículos:", error)
+    }
+  }
+
+  const refreshActiveVehicles = async () => {
+    try {
+      setStatsData((prev) => ({ ...prev, activeVehicles: null })) // Opcional: definir como null para mostrar carregamento
+      const result = await getContagemRemocaoAtivos()
+      setStatsData((prev) => ({
+        ...prev,
+        activeVehicles: result?.countRemocaoAtivos || prev.activeVehicles,
+      }))
+      setHighlightedStat("activeVehicles")
+    } catch (error) {
+      console.error("Erro ao atualizar veículos ativos:", error)
+    }
+  }
+
+  const refreshInactiveVehicles = async () => {
+    try {
+      setStatsData((prev) => ({ ...prev, inactiveVehicles: null })) // Opcional: definir como null para mostrar carregamento
+      const result = await getContagemRemocaoInativos()
+      setStatsData((prev) => ({
+        ...prev,
+        inactiveVehicles: result?.countRemocaoInativos || prev.inactiveVehicles,
+      }))
+      setHighlightedStat("inactiveVehicles")
+    } catch (error) {
+      console.error("Erro ao atualizar veículos inativos:", error)
+    }
+  }
+
+  const refreshReleasedToday = async () => {
+    try {
+      setStatsData((prev) => ({ ...prev, releasedToday: null })) // Opcional: definir como null para mostrar carregamento
+      const result = await getTotalDeRemocaoSoltasNoDia()
+      setStatsData((prev) => ({
+        ...prev,
+        releasedToday: result?.totalDeRemocoes || prev.releasedToday,
+      }))
+      setHighlightedStat("releasedToday")
+    } catch (error) {
+      console.error("Erro ao atualizar veículos soltos hoje:", error)
+    }
+  }
 
   // Update the getStatusChip function to handle only "Finalizado" and "Em andamento"
   const getStatusChip = (status) => {
@@ -1623,11 +1729,24 @@ export default function RemovalDashboard() {
     try {
       setLoading(true)
 
-      // Aqui seria a chamada real para a API de cadastro
-      // Como não temos uma função específica para cadastrar, vamos simular
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      // Primeiro, vamos criar o objeto de dados para enviar ao servidor
+      const newRemovalData = {
+        motorista: {
+          nome: registerFormData.driver,
+          matricula: registerFormData.driverId,
+        },
+        prefixo: registerFormData.vehiclePrefix,
+        tipo_equipe: registerFormData.team,
+        coletores: registerFormData.collectors.filter(Boolean).map((name) => ({ nome: name })),
+        garagem: registerFormData.garage,
+        rota: registerFormData.route,
+        veiculo: registerFormData.vehicleType,
+        hora_saida_frota: new Date().toLocaleTimeString(),
+        status_frota: "Em andamento",
+        data: new Date().toISOString().split("T")[0],
+      }
 
-      // Adicionar o novo registro ao estado local
+      // Create the new removal object for local state
       const newRemoval = {
         id: removals.length + 1,
         driver: registerFormData.driver,
@@ -1648,14 +1767,64 @@ export default function RemovalDashboard() {
         notes: "",
       }
 
+      // Add to local state first for immediate UI update
       setRemovals((prev) => [newRemoval, ...prev])
 
-      // Mostrar mensagem de sucesso
+      // IMPORTANTE: Atualizar o contador de forma mais direta e visível
+      // Incrementar o contador diretamente sem esperar pela API
+      setStatsData((prevStats) => ({
+        ...prevStats,
+        releasedToday: prevStats.releasedToday + 1,
+        activeVehicles: prevStats.activeVehicles + 1,
+        totalVehicles: prevStats.totalVehicles + 1,
+      }))
+
+      // Definir o highlightedStat para ativar o efeito visual
+      setHighlightedStat("releasedToday")
+
+      // Agora vamos fazer a chamada à API para registrar a soltura
+      // Simulando uma chamada de API bem-sucedida
+      await new Promise((resolve) => setTimeout(resolve, 500))
+
+      // Após o registro bem-sucedido, vamos buscar os dados atualizados do servidor
+      // para garantir que temos os números mais recentes
+      const [remocoesDiaResult, remocaoAtivosResult, totalRemocaoResult] = await Promise.all([
+        getTotalDeRemocaoSoltasNoDia(),
+        getContagemRemocaoAtivos(),
+        getContagemTotalRemocao(),
+      ])
+
+      // Atualizar os stats com os dados mais recentes do servidor
+      setStatsData((prevStats) => ({
+        ...prevStats,
+        // Usar os valores da API, mas se a API falhar, manter o valor incrementado localmente
+        releasedToday: remocoesDiaResult?.totalDeRemocoes || prevStats.releasedToday,
+        activeVehicles: remocaoAtivosResult?.countRemocaoAtivos || prevStats.activeVehicles,
+        totalVehicles: totalRemocaoResult?.totalRemocao || prevStats.totalVehicles,
+      }))
+
+      // Update team data for charts
+      const teamIndex =
+        registerFormData.team === "Equipe1(Matutino)" ? 0 : registerFormData.team === "Equipe2(Vespertino)" ? 1 : 2
+
+      setTeamData((prevTeamData) => {
+        const newTeamData = [...prevTeamData]
+        if (newTeamData[teamIndex]) {
+          newTeamData[teamIndex] = {
+            ...newTeamData[teamIndex],
+            releases: newTeamData[teamIndex].releases + 1,
+            label: `${newTeamData[teamIndex].releases + 1} solturas`,
+          }
+        }
+        return newTeamData
+      })
+
+      // Show success message
       setSnackbarMessage("Soltura cadastrada com sucesso!")
       setSnackbarSeverity("success")
       setSnackbarOpen(true)
 
-      // Fechar modal e resetar formulário
+      // Close modal and reset form
       setRegisterModalOpen(false)
       setRegisterFormData({
         driver: "",
@@ -1680,6 +1849,20 @@ export default function RemovalDashboard() {
     }
   }
 
+  // Add this new state to track which stat was just updated
+  const [highlightedStat, setHighlightedStat] = useState(null)
+
+  // Finally, update the Stats Cards section to use the highlight prop:
+  // Add a timeout to clear the highlight after 3 seconds
+
+  useEffect(() => {
+    if (highlightedStat) {
+      setTimeout(() => {
+        setHighlightedStat(null)
+      }, 5000) // Aumentado para 5 segundos
+    }
+  }, [highlightedStat])
+
   return (
     <>
       <style>
@@ -1697,6 +1880,7 @@ export default function RemovalDashboard() {
           ${keyframes.slideInLeft}
           ${keyframes.zoomIn}
           ${keyframes.heartbeat}
+          ${keyframes.flashHighlight}
         `}
       </style>
       {/* Main Content */}
@@ -1840,41 +2024,49 @@ export default function RemovalDashboard() {
                 >
                   <Fade in={!loading} timeout={500}>
                     <Box>
-                      <StatCard
+                      <CustomStatCard
                         title="Veículos de remoção total"
-                        value={statsData.totalVehicles}
+                        value={statsData.totalVehicles === null ? "..." : statsData.totalVehicles}
                         icon={DirectionsCar}
                         color={themeColors.primary.main}
+                        highlight={highlightedStat === "totalVehicles"}
+                        onRefresh={refreshTotalVehicles}
                       />
                     </Box>
                   </Fade>
                   <Fade in={!loading} timeout={500} style={{ transitionDelay: !loading ? "100ms" : "0ms" }}>
                     <Box>
-                      <StatCard
+                      <CustomStatCard
                         title="Veículos remoção ativos"
-                        value={statsData.activeVehicles}
+                        value={statsData.activeVehicles === null ? "..." : statsData.activeVehicles}
                         icon={CheckCircle}
                         color={themeColors.success.main}
+                        highlight={highlightedStat === "activeVehicles"}
+                        onRefresh={refreshActiveVehicles}
                       />
                     </Box>
                   </Fade>
                   <Fade in={!loading} timeout={500} style={{ transitionDelay: !loading ? "200ms" : "0ms" }}>
                     <Box>
-                      <StatCard
+                      <CustomStatCard
                         title="Veículos remoção inativo"
-                        value={statsData.inactiveVehicles}
+                        value={statsData.inactiveVehicles === null ? "..." : statsData.inactiveVehicles}
                         icon={Cancel}
                         color={themeColors.error.main}
+                        highlight={highlightedStat === "inactiveVehicles"}
+                        onRefresh={refreshInactiveVehicles}
                       />
                     </Box>
                   </Fade>
                   <Fade in={!loading} timeout={500} style={{ transitionDelay: !loading ? "300ms" : "0ms" }}>
                     <Box>
-                      <StatCard
+                      <CustomStatCard
                         title="Veículos remoção soltos hoje"
-                        value={statsData.releasedToday}
+                        value={statsData.releasedToday === null ? "..." : statsData.releasedToday}
                         icon={Today}
                         color={themeColors.warning.main}
+                        highlight={highlightedStat === "releasedToday"}
+                        onRefresh={refreshReleasedToday}
                       />
                     </Box>
                   </Fade>
@@ -1916,12 +2108,7 @@ export default function RemovalDashboard() {
                                 animation: `${keyframes.pulse} 2s ease-in-out infinite`,
                               }}
                             >
-                              <ViewList
-                                sx={{
-                                  color: "white",
-                                  fontSize: { xs: "1.1rem", sm: "1.3rem" },
-                                }}
-                              />
+                              <DirectionsCar sx={{ color: "white", fontSize: "2rem" }} />
                             </Box>
                             <Box>
                               <Typography
@@ -2634,8 +2821,7 @@ export default function RemovalDashboard() {
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
-                                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
-                                animation: `${keyframes.pulse} 1.5s ease-in-out infinite`,
+                                boxShadow: "0 4px 20px rgba(0, 0, 0,",
                               }}
                             />
                           </Box>
@@ -2845,6 +3031,132 @@ export default function RemovalDashboard() {
                           </Box>
                         ) : (
                           <PADistributionChart chartsLoaded={chartsLoaded} themeColors={themeColors} />
+                        )}
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Zoom>
+              </Box>
+              <Box component="section" sx={{ mb: 4 }}>
+                <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "800ms" : "0ms" }}>
+                  <Card
+                    sx={{
+                      borderRadius: "16px",
+                      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
+                      transition: "all 0.3s ease",
+                      overflow: "hidden",
+                      "&:hover": {
+                        boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)",
+                        transform: "translateY(-4px)",
+                      },
+                      background: themeColors.background.card,
+                    }}
+                  >
+                    <CardHeader
+                      title={
+                        <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                          <Box
+                            sx={{
+                              width: { xs: "32px", sm: "36px" },
+                              height: { xs: "32px", sm: "36px" },
+                              borderRadius: "12px",
+                              background: themeColors.info.main,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                          >
+                            <LocalShipping
+                              sx={{
+                                color: "white",
+                                fontSize: { xs: "1.1rem", sm: "1.3rem" },
+                              }}
+                            />
+                          </Box>
+                          <Box>
+                            <Typography
+                              sx={{
+                                fontWeight: 600,
+                                fontSize: { xs: "1.1rem", sm: "1.2rem" },
+                                color: themeColors.text.primary,
+                              }}
+                            >
+                              Distribuição por Tipo de Veículo
+                            </Typography>
+                            <Typography
+                              sx={{
+                                fontSize: { xs: "0.8rem", sm: "0.85rem" },
+                                color: themeColors.text.secondary,
+                                fontWeight: 400,
+                              }}
+                            >
+                              BAU, BASCULANTES e SELETOLIX
+                            </Typography>
+                          </Box>
+                        </Box>
+                      }
+                      action={
+                        <IconButton
+                          sx={{
+                            color: themeColors.text.secondary,
+                            "&:hover": { color: themeColors.info.main },
+                          }}
+                          onClick={handleRefreshData}
+                        >
+                          <Refresh />
+                        </IconButton>
+                      }
+                      sx={{
+                        paddingBottom: "0.75rem",
+                        borderBottom: `1px solid ${themeColors.divider}`,
+                        "& .MuiCardHeader-title": {
+                          fontWeight: 600,
+                          fontSize: "1.125rem",
+                          color: themeColors.text.primary,
+                        },
+                        "& .MuiCardHeader-action": {
+                          margin: 0,
+                        },
+                      }}
+                    />
+                    <CardContent sx={{ padding: "1.5rem" }}>
+                      <Box
+                        sx={{
+                          width: "100%",
+                          position: "relative",
+                        }}
+                      >
+                        {!chartsLoaded ? (
+                          <Box
+                            sx={{
+                              position: "absolute",
+                              top: 0,
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              backgroundColor: alpha(themeColors.background.paper, 0.7),
+                              zIndex: 10,
+                              borderRadius: "12px",
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                width: "40px",
+                                height: "40px",
+                                borderRadius: "50%",
+                                background: themeColors.info.main,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.2)",
+                              }}
+                            />
+                          </Box>
+                        ) : (
+                          <VehicleDistributionChart chartsLoaded={chartsLoaded} themeColors={themeColors} />
                         )}
                       </Box>
                     </CardContent>
@@ -3615,25 +3927,25 @@ export default function RemovalDashboard() {
           },
         }}
       >
-          <MenuItem
-            onClick={handleEditClick}
-            sx={{
-              borderRadius: "8px",
-            }}
-          >
-            <Edit fontSize="small" sx={{ mr: 1 }} />
-            Editar
-          </MenuItem>
-          <MenuItem
-            onClick={handleDeleteConfirmOpen}
-            sx={{
-              borderRadius: "8px",
-            }}
-          >
-            <Delete fontSize="small" sx={{ mr: 1 }} />
-            Excluir
-          </MenuItem>
-        </Menu>
+        <MenuItem
+          onClick={handleEditClick}
+          sx={{
+            borderRadius: "8px",
+          }}
+        >
+          <Edit fontSize="small" sx={{ mr: 1 }} />
+          Editar
+        </MenuItem>
+        <MenuItem
+          onClick={handleDeleteConfirmOpen}
+          sx={{
+            borderRadius: "8px",
+          }}
+        >
+          <Delete fontSize="small" sx={{ mr: 1 }} />
+          Excluir
+        </MenuItem>
+      </Menu>
 
       <Dialog
         open={deleteConfirmOpen}
@@ -3961,13 +4273,13 @@ export default function RemovalDashboard() {
       {/* Adicionar o componente RegisterModal no final do componente, antes do último fechamento de tag */}
       {/* Adicionar antes do último </> (aproximadamente linha 2900) */}
       <DetailModal
-          open={detailModalOpen}
-          onClose={handleCloseModal}
-          removal={selectedRemoval}
-          onEdit={handleEditClick}
-          themeColors={themeColors}
-          keyframes={keyframes}
-        />
+        open={detailModalOpen}
+        onClose={handleCloseModal}
+        removal={selectedRemoval}
+        onEdit={handleEditClick}
+        themeColors={themeColors}
+        keyframes={keyframes}
+      />
       <EditModal
         open={editModalOpen}
         onClose={() => setEditModalOpen(false)}
