@@ -407,6 +407,96 @@ const SearchInput = ({ icon: Icon, placeholder, value, onChange, suggestions = [
   )
 }
 
+// Custom stat card component - redesigned to be mais simples e branco
+const CustomStatCard = ({ title, value, icon: Icon, color, highlight, onRefresh }) => (
+  <Card
+    sx={{
+      position: "relative",
+      overflow: "hidden",
+      borderRadius: "16px",
+      boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)",
+      background: "white",
+      height: "100%",
+      transition: "all 0.3s ease",
+      "&:hover": {
+        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
+      },
+      "&::before": {
+        content: '""',
+        position: "absolute",
+        top: 0,
+        left: 0,
+        width: "100%",
+        height: "3px",
+        background: color,
+        zIndex: 1,
+      },
+      animation: highlight ? `${keyframes.fadeIn} 0.6s ease-out` : `${keyframes.fadeIn} 0.6s ease-out`,
+    }}
+  >
+    <Box
+      sx={{
+        position: "absolute",
+        top: "20px",
+        right: "20px",
+        width: "40px",
+        height: "40px",
+        borderRadius: "50%",
+        background: alpha(color, 0.1),
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <Icon sx={{ fontSize: 24, color: color }} />
+    </Box>
+    <CardContent sx={{ p: 3, pt: 4, pb: 5 }}>
+      <Typography
+        variant="h3"
+        sx={{
+          fontWeight: 700,
+          fontSize: { xs: "2rem", sm: "2.5rem" },
+          color: themeColors.text.primary,
+          mb: 1,
+        }}
+      >
+        {value}
+      </Typography>
+      <Typography
+        variant="body1"
+        sx={{
+          color: themeColors.text.secondary,
+          fontWeight: 500,
+          fontSize: "0.95rem",
+        }}
+      >
+        {title}
+      </Typography>
+      {onRefresh && (
+        <IconButton
+          onClick={onRefresh}
+          size="small"
+          sx={{
+            position: "absolute",
+            bottom: "10px",
+            right: "10px",
+            backgroundColor: "#f0f0f0",
+            color: "#333333",
+            width: "28px",
+            height: "28px",
+            transition: "all 0.2s ease",
+            "&:hover": {
+              backgroundColor: "#e0e0e0",
+            },
+          }}
+        >
+          <Refresh fontSize="small" />
+        </IconButton>
+      )}
+    </CardContent>
+  </Card>
+)
+
 export default function RemovalDashboard() {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
@@ -467,1403 +557,1295 @@ export default function RemovalDashboard() {
     route: "",
     leaders: ["", ""],
     leaderPhones: ["", ""],
-  })
+  });
 
-  // Estados para armazenar dados da API
-  const [removals, setRemovals] = useState([])
-  const [monthlyData, setMonthlyData] = useState([])
-  const [teamData, setTeamData] = useState([])
+// Estados para armazenar dados da API
+const [removals, setRemovals] = useState([])
+const [monthlyData, setMonthlyData] = useState([])
+const [teamData, setTeamData] = useState([])
 
-  // Vamos modificar a função loadAllData para garantir que os dados sejam processados corretamente
-  const loadAllData = async () => {
-    console.log("Iniciando carregamento de dados...")
-    setLoading(true)
-    setInitialLoading(true)
+// Vamos modificar a função loadAllData para garantir que os dados sejam processados corretamente
+const loadAllData = async () => {
+  console.log("Iniciando carregamento de dados...")
+  setLoading(true)
+  setInitialLoading(true)
 
-    try {
-      // Carregar dados em paralelo
-      const [
-        solturasData,
-        totalRemocaoResult,
-        remocaoAtivosResult,
-        remocaoInativosResult,
-        remocoesDiaResult,
-        equipesDiaResult,
-        remocoesPorMesResult,
-        mediaMensalResult,
-      ] = await Promise.all([
-        getSolturasDetalhada(),
-        getContagemTotalRemocao(),
-        getContagemRemocaoAtivos(),
-        getContagemRemocaoInativos(),
-        getTotalDeRemocaoSoltasNoDia(),
-        getQuantidadeSolturaEquipesDia(),
-        getRemocoesPorMes(),
-        getMediaMensalDeSolturas(),
-      ])
+  try {
+    // Carregar dados em paralelo
+    const [
+      solturasData,
+      totalRemocaoResult,
+      remocaoAtivosResult,
+      remocaoInativosResult,
+      remocoesDiaResult,
+      equipesDiaResult,
+      remocoesPorMesResult,
+      mediaMensalResult,
+    ] = await Promise.all([
+      getSolturasDetalhada(),
+      getContagemTotalRemocao(),
+      getContagemRemocaoAtivos(),
+      getContagemRemocaoInativos(),
+      getTotalDeRemocaoSoltasNoDia(),
+      getQuantidadeSolturaEquipesDia(),
+      getRemocoesPorMes(),
+      getMediaMensalDeSolturas(),
+    ])
 
-      console.log("Dados carregados:", {
-        solturasData,
-        totalRemocaoResult,
-        remocaoAtivosResult,
-        remocaoInativosResult,
-        remocoesDiaResult,
-        equipesDiaResult,
-        remocoesPorMesResult,
-      })
+    console.log("Dados carregados:", {
+      solturasData,
+      totalRemocaoResult,
+      remocaoAtivosResult,
+      remocaoInativosResult,
+      remocoesDiaResult,
+      equipesDiaResult,
+      remocoesPorMesResult,
+    })
 
-      // Formatar dados de solturas para o formato esperado pela UI
-      const formattedRemovals = Array.isArray(solturasData)
-        ? solturasData.map((soltura, index) => {
-            // Verificar a estrutura dos dados de motorista
-            console.log("Dados de motorista:", soltura.motorista)
+    // Formatar dados de solturas para o formato esperado pela UI
+    const formattedRemovals = Array.isArray(solturasData)
+      ? solturasData.map((soltura, index) => {
+          // Verificar a estrutura dos dados de motorista
+          console.log("Dados de motorista:", soltura.motorista)
 
-            // Verificar a estrutura dos dados de coletores
-            console.log("Dados de coletores:", soltura.coletores)
+          // Verificar a estrutura dos dados de coletores
+          console.log("Dados de coletores:", soltura.coletores)
 
-            return {
-              id: index + 1,
-              // Garantir que o nome do motorista seja exibido corretamente
-              driver:
-                typeof soltura.motorista === "object"
-                  ? soltura.motorista.nome || "Não informado"
-                  : soltura.motorista || "Não informado",
+          return {
+            id: index + 1,
+            // Garantir que o nome do motorista seja exibido corretamente
+            driver:
+              typeof soltura.motorista === "object"
+                ? soltura.motorista.nome || "Não informado"
+                : soltura.motorista || "Não informado",
 
-              driverId:
-                typeof soltura.motorista === "object"
-                  ? soltura.motorista.matricula || ""
-                  : soltura.matricula_motorista || "",
+            driverId:
+              typeof soltura.motorista === "object"
+                ? soltura.motorista.matricula || ""
+                : soltura.matricula_motorista || "",
 
-              // Garantir que os nomes dos coletores sejam extraídos corretamente
-              collectors: Array.isArray(soltura.coletores)
-                ? soltura.coletores
-                    .map((c) => {
-                      if (typeof c === "object") {
-                        return c.nome || "Não informado"
-                      }
-                      return c || "Não informado"
-                    })
-                    .filter(Boolean)
-                : [],
+            // Garantir que os nomes dos coletores sejam extraídos corretamente
+            collectors: Array.isArray(soltura.coletores)
+              ? soltura.coletores
+                  .map((c) => {
+                    if (typeof c === "object") {
+                      return c.nome || "Não informado"
+                    }
+                    return c || "Não informado"
+                  })
+                  .filter(Boolean)
+              : [],
 
-              collectorsIds: Array.isArray(soltura.coletores)
-                ? soltura.coletores
-                    .map((c) => {
-                      if (typeof c === "object") {
-                        return c.matricula || ""
-                      }
-                      return ""
-                    })
-                    .filter(Boolean)
-                : [],
+            collectorsIds: Array.isArray(soltura.coletores)
+              ? soltura.coletores
+                  .map((c) => {
+                    if (typeof c === "object") {
+                      return c.matricula || ""
+                    }
+                    return ""
+                  })
+                  .filter(Boolean)
+              : [],
 
-              garage: soltura.garagem || "PA1",
-              route: soltura.rota || "",
-              vehiclePrefix: soltura.prefixo || "",
-              departureTime: soltura.hora_saida_frota || "",
-              status: soltura.status_frota === "Em andamento" ? "Em andamento" : "Finalizado",
-              arrivalTime: soltura.hora_chegada || "",
-              date: soltura.data || new Date().toISOString().split("T")[0],
-              team: soltura.tipo_equipe || "",
-              location:
-                typeof soltura.setores === "string"
-                  ? soltura.setores
-                  : Array.isArray(soltura.setores)
-                    ? soltura.setores.join(", ")
-                    : "Não informado",
-              vehicle: soltura.veiculo || "Caminhão Reboque",
-              distance: "0 km",
-              notes: "",
-            }
-          })
-        : []
-      // Formatar dados de equipes para o gráfico
-      const formattedTeamData = equipesDiaResult?.dadosEquipes
-        ? equipesDiaResult.dadosEquipes.map((item, index) => ({
-            name: item.tipoEquipe || `Equipe ${index + 1}`,
-            label: `${item.quantidade || 0} solturas`,
-            releases: item.quantidade || 0,
-            color:
-              index === 0
-                ? themeColors.primary.main
-                : index === 1
-                  ? themeColors.success.main
-                  : themeColors.warning.main,
-          }))
-        : []
+            garage: soltura.garagem || "PA1",
+            route: soltura.rota || "",
+            vehiclePrefix: soltura.prefixo || "",
+            departureTime: soltura.hora_saida_frota || "",
+            status: soltura.status_frota === "Em andamento" ? "Em andamento" : "Finalizado",
+            arrivalTime: soltura.hora_chegada || "",
+            date: soltura.data || new Date().toISOString().split("T")[0],
+            team: soltura.tipo_equipe || "",
+            location:
+              typeof soltura.setores === "string"
+                ? soltura.setores
+                : Array.isArray(soltura.setores)
+                  ? soltura.setores.join(", ")
+                  : "Não informado",
+            vehicle: soltura.veiculo || "Caminhão Reboque",
+            distance: "0 km",
+            notes: "",
+          }
+        })
+      : []
+    // Formatar dados de equipes para o gráfico
+    const formattedTeamData = equipesDiaResult?.dadosEquipes
+      ? equipesDiaResult.dadosEquipes.map((item, index) => ({
+          name: item.tipoEquipe || `Equipe ${index + 1}`,
+          label: `${item.quantidade || 0} solturas`,
+          releases: item.quantidade || 0,
+          color:
+            index === 0 ? themeColors.primary.main : index === 1 ? themeColors.success.main : themeColors.warning.main,
+        }))
+      : []
 
-      console.log("Dados de equipe formatados:", formattedTeamData)
+    console.log("Dados de equipe formatados:", formattedTeamData)
 
-      // Formatar dados mensais para o gráfico
-      const formattedMonthlyData = remocoesPorMesResult?.remocoes
-        ? remocoesPorMesResult.remocoes.map((item) => ({
-            month: item.mes,
-            removals: item.total,
-          }))
-        : []
+    // Formatar dados mensais para o gráfico
+    const formattedMonthlyData = remocoesPorMesResult?.remocoes
+      ? remocoesPorMesResult.remocoes.map((item) => ({
+          month: item.mes,
+          removals: item.total,
+        }))
+      : []
 
-      console.log("Dados mensais formatados:", formattedMonthlyData)
+    console.log("Dados mensais formatados:", formattedMonthlyData)
 
-      // Atualizar estados com os dados recebidos
-      setRemovals(formattedRemovals)
-      setMonthlyData(formattedMonthlyData)
-      setTeamData(formattedTeamData)
+    // Atualizar estados com os dados recebidos
+    setRemovals(formattedRemovals)
+    setMonthlyData(formattedMonthlyData)
+    setTeamData(formattedTeamData)
 
-      // Atualizar estatísticas
-      setStatsData({
-        totalVehicles: totalRemocaoResult?.totalRemocao || 0,
-        activeVehicles: remocaoAtivosResult?.countRemocaoAtivos || 0,
-        inactiveVehicles: remocaoInativosResult?.countRemocaoInativos || 0,
-        releasedToday: remocoesDiaResult?.totalDeRemocoes || 0,
-      })
+    // Atualizar estatísticas
+    setStatsData({
+      totalVehicles: totalRemocaoResult?.totalRemocao || 0,
+      activeVehicles: remocaoAtivosResult?.countRemocaoAtivos || 0,
+      inactiveVehicles: remocaoInativosResult?.countRemocaoInativos || 0,
+      releasedToday: remocoesDiaResult?.totalDeRemocoes || 0,
+    })
 
-      console.log("Estatísticas atualizadas:", {
-        totalVehicles: totalRemocaoResult?.totalRemocao || 0,
-        activeVehicles: remocaoAtivosResult?.countRemocaoAtivos || 0,
-        inactiveVehicles: remocaoInativosResult?.countRemocaoInativos || 0,
-        releasedToday: remocoesDiaResult?.totalDeRemocoes || 0,
-      })
+    console.log("Estatísticas atualizadas:", {
+      totalVehicles: totalRemocaoResult?.totalRemocao || 0,
+      activeVehicles: remocaoAtivosResult?.countRemocaoAtivos || 0,
+      inactiveVehicles: remocaoInativosResult?.countRemocaoInativos || 0,
+      releasedToday: remocoesDiaResult?.totalDeRemocoes || 0,
+    })
 
-      // Marcar carregamento como concluído
-      setChartsLoaded(true)
-      setLoading(false)
-      setInitialLoading(false)
-    } catch (error) {
-      console.error("Erro ao carregar dados:", error)
-      // Mostrar mensagem de erro
-      setSnackbarMessage("Erro ao carregar dados. Tente novamente.")
-      setSnackbarSeverity("error")
-      setSnackbarOpen(true)
+    // Marcar carregamento como concluído
+    setChartsLoaded(true)
+    setLoading(false)
+    setInitialLoading(false)
+  } catch (error) {
+    console.error("Erro ao carregar dados:", error)
+    // Mostrar mensagem de erro
+    setSnackbarMessage("Erro ao carregar dados. Tente novamente.")
+    setSnackbarSeverity("error")
+    setSnackbarOpen(true)
 
-      // Mesmo com erro, marcar carregamento como concluído
-      setLoading(false)
-      setInitialLoading(false)
-    }
+    // Mesmo com erro, marcar carregamento como concluído
+    setLoading(false)
+    setInitialLoading(false)
   }
+}
 
-  // Load data on component mount
-  useEffect(() => {
-    loadAllData()
-  }, [])
+// Load data on component mount
+useEffect(() => {
+  loadAllData()
+}, [])
 
-  // Handle sidebar collapse
-  const handleSidebarCollapse = (collapsed) => {
-    setSidebarCollapsed(collapsed)
+// Handle sidebar collapse
+const handleSidebarCollapse = (collapsed) => {
+  setSidebarCollapsed(collapsed)
+}
+
+// Handle month menu
+const handleMonthMenuOpen = (event) => {
+  setMonthMenuAnchor(event.currentTarget)
+}
+
+const handleMonthMenuClose = () => {
+  setMonthMenuAnchor(null)
+}
+
+const handleMonthChange = (month) => {
+  setSelectedMonth(month)
+  setMonthMenuAnchor(null)
+}
+
+// Handle filter menu
+const handleFilterMenuOpen = (event) => {
+  setFilterMenuAnchor(event.currentTarget)
+}
+
+const handleFilterMenuClose = () => {
+  setFilterMenuAnchor(null)
+}
+
+// Handle action menu
+const handleActionMenuOpen = (event, id) => {
+  event.stopPropagation()
+  setActionMenuAnchor(event.currentTarget)
+  setSelectedRowId(id)
+}
+
+const handleActionMenuClose = () => {
+  setActionMenuAnchor(null)
+  setSelectedRowId(null)
+}
+
+// Handle view mode change
+const handleViewModeChange = (event, newMode) => {
+  if (newMode !== null) {
+    setViewMode(newMode)
   }
+}
 
-  // Handle month menu
-  const handleMonthMenuOpen = (event) => {
-    setMonthMenuAnchor(event.currentTarget)
-  }
+// Handle status filter change
+const handleStatusFilterChange = (event) => {
+  setStatusFilter(event.target.value)
+}
 
-  const handleMonthMenuClose = () => {
-    setMonthMenuAnchor(null)
-  }
+// Handle pagination
+const handlePageChange = (event, newPage) => {
+  setPage(newPage)
+}
 
-  const handleMonthChange = (month) => {
-    setSelectedMonth(month)
-    setMonthMenuAnchor(null)
-  }
+const handleRowsPerPageChange = (event) => {
+  setRowsPerPage(Number.parseInt(event.target.value, 10))
+  setPage(0)
+}
 
-  // Handle filter menu
-  const handleFilterMenuOpen = (event) => {
-    setFilterMenuAnchor(event.currentTarget)
-  }
+// Handle sorting
+const handleSort = (field) => {
+  const isAsc = sortField === field && sortDirection === "asc"
+  setSortDirection(isAsc ? "desc" : "asc")
+  setSortField(field)
+}
 
-  const handleFilterMenuClose = () => {
-    setFilterMenuAnchor(null)
-  }
+// Handle chart type change
+const handleChartTypeChange = (event, newValue) => {
+  setChartType(newValue)
+}
 
-  // Handle action menu
-  const handleActionMenuOpen = (event, id) => {
-    event.stopPropagation()
-    setActionMenuAnchor(event.currentTarget)
-    setSelectedRowId(id)
-  }
+// Handle team chart type change
+const handleTeamChartTypeChange = (event, newValue) => {
+  setTeamChartType(newValue)
+}
 
-  const handleActionMenuClose = () => {
-    setActionMenuAnchor(null)
-    setSelectedRowId(null)
-  }
-
-  // Handle view mode change
-  const handleViewModeChange = (event, newMode) => {
-    if (newMode !== null) {
-      setViewMode(newMode)
-    }
-  }
-
-  // Handle status filter change
-  const handleStatusFilterChange = (event) => {
-    setStatusFilter(event.target.value)
-  }
-
-  // Handle pagination
-  const handlePageChange = (event, newPage) => {
-    setPage(newPage)
-  }
-
-  const handleRowsPerPageChange = (event) => {
-    setRowsPerPage(Number.parseInt(event.target.value, 10))
-    setPage(0)
-  }
-
-  // Handle sorting
-  const handleSort = (field) => {
-    const isAsc = sortField === field && sortDirection === "asc"
-    setSortDirection(isAsc ? "desc" : "asc")
-    setSortField(field)
-  }
-
-  // Handle chart type change
-  const handleChartTypeChange = (event, newValue) => {
-    setChartType(newValue)
-  }
-
-  // Handle team chart type change
-  const handleTeamChartTypeChange = (event, newValue) => {
-    setTeamChartType(newValue)
-  }
-
-  const handleEditClick = () => {
-    const removalToEdit = removals.find((removal) => removal.id === selectedRowId)
-    if (removalToEdit) {
-      setSelectedRemoval(removalToEdit)
-      setEditModalOpen(true)
-      setActionMenuAnchor(null)
-    }
-  }
-
-  // Handle save edit
-  const handleSaveEdit = (editedData) => {
-    try {
-      // Update the removal in the state
-      const updatedRemovals = removals.map((removal) =>
-        removal.id === selectedRemoval.id ? { ...removal, ...editedData } : removal,
-      )
-      setRemovals(updatedRemovals)
-
-      // Show success message
-      setSnackbarMessage("Registro atualizado com sucesso!")
-      setSnackbarSeverity("success")
-      setSnackbarOpen(true)
-
-      // Close modal
-      setEditModalOpen(false)
-    } catch (error) {
-      console.error("Erro ao atualizar:", error)
-      setSnackbarMessage("Erro ao atualizar registro. Tente novamente.")
-      setSnackbarSeverity("error")
-      setSnackbarOpen(true)
-    }
-  }
-
-  // Handle modal open
-  const handleOpenModal = (removal) => {
-    setSelectedRemoval(removal)
-    setModalOpen(true)
-  }
-
-  // Handle modal close
-  const handleCloseModal = () => {
-    setModalOpen(false)
-  }
-
-  // Handle pie chart hover
-  const onPieEnter = (_, index) => {
-    setActiveIndex(index)
-  }
-
-  // Handle delete confirmation dialog
-  const handleDeleteConfirmOpen = () => {
-    setDeleteConfirmOpen(true)
+const handleEditClick = () => {
+  const removalToEdit = removals.find((removal) => removal.id === selectedRowId)
+  if (removalToEdit) {
+    setSelectedRemoval(removalToEdit)
+    setEditModalOpen(true)
     setActionMenuAnchor(null)
   }
+}
 
-  const handleDeleteConfirmClose = () => {
-    setDeleteConfirmOpen(false)
-  }
-
-  const handleOpenModalDetail = (removal) => {
-    setSelectedRemoval(removal)
-    setDetailModalOpen(true)
-  }
-
-  // Handle modal close
-  const handleCloseModalDetail = () => {
-    setDetailModalOpen(false)
-  }
-  // Handle delete action
-  const handleDelete = async () => {
-    try {
-      setLoading(true)
-
-      // Aqui seria a chamada real para a API de exclusão
-      // Como não temos uma função específica para excluir, vamos simular
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // Atualizar estado local
-      const updatedRemovals = removals.filter((removal) => removal.id !== selectedRowId)
-      setRemovals(updatedRemovals)
-
-      // Show success message
-      setSnackbarMessage("Registro removido com sucesso!")
-      setSnackbarSeverity("success")
-      setSnackbarOpen(true)
-
-      // Close dialog
-      handleDeleteConfirmClose()
-      setSelectedRowId(null)
-    } catch (error) {
-      console.error("Erro ao excluir:", error)
-      setSnackbarMessage("Erro ao excluir registro. Tente novamente.")
-      setSnackbarSeverity("error")
-      setSnackbarOpen(true)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    if (refreshStats) {
-      // Aqui você pode resetar o estado de refresh após um ciclo de renderização
-      setRefreshStats(false)
-    }
-  }, [refreshStats])
-
-  // Handle share menu
-  const handleShareMenuOpen = (event) => {
-    event.stopPropagation()
-    setShareMenuAnchor(event.currentTarget)
-    setActionMenuAnchor(null)
-  }
-
-  const handleShareMenuClose = () => {
-    setShareMenuAnchor(null)
-  }
-
-  // Handle share action
-  const handleShare = (platform) => {
-    const removal = removals.find((r) => r.id === selectedRowId)
-    let shareMessage = ""
-
-    if (removal) {
-      shareMessage = `Detalhes da Remoção: ${removal.driver} - ${removal.vehiclePrefix} - ${removal.status}`
-    }
+// Handle save edit
+const handleSaveEdit = (editedData) => {
+  try {
+    // Update the removal in the state
+    const updatedRemovals = removals.map((removal) =>
+      removal.id === selectedRemoval.id ? { ...removal, ...editedData } : removal,
+    )
+    setRemovals(updatedRemovals)
 
     // Show success message
-    setSnackbarMessage(`Compartilhado via ${platform}!`)
+    setSnackbarMessage("Registro atualizado com sucesso!")
     setSnackbarSeverity("success")
     setSnackbarOpen(true)
 
-    // Close menu
-    handleShareMenuClose()
+    // Close modal
+    setEditModalOpen(false)
+  } catch (error) {
+    console.error("Erro ao atualizar:", error)
+    setSnackbarMessage("Erro ao atualizar registro. Tente novamente.")
+    setSnackbarSeverity("error")
+    setSnackbarOpen(true)
+  }
+}
+
+// Handle modal open
+const handleOpenModal = (removal) => {
+  setSelectedRemoval(removal)
+  setModalOpen(true)
+}
+
+// Handle modal close
+const handleCloseModal = () => {
+  setModalOpen(false)
+}
+
+// Handle pie chart hover
+const onPieEnter = (_, index) => {
+  setActiveIndex(index)
+}
+
+// Handle delete confirmation dialog
+const handleDeleteConfirmOpen = () => {
+  setDeleteConfirmOpen(true)
+  setActionMenuAnchor(null)
+}
+
+const handleDeleteConfirmClose = () => {
+  setDeleteConfirmOpen(false)
+}
+
+const handleOpenModalDetail = (removal) => {
+  setSelectedRemoval(removal)
+  setDetailModalOpen(true)
+}
+
+// Handle modal close
+const handleCloseModalDetail = () => {
+  setDetailModalOpen(false)
+}
+// Handle delete action
+const handleDelete = async () => {
+  try {
+    setLoading(true)
+
+    // Aqui seria a chamada real para a API de exclusão
+    // Como não temos uma função específica para excluir, vamos simular
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+
+    // Atualizar estado local
+    const updatedRemovals = removals.filter((removal) => removal.id !== selectedRowId)
+    setRemovals(updatedRemovals)
+
+    // Show success message
+    setSnackbarMessage("Registro removido com sucesso!")
+    setSnackbarSeverity("success")
+    setSnackbarOpen(true)
+
+    // Close dialog
+    handleDeleteConfirmClose()
+    setSelectedRowId(null)
+  } catch (error) {
+    console.error("Erro ao excluir:", error)
+    setSnackbarMessage("Erro ao excluir registro. Tente novamente.")
+    setSnackbarSeverity("error")
+    setSnackbarOpen(true)
+  } finally {
+    setLoading(false)
+  }
+}
+
+useEffect(() => {
+  if (refreshStats) {
+    // Aqui você pode resetar o estado de refresh após um ciclo de renderização
+    setRefreshStats(false)
+  }
+}, [refreshStats])
+
+// Handle share menu
+const handleShareMenuOpen = (event) => {
+  event.stopPropagation()
+  setShareMenuAnchor(event.currentTarget)
+  setActionMenuAnchor(null)
+}
+
+const handleShareMenuClose = () => {
+  setShareMenuAnchor(null)
+}
+
+// Handle share action
+const handleShare = (platform) => {
+  const removal = removals.find((r) => r.id === selectedRowId)
+  let shareMessage = ""
+
+  if (removal) {
+    shareMessage = `Detalhes da Remoção: ${removal.driver} - ${removal.vehiclePrefix} - ${removal.status}`
   }
 
-  // Handle snackbar close
-  const handleSnackbarClose = () => {
-    setSnackbarOpen(false)
-  }
+  // Show success message
+  setSnackbarMessage(`Compartilhado via ${platform}!`)
+  setSnackbarSeverity("success")
+  setSnackbarOpen(true)
 
-  // Função para atualizar dados
-  const handleRefreshData = () => {
-    loadAllData()
-  }
+  // Close menu
+  handleShareMenuClose()
+}
 
-  // Função para obter dados do gráfico de pizza
-  const getPieChartData = () => {
-    const statusCounts = { Finalizado: 0, "Em andamento": 0 }
+// Handle snackbar close
+const handleSnackbarClose = () => {
+  setSnackbarOpen(false)
+}
 
-    removals.forEach((removal) => {
-      statusCounts[removal.status] = (statusCounts[removal.status] || 0) + 1
+// Função para atualizar dados
+const handleRefreshData = () => {
+  loadAllData()
+}
+
+// Função para obter dados do gráfico de pizza
+const getPieChartData = () => {
+  const statusCounts = { Finalizado: 0, "Em andamento": 0 }
+
+  removals.forEach((removal) => {
+    statusCounts[removal.status] = (statusCounts[removal.status] || 0) + 1
+  })
+
+  return [
+    { name: "Finalizado", value: statusCounts["Finalizado"], color: themeColors.success.main },
+    { name: "Em andamento", value: statusCounts["Em andamento"], color: themeColors.primary.main },
+  ]
+}
+
+// Calcular dados derivados
+const pieChartData = useMemo(() => getPieChartData(), [removals])
+
+// Filter and sort removals data
+const filteredRemovals = useMemo(() => {
+  return removals
+    .filter(
+      (removal) =>
+        // Busca unificada em múltiplos campos
+        (driverSearch === "" ||
+          removal.driver?.toLowerCase().includes(driverSearch.toLowerCase()) ||
+          removal.vehiclePrefix?.toLowerCase().includes(driverSearch.toLowerCase()) ||
+          removal.vehiclePrefix?.toLowerCase().includes(driverSearch.toLowerCase())) &&
+        (selectedDate === null || removal.date === selectedDate?.toISOString().split("T")[0]) &&
+        // Update the filter function to handle the new status values
+        (statusFilter === "all" ||
+          (statusFilter === "completed" && removal.status === "Finalizado") ||
+          (statusFilter === "in-progress" && removal.status === "Em andamento")) &&
+        // Filtro por equipe
+        (teamFilter === "all" ||
+          (teamFilter === "team-1" && removal.team === "Equipe1(Matutino)") ||
+          (teamFilter === "team-2" && removal.team === "Equipe2(Vespertino)") ||
+          (teamFilter === "team-3" && removal.team === "Equipe3(Noturno)")),
+    )
+    .sort((a, b) => {
+      const factor = sortDirection === "asc" ? 1 : -1
+      if (sortField === "driver") {
+        return factor * a.driver.localeCompare(b.driver)
+      } else if (sortField === "vehiclePrefix") {
+        return factor * a.vehiclePrefix.localeCompare(b.vehiclePrefix)
+      } else if (sortField === "departureTime") {
+        return factor * a.departureTime.localeCompare(b.departureTime)
+      } else if (sortField === "team") {
+        return factor * a.team.localeCompare(b.team)
+      } else if (sortField === "status") {
+        return factor * a.status.localeCompare(b.status)
+      }
+      return 0
     })
+}, [driverSearch, selectedDate, statusFilter, teamFilter, sortField, sortDirection, removals])
 
-    return [
-      { name: "Finalizado", value: statusCounts["Finalizado"], color: themeColors.success.main },
-      { name: "Em andamento", value: statusCounts["Em andamento"], color: themeColors.primary.main },
-    ]
+// Get paginated data
+const paginatedRemovals = filteredRemovals.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+
+// Filter chart data based on selected month
+const chartData = useMemo(() => {
+  if (selectedMonth === "Todos") {
+    return monthlyData
   }
+  return monthlyData.filter((data) => data.month === selectedMonth)
+}, [selectedMonth, monthlyData])
 
-  // Calcular dados derivados
-  const pieChartData = useMemo(() => getPieChartData(), [removals])
+// Calculate total removals
+const totalRemovalsCount = removals.length
 
-  // Filter and sort removals data
-  const filteredRemovals = useMemo(() => {
-    return removals
-      .filter(
-        (removal) =>
-          // Busca unificada em múltiplos campos
-          (driverSearch === "" ||
-            removal.driver?.toLowerCase().includes(driverSearch.toLowerCase()) ||
-            removal.vehiclePrefix?.toLowerCase().includes(driverSearch.toLowerCase()) ||
-            removal.vehiclePrefix?.toLowerCase().includes(driverSearch.toLowerCase())) &&
-          (selectedDate === null || removal.date === selectedDate?.toISOString().split("T")[0]) &&
-          // Update the filter function to handle the new status values
-          (statusFilter === "all" ||
-            (statusFilter === "completed" && removal.status === "Finalizado") ||
-            (statusFilter === "in-progress" && removal.status === "Em andamento")) &&
-          // Filtro por equipe
-          (teamFilter === "all" ||
-            (teamFilter === "team-1" && removal.team === "Equipe1(Matutino)") ||
-            (teamFilter === "team-2" && removal.team === "Equipe2(Vespertino)") ||
-            (teamFilter === "team-3" && removal.team === "Equipe3(Noturno)")),
-      )
-      .sort((a, b) => {
-        const factor = sortDirection === "asc" ? 1 : -1
-        if (sortField === "driver") {
-          return factor * a.driver.localeCompare(b.driver)
-        } else if (sortField === "vehiclePrefix") {
-          return factor * a.vehiclePrefix.localeCompare(b.vehiclePrefix)
-        } else if (sortField === "departureTime") {
-          return factor * a.departureTime.localeCompare(b.departureTime)
-        } else if (sortField === "team") {
-          return factor * a.team.localeCompare(b.team)
-        } else if (sortField === "status") {
-          return factor * a.status.localeCompare(b.status)
-        }
-        return 0
-      })
-  }, [driverSearch, selectedDate, statusFilter, teamFilter, sortField, sortDirection, removals])
+// Calculate monthly average
+const monthlyAverage = useMemo(() => {
+  if (monthlyData.length === 0) return 0
+  return Math.round(monthlyData.reduce((sum, item) => sum + item.removals, 0) / monthlyData.length)
+}, [monthlyData])
 
-  // Get paginated data
-  const paginatedRemovals = filteredRemovals.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+// Obter sugestões para o campo de busca
+const searchSuggestions = useMemo(() => {
+  const driverNames = [...new Set(removals.map((r) => r.driver).filter(Boolean))]
+  const vehiclePrefixes = [...new Set(removals.map((r) => r.vehiclePrefix).filter(Boolean))]
+  return [...driverNames, ...vehiclePrefixes]
+}, [removals])
 
-  // Filter chart data based on selected month
-  const chartData = useMemo(() => {
-    if (selectedMonth === "Todos") {
-      return monthlyData
-    }
-    return monthlyData.filter((data) => data.month === selectedMonth)
-  }, [selectedMonth, monthlyData])
-
-  // Calculate total removals
-  const totalRemovalsCount = removals.length
-
-  // Calculate monthly average
-  const monthlyAverage = useMemo(() => {
-    if (monthlyData.length === 0) return 0
-    return Math.round(monthlyData.reduce((sum, item) => sum + item.removals, 0) / monthlyData.length)
-  }, [monthlyData])
-
-  // Obter sugestões para o campo de busca
-  const searchSuggestions = useMemo(() => {
-    const driverNames = [...new Set(removals.map((r) => r.driver).filter(Boolean))]
-    const vehiclePrefixes = [...new Set(removals.map((r) => r.vehiclePrefix).filter(Boolean))]
-    return [...driverNames, ...vehiclePrefixes]
-  }, [removals])
-
-  // Custom tooltip for the chart
-  const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-      const data = monthlyData.find((item) => item.month === label)
-      const removals = data?.removals || 0
-
-      return (
-        <Box
-          sx={{
-            backgroundColor: "rgba(255, 255, 255, 0.98)",
-            border: "none",
-            borderRadius: "16px",
-            padding: "1.2rem",
-            boxShadow: "0 10px 40px rgba(0, 0, 0, 0.15)",
-            maxWidth: "280px",
-            position: "relative",
-            "&:before": {
-              content: '""',
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              height: "6px",
-              background: `linear-gradient(90deg, ${themeColors.primary.main}, ${themeColors.primary.light})`,
-              borderTopLeftRadius: "16px",
-              borderTopRightRadius: "16px",
-            },
-          }}
-        >
-          <Typography
-            sx={{
-              fontWeight: 700,
-              fontSize: "1.2rem",
-              marginBottom: "0.75rem",
-              color: themeColors.text.primary,
-              borderBottom: "1px solid rgba(226, 232, 240, 0.5)",
-              paddingBottom: "0.5rem",
-            }}
-          >
-            {`${label} - ${removals} Remoções`}
-          </Typography>
-
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginBottom: "0.5rem",
-              fontSize: "0.875rem",
-            }}
-          >
-            <Box sx={{ display: "flex", alignItems: "center" }}>
-              <Box
-                component="span"
-                sx={{
-                  display: "inline-block",
-                  width: "12px",
-                  height: "12px",
-                  borderRadius: "4px",
-                  marginRight: "0.75rem",
-                  backgroundColor: themeColors.primary.main,
-                }}
-              />
-              <Typography sx={{ color: themeColors.text.secondary, fontWeight: 500 }}>Remoções:</Typography>
-            </Box>
-            <Typography sx={{ fontWeight: 600, color: themeColors.text.primary }}>{removals}</Typography>
-          </Box>
-
-          <Box sx={{ marginTop: "0.75rem", paddingTop: "0.75rem", borderTop: "1px dashed rgba(226, 232, 240, 0.8)" }}>
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <Typography sx={{ color: themeColors.text.secondary, fontWeight: 500, fontSize: "0.875rem" }}>
-                Média Mensal:
-              </Typography>
-              <Typography
-                sx={{
-                  fontWeight: 700,
-                  fontSize: "0.875rem",
-                  color: themeColors.success.main,
-                }}
-              >
-                {monthlyAverage}
-              </Typography>
-            </Box>
-          </Box>
-        </Box>
-      )
-    }
-    return null
-  }
-
-  // Custom tooltip for team chart
-  const TeamChartTooltip = ({ active, payload }) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload
-      return (
-        <Box
-          sx={{
-            backgroundColor: "rgba(255, 255, 255, 0.98)",
-            border: "none",
-            borderRadius: "16px",
-            padding: "1.2rem",
-            boxShadow: "0 10px 40px rgba(0, 0, 0, 0.15)",
-            maxWidth: "280px",
-            position: "relative",
-            "&:before": {
-              content: '""',
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              height: "6px",
-              background: `linear-gradient(90deg, ${data.color}, ${alpha(data.color, 0.8)})`,
-              borderTopLeftRadius: "16px",
-              borderTopRightRadius: "16px",
-            },
-          }}
-        >
-          <Typography
-            sx={{
-              fontWeight: 700,
-              fontSize: "1.2rem",
-              marginBottom: "0.75rem",
-              color: themeColors.text.primary,
-              borderBottom: "1px solid rgba(226, 232, 240, 0.5)",
-              paddingBottom: "0.5rem",
-            }}
-          >
-            {`${data.name} (${data.label})`}
-          </Typography>
-
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginBottom: "0.5rem",
-              fontSize: "0.875rem",
-            }}
-          >
-            <Box sx={{ display: "flex", alignItems: "center" }}>
-              <Box
-                component="span"
-                sx={{
-                  display: "inline-block",
-                  width: "12px",
-                  height: "12px",
-                  borderRadius: "4px",
-                  marginRight: "0.75rem",
-                  backgroundColor: data.color,
-                }}
-              />
-              <Typography sx={{ color: themeColors.text.secondary, fontWeight: 500 }}>Solturas:</Typography>
-            </Box>
-            <Typography sx={{ fontWeight: 600, color: themeColors.text.primary }}>{data.releases}</Typography>
-          </Box>
-        </Box>
-      )
-    }
-    return null
-  }
-
-  // Custom active shape for pie chart
-  const renderActiveShape = (props) => {
-    const RADIAN = Math.PI / 180
-    const { cx, cy, midAngle, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent, value } = props
-    const sin = Math.sin(-RADIAN * midAngle)
-    const cos = Math.cos(-RADIAN * midAngle)
-    const sx = cx + (outerRadius + 10) * cos
-    const sy = cy + (outerRadius + 10) * sin
-    const mx = cx + (outerRadius + 30) * cos
-    const my = cy + (outerRadius + 30) * sin
-    const ex = mx + (cos >= 0 ? 1 : -1) * 22
-    const ey = my
-    const textAnchor = cos >= 0 ? "start" : "end"
+// Custom tooltip for the chart
+const CustomTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    const data = monthlyData.find((item) => item.month === label)
+    const removals = data?.removals || 0
 
     return (
-      <g>
-        <text x={cx} y={cy - 15} textAnchor="middle" fill={fill} fontSize={18} fontWeight="bold">
-          {payload.name}
-        </text>
-        <text x={cx} y={cy + 15} textAnchor="middle" fill={themeColors.text.primary} fontSize={16}>
-          {`${value} (${(percent * 100).toFixed(0)}%)`}
-        </text>
-        <Sector
-          cx={cx}
-          cy={cy}
-          innerRadius={innerRadius}
-          outerRadius={outerRadius}
-          startAngle={startAngle}
-          endAngle={endAngle}
-          fill={payload.color}
-          stroke="#fff"
-          strokeWidth={3}
-        />
-        <Sector
-          cx={cx}
-          cy={cy}
-          startAngle={startAngle}
-          endAngle={endAngle}
-          innerRadius={outerRadius + 6}
-          outerRadius={outerRadius + 12}
-          fill={payload.color}
-          stroke={payload.color}
-          strokeWidth={1}
-          strokeOpacity={0.8}
-        />
-        <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={payload.color} fill="none" strokeWidth={2} />
-        <circle cx={ex} cy={ey} r={2} fill={payload.color} stroke="none" />
-        <text x={ex + (cos >= 0 ? 1 : -1) * 12} fill={payload.color} stroke="none" />
-        <text
-          x={ex + (cos >= 0 ? 1 : -1) * 12}
-          y={ey}
-          textAnchor={textAnchor}
-          fill={themeColors.text.primary}
-          fontSize={14}
-          fontWeight={500}
-        >{`${value} (${(percent * 100).toFixed(0)}%)`}</text>
-      </g>
-    )
-  }
-
-  // Custom stat card component - redesigned to be more modern and clean
-  const CustomStatCard = ({ title, value, icon: Icon, color, highlight, onRefresh }) => (
-    <Card
-      sx={{
-        position: "relative",
-        overflow: "hidden",
-        borderRadius: "24px",
-        boxShadow: highlight ? `0 0 30px ${color}` : "0 10px 30px rgba(0, 0, 0, 0.08)",
-        background: highlight
-          ? `linear-gradient(135deg, ${alpha(color, 0.3)} 0%, white 100%)`
-          : `linear-gradient(135deg, white 0%, #fafafa 100%)`,
-        height: "100%",
-        transition: "all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
-        "&:hover": {
-          transform: "translateY(-8px)",
-          boxShadow: `0 15px 35px ${alpha(color, 0.2)}`,
-        },
-        "&::before": {
-          content: '""',
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "5px",
-          background: `linear-gradient(90deg, ${color}, ${alpha(color, 0.5)})`,
-          zIndex: 1,
-        },
-        animation: highlight
-          ? `${keyframes.flashHighlight} 0.7s ease-in-out 5, ${keyframes.float} 4s ease-in-out infinite`
-          : `${keyframes.fadeIn} 0.6s ease-out, ${keyframes.float} 4s ease-in-out infinite`,
-        transform: highlight ? "scale(1.05)" : "scale(1)",
-      }}
-    >
       <Box
         sx={{
-          position: "absolute",
-          top: "20px",
-          right: "20px",
-          width: "60px",
-          height: "60px",
-          borderRadius: "50%",
-          background: highlight
-            ? `linear-gradient(135deg, ${color} 0%, ${alpha(color, 0.7)} 100%)`
-            : `linear-gradient(135deg, ${alpha(color, 0.12)} 0%, ${alpha(color, 0.06)} 100%)`,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          animation: highlight
-            ? `${keyframes.pulse} 0.5s ease-in-out infinite`
-            : `${keyframes.pulse} 3s ease-in-out infinite`,
+          backgroundColor: "rgba(255, 255, 255, 0.98)",
+          border: "none",
+          borderRadius: "16px",
+          padding: "1.2rem",
+          boxShadow: "0 10px 40px rgba(0, 0, 0, 0.15)",
+          maxWidth: "280px",
+          position: "relative",
+          "&:before": {
+            content: '""',
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: "6px",
+            background: `linear-gradient(90deg, ${themeColors.primary.main}, ${themeColors.primary.light})`,
+            borderTopLeftRadius: "16px",
+            borderTopRightRadius: "16px",
+          },
         }}
       >
-        <Icon sx={{ fontSize: 30, color: highlight ? "white" : color }} />
-      </Box>
-      <CardContent sx={{ p: 3, pt: 4, pb: 5 }}>
         <Typography
-          variant="h3"
           sx={{
             fontWeight: 700,
-            fontSize: { xs: "2rem", sm: "2.5rem" },
-            color: highlight ? color : themeColors.text.primary,
-            mb: 1,
-            animation: highlight
-              ? `${keyframes.heartbeat} 0.5s ease-in-out infinite`
-              : `${keyframes.slideInUp} 0.5s ease-out`,
+            fontSize: "1.2rem",
+            marginBottom: "0.75rem",
+            color: themeColors.text.primary,
+            borderBottom: "1px solid rgba(226, 232, 240, 0.5)",
+            paddingBottom: "0.5rem",
           }}
         >
-          {value}
+          {`${label} - ${removals} Remoções`}
         </Typography>
-        <Typography
-          variant="body1"
-          sx={{
-            color: themeColors.text.secondary,
-            fontWeight: 500,
-            fontSize: "0.95rem",
-            animation: `${keyframes.slideInUp} 0.5s ease-out 0.1s both`,
-          }}
-        >
-          {title}
-        </Typography>
+
         <Box
           sx={{
-            position: "absolute",
-            bottom: 0,
-            left: 0,
-            width: "100%",
-            height: "4px",
-            background: `linear-gradient(90deg, transparent, ${alpha(color, 0.25)}, transparent)`,
-            animation: `${keyframes.shimmer} 2s infinite linear`,
-            backgroundSize: "200% 100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: "0.5rem",
+            fontSize: "0.875rem",
           }}
-        />
-        {onRefresh && (
-          <IconButton
-            onClick={onRefresh}
-            size="small"
+        >
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <Box
+              component="span"
+              sx={{
+                display: "inline-block",
+                width: "12px",
+                height: "12px",
+                borderRadius: "4px",
+                marginRight: "0.75rem",
+                backgroundColor: themeColors.primary.main,
+              }}
+            />
+            <Typography sx={{ color: themeColors.text.secondary, fontWeight: 500 }}>Remoções:</Typography>
+          </Box>
+          <Typography sx={{ fontWeight: 600, color: themeColors.text.primary }}>{removals}</Typography>
+        </Box>
+
+        <Box sx={{ marginTop: "0.75rem", paddingTop: "0.75rem", borderTop: "1px dashed rgba(226, 232, 240, 0.8)" }}>
+          <Box
             sx={{
-              position: "absolute",
-              bottom: "10px",
-              right: "10px",
-              backgroundColor: alpha(color, 0.1),
-              color: color,
-              width: "32px",
-              height: "32px",
-              transition: "all 0.3s ease",
-              "&:hover": {
-                backgroundColor: alpha(color, 0.2),
-                transform: "rotate(180deg)",
-              },
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
             }}
           >
-            <Refresh fontSize="small" />
-          </IconButton>
-        )}
-      </CardContent>
-    </Card>
-  )
-
-  // Funções para atualizar cards individuais
-  const refreshTotalVehicles = async () => {
-    try {
-      setStatsData((prev) => ({ ...prev, totalVehicles: null })) // Opcional: definir como null para mostrar carregamento
-      const result = await getContagemTotalRemocao()
-      setStatsData((prev) => ({
-        ...prev,
-        totalVehicles: result?.totalRemocao || prev.totalVehicles,
-      }))
-      setHighlightedStat("totalVehicles")
-    } catch (error) {
-      console.error("Erro ao atualizar total de veículos:", error)
-    }
-  }
-
-  const refreshActiveVehicles = async () => {
-    try {
-      setStatsData((prev) => ({ ...prev, activeVehicles: null })) // Opcional: definir como null para mostrar carregamento
-      const result = await getContagemRemocaoAtivos()
-      setStatsData((prev) => ({
-        ...prev,
-        activeVehicles: result?.countRemocaoAtivos || prev.activeVehicles,
-      }))
-      setHighlightedStat("activeVehicles")
-    } catch (error) {
-      console.error("Erro ao atualizar veículos ativos:", error)
-    }
-  }
-
-  const refreshInactiveVehicles = async () => {
-    try {
-      setStatsData((prev) => ({ ...prev, inactiveVehicles: null })) // Opcional: definir como null para mostrar carregamento
-      const result = await getContagemRemocaoInativos()
-      setStatsData((prev) => ({
-        ...prev,
-        inactiveVehicles: result?.countRemocaoInativos || prev.inactiveVehicles,
-      }))
-      setHighlightedStat("inactiveVehicles")
-    } catch (error) {
-      console.error("Erro ao atualizar veículos inativos:", error)
-    }
-  }
-
-  const refreshReleasedToday = async () => {
-    try {
-      setStatsData((prev) => ({ ...prev, releasedToday: null })) // Opcional: definir como null para mostrar carregamento
-      const result = await getTotalDeRemocaoSoltasNoDia()
-      setStatsData((prev) => ({
-        ...prev,
-        releasedToday: result?.totalDeRemocoes || prev.releasedToday,
-      }))
-      setHighlightedStat("releasedToday")
-    } catch (error) {
-      console.error("Erro ao atualizar veículos soltos hoje:", error)
-    }
-  }
-
-  // Update the getStatusChip function to handle only "Finalizado" and "Em andamento"
-  const getStatusChip = (status) => {
-    if (status === "Finalizado") {
-      return (
-        <Chip
-          label="Finalizado"
-          sx={{
-            backgroundColor: alpha(themeColors.success.main, 0.1),
-            color: themeColors.success.main,
-            fontWeight: 600,
-            borderRadius: "12px",
-            transition: "all 0.3s ease",
-            "&:hover": {
-              backgroundColor: alpha(themeColors.success.main, 0.2),
-            },
-          }}
-          size="small"
-        />
-      )
-    } else {
-      return (
-        <Chip
-          label="Em andamento"
-          sx={{
-            backgroundColor: alpha(themeColors.primary.main, 0.1),
-            color: themeColors.primary.main,
-            fontWeight: 600,
-            borderRadius: "12px",
-            transition: "all 0.3s ease",
-            "&:hover": {
-              backgroundColor: alpha(themeColors.primary.main, 0.2),
-            },
-          }}
-          size="small"
-        />
-      )
-    }
-  }
-
-  // Sort indicator component
-  const SortIndicator = ({ field }) => {
-    if (sortField !== field) return null
-    return sortDirection === "asc" ? (
-      <ArrowUpward sx={{ fontSize: 16, ml: 0.5 }} />
-    ) : (
-      <ArrowDownward sx={{ fontSize: 16, ml: 0.5 }} />
+            <Typography sx={{ color: themeColors.text.secondary, fontWeight: 500, fontSize: "0.875rem" }}>
+              Média Mensal:
+            </Typography>
+            <Typography
+              sx={{
+                fontWeight: 700,
+                fontSize: "0.875rem",
+                color: themeColors.success.main,
+              }}
+            >
+              {monthlyAverage}
+            </Typography>
+          </Box>
+        </Box>
+      </Box>
     )
   }
+  return null
+}
 
-  // Render chart based on selected type
-  const renderChart = () => {
-    switch (chartType) {
-      case 0: // Bar Chart
-        return (
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={chartData}
-              margin={{ top: 30, right: 30, left: 20, bottom: 60 }}
-              barGap={12}
-              barCategoryGap={40}
+// Custom tooltip for team chart
+const TeamChartTooltip = ({ active, payload }) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload
+    return (
+      <Box
+        sx={{
+          backgroundColor: "rgba(255, 255, 255, 0.98)",
+          border: "none",
+          borderRadius: "16px",
+          padding: "1.2rem",
+          boxShadow: "0 10px 40px rgba(0, 0, 0, 0.15)",
+          maxWidth: "280px",
+          position: "relative",
+          "&:before": {
+            content: '""',
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: "6px",
+            background: `linear-gradient(90deg, ${data.color}, ${alpha(data.color, 0.8)})`,
+            borderTopLeftRadius: "16px",
+            borderTopRightRadius: "16px",
+          },
+        }}
+      >
+        <Typography
+          sx={{
+            fontWeight: 700,
+            fontSize: "1.2rem",
+            marginBottom: "0.75rem",
+            color: themeColors.text.primary,
+            borderBottom: "1px solid rgba(226, 232, 240, 0.5)",
+            paddingBottom: "0.5rem",
+          }}
+        >
+          {`${data.name} (${data.label})`}
+        </Typography>
+
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: "0.5rem",
+            fontSize: "0.875rem",
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <Box
+              component="span"
+              sx={{
+                display: "inline-block",
+                width: "12px",
+                height: "12px",
+                borderRadius: "4px",
+                marginRight: "0.75rem",
+                backgroundColor: data.color,
+              }}
+            />
+            <Typography sx={{ color: themeColors.text.secondary, fontWeight: 500 }}>Solturas:</Typography>
+          </Box>
+          <Typography sx={{ fontWeight: 600, color: themeColors.text.primary }}>{data.releases}</Typography>
+        </Box>
+      </Box>
+    )
+  }
+  return null
+}
+
+// Custom active shape for pie chart
+const renderActiveShape = (props) => {
+  const RADIAN = Math.PI / 180
+  const { cx, cy, midAngle, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent, value } = props
+  const sin = Math.sin(-RADIAN * midAngle)
+  const cos = Math.cos(-RADIAN * midAngle)
+  const sx = cx + (outerRadius + 10) * cos
+  const sy = cy + (outerRadius + 10) * sin
+  const mx = cx + (outerRadius + 30) * cos
+  const my = cy + (outerRadius + 30) * sin
+  const ex = mx + (cos >= 0 ? 1 : -1) * 22
+  const ey = my
+  const textAnchor = cos >= 0 ? "start" : "end"
+
+  return (
+    <g>
+      <text x={cx} y={cy - 15} textAnchor="middle" fill={fill} fontSize={18} fontWeight="bold">
+        {payload.name}
+      </text>
+      <text x={cx} y={cy + 15} textAnchor="middle" fill={themeColors.text.primary} fontSize={16}>
+        {`${value} (${(percent * 100).toFixed(0)}%)`}
+      </text>
+      <Sector
+        cx={cx}
+        cy={cy}
+        innerRadius={innerRadius}
+        outerRadius={outerRadius}
+        startAngle={startAngle}
+        endAngle={endAngle}
+        fill={payload.color}
+        stroke="#fff"
+        strokeWidth={3}
+      />
+      <Sector
+        cx={cx}
+        cy={cy}
+        startAngle={startAngle}
+        endAngle={endAngle}
+        innerRadius={outerRadius + 6}
+        outerRadius={outerRadius + 12}
+        fill={payload.color}
+        stroke={payload.color}
+        strokeWidth={1}
+        strokeOpacity={0.8}
+      />
+      <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={payload.color} fill="none" strokeWidth={2} />
+      <circle cx={ex} cy={ey} r={2} fill={payload.color} stroke="none" />
+      <text x={ex + (cos >= 0 ? 1 : -1) * 12} fill={payload.color} stroke="none" />
+      <text
+        x={ex + (cos >= 0 ? 1 : -1) * 12}
+        y={ey}
+        textAnchor={textAnchor}
+        fill={themeColors.text.primary}
+        fontSize={14}
+        fontWeight={500}
+      >{`${value} (${(percent * 100).toFixed(0)}%)`}</text>
+    </g>
+  )
+}
+
+// Funções para atualizar cards individuais
+const refreshTotalVehicles = async () => {
+  try {
+    setStatsData((prev) => ({ ...prev, totalVehicles: null })) // Opcional: definir como null para mostrar carregamento
+    const result = await getContagemTotalRemocao()
+    setStatsData((prev) => ({
+      ...prev,
+      totalVehicles: result?.totalRemocao || prev.totalVehicles,
+    }))
+    setHighlightedStat("totalVehicles")
+  } catch (error) {
+    console.error("Erro ao atualizar total de veículos:", error)
+  }
+}
+
+const refreshActiveVehicles = async () => {
+  try {
+    setStatsData((prev) => ({ ...prev, activeVehicles: null })) // Opcional: definir como null para mostrar carregamento
+    const result = await getContagemRemocaoAtivos()
+    setStatsData((prev) => ({
+      ...prev,
+      activeVehicles: result?.countRemocaoAtivos || prev.activeVehicles,
+    }))
+    setHighlightedStat("activeVehicles")
+  } catch (error) {
+    console.error("Erro ao atualizar veículos ativos:", error)
+  }
+}
+
+const refreshInactiveVehicles = async () => {
+  try {
+    setStatsData((prev) => ({ ...prev, inactiveVehicles: null })) // Opcional: definir como null para mostrar carregamento
+    const result = await getContagemRemocaoInativos()
+    setStatsData((prev) => ({
+      ...prev,
+      inactiveVehicles: result?.countRemocaoInativos || prev.inactiveVehicles,
+    }))
+    setHighlightedStat("inactiveVehicles")
+  } catch (error) {
+    console.error("Erro ao atualizar veículos inativos:", error)
+  }
+}
+
+const refreshReleasedToday = async () => {
+  try {
+    const result = await getTotalDeRemocaoSoltasNoDia();
+    const novoTotal = result?.totalDeRemocoes;
+
+    setStatsData((prev) => {
+      if (prev.releasedToday === novoTotal || novoTotal == null) {
+        return prev; // NÃO atualiza se o valor for igual ou se vier nulo
+      }
+
+      return {
+        ...prev,
+        releasedToday: novoTotal,
+      };
+    });
+
+    setHighlightedStat("releasedToday");
+  } catch (error) {
+    console.error("Erro ao atualizar veículos soltos hoje:", error);
+  }
+};
+
+useEffect(() => {
+  refreshReleasedToday();
+
+  const interval = setInterval(() => {
+    refreshReleasedToday();
+  }, 7000); // Atualiza a cada 3 segundos
+
+  return () => clearInterval(interval);
+}, []);
+
+ 
+
+// Update the getStatusChip function to handle only "Finalizado" and "Em andamento"
+const getStatusChip = (status) => {
+  if (status === "Finalizado") {
+    return (
+      <Chip
+        label="Finalizado"
+        sx={{
+          backgroundColor: alpha(themeColors.success.main, 0.1),
+          color: themeColors.success.main,
+          fontWeight: 600,
+          borderRadius: "12px",
+          transition: "all 0.3s ease",
+          "&:hover": {
+            backgroundColor: alpha(themeColors.success.main, 0.2),
+          },
+        }}
+        size="small"
+      />
+    )
+  } else {
+    return (
+      <Chip
+        label="Em andamento"
+        sx={{
+          backgroundColor: alpha(themeColors.primary.main, 0.1),
+          color: themeColors.primary.main,
+          fontWeight: 600,
+          borderRadius: "12px",
+          transition: "all 0.3s ease",
+          "&:hover": {
+            backgroundColor: alpha(themeColors.primary.main, 0.2),
+          },
+        }}
+        size="small"
+      />
+    )
+  }
+}
+
+// Sort indicator component
+const SortIndicator = ({ field }) => {
+  if (sortField !== field) return null
+  return sortDirection === "asc" ? (
+    <ArrowUpward sx={{ fontSize: 16, ml: 0.5 }} />
+  ) : (
+    <ArrowDownward sx={{ fontSize: 16, ml: 0.5 }} />
+  )
+}
+
+// Render chart based on selected type
+const renderChart = () => {
+  switch (chartType) {
+    case 0: // Bar Chart
+      return (
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={chartData}
+            margin={{ top: 30, right: 30, left: 20, bottom: 60 }}
+            barGap={12}
+            barCategoryGap={40}
+          >
+            <defs>
+              <linearGradient id="colorRemovals" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={themeColors.primary.main} stopOpacity={1} />
+                <stop offset="100%" stopColor={themeColors.primary.light} stopOpacity={0.8} />
+              </linearGradient>
+              <filter id="shadow" height="200%">
+                <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor={themeColors.primary.main} floodOpacity="0.2" />
+              </filter>
+            </defs>
+            <CartesianGrid vertical={false} strokeDasharray="5 5" stroke={themeColors.divider} strokeOpacity={0.6} />
+            <XAxis
+              dataKey="month"
+              tickLine={false}
+              axisLine={{ stroke: themeColors.divider, strokeWidth: 1 }}
+              tick={{ fill: themeColors.text.primary, fontSize: 12, fontWeight: 500 }}
+              dy={10}
+            />
+            <YAxis
+              tickLine={false}
+              axisLine={{ stroke: themeColors.divider, strokeWidth: 1 }}
+              tick={{ fill: themeColors.text.primary, fontSize: 12, fontWeight: 500 }}
+              tickFormatter={(value) => `${value}`}
+              dx={-10}
+            />
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(241, 245, 249, 0.5)" }} />
+            <Legend verticalAlign="bottom" wrapperStyle={{ paddingTop: 20 }} />
+            <ReferenceLine y={0} stroke={themeColors.divider} strokeWidth={1} />
+            <Bar
+              dataKey="removals"
+              fill="url(#colorRemovals)"
+              radius={[8, 8, 0, 0]}
+              name="Remoções"
+              animationDuration={1500}
+              barSize={40}
+              filter="url(#shadow)"
             >
-              <defs>
-                <linearGradient id="colorRemovals" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={themeColors.primary.main} stopOpacity={1} />
-                  <stop offset="100%" stopColor={themeColors.primary.light} stopOpacity={0.8} />
-                </linearGradient>
-                <filter id="shadow" height="200%">
-                  <feDropShadow
-                    dx="0"
-                    dy="4"
-                    stdDeviation="6"
-                    floodColor={themeColors.primary.main}
-                    floodOpacity="0.2"
-                  />
-                </filter>
-              </defs>
-              <CartesianGrid vertical={false} strokeDasharray="5 5" stroke={themeColors.divider} strokeOpacity={0.6} />
-              <XAxis
-                dataKey="month"
-                tickLine={false}
-                axisLine={{ stroke: themeColors.divider, strokeWidth: 1 }}
-                tick={{ fill: themeColors.text.primary, fontSize: 12, fontWeight: 500 }}
-                dy={10}
-              />
-              <YAxis
-                tickLine={false}
-                axisLine={{ stroke: themeColors.divider, strokeWidth: 1 }}
-                tick={{ fill: themeColors.text.primary, fontSize: 12, fontWeight: 500 }}
-                tickFormatter={(value) => `${value}`}
-                dx={-10}
-              />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(241, 245, 249, 0.5)" }} />
-              <Legend verticalAlign="bottom" wrapperStyle={{ paddingTop: 20 }} />
-              <ReferenceLine y={0} stroke={themeColors.divider} strokeWidth={1} />
-              <Bar
+              <LabelList
                 dataKey="removals"
-                fill="url(#colorRemovals)"
-                radius={[8, 8, 0, 0]}
-                name="Remoções"
-                animationDuration={1500}
-                barSize={40}
-                filter="url(#shadow)"
-              >
-                <LabelList
-                  dataKey="removals"
-                  position="top"
-                  fill={themeColors.primary.main}
-                  fontSize={12}
-                  fontWeight={600}
-                />
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        )
-      case 1: // Line Chart
-        return (
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData} margin={{ top: 30, right: 30, left: 20, bottom: 60 }}>
-              <defs>
-                <linearGradient id="colorRemovals" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={themeColors.primary.main} stopOpacity={1} />
-                  <stop offset="100%" stopColor={themeColors.primary.light} stopOpacity={0.8} />
-                </linearGradient>
-                <filter id="glow" height="200%">
-                  <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
+                position="top"
+                fill={themeColors.primary.main}
+                fontSize={12}
+                fontWeight={600}
+              />
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      )
+    case 1: // Line Chart
+      return (
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={chartData} margin={{ top: 30, right: 30, left: 20, bottom: 60 }}>
+            <defs>
+              <linearGradient id="colorRemovals" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={themeColors.primary.main} stopOpacity={1} />
+                <stop offset="100%" stopColor={themeColors.primary.light} stopOpacity={0.8} />
+              </linearGradient>
+              <filter id="glow" height="200%">
+                <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
+                <feMerge>
+                  <feMergeNode in="coloredBlur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+            <CartesianGrid strokeDasharray="5 5" stroke={themeColors.divider} strokeOpacity={0.6} />
+            <XAxis
+              dataKey="month"
+              tickLine={false}
+              axisLine={{ stroke: themeColors.divider, strokeWidth: 1 }}
+              tick={{ fill: themeColors.text.primary, fontSize: 12, fontWeight: 500 }}
+            />
+            <YAxis
+              tickLine={false}
+              axisLine={{ stroke: themeColors.divider, strokeWidth: 1 }}
+              tick={{ fill: themeColors.text.primary, fontSize: 12, fontWeight: 500 }}
+            />
+            <Tooltip content={<CustomTooltip />} />
+            <Legend verticalAlign="bottom" wrapperStyle={{ paddingTop: 20 }} />
+            <Line
+              type="monotone"
+              dataKey="removals"
+              stroke="url(#colorRemovals)"
+              strokeWidth={4}
+              dot={{ r: 6, fill: themeColors.primary.main, strokeWidth: 2, stroke: "#ffffff" }}
+              activeDot={{ r: 8, fill: themeColors.primary.main, strokeWidth: 2, stroke: "#ffffff" }}
+              name="Remoções"
+              filter="url(#glow)"
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      )
+    case 2: // Pie Chart
+      return (
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <defs>
+              {pieChartData.map((entry, index) => (
+                <filter key={`filter-${index}`} id={`glow-${index}`} height="200%">
+                  <feGaussianBlur stdDeviation="3" result="coloredBlur" />
                   <feMerge>
                     <feMergeNode in="coloredBlur" />
                     <feMergeNode in="SourceGraphic" />
                   </feMerge>
                 </filter>
-              </defs>
-              <CartesianGrid strokeDasharray="5 5" stroke={themeColors.divider} strokeOpacity={0.6} />
-              <XAxis
-                dataKey="month"
-                tickLine={false}
-                axisLine={{ stroke: themeColors.divider, strokeWidth: 1 }}
-                tick={{ fill: themeColors.text.primary, fontSize: 12, fontWeight: 500 }}
-              />
-              <YAxis
-                tickLine={false}
-                axisLine={{ stroke: themeColors.divider, strokeWidth: 1 }}
-                tick={{ fill: themeColors.text.primary, fontSize: 12, fontWeight: 500 }}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend verticalAlign="bottom" wrapperStyle={{ paddingTop: 20 }} />
-              <Line
-                type="monotone"
-                dataKey="removals"
-                stroke="url(#colorRemovals)"
-                strokeWidth={4}
-                dot={{ r: 6, fill: themeColors.primary.main, strokeWidth: 2, stroke: "#ffffff" }}
-                activeDot={{ r: 8, fill: themeColors.primary.main, strokeWidth: 2, stroke: "#ffffff" }}
-                name="Remoções"
-                filter="url(#glow)"
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        )
-      case 2: // Pie Chart
-        return (
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <defs>
-                {pieChartData.map((entry, index) => (
-                  <filter key={`filter-${index}`} id={`glow-${index}`} height="200%">
-                    <feGaussianBlur stdDeviation="3" result="coloredBlur" />
-                    <feMerge>
-                      <feMergeNode in="coloredBlur" />
-                      <feMergeNode in="SourceGraphic" />
-                    </feMerge>
-                  </filter>
-                ))}
-              </defs>
-              <Pie
-                activeIndex={activeIndex}
-                activeShape={renderActiveShape}
-                data={pieChartData}
-                cx="50%"
-                cy="50%"
-                innerRadius={100}
-                outerRadius={140}
-                fill="#8884d8"
-                dataKey="value"
-                onMouseEnter={onPieEnter}
-                paddingAngle={2}
-                filter={`url(#glow-${activeIndex})`}
-              >
-                {pieChartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} stroke="#fff" strokeWidth={2} />
-                ))}
-              </Pie>
-              <Legend
-                verticalAlign="bottom"
-                layout="horizontal"
-                align="center"
-                wrapperStyle={{ paddingTop: 30 }}
-                formatter={(value, entry, index) => (
-                  <span
-                    style={{
-                      color: pieChartData[index].color,
-                      fontWeight: 600,
-                      fontSize: "14px",
-                      padding: "4px 8px",
-                      borderRadius: "4px",
-                      backgroundColor: alpha(pieChartData[index].color, 0.1),
-                    }}
-                  >
-                    {value}
-                  </span>
-                )}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-        )
-      default:
-        return null
-    }
+              ))}
+            </defs>
+            <Pie
+              activeIndex={activeIndex}
+              activeShape={renderActiveShape}
+              data={pieChartData}
+              cx="50%"
+              cy="50%"
+              innerRadius={100}
+              outerRadius={140}
+              fill="#8884d8"
+              dataKey="value"
+              onMouseEnter={onPieEnter}
+              paddingAngle={2}
+              filter={`url(#glow-${activeIndex})`}
+            >
+              {pieChartData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.color} stroke="#fff" strokeWidth={2} />
+              ))}
+            </Pie>
+            <Legend
+              verticalAlign="bottom"
+              layout="horizontal"
+              align="center"
+              wrapperStyle={{ paddingTop: 30 }}
+              formatter={(value, entry, index) => (
+                <span
+                  style={{
+                    color: pieChartData[index].color,
+                    fontWeight: 600,
+                    fontSize: "14px",
+                    padding: "4px 8px",
+                    borderRadius: "4px",
+                    backgroundColor: alpha(pieChartData[index].color, 0.1),
+                  }}
+                >
+                  {value}
+                </span>
+              )}
+            />
+          </PieChart>
+        </ResponsiveContainer>
+      )
+    default:
+      return null
   }
+}
 
-  // Render team chart based on selected type
-  const renderTeamChart = () => {
-    switch (teamChartType) {
-      case 0: // Bar Chart
-        return (
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={teamData} margin={{ top: 20, right: 30, left: 20, bottom: 40 }}>
-              <defs>
-                {teamData.map((entry, index) => (
-                  <linearGradient key={`gradient-${index}`} id={`colorTeam${index}`} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={entry.color} stopOpacity={1} />
-                    <stop offset="100%" stopColor={entry.color} stopOpacity={0.8} />
-                  </linearGradient>
-                ))}
-                <filter id="teamShadow" height="200%">
-                  <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#000000" floodOpacity="0.15" />
-                </filter>
-              </defs>
-              <CartesianGrid strokeDasharray="5 5" vertical={false} stroke={themeColors.divider} strokeOpacity={0.6} />
-              <XAxis
-                dataKey="name"
-                tick={{ fill: themeColors.text.primary, fontSize: 12, fontWeight: 500 }}
-                tickLine={false}
-                axisLine={{ stroke: themeColors.divider, strokeWidth: 1 }}
+// Render team chart based on selected type
+const renderTeamChart = () => {
+  switch (teamChartType) {
+    case 0: // Bar Chart
+      return (
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={teamData} margin={{ top: 20, right: 30, left: 20, bottom: 40 }}>
+            <defs>
+              {teamData.map((entry, index) => (
+                <linearGradient key={`gradient-${index}`} id={`colorTeam${index}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={entry.color} stopOpacity={1} />
+                  <stop offset="100%" stopColor={entry.color} stopOpacity={0.8} />
+                </linearGradient>
+              ))}
+              <filter id="teamShadow" height="200%">
+                <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#000000" floodOpacity="0.15" />
+              </filter>
+            </defs>
+            <CartesianGrid strokeDasharray="5 5" vertical={false} stroke={themeColors.divider} strokeOpacity={0.6} />
+            <XAxis
+              dataKey="name"
+              tick={{ fill: themeColors.text.primary, fontSize: 12, fontWeight: 500 }}
+              tickLine={false}
+              axisLine={{ stroke: themeColors.divider, strokeWidth: 1 }}
+            />
+            <YAxis
+              tick={{ fill: themeColors.text.primary, fontSize: 12, fontWeight: 500 }}
+              tickLine={false}
+              axisLine={{ stroke: themeColors.divider, strokeWidth: 1 }}
+            />
+            <Tooltip content={<TeamChartTooltip />} />
+            <Legend
+              verticalAlign="top"
+              height={36}
+              iconType="circle"
+              iconSize={10}
+              formatter={(value, entry, index) => (
+                <span
+                  style={{
+                    color: teamData[index]?.color,
+                    fontWeight: 600,
+                    fontSize: "14px",
+                    padding: "4px 8px",
+                    borderRadius: "4px",
+                    backgroundColor: alpha(teamData[index]?.color || themeColors.primary.main, 0.1),
+                  }}
+                >{`${value} (${teamData[index]?.label || ""})`}</span>
+              )}
+            />
+            <Bar dataKey="releases" name="Solturas" radius={[10, 10, 0, 0]} filter="url(#teamShadow)" barSize={50}>
+              {teamData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={`url(#colorTeam${index})`} />
+              ))}
+              <LabelList
+                dataKey="releases"
+                position="top"
+                fill={themeColors.text.primary}
+                fontSize={14}
+                fontWeight={600}
               />
-              <YAxis
-                tick={{ fill: themeColors.text.primary, fontSize: 12, fontWeight: 500 }}
-                tickLine={false}
-                axisLine={{ stroke: themeColors.divider, strokeWidth: 1 }}
-              />
-              <Tooltip content={<TeamChartTooltip />} />
-              <Legend
-                verticalAlign="top"
-                height={36}
-                iconType="circle"
-                iconSize={10}
-                formatter={(value, entry, index) => (
-                  <span
-                    style={{
-                      color: teamData[index]?.color,
-                      fontWeight: 600,
-                      fontSize: "14px",
-                      padding: "4px 8px",
-                      borderRadius: "4px",
-                      backgroundColor: alpha(teamData[index]?.color || themeColors.primary.main, 0.1),
-                    }}
-                  >{`${value} (${teamData[index]?.label || ""})`}</span>
-                )}
-              />
-              <Bar dataKey="releases" name="Solturas" radius={[10, 10, 0, 0]} filter="url(#teamShadow)" barSize={50}>
-                {teamData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={`url(#colorTeam${index})`} />
-                ))}
-                <LabelList
-                  dataKey="releases"
-                  position="top"
-                  fill={themeColors.text.primary}
-                  fontSize={14}
-                  fontWeight={600}
-                />
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        )
-      default:
-        return null
-    }
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      )
+    default:
+      return null
   }
+}
 
-  // Custom date picker component
-  const DatePickerInput = () => (
-    <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <Box sx={{ display: "flex", alignItems: "center" }}>
-        <DatePicker
-          value={selectedDate}
-          onChange={(newDate) => setSelectedDate(newDate)}
-          slotProps={{
-            textField: {
-              variant: "outlined",
-              size: "small",
-              sx: {
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "12px",
-                  backgroundColor: "white",
-                },
+// Custom date picker component
+const DatePickerInput = () => (
+  <LocalizationProvider dateAdapter={AdapterDateFns}>
+    <Box sx={{ display: "flex", alignItems: "center" }}>
+      <DatePicker
+        value={selectedDate}
+        onChange={(newDate) => setSelectedDate(newDate)}
+        slotProps={{
+          textField: {
+            variant: "outlined",
+            size: "small",
+            sx: {
+              "& .MuiOutlinedInput-root": {
+                borderRadius: "12px",
+                backgroundColor: "white",
               },
             },
+          },
+        }}
+      />
+
+      {selectedDate && (
+        <Chip
+          label={selectedDate.toLocaleDateString()}
+          size="small"
+          onDelete={() => setSelectedDate(null)}
+          sx={{
+            ml: 1,
+            borderRadius: "12px",
+            backgroundColor: alpha(themeColors.primary.main, 0.1),
+            color: themeColors.primary.main,
+            fontWeight: 500,
+            height: "28px",
+            animation: `${keyframes.fadeIn} 0.3s ease-out`,
           }}
         />
+      )}
+    </Box>
+  </LocalizationProvider>
+)
 
-        {selectedDate && (
-          <Chip
-            label={selectedDate.toLocaleDateString()}
-            size="small"
-            onDelete={() => setSelectedDate(null)}
-            sx={{
-              ml: 1,
-              borderRadius: "12px",
-              backgroundColor: alpha(themeColors.primary.main, 0.1),
-              color: themeColors.primary.main,
-              fontWeight: 500,
-              height: "28px",
-              animation: `${keyframes.fadeIn} 0.3s ease-out`,
-            }}
-          />
-        )}
-      </Box>
-    </LocalizationProvider>
-  )
-
-  // Modifique o useEffect para usar dados de exemplo se a API falhar
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        await loadAllData()
-
-        // Se após carregar os dados, ainda não temos nada, use os dados de exemplo
-        setTimeout(() => {
-          if (removals.length === 0) {
-            console.log("Usando dados de exemplo porque a API não retornou dados")
-            setChartsLoaded(true)
-          }
-        }, 1000)
-      } catch (error) {
-        console.error("Erro ao carregar dados:", error)
-
-        // Em caso de erro, marcar carregamento como concluído
-        setChartsLoaded(true)
-        setLoading(false)
-        setInitialLoading(false)
-      }
-    }
-
-    fetchData()
-  }, [])
-
-  const handleRegisterFormChange = (field, value, index = null) => {
-    if (index !== null) {
-      // Para campos com múltiplos valores (collectors, leaders, leaderPhones)
-      setRegisterFormData((prev) => {
-        const newValues = [...prev[field]]
-        newValues[index] = value
-        return { ...prev, [field]: newValues }
-      })
-    } else {
-      // Para campos simples
-      setRegisterFormData((prev) => ({ ...prev, [field]: value }))
-    }
-  }
-
-  // Adicionar a função para lidar com o envio do formulário
-  // Adicionar após a função handleRegisterFormChange
-  const handleRegisterSubmit = async () => {
+// Modifique o useEffect para usar dados de exemplo se a API falhar
+useEffect(() => {
+  const fetchData = async () => {
     try {
-      setLoading(true)
+      await loadAllData()
 
-      // Primeiro, vamos criar o objeto de dados para enviar ao servidor
-      const newRemovalData = {
-        motorista: {
-          nome: registerFormData.driver,
-          matricula: registerFormData.driverId,
-        },
-        prefixo: registerFormData.vehiclePrefix,
-        tipo_equipe: registerFormData.team,
-        coletores: registerFormData.collectors.filter(Boolean).map((name) => ({ nome: name })),
-        garagem: registerFormData.garage,
-        rota: registerFormData.route,
-        veiculo: registerFormData.vehicleType,
-        hora_saida_frota: new Date().toLocaleTimeString(),
-        status_frota: "Em andamento",
-        data: new Date().toISOString().split("T")[0],
-      }
-
-      // Create the new removal object for local state
-      const newRemoval = {
-        id: removals.length + 1,
-        driver: registerFormData.driver,
-        driverId: registerFormData.driverId,
-        collectors: registerFormData.collectors.filter(Boolean),
-        collectorsIds: [],
-        garage: registerFormData.garage,
-        route: registerFormData.route,
-        vehiclePrefix: registerFormData.vehiclePrefix,
-        departureTime: new Date().toLocaleTimeString(),
-        status: "Em andamento",
-        arrivalTime: "",
-        date: new Date().toISOString().split("T")[0],
-        team: registerFormData.team,
-        location: "",
-        vehicle: registerFormData.vehicleType,
-        distance: "0 km",
-        notes: "",
-      }
-
-      // Add to local state first for immediate UI update
-      setRemovals((prev) => [newRemoval, ...prev])
-
-      // IMPORTANTE: Atualizar o contador de forma mais direta e visível
-      // Incrementar o contador diretamente sem esperar pela API
-      setStatsData((prevStats) => ({
-        ...prevStats,
-        releasedToday: prevStats.releasedToday + 1,
-        activeVehicles: prevStats.activeVehicles + 1,
-        totalVehicles: prevStats.totalVehicles + 1,
-      }))
-
-      // Definir o highlightedStat para ativar o efeito visual
-      setHighlightedStat("releasedToday")
-
-      // Agora vamos fazer a chamada à API para registrar a soltura
-      // Simulando uma chamada de API bem-sucedida
-      await new Promise((resolve) => setTimeout(resolve, 500))
-
-      // Após o registro bem-sucedido, vamos buscar os dados atualizados do servidor
-      // para garantir que temos os números mais recentes
-      const [remocoesDiaResult, remocaoAtivosResult, totalRemocaoResult] = await Promise.all([
-        getTotalDeRemocaoSoltasNoDia(),
-        getContagemRemocaoAtivos(),
-        getContagemTotalRemocao(),
-      ])
-
-      // Atualizar os stats com os dados mais recentes do servidor
-      setStatsData((prevStats) => ({
-        ...prevStats,
-        // Usar os valores da API, mas se a API falhar, manter o valor incrementado localmente
-        releasedToday: remocoesDiaResult?.totalDeRemocoes || prevStats.releasedToday,
-        activeVehicles: remocaoAtivosResult?.countRemocaoAtivos || prevStats.activeVehicles,
-        totalVehicles: totalRemocaoResult?.totalRemocao || prevStats.totalVehicles,
-      }))
-
-      // Update team data for charts
-      const teamIndex =
-        registerFormData.team === "Equipe1(Matutino)" ? 0 : registerFormData.team === "Equipe2(Vespertino)" ? 1 : 2
-
-      setTeamData((prevTeamData) => {
-        const newTeamData = [...prevTeamData]
-        if (newTeamData[teamIndex]) {
-          newTeamData[teamIndex] = {
-            ...newTeamData[teamIndex],
-            releases: newTeamData[teamIndex].releases + 1,
-            label: `${newTeamData[teamIndex].releases + 1} solturas`,
-          }
+      // Se após carregar os dados, ainda não temos nada, use os dados de exemplo
+      setTimeout(() => {
+        if (removals.length === 0) {
+          console.log("Usando dados de exemplo porque a API não retornou dados")
+          setChartsLoaded(true)
         }
-        return newTeamData
-      })
-
-      // Show success message
-      setSnackbarMessage("Soltura cadastrada com sucesso!")
-      setSnackbarSeverity("success")
-      setSnackbarOpen(true)
-
-      // Close modal and reset form
-      setRegisterModalOpen(false)
-      setRegisterFormData({
-        driver: "",
-        driverId: "",
-        team: "Equipe1(Matutino)",
-        vehiclePrefix: "",
-        shift: "Manhã",
-        collectors: ["", "", ""],
-        vehicleType: "Caminhão Reboque",
-        garage: "PA1",
-        route: "",
-        leaders: ["", ""],
-        leaderPhones: ["", ""],
-      })
+      }, 1000)
     } catch (error) {
-      console.error("Erro ao cadastrar soltura:", error)
-      setSnackbarMessage("Erro ao cadastrar soltura. Tente novamente.")
-      setSnackbarSeverity("error")
-      setSnackbarOpen(true)
-    } finally {
+      console.error("Erro ao carregar dados:", error)
+
+      // Em caso de erro, marcar carregamento como concluído
+      setChartsLoaded(true)
       setLoading(false)
+      setInitialLoading(false)
     }
   }
 
-  // Add this new state to track which stat was just updated
-  const [highlightedStat, setHighlightedStat] = useState(null)
+  fetchData()
+}, [])
 
-  // Finally, update the Stats Cards section to use the highlight prop:
-  // Add a timeout to clear the highlight after 3 seconds
+const handleRegisterFormChange = (field, value, index = null) => {
+  if (index !== null) {
+    // Para campos com múltiplos valores (collectors, leaders, leaderPhones)
+    setRegisterFormData((prev) => {
+      const newValues = [...prev[field]]
+      newValues[index] = value
+      return { ...prev, [field]: newValues }
+    })
+  } else {
+    // Para campos simples
+    setRegisterFormData((prev) => ({ ...prev, [field]: value }))
+  }
+}
 
-  useEffect(() => {
-    if (highlightedStat) {
-      setTimeout(() => {
-        setHighlightedStat(null)
-      }, 5000) // Aumentado para 5 segundos
+// Adicionar a função para lidar com o envio do formulário
+// Adicionar após a função handleRegisterFormChange
+const handleRegisterSubmit = async () => {
+  try {
+    setLoading(true)
+
+    // Primeiro, vamos criar o objeto de dados para enviar ao servidor
+    const newRemovalData = {
+      motorista: {
+        nome: registerFormData.driver,
+        matricula: registerFormData.driverId,
+      },
+      prefixo: registerFormData.vehiclePrefix,
+      tipo_equipe: registerFormData.team,
+      coletores: registerFormData.collectors.filter(Boolean).map((name) => ({ nome: name })),
+      garagem: registerFormData.garage,
+      rota: registerFormData.route,
+      veiculo: registerFormData.vehicleType,
+      hora_saida_frota: new Date().toLocaleTimeString(),
+      status_frota: "Em andamento",
+      data: new Date().toISOString().split("T")[0],
     }
-  }, [highlightedStat])
 
-  return (
+    // Create the new removal object for local state
+    const newRemoval = {
+      id: removals.length + 1,
+      driver: registerFormData.driver,
+      driverId: registerFormData.driverId,
+      collectors: registerFormData.collectors.filter(Boolean),
+      collectorsIds: [],
+      garage: registerFormData.garage,
+      route: registerFormData.route,
+      vehiclePrefix: registerFormData.vehiclePrefix,
+      departureTime: new Date().toLocaleTimeString(),
+      status: "Em andamento",
+      arrivalTime: "",
+      date: new Date().toISOString().split("T")[0],
+      team: registerFormData.team,
+      location: "",
+      vehicle: registerFormData.vehicleType,
+      distance: "0 km",
+      notes: "",
+    }
+
+    // Add to local state first for immediate UI update
+    setRemovals((prev) => [newRemoval, ...prev])
+
+    // IMPORTANTE: Atualizar o contador de forma mais direta e visível
+    // Incrementar o contador diretamente sem esperar pela API
+    setStatsData((prevStats) => ({
+      ...prevStats,
+      releasedToday: prevStats.releasedToday + 1,
+      activeVehicles: prevStats.activeVehicles + 1,
+      totalVehicles: prevStats.totalVehicles + 1,
+    }))
+
+    // Definir o highlightedStat para ativar o efeito visual
+    setHighlightedStat("releasedToday")
+
+    // Agora vamos fazer a chamada à API para registrar a soltura
+    // Simulando uma chamada de API bem-sucedida
+    await new Promise((resolve) => setTimeout(resolve, 500))
+
+    // Após o registro bem-sucedido, vamos buscar os dados atualizados do servidor
+    // para garantir que temos os números mais recentes
+    const [remocoesDiaResult, remocaoAtivosResult, totalRemocaoResult] = await Promise.all([
+      getTotalDeRemocaoSoltasNoDia(),
+      getContagemRemocaoAtivos(),
+      getContagemTotalRemocao(),
+    ])
+
+    // Atualizar os stats com os dados mais recentes do servidor
+    setStatsData((prevStats) => ({
+      ...prevStats,
+      // Usar os valores da API, mas se a API falhar, manter o valor incrementado localmente
+      releasedToday: remocoesDiaResult?.totalDeRemocoes || prevStats.releasedToday,
+      activeVehicles: remocaoAtivosResult?.countRemocaoAtivos || prevStats.activeVehicles,
+      totalVehicles: totalRemocaoResult?.totalRemocao || prevStats.totalVehicles,
+    }))
+
+    // Update team data for charts
+    const teamIndex =
+      registerFormData.team === "Equipe1(Matutino)" ? 0 : registerFormData.team === "Equipe2(Vespertino)" ? 1 : 2
+
+    setTeamData((prevTeamData) => {
+      const newTeamData = [...prevTeamData]
+      if (newTeamData[teamIndex]) {
+        newTeamData[teamIndex] = {
+          ...newTeamData[teamIndex],
+          releases: newTeamData[teamIndex].releases + 1,
+          label: `${newTeamData[teamIndex].releases + 1} solturas`,
+        }
+      }
+      return newTeamData
+    })
+
+    // Show success message
+    setSnackbarMessage("Soltura cadastrada com sucesso!")
+    setSnackbarSeverity("success")
+    setSnackbarOpen(true)
+
+    // Close modal and reset form
+    setRegisterModalOpen(false)
+    setRegisterFormData({
+      driver: "",
+      driverId: "",
+      team: "Equipe1(Matutino)",
+      vehiclePrefix: "",
+      shift: "Manhã",
+      collectors: ["", "", ""],
+      vehicleType: "Caminhão Reboque",
+      garage: "PA1",
+      route: "",
+      leaders: ["", ""],
+      leaderPhones: ["", ""],
+    })
+  } catch (error) {
+    console.error("Erro ao cadastrar soltura:", error)
+    setSnackbarMessage("Erro ao cadastrar soltura. Tente novamente.")
+    setSnackbarSeverity("error")
+    setSnackbarOpen(true)
+  } finally {
+    setLoading(false)
+  }
+}
+
+// Add this new state to track which stat was just updated
+const [highlightedStat, setHighlightedStat] = useState(null)
+
+// Finally, update the Stats Cards section to use the highlight prop:
+// Add a timeout to clear the highlight after 3 seconds
+
+useEffect(() => {
+  if (highlightedStat) {
+    setTimeout(() => {
+      setHighlightedStat(null)
+    }, 1000) // Reduzido para 1 segundo
+  }
+}, [highlightedStat])
+
+return (
     <>
       <style>
         {`
@@ -1894,7 +1876,7 @@ export default function RemovalDashboard() {
             display: "flex",
             flexDirection: "column",
             minHeight: "100vh",
-            backgroundColor: themeColors.background.default,
+            backgroundColor: "#ffffff",
             marginLeft: {
               xs: 0,
               sm: sidebarCollapsed ? "80px" : "280px",
@@ -1955,10 +1937,6 @@ export default function RemovalDashboard() {
                       fontSize: { xs: "1.35rem", sm: "1.8rem" },
                       color: themeColors.text.primary,
                       letterSpacing: "-0.02em",
-                      background: `linear-gradient(135deg, ${themeColors.primary.dark} 0%, ${themeColors.primary.main} 100%)`,
-                      WebkitBackgroundClip: "text",
-                      WebkitTextFillColor: "transparent",
-                      textShadow: "0px 2px 4px rgba(0,0,0,0.05)",
                     }}
                   >
                     Controle de Remoção
@@ -1991,9 +1969,8 @@ export default function RemovalDashboard() {
             </Toolbar>
             <Divider
               sx={{
-                height: "3px",
-                background: `linear-gradient(90deg, ${alpha(themeColors.primary.main, 0.8)}, ${alpha(themeColors.primary.light, 0.8)}, ${alpha(themeColors.primary.main, 0.8)})`,
-                boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+                height: "1px",
+                background: `${alpha(themeColors.primary.main, 0.2)}`,
               }}
             />
           </AppBar>

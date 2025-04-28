@@ -298,7 +298,7 @@ export const getContagemTotalRemocao = async () => {
 export const getQuantidadeSolturaEquipesDia = async () => {
   //// pro elemento Equipes:Análise comparativa por turno
   try {
-    const response = await axios.get(`${API_URL}api/quantidade_soltura_equipes/`, {
+    const response = await axios.get(`${API_URL}api/solturas/quantidade_soltura_equipes/`, {
       headers: {
         "Content-Type": "application/json",
       },
@@ -378,5 +378,118 @@ export const getRemocoesPorMes = async () => {
       console.error("Erro inesperado:", error.message)
       return { error: "Erro inesperado ao buscar remoções por mês" }
     }
+  }
+}
+
+export const getDistribuicaoPorStatus = async () => {
+  try {
+    const response = await axios.get(`${API_URL}api/soltura/distribuicao_status/`, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    // Extrair as informações necessárias da resposta
+    const quantidadeEmAndamento = response.data.quantidade_em_andamento;
+    const quantidadeFinalizado = response.data.quantidade_finalizado;
+    const resultado = response.data.resultado;
+
+    // Retornar os dados obtidos
+    return {
+      quantidadeEmAndamento,
+      quantidadeFinalizado,
+      resultado,
+    };
+  } catch (error) {
+    if (error.response) {
+      // Caso haja erro na resposta da API
+      console.error("Erro ao buscar a distribuição de status:", error.response.data);
+      return { error: error.response.data };
+    } else {
+      // Caso haja erro na requisição ou outro erro inesperado
+      console.error("Erro inesperado:", error.message);
+      return { error: "Erro inesperado ao buscar a distribuição de status" };
+    }
+  }
+};
+
+export const getDistribuicaoPorTipoVeiculo = async () => {
+  try {
+    // Requisição GET para obter os dados de distribuição
+    const response = await axios.get(`${API_URL}api/soltura/tipos_veiculos_soltos_no_dia/`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    // Os dados retornados da API
+    const distribuicao = response.data;
+
+    // Verifique se os dados foram recebidos corretamente
+    if (distribuicao && distribuicao.Basculante && distribuicao.Baú && distribuicao.Seletolix) {
+      return {
+        Basculante: {
+          contagem: distribuicao.Basculante.contagem || 0,
+          porcentagem: distribuicao.Basculante.porcentagem || 0.0,
+        },
+        Baú: {
+          contagem: distribuicao.Baú.contagem || 0,
+          porcentagem: distribuicao.Baú.porcentagem || 0.0,
+        },
+        Seletolix: {
+          contagem: distribuicao.Seletolix.contagem || 0,
+          porcentagem: distribuicao.Seletolix.porcentagem || 0.0,
+        },
+      };
+    } else {
+      throw new Error('Dados da API inválidos');
+    }
+  } catch (error) {
+    console.error('Erro ao buscar a distribuição por tipo de veículo:', error);
+    return { error: 'Erro ao buscar a distribuição por tipo de veículo' };
+  }
+};
+
+export const getDistribuicaoDiaria = async () => {
+  try {
+    // Realizando a requisição à API
+    const response = await axios.get(`${API_URL}api/soltura/distribuicao_pa/`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    // Verificar se a resposta foi recebida corretamente
+    if (!response || !response.data) {
+      throw new Error("A resposta da API está vazia ou indefinida");
+    }
+
+    console.log("Resposta da API:", response.data);
+
+    // Garantir que os dados estejam no formato correto
+    const distribuicao = response.data;
+
+    // Verificando se a estrutura da resposta é válida
+    if (distribuicao && distribuicao.PA1 !== undefined && distribuicao.PA2 !== undefined) {
+      console.log('Distribuição diária por PA:', distribuicao);
+
+      // Mapeando os valores de PA1, PA2, PA3 e PA4
+      const distribuicaoPorPA = {
+        PA1: distribuicao.PA1 || 0,
+        PA2: distribuicao.PA2 || 0,
+        PA3: distribuicao.PA3 || 0,
+        PA4: distribuicao.PA4 || 0
+      };
+
+      // Exibindo os dados mapeados
+      console.log('Distribuição mapeada por PA:', distribuicaoPorPA);
+      return distribuicaoPorPA;  // Retorna os dados mapeados
+    } else {
+      console.error('Estrutura de dados inválida:', distribuicao);
+      return null;
+    }
+  } catch (error) {
+    console.error(`Erro ao buscar dados da API: ${error.message}`);
+    return null;
   }
 }

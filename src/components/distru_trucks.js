@@ -1,50 +1,131 @@
 "use client"
-import { useState, useEffect } from "react"
-import { Box, Typography, alpha, Paper } from "@mui/material"
+import { useState, useEffect, useRef } from "react"
+import { Box, Typography, alpha, Paper, CircularProgress } from "@mui/material"
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LabelList } from "recharts"
 import LocalShippingIcon from "@mui/icons-material/LocalShipping"
 import ConstructionIcon from "@mui/icons-material/Construction"
 import DeleteSweepIcon from "@mui/icons-material/DeleteSweep"
+import { getDistribuicaoPorTipoVeiculo } from "../service/dashboard"
 
 // Simplified Vehicle Distribution Chart Component - Cards and Chart only
-const VehicleDistributionChart = ({ chartsLoaded, themeColors, data = { bau: 12, basculantes: 8, seletolix: 5 } }) => {
+const VehicleDistributionChart = ({ chartsLoaded = true, themeColors }) => {
+  const [vehicleData, setVehicleData] = useState({})
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [animateChart, setAnimateChart] = useState(false)
+  const [lastUpdated, setLastUpdated] = useState(null)
+
+  // Use a ref to store the previous data for comparison
+  const prevDataRef = useRef(null)
 
   // Vehicle type icons and colors configuration
   const vehicleConfig = {
-    bau: {
+    Baú: {
       icon: <LocalShippingIcon fontSize="small" />,
       color: themeColors.primary.main,
-      label: "BAU",
+      label: "BAÚ",
     },
-    basculantes: {
+    Basculante: {
       icon: <ConstructionIcon fontSize="small" />,
       color: themeColors.success.main,
-      label: "BASCULANTES",
+      label: "BASCULANTE",
     },
-    seletolix: {
+    Seletolix: {
       icon: <DeleteSweepIcon fontSize="small" />,
       color: themeColors.warning.main,
       label: "SELETOLIX",
     },
   }
 
-  // Transform data for the chart
-  const chartData = [
-    { name: "BAU", value: data.bau, color: vehicleConfig.bau.color },
-    { name: "BASCULANTES", value: data.basculantes, color: vehicleConfig.basculantes.color },
-    { name: "SELETOLIX", value: data.seletolix, color: vehicleConfig.seletolix.color },
-  ]
+  // Helper function to check if data has changed
+  const hasDataChanged = (oldData, newData) => {
+    if (!oldData || !newData) return true
 
-  // Calculate total vehicles
-  const totalVehicles = chartData.reduce((sum, item) => sum + item.value, 0)
+    for (const key in vehicleConfig) {
+      if (!oldData[key] || !newData[key] || oldData[key] !== newData[key]) {
+        return true
+      }
+    }
+
+    return false
+  }
+
+  const fetchData = async () => {
+    try {
+      setLoading(true)
+      const response = await getDistribuicaoPorTipoVeiculo()
+
+      console.log("API response:", response)
+
+      // Check if there was an error in the response
+      if (response.error) {
+        console.error("Error from API:", response.error)
+        setError(response.error)
+        return
+      }
+
+      // Extract the count values directly from the API response
+      const newData = {
+        Basculante: response.Basculante?.contagem,
+        Baú: response.Baú?.contagem,
+        Seletolix: response.Seletolix?.contagem,
+      }
+
+      console.log("Extracted data:", newData)
+
+      // Check if data has changed
+      if (hasDataChanged(prevDataRef.current, newData)) {
+        setVehicleData(newData)
+        setAnimateChart(true)
+        setLastUpdated(new Date())
+
+        // Update the previous data reference
+        prevDataRef.current = { ...newData }
+      } else {
+        console.log("Data hasn't changed, skipping update")
+      }
+
+      setError(null)
+    } catch (err) {
+      console.error("Failed to fetch vehicle distribution data:", err)
+      setError("Falha ao carregar dados de distribuição de veículos")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Initial data fetch
+  useEffect(() => {
+    fetchData()
+  }, [])
+
+  // Auto-refresh every 3 seconds
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      fetchData()
+    }, 3000)
+
+    // Clean up interval on component unmount
+    return () => clearInterval(intervalId)
+  }, [])
 
   // Animation effect when data changes
   useEffect(() => {
-    setAnimateChart(true)
-    const timer = setTimeout(() => setAnimateChart(false), 800)
-    return () => clearTimeout(timer)
-  }, [data])
+    if (animateChart) {
+      const timer = setTimeout(() => setAnimateChart(false), 800)
+      return () => clearTimeout(timer)
+    }
+  }, [animateChart])
+
+  // Transform data for the chart
+  const chartData = Object.keys(vehicleConfig).map((key) => ({
+    name: vehicleConfig[key].label,
+    value: vehicleData[key] || 0,
+    color: vehicleConfig[key].color,
+  }))
+
+  // Calculate total vehicles
+  const totalVehicles = chartData.reduce((sum, item) => sum + item.value, 0)
 
   // Custom tooltip component
   const CustomTooltip = ({ active, payload }) => {
@@ -66,7 +147,7 @@ const VehicleDistributionChart = ({ chartsLoaded, themeColors, data = { bau: 12,
             Quantidade: <span style={{ fontWeight: 600, color: data.color }}>{data.value}</span>
           </Typography>
           <Typography variant="caption" sx={{ display: "block", mt: 0.5, color: "text.secondary" }}>
-            {Math.round((data.value / totalVehicles) * 100)}% do total
+            {totalVehicles > 0 ? Math.round((data.value / totalVehicles) * 100) : 0}% do total
           </Typography>
         </Paper>
       )
@@ -85,20 +166,39 @@ const VehicleDistributionChart = ({ chartsLoaded, themeColors, data = { bau: 12,
           minHeight: 100,
         }}
       >
-        <Box sx={{ textAlign: "center" }}>
-          <Box
-            sx={{
-              width: 40,
-              height: 40,
-              borderRadius: "50%",
-              backgroundColor: alpha(themeColors.info.main, 0.1),
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              margin: "0 auto",
-            }}
-          />
-        </Box>
+        <CircularProgress size={40} color="primary" />
+      </Box>
+    )
+  }
+
+  if (error) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100%",
+          minHeight: 100,
+        }}
+      >
+        <Typography color="error">{error}</Typography>
+      </Box>
+    )
+  }
+
+  if (loading && Object.keys(vehicleData).length === 0) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100%",
+          minHeight: 100,
+        }}
+      >
+        <CircularProgress size={40} color="primary" />
       </Box>
     )
   }
@@ -112,8 +212,28 @@ const VehicleDistributionChart = ({ chartsLoaded, themeColors, data = { bau: 12,
           justifyContent: "space-between",
           mb: 3,
           gap: 2,
+          position: "relative",
         }}
       >
+        {loading && (
+          <Box
+            sx={{
+              position: "absolute",
+              top: -10,
+              right: -10,
+              zIndex: 10,
+              backgroundColor: alpha(themeColors.info.main, 0.1),
+              color: themeColors.info.main,
+              padding: "4px 8px",
+              borderRadius: "4px",
+              fontSize: "12px",
+              fontWeight: 500,
+            }}
+          >
+            <span>Atualizando...</span>
+          </Box>
+        )}
+
         {Object.entries(vehicleConfig).map(([key, config], index) => (
           <Paper
             key={key}
@@ -159,7 +279,7 @@ const VehicleDistributionChart = ({ chartsLoaded, themeColors, data = { bau: 12,
                 transform: animateChart ? "scale(1.2)" : "scale(1)",
               }}
             >
-              {data[key]}
+              {vehicleData[key] || 0}
             </Typography>
             <Typography
               variant="caption"
@@ -182,15 +302,30 @@ const VehicleDistributionChart = ({ chartsLoaded, themeColors, data = { bau: 12,
           height: 220,
           transition: "opacity 0.5s ease",
           opacity: animateChart ? 0.7 : 1,
+          position: "relative",
         }}
       >
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={chartData}
-            layout="vertical"
-            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-            barGap={8}
+        {lastUpdated && (
+          <Box
+            sx={{
+              position: "absolute",
+              bottom: 0,
+              right: 0,
+              zIndex: 10,
+              backgroundColor: alpha(themeColors.success.main, 0.1),
+              color: themeColors.success.main,
+              padding: "4px 8px",
+              borderRadius: "4px",
+              fontSize: "10px",
+              fontWeight: 500,
+            }}
           >
+            <span>Atualizado: {lastUpdated.toLocaleTimeString()}</span>
+          </Box>
+        )}
+
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }} barGap={8}>
             <XAxis
               type="number"
               axisLine={false}

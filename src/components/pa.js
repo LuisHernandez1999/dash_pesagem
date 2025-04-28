@@ -1,16 +1,127 @@
+"use client"
+
+import { useEffect, useState, useRef } from "react"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList, Cell } from "recharts"
 import { Box, Typography, Paper, alpha, Fade, Chip, Divider, IconButton, Tooltip as MuiTooltip } from "@mui/material"
-import { TrendingUp, TrendingDown, Info } from "@mui/icons-material"
+import { Info} from "@mui/icons-material"
+import { getDistribuicaoDiaria } from "../service/dashboard"
+
+// Mock data to use if API fails
+
+// Helper function to check if data has changed
+const hasDataChanged = (oldData, newData) => {
+  if (!oldData || !newData) return true
+  
+  // Compare the values of each PA
+  for (const key in newData) {
+    if (newData[key] !== oldData[key]) {
+      return true
+    }
+  }
+  
+  return false
+}
 
 // PA Distribution Chart Component
-const PADistributionChart = ({ chartsLoaded, themeColors }) => {
-  // Sample data for PA distribution
-  const paData = [
-    { name: "PA1", value: 42, color: themeColors.info.main, percent: "45%", trend: "+5%", trendType: "up" },
-    { name: "PA2", value: 28, color: themeColors.primary.main, percent: "30%", trend: "+2%", trendType: "up" },
-    { name: "PA3", value: 15, color: themeColors.warning.main, percent: "16%", trend: "-3%", trendType: "down" },
-    { name: "PA4", value: 8, color: themeColors.success.main, percent: "9%", trend: "+1%", trendType: "up" },
-  ]
+const PADistributionChart = ({ chartsLoaded = true, themeColors }) => {
+  const [paData, setPaData] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [lastUpdated, setLastUpdated] = useState(null)
+  
+  // Use a ref to store the previous raw data for comparison
+  const prevRawDataRef = useRef(null)
+
+  const fetchData = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      console.log("Fetching distribution data...")
+      let distribuicaoPorPA = await getDistribuicaoDiaria()
+
+      // Log the raw response
+      console.log("Raw API response:", distribuicaoPorPA)
+
+      // If API returns null or undefined, use mock data
+      if (!distribuicaoPorPA) {
+        console.warn("API returned null or undefined, using mock data")
+        distribuicaoPorPA = MOCK_DATA
+      }
+
+      // Check if data has changed from previous fetch
+      const dataChanged = hasDataChanged(prevRawDataRef.current, distribuicaoPorPA)
+      
+      if (dataChanged) {
+        console.log("Data has changed, updating chart...")
+        
+        // Transform API data to the format needed by the chart
+        const transformedData = Object.entries(distribuicaoPorPA).map(([name, value], index) => {
+          // Assign colors based on index
+          const colors = [
+            themeColors.info.main,
+            themeColors.primary.main,
+            themeColors.warning.main,
+            themeColors.success.main,
+          ]
+
+          return {
+            name,
+            value: Number(value),
+            color: colors[index % colors.length],
+          }
+        })
+
+        console.log("Transformed data for chart:", transformedData)
+        setPaData(transformedData)
+        setLastUpdated(new Date())
+        
+        // Update the previous data reference
+        prevRawDataRef.current = {...distribuicaoPorPA}
+      } else {
+        console.log("Data has not changed, skipping update")
+      }
+    } catch (err) {
+      console.error("Error fetching PA distribution data:", err)
+      setError("Falha ao carregar dados de distribuição")
+
+      // Use mock data on error
+      console.warn("Using mock data due to error")
+      const mockTransformedData = Object.entries(MOCK_DATA).map(([name, value], index) => {
+        const colors = [
+          themeColors.info.main,
+          themeColors.primary.main,
+          themeColors.warning.main,
+          themeColors.success.main,
+        ]
+
+        return {
+          name,
+          value: Number(value),
+          color: colors[index % colors.length],
+        }
+      })
+
+      setPaData(mockTransformedData)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Initial data fetch
+  useEffect(() => {
+    fetchData()
+  }, [])
+
+  // Auto-refresh every 3 seconds
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      fetchData()
+    }, 3000)
+
+    // Clean up interval on component unmount
+    return () => clearInterval(intervalId)
+  }, [])
 
   // Custom tooltip for the chart
   const PATooltip = ({ active, payload }) => {
@@ -77,66 +188,18 @@ const PADistributionChart = ({ chartsLoaded, themeColors }) => {
             </Box>
             <Typography sx={{ fontWeight: 600, color: themeColors.text.primary }}>{data.value}</Typography>
           </Box>
-
-          <Box sx={{ marginTop: "0.75rem", paddingTop: "0.75rem", borderTop: "1px dashed rgba(226, 232, 240, 0.8)" }}>
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <Typography sx={{ color: themeColors.text.secondary, fontWeight: 500, fontSize: "0.875rem" }}>
-                Percentual:
-              </Typography>
-              <Typography
-                sx={{
-                  fontWeight: 700,
-                  fontSize: "0.875rem",
-                  color: data.color,
-                }}
-              >
-                {data.percent}
-              </Typography>
-            </Box>
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                mt: 1,
-              }}
-            >
-              <Typography sx={{ color: themeColors.text.secondary, fontWeight: 500, fontSize: "0.875rem" }}>
-                Tendência:
-              </Typography>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  color: data.trendType === "up" ? themeColors.success.main : themeColors.error.main,
-                }}
-              >
-                {data.trendType === "up" ? (
-                  <TrendingUp fontSize="small" sx={{ mr: 0.5 }} />
-                ) : (
-                  <TrendingDown fontSize="small" sx={{ mr: 0.5 }} />
-                )}
-                <Typography
-                  sx={{
-                    fontWeight: 700,
-                    fontSize: "0.875rem",
-                  }}
-                >
-                  {data.trend}
-                </Typography>
-              </Box>
-            </Box>
-          </Box>
         </Box>
       )
     }
     return null
+  }
+
+  if (loading && paData.length === 0) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
+        <Typography>Carregando dados de distribuição...</Typography>
+      </Box>
+    )
   }
 
   return (
@@ -156,37 +219,82 @@ const PADistributionChart = ({ chartsLoaded, themeColors }) => {
             flex: 1,
             height: { xs: "250px", md: "100%" },
             width: { xs: "100%", md: "60%" },
+            position: "relative",
           }}
         >
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={paData} layout="vertical" margin={{ top: 20, right: 30, left: 40, bottom: 20 }}>
-              <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
-              <XAxis type="number" />
-              <YAxis
-                dataKey="name"
-                type="category"
-                tick={{ fill: themeColors.text.primary, fontSize: 12, fontWeight: 500 }}
-              />
-              <Tooltip content={<PATooltip />} />
-              <Bar dataKey="value" name="Veículos" radius={[0, 4, 4, 0]} barSize={30}>
-                {paData.map((entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={entry.color}
-                    filter={`drop-shadow(0px 2px 3px ${alpha(entry.color, 0.3)})`}
-                  />
-                ))}
-                <LabelList
-                  dataKey="value"
-                  position="right"
-                  fill={themeColors.text.primary}
-                  fontSize={12}
-                  fontWeight={600}
-                  formatter={(value) => `${value} veículos`}
+          {loading && (
+            <Box 
+              sx={{ 
+                position: "absolute", 
+                top: 0, 
+                right: 0, 
+                zIndex: 10, 
+                backgroundColor: alpha(themeColors.info.main, 0.1),
+                color: themeColors.info.main,
+                padding: "4px 8px",
+                borderRadius: "4px",
+                fontSize: "12px",
+                fontWeight: 500,
+              }}
+            >
+              <span>Atualizando...</span>
+            </Box>
+          )}
+          
+          {lastUpdated && (
+            <Box 
+              sx={{ 
+                position: "absolute", 
+                bottom: 0, 
+                right: 0, 
+                zIndex: 10, 
+                backgroundColor: alpha(themeColors.success.main, 0.1),
+                color: themeColors.success.main,
+                padding: "4px 8px",
+                borderRadius: "4px",
+                fontSize: "10px",
+                fontWeight: 500,
+              }}
+            >
+              <span>Atualizado: {lastUpdated.toLocaleTimeString()}</span>
+            </Box>
+          )}
+          
+          {paData.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={paData} layout="vertical" margin={{ top: 20, right: 30, left: 40, bottom: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                <XAxis type="number" />
+                <YAxis
+                  dataKey="name"
+                  type="category"
+                  tick={{ fill: themeColors.text.primary, fontSize: 12, fontWeight: 500 }}
                 />
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+                <Tooltip content={<PATooltip />} />
+                <Bar dataKey="value" name="Veículos" radius={[0, 4, 4, 0]} barSize={30}>
+                  {paData.map((entry, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={entry.color}
+                      filter={`drop-shadow(0px 2px 3px ${alpha(entry.color, 0.3)})`}
+                    />
+                  ))}
+                  <LabelList
+                    dataKey="value"
+                    position="right"
+                    fill={themeColors.text.primary}
+                    fontSize={12}
+                    fontWeight={600}
+                    formatter={(value) => `${value} veículos`}
+                  />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
+              <Typography>Nenhum dado de distribuição disponível</Typography>
+            </Box>
+          )}
         </Box>
 
         {/* Stats Section */}
@@ -211,91 +319,92 @@ const PADistributionChart = ({ chartsLoaded, themeColors }) => {
               >
                 Distribuição de Veículos por Garagem
               </Typography>
-              <MuiTooltip title="Dados atualizados hoje às 08:00">
-                <IconButton size="small">
-                  <Info fontSize="small" />
-                </IconButton>
-              </MuiTooltip>
+              <Box sx={{ display: "flex", gap: 1 }}>
+                <MuiTooltip title="Atualizar dados">
+                  <IconButton size="small" onClick={fetchData}>
+                  </IconButton>
+                </MuiTooltip>
+                <MuiTooltip title="Dados atualizados a cada 3 segundos">
+                  <IconButton size="small">
+                    <Info fontSize="small" />
+                  </IconButton>
+                </MuiTooltip>
+              </Box>
             </Box>
 
             <Divider sx={{ mb: 2 }} />
 
-            <Box
-              sx={{
-                display: "grid",
-                gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(2, 1fr)" },
-                gap: 2,
-              }}
-            >
-              {paData.map((item) => (
-                <Paper
-                  key={item.name}
-                  elevation={0}
-                  sx={{
-                    p: 2,
-                    borderRadius: "16px",
-                    border: `1px solid ${themeColors.divider}`,
-                    background: alpha(item.color, 0.05),
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    transition: "all 0.3s ease",
-                    "&:hover": {
-                      transform: "translateY(-4px)",
-                      boxShadow: `0 8px 16px ${alpha(item.color, 0.15)}`,
-                      border: `1px solid ${alpha(item.color, 0.3)}`,
-                    },
-                    position: "relative",
-                    overflow: "hidden",
-                    "&::before": {
-                      content: '""',
-                      position: "absolute",
-                      top: 0,
-                      left: 0,
-                      width: "5px",
-                      height: "100%",
-                      background: item.color,
-                    },
-                  }}
-                >
-                  <Box sx={{ display: "flex", justifyContent: "center", width: "100%", mb: 1 }}>
-                    <Chip
-                      label={item.name}
-                      size="small"
+            {paData.length > 0 ? (
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(2, 1fr)" },
+                  gap: 2,
+                }}
+              >
+                {paData.map((item) => (
+                  <Paper
+                    key={item.name}
+                    elevation={0}
+                    sx={{
+                      p: 2,
+                      borderRadius: "16px",
+                      border: `1px solid ${themeColors.divider}`,
+                      background: alpha(item.color, 0.05),
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      transition: "all 0.3s ease",
+                      "&:hover": {
+                        transform: "translateY(-4px)",
+                        boxShadow: `0 8px 16px ${alpha(item.color, 0.15)}`,
+                        border: `1px solid ${alpha(item.color, 0.3)}`,
+                      },
+                      position: "relative",
+                      overflow: "hidden",
+                      "&::before": {
+                        content: '""',
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        width: "5px",
+                        height: "100%",
+                        background: item.color,
+                      },
+                    }}
+                  >
+                    <Box sx={{ display: "flex", justifyContent: "center", width: "100%", mb: 1 }}>
+                      <Chip
+                        label={item.name}
+                        size="small"
+                        sx={{
+                          backgroundColor: alpha(item.color, 0.1),
+                          color: item.color,
+                          fontWeight: 600,
+                          height: "24px",
+                        }}
+                      />
+                    </Box>
+                    <Typography
+                      variant="h4"
                       sx={{
-                        backgroundColor: alpha(item.color, 0.1),
+                        fontWeight: 700,
                         color: item.color,
-                        fontWeight: 600,
-                        height: "24px",
+                        mb: 0.5,
                       }}
-                    />
-                  </Box>
-                  <Typography
-                    variant="h4"
-                    sx={{
-                      fontWeight: 700,
-                      color: item.color,
-                      mb: 0.5,
-                    }}
-                  >
-                    {item.value}
-                  </Typography>
-                  <Typography
-                    sx={{
-                      fontWeight: 500,
-                      color: themeColors.text.secondary,
-                      fontSize: "0.8rem",
-                    }}
-                  >
-                    {item.percent} do total
-                  </Typography>
-                </Paper>
-              ))}
-            </Box>
+                    >
+                      {item.value}
+                    </Typography>
+                  </Paper>
+                ))}
+              </Box>
+            ) : (
+              <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", p: 4 }}>
+                <Typography>Nenhum dado disponível</Typography>
+              </Box>
+            )}
           </Box>
-
-          {/* Summary Section removed as requested */}
         </Box>
       </Box>
     </Fade>
