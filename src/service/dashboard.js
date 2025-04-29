@@ -416,7 +416,7 @@ export const getDistribuicaoPorStatus = async () => {
 export const getDistribuicaoPorTipoVeiculo = async () => {
   try {
     // Requisição GET para obter os dados de distribuição
-    const response = await axios.get(`${API_URL}api/soltura/tipos_veiculos_soltos_no_dia/`, {
+    const response = await axios.get(`${API_URL}/api/soltura/tipos_veiculos_soltos_no_dia/`, {
       headers: {
         'Content-Type': 'application/json',
       },
@@ -493,3 +493,72 @@ export const getDistribuicaoDiaria = async () => {
     return null;
   }
 }
+
+export const getQuantidadeSolturaEquipesDiaTipo = async () => {
+  try {
+    // Requisição GET para o endpoint da API
+    const response = await axios.get(`${API_URL}/api/soltura/tipos_equipes_soltas/`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    // Verificação da resposta
+    if (!response || !response.data) {
+      throw new Error("A resposta da API está vazia ou indefinida");
+    }
+
+    const data = response.data;
+
+    // Mapeamento seguro com fallback para 0
+    const resultado = {
+      'Equipe1(Matutino)': data['Equipe1(Matutino)'] ?? 0,
+      'Equipe2(Vespertino)': data['Equipe2(Vespertino)'] ?? 0,
+      'Equipe3(Noturno)': data['Equipe3(Noturno)'] ?? 0,
+    };
+
+    console.log('Distribuição mapeada por equipe:', resultado);
+    return resultado;
+
+  } catch (error) {
+    console.error(`Erro ao buscar dados da API: ${error.message}`);
+    return {
+      'Equipe1(Matutino)': 0,
+      'Equipe2(Vespertino)': 0,
+      'Equipe3(Noturno)': 0,
+    };
+  }
+};
+
+export const getDistribuicaoPorStatusTipo = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/api/soltura/ distribuicao_por_status/`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response || !response.data) {
+      throw new Error('Resposta da API está vazia');
+    }
+
+    const data = response.data;
+
+    // Mapeamento seguro com fallback para 0
+    const distribuicaoStatus = {
+      emAndamento: data.quantidade_em_andamento ?? 0,
+      finalizado: data.quantidade_finalizado ?? 0,
+      resultado: data.resultado || {}, // resultado pode conter outros status também
+    };
+
+    console.log('Distribuição por status:', distribuicaoStatus);
+    return distribuicaoStatus;
+  } catch (error) {
+    console.error(`Erro ao buscar distribuição por status: ${error.message}`);
+    return {
+      emAndamento: 0,
+      finalizado: 0,
+      resultado: {},
+    };
+  }
+};

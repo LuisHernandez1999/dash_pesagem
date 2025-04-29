@@ -2,23 +2,22 @@
 
 import { useEffect, useState, useRef } from "react"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList, Cell } from "recharts"
-import { Box, Typography, Paper, alpha, Fade, Chip, Divider, IconButton, Tooltip as MuiTooltip } from "@mui/material"
-import { Info} from "@mui/icons-material"
+import { Box, Typography, Paper, Chip, Divider, IconButton, Fade, alpha } from "@mui/material"
+import { Info, Refresh } from "@mui/icons-material"
+import { Tooltip as MuiTooltip } from "@mui/material"
 import { getDistribuicaoDiaria } from "../service/dashboard"
-
-// Mock data to use if API fails
 
 // Helper function to check if data has changed
 const hasDataChanged = (oldData, newData) => {
   if (!oldData || !newData) return true
-  
+
   // Compare the values of each PA
   for (const key in newData) {
     if (newData[key] !== oldData[key]) {
       return true
     }
   }
-  
+
   return false
 }
 
@@ -28,7 +27,7 @@ const PADistributionChart = ({ chartsLoaded = true, themeColors }) => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [lastUpdated, setLastUpdated] = useState(null)
-  
+
   // Use a ref to store the previous raw data for comparison
   const prevRawDataRef = useRef(null)
 
@@ -38,23 +37,17 @@ const PADistributionChart = ({ chartsLoaded = true, themeColors }) => {
       setError(null)
 
       console.log("Fetching distribution data...")
-      let distribuicaoPorPA = await getDistribuicaoDiaria()
+      const distribuicaoPorPA = await getDistribuicaoDiaria()
 
       // Log the raw response
       console.log("Raw API response:", distribuicaoPorPA)
 
-      // If API returns null or undefined, use mock data
-      if (!distribuicaoPorPA) {
-        console.warn("API returned null or undefined, using mock data")
-        distribuicaoPorPA = MOCK_DATA
-      }
-
       // Check if data has changed from previous fetch
       const dataChanged = hasDataChanged(prevRawDataRef.current, distribuicaoPorPA)
-      
+
       if (dataChanged) {
         console.log("Data has changed, updating chart...")
-        
+
         // Transform API data to the format needed by the chart
         const transformedData = Object.entries(distribuicaoPorPA).map(([name, value], index) => {
           // Assign colors based on index
@@ -75,34 +68,15 @@ const PADistributionChart = ({ chartsLoaded = true, themeColors }) => {
         console.log("Transformed data for chart:", transformedData)
         setPaData(transformedData)
         setLastUpdated(new Date())
-        
+
         // Update the previous data reference
-        prevRawDataRef.current = {...distribuicaoPorPA}
+        prevRawDataRef.current = { ...distribuicaoPorPA }
       } else {
         console.log("Data has not changed, skipping update")
       }
     } catch (err) {
       console.error("Error fetching PA distribution data:", err)
       setError("Falha ao carregar dados de distribuição")
-
-      // Use mock data on error
-      console.warn("Using mock data due to error")
-      const mockTransformedData = Object.entries(MOCK_DATA).map(([name, value], index) => {
-        const colors = [
-          themeColors.info.main,
-          themeColors.primary.main,
-          themeColors.warning.main,
-          themeColors.success.main,
-        ]
-
-        return {
-          name,
-          value: Number(value),
-          color: colors[index % colors.length],
-        }
-      })
-
-      setPaData(mockTransformedData)
     } finally {
       setLoading(false)
     }
@@ -223,12 +197,12 @@ const PADistributionChart = ({ chartsLoaded = true, themeColors }) => {
           }}
         >
           {loading && (
-            <Box 
-              sx={{ 
-                position: "absolute", 
-                top: 0, 
-                right: 0, 
-                zIndex: 10, 
+            <Box
+              sx={{
+                position: "absolute",
+                top: 0,
+                right: 0,
+                zIndex: 10,
                 backgroundColor: alpha(themeColors.info.main, 0.1),
                 color: themeColors.info.main,
                 padding: "4px 8px",
@@ -240,14 +214,14 @@ const PADistributionChart = ({ chartsLoaded = true, themeColors }) => {
               <span>Atualizando...</span>
             </Box>
           )}
-          
+
           {lastUpdated && (
-            <Box 
-              sx={{ 
-                position: "absolute", 
-                bottom: 0, 
-                right: 0, 
-                zIndex: 10, 
+            <Box
+              sx={{
+                position: "absolute",
+                bottom: 0,
+                right: 0,
+                zIndex: 10,
                 backgroundColor: alpha(themeColors.success.main, 0.1),
                 color: themeColors.success.main,
                 padding: "4px 8px",
@@ -259,7 +233,7 @@ const PADistributionChart = ({ chartsLoaded = true, themeColors }) => {
               <span>Atualizado: {lastUpdated.toLocaleTimeString()}</span>
             </Box>
           )}
-          
+
           {paData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={paData} layout="vertical" margin={{ top: 20, right: 30, left: 40, bottom: 20 }}>
@@ -322,6 +296,7 @@ const PADistributionChart = ({ chartsLoaded = true, themeColors }) => {
               <Box sx={{ display: "flex", gap: 1 }}>
                 <MuiTooltip title="Atualizar dados">
                   <IconButton size="small" onClick={fetchData}>
+                    <Refresh fontSize="small" />
                   </IconButton>
                 </MuiTooltip>
                 <MuiTooltip title="Dados atualizados a cada 3 segundos">
