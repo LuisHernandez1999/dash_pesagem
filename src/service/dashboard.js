@@ -562,3 +562,38 @@ export const getDistribuicaoPorStatusTipo = async () => {
     };
   }
 };
+export const editarSoltura = async (solturaId, dados) => {
+  try {
+    const response = await axios.put(
+      `${API_URL}/api/soltura/${solturaId}/editar/`, // ou a URL que seu backend define
+      {
+        motorista: dados.motorista,
+        veiculo: dados.veiculo,
+        tipo_equipe: dados.tipo_equipe || "",
+        frequencia: dados.frequencia,
+        setor: dados.setor,
+        celular: dados.celular || "",
+        lider: dados.lider || "",
+        hora_entrega_chave: dados.hora_entrega_chave,
+        hora_saida_frota: dados.hora_saida_frota,
+        hora_chegada: dados.hora_chegada || null,
+        turno: dados.turno,
+        tipo_servico: dados.tipo_servico,
+        coletores: dados.tipo_servico.toLowerCase() !== "varrição" ? dados.coletores : [],
+        rota: dados.rota || null,
+        data: dados.data || null,
+        status_frota: dados.status_frota || null,
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao editar soltura:', error);
+    throw error.response?.data || { error: 'Erro inesperado ao editar soltura' };
+  }
+};
