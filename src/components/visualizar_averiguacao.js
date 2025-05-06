@@ -29,9 +29,24 @@ import {
   Edit,
 } from "@mui/icons-material"
 
+// Constante para o domínio base da API
+const API_BASE_URL = "http://127.0.0.1:8000"
+
+// Função para obter a URL completa da imagem
+const getFullImageUrl = (imagePath) => {
+  if (!imagePath) return null
+  // Se a imagem já começa com http, é uma URL completa
+  if (imagePath.startsWith("http")) return imagePath
+  // Caso contrário, adiciona o domínio base
+  return `${API_BASE_URL}${imagePath}`
+}
+
 // Detail Modal Component
 const DetailModal = ({ open, onClose, inspection, themeColors, keyframes }) => {
   if (!inspection) return null
+
+  // Log para depuração
+  console.log("Fotos no modal de detalhes:", inspection.photos)
 
   return (
     <Dialog
@@ -429,7 +444,7 @@ const DetailModal = ({ open, onClose, inspection, themeColors, keyframes }) => {
             />
           </Divider>
 
-          {/* Photos */}
+          {/* Photos - Modificado para usar getFullImageUrl */}
           <Grid
             container
             spacing={2}
@@ -437,39 +452,45 @@ const DetailModal = ({ open, onClose, inspection, themeColors, keyframes }) => {
               animation: `${keyframes.fadeIn} 0.5s ease-out 0.6s both, ${keyframes.slideInUp} 0.5s ease-out 0.6s both`,
             }}
           >
-            {inspection.photos.map(
-              (photo, index) =>
-                photo && (
-                  <Grid item xs={12} sm={4} key={index}>
-                    <Paper
-                      elevation={0}
-                      sx={{
-                        borderRadius: "16px",
-                        overflow: "hidden",
-                        height: "180px",
-                        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
-                        transition: "all 0.3s ease",
-                        "&:hover": {
-                          transform: "translateY(-4px)",
-                          boxShadow: "0 8px 24px rgba(0, 0, 0, 0.12)",
-                        },
-                      }}
-                    >
-                      <Box
-                        component="img"
-                        src={photo}
-                        alt={`Foto ${index + 1}`}
+            {inspection.photos && inspection.photos.length > 0 ? (
+              inspection.photos.map(
+                (photo, index) =>
+                  photo && (
+                    <Grid item xs={12} sm={6} md={4} key={index}>
+                      <Paper
+                        elevation={0}
                         sx={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
+                          borderRadius: "16px",
+                          overflow: "hidden",
+                          height: "180px",
+                          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
+                          transition: "all 0.3s ease",
+                          "&:hover": {
+                            transform: "translateY(-4px)",
+                            boxShadow: "0 8px 24px rgba(0, 0, 0, 0.12)",
+                          },
                         }}
-                      />
-                    </Paper>
-                  </Grid>
-                ),
-            )}
-            {!inspection.photos.some((photo) => photo) && (
+                      >
+                        <Box
+                          component="img"
+                          src={getFullImageUrl(photo)}
+                          alt={`Foto ${index + 1}`}
+                          sx={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                          }}
+                          onError={(e) => {
+                            console.error("Erro ao carregar imagem no modal:", photo)
+                            e.target.onerror = null
+                            e.target.src = "/abstract-geometric-shapes.png"
+                          }}
+                        />
+                      </Paper>
+                    </Grid>
+                  ),
+              )
+            ) : (
               <Grid item xs={12}>
                 <Box
                   sx={{
