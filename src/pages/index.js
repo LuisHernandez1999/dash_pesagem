@@ -78,7 +78,6 @@ import {
   Menu as MenuIcon,
   WbSunny,
   MoreVert,
-  Share,
   Print,
   Delete,
   Group,
@@ -91,7 +90,6 @@ import {
   Email,
   Search,
   Edit,
-  LocalShipping,
 } from "@mui/icons-material"
 import Sidebar from "@/components/sidebar"
 import {
@@ -104,13 +102,12 @@ import {
   getMediaMensalDeSolturas,
   getRemocoesPorMes,
 } from "../service/dashboard"
-import PADistributionChart from "../components/pa"
 import VehicleDistributionChart from "../components/distru_trucks"
 import RegisterModal from "../components/cadastro_soltura"
 import EditModal from "../components/edit_soltura"
 import DetailModal from "../components/deatil"
 import StatusChart from "../components/satus_chart"
-import TeamChart from "../components/team_chart"
+import TeamChart from "@/components/team_chart"
 
 // Animation keyframes
 const keyframes = {
@@ -404,7 +401,7 @@ const SearchInput = ({ icon: Icon, placeholder, value, onChange, suggestions = [
 }
 
 // Custom stat card component - redesigned to be mais simples e branco
-const CustomStatCard = ({ title, value, icon: Icon, color, highlight, onRefresh }) => (
+const CustomStatCard = ({ title, value, icon: Icon, color, highlight }) => (
   <Card
     sx={{
       position: "relative",
@@ -468,27 +465,6 @@ const CustomStatCard = ({ title, value, icon: Icon, color, highlight, onRefresh 
       >
         {title}
       </Typography>
-      {onRefresh && (
-        <IconButton
-          onClick={onRefresh}
-          size="small"
-          sx={{
-            position: "absolute",
-            bottom: "10px",
-            right: "10px",
-            backgroundColor: "#f0f0f0",
-            color: "#333333",
-            width: "28px",
-            height: "28px",
-            transition: "all 0.2s ease",
-            "&:hover": {
-              backgroundColor: "#e0e0e0",
-            },
-          }}
-        >
-          <Refresh fontSize="small" />
-        </IconButton>
-      )}
     </CardContent>
   </Card>
 )
@@ -560,14 +536,25 @@ export default function RemovalDashboard() {
   const [monthlyData, setMonthlyData] = useState([])
   const [teamData, setTeamData] = useState([])
 
+  // Add these state variables in the component
+  const [autoRefreshTotal, setAutoRefreshTotal] = useState(true)
+  const [autoRefreshActive, setAutoRefreshActive] = useState(true)
+  const [autoRefreshInactive, setAutoRefreshInactive] = useState(true)
+  const [autoRefreshReleased, setAutoRefreshReleased] = useState(true)
+
+  // Add a new state variable for the "recently registered" filter
+  // Add this after the other filter state variables (around line 190)
+  const [recentlyRegisteredFilter, setRecentlyRegisteredFilter] = useState(false)
+
   // Vamos modificar a função loadAllData para garantir que os dados sejam processados corretamente
+  // Substitua a função loadAllData (aproximadamente linha 300) com esta versão atualizada:
   const loadAllData = async () => {
     console.log("Iniciando carregamento de dados...")
     setLoading(true)
     setInitialLoading(true)
 
     try {
-      // Carregar dados em paralelo
+      // Load data in parallel
       const [
         solturasData,
         totalRemocaoResult,
@@ -598,67 +585,95 @@ export default function RemovalDashboard() {
         remocoesPorMesResult,
       })
 
-      // Formatar dados de solturas para o formato esperado pela UI
-      const formattedRemovals = Array.isArray(solturasData)
-        ? solturasData.map((soltura, index) => {
-            return {
-              id: index + 1,
-              // Garantir que o nome do motorista seja exibido corretamente
-              driver:
-                typeof soltura.motorista === "object"
-                  ? soltura.motorista.nome || "Não informado"
-                  : soltura.motorista || "Não informado",
+      // Create a Map to store only the most recent version of each record
+      // using a combination of prefix and driver as a unique key
+      const uniqueRemovalsMap = new Map()
 
-              driverId:
-                typeof soltura.motorista === "object"
-                  ? soltura.motorista.matricula || ""
-                  : soltura.matricula_motorista || "",
+      // Format soltura data for the expected UI format
+      if (Array.isArray(solturasData)) {
+        solturasData.forEach((soltura, index) => {
+          const formattedRemoval = {
+            id: index + 1,
+            // Ensure driver name is displayed correctly
+            driver:
+              typeof soltura.motorista === "object"
+                ? soltura.motorista.nome || "Não informado"
+                : soltura.motorista || "Não informado",
 
-              // Garantir que os nomes dos coletores sejam extraídos corretamente
-              collectors: Array.isArray(soltura.coletores)
-                ? soltura.coletores
-                    .map((c) => {
-                      if (typeof c === "object") {
-                        return c.nome || "Não informado"
-                      }
-                      return c || "Não informado"
-                    })
-                    .filter(Boolean)
-                : [],
+            driverId:
+              typeof soltura.motorista === "object"
+                ? soltura.motorista.matricula || ""
+                : soltura.matricula_motorista || "",
 
-              collectorsIds: Array.isArray(soltura.coletores)
-                ? soltura.coletores
-                    .map((c) => {
-                      if (typeof c === "object") {
-                        return c.matricula || ""
-                      }
-                      return ""
-                    })
-                    .filter(Boolean)
-                : [],
+            // Ensure collector names are extracted correctly
+            collectors: Array.isArray(soltura.coletores)
+              ? soltura.coletores
+                  .map((c) => {
+                    if (typeof c === "object") {
+                      return c.nome || "Não informado"
+                    }
+                    return c || "Não informado"
+                  })
+                  .filter(Boolean)
+              : [],
 
-              garage: soltura.garagem || "PA1",
-              route: soltura.rota || "",
-              vehiclePrefix: soltura.prefixo || "",
-              departureTime: soltura.hora_saida_frota || "",
-              status: soltura.status_frota === "Em andamento" ? "Em andamento" : "Finalizado",
-              arrivalTime: soltura.hora_chegada || "",
-              date: soltura.data || new Date().toISOString().split("T")[0],
-              team: soltura.tipo_equipe || "",
-              location:
-                typeof soltura.setores === "string"
-                  ? soltura.setores
-                  : Array.isArray(soltura.setores)
-                    ? soltura.setores.join(", ")
-                    : "Não informado",
-              vehicle: soltura.veiculo || "Caminhão Reboque",
-              distance: "0 km",
-              notes: "",
+            collectorsIds: Array.isArray(soltura.coletores)
+              ? soltura.coletores
+                  .map((c) => {
+                    if (typeof c === "object") {
+                      return c.matricula || ""
+                    }
+                    return ""
+                  })
+                  .filter(Boolean)
+              : [],
+
+            garage: soltura.garagem || "PA1",
+            route: soltura.rota || "",
+            vehiclePrefix: soltura.prefixo || "",
+            departureTime: soltura.hora_saida_frota || "",
+            status: soltura.status_frota === "Em andamento" ? "Em andamento" : "Finalizado",
+            arrivalTime: soltura.hora_chegada || "",
+            date: soltura.data || new Date().toISOString().split("T")[0],
+            team: soltura.tipo_equipe || "",
+            location:
+              typeof soltura.setores === "string"
+                ? soltura.setores
+                : Array.isArray(soltura.setores)
+                  ? soltura.setores.join(", ")
+                  : "Não informado",
+            vehicle: soltura.veiculo || "Caminhão Reboque",
+            distance: "0 km",
+            notes: "",
+            tipo_equipe: soltura.tipo_equipe,
+            status_frota: soltura.status_frota,
+            hora_saida_frota: soltura.hora_saida_frota,
+          }
+
+          // Create a unique key for each record
+          const uniqueKey = `${formattedRemoval.vehiclePrefix}-${formattedRemoval.driver}`
+
+          // If the record already exists, check which is more recent
+          if (uniqueRemovalsMap.has(uniqueKey)) {
+            const existingRemoval = uniqueRemovalsMap.get(uniqueKey)
+            const existingDate = new Date(existingRemoval.date)
+            const newDate = new Date(formattedRemoval.date)
+
+            // Replace only if the new record is more recent
+            if (newDate >= existingDate) {
+              uniqueRemovalsMap.set(uniqueKey, formattedRemoval)
             }
-          })
-        : []
+          } else {
+            // If it doesn't exist, add to the Map
+            uniqueRemovalsMap.set(uniqueKey, formattedRemoval)
+          }
+        })
+      }
 
-      // Formatar dados de equipes para o gráfico
+      // Convert the Map to an array of unique records
+      const formattedRemovals = Array.from(uniqueRemovalsMap.values())
+
+      // Format team data for the chart
       const formattedTeamData = equipesDiaResult?.dadosEquipes
         ? equipesDiaResult.dadosEquipes.map((item, index) => ({
             name: item.tipoEquipe || `Equipe ${index + 1}`,
@@ -673,7 +688,7 @@ export default function RemovalDashboard() {
           }))
         : []
 
-      // Formatar dados mensais para o gráfico
+      // Format monthly data for the chart
       const formattedMonthlyData = remocoesPorMesResult?.remocoes
         ? remocoesPorMesResult.remocoes.map((item) => ({
             month: item.mes,
@@ -681,12 +696,12 @@ export default function RemovalDashboard() {
           }))
         : []
 
-      // Atualizar estados com os dados recebidos
+      // Update states with received data
       setRemovals(formattedRemovals)
       setMonthlyData(formattedMonthlyData)
       setTeamData(formattedTeamData)
 
-      // Atualizar estatísticas
+      // Update statistics
       setStatsData({
         totalVehicles: totalRemocaoResult?.totalRemocao || 0,
         activeVehicles: remocaoAtivosResult?.countRemocaoAtivos || 0,
@@ -694,18 +709,18 @@ export default function RemovalDashboard() {
         releasedToday: remocoesDiaResult?.totalDeRemocoes || 0,
       })
 
-      // Marcar carregamento como concluído
+      // Mark loading as complete
       setChartsLoaded(true)
       setLoading(false)
       setInitialLoading(false)
     } catch (error) {
       console.error("Erro ao carregar dados:", error)
-      // Mostrar mensagem de erro
+      // Show error message
       setSnackbarMessage("Erro ao carregar dados. Tente novamente.")
       setSnackbarSeverity("error")
       setSnackbarOpen(true)
 
-      // Mesmo com erro, marcar carregamento como concluído
+      // Even with error, mark loading as complete
       setLoading(false)
       setInitialLoading(false)
     }
@@ -757,7 +772,7 @@ export default function RemovalDashboard() {
   }
 
   // Handle view mode change
-  const handleViewModeChange = (event, newMode) => {
+  const handleViewModeChange = (newMode) => {
     if (newMode !== null) {
       setViewMode(newMode)
     }
@@ -807,19 +822,47 @@ export default function RemovalDashboard() {
   // Handle save edit
   const handleSaveEdit = (editedData) => {
     try {
-      // Update the removal in the state
-      const updatedRemovals = removals.map((removal) =>
-        removal.id === selectedRemoval.id ? { ...removal, ...editedData } : removal,
-      )
-      setRemovals(updatedRemovals)
+      // Find the index of the record to be edited
+      const indexToUpdate = removals.findIndex((removal) => removal.id === selectedRemoval.id)
 
-      // Show success message
-      setSnackbarMessage("Registro atualizado com sucesso!")
-      setSnackbarSeverity("success")
-      setSnackbarOpen(true)
+      if (indexToUpdate !== -1) {
+        // Create a copy of the removals array
+        const updatedRemovals = [...removals]
 
-      // Close modal
-      setEditModalOpen(false)
+        // Replace the old record completely with the edited data
+        // while preserving the id and other metadata
+        updatedRemovals[indexToUpdate] = {
+          ...updatedRemovals[indexToUpdate], // Keep the original id and any other metadata
+          ...editedData, // Completely overwrite with new data
+          lastEditDate: new Date().toISOString(), // Add edit timestamp
+        }
+
+        // Update the state with the modified array
+        setRemovals(updatedRemovals)
+
+        // Also update selectedRemoval to reflect changes in the detailed view
+        setSelectedRemoval({ ...selectedRemoval, ...editedData })
+
+        // Update team chart data if the team was changed
+        if (editedData.team && editedData.team !== selectedRemoval.team) {
+          updateTeamChartData(selectedRemoval.team, editedData.team)
+        }
+
+        // Update status chart data if the status was changed
+        if (editedData.status && editedData.status !== selectedRemoval.status) {
+          // Trigger refresh of stats
+          setRefreshStats(true)
+        }
+
+        // Show success message
+        setSnackbarMessage("Registro atualizado com sucesso!")
+        setSnackbarSeverity("success")
+        setSnackbarOpen(true)
+
+        // Close modals
+        setEditModalOpen(false)
+        setDetailModalOpen(false)
+      }
     } catch (error) {
       console.error("Erro ao atualizar:", error)
       setSnackbarMessage("Erro ao atualizar registro. Tente novamente.")
@@ -828,9 +871,41 @@ export default function RemovalDashboard() {
     }
   }
 
+  // Function to update team chart data when a removal's team is changed
+  const updateTeamChartData = (oldTeam, newTeam) => {
+    setTeamData((prevTeamData) => {
+      const newTeamData = [...prevTeamData]
+
+      // Find indices for old and new teams
+      const oldTeamIndex = newTeamData.findIndex((team) => team.name === oldTeam)
+      const newTeamIndex = newTeamData.findIndex((team) => team.name === newTeam)
+
+      // Update counts if teams were found
+      if (oldTeamIndex !== -1) {
+        newTeamData[oldTeamIndex] = {
+          ...newTeamData[oldTeamIndex],
+          releases: Math.max(0, newTeamData[oldTeamIndex].releases - 1),
+          label: `${Math.max(0, newTeamData[oldTeamIndex].releases - 1)} solturas`,
+        }
+      }
+
+      if (newTeamIndex !== -1) {
+        newTeamData[newTeamIndex] = {
+          ...newTeamData[newTeamIndex],
+          releases: newTeamData[newTeamIndex].releases + 1,
+          label: `${newTeamData[newTeamIndex].releases + 1} solturas`,
+        }
+      }
+
+      return newTeamData
+    })
+  }
+
   // Handle modal open
   const handleOpenModal = (removal) => {
-    setSelectedRemoval(removal)
+    // Find the most up-to-date version of this removal in the state
+    const currentRemoval = removals.find((r) => r.id === removal.id) || removal
+    setSelectedRemoval(currentRemoval)
     setModalOpen(true)
   }
 
@@ -849,12 +924,21 @@ export default function RemovalDashboard() {
     setDeleteConfirmOpen(false)
   }
 
+  // Update the handleOpenModalDetail function to ensure it gets the most up-to-date data
   const handleOpenModalDetail = (removal) => {
-    setSelectedRemoval(removal)
-    setDetailModalOpen(true)
+    // Close any existing modal first to prevent duplicates
+    setDetailModalOpen(false)
+
+    // Small delay to ensure the previous modal is fully closed
+    setTimeout(() => {
+      // Find the most up-to-date version of this removal in the state
+      const currentRemoval = removals.find((r) => r.id === removal.id) || removal
+      setSelectedRemoval(currentRemoval)
+      setDetailModalOpen(true)
+    }, 50)
   }
 
-  // Handle modal close
+  // Update the handleCloseModalDetail function
   const handleCloseModalDetail = () => {
     setDetailModalOpen(false)
   }
@@ -931,8 +1015,18 @@ export default function RemovalDashboard() {
     setSnackbarOpen(false)
   }
 
-  // Função para atualizar dados
+  // Modificar a função handleRefreshData para limpar os filtros
+  // Substitua a função handleRefreshData (aproximadamente linha 550) com esta versão:
   const handleRefreshData = () => {
+    // Opcionalmente, limpar os filtros ao atualizar
+    setSelectedDate(null)
+    setDriverSearch("")
+    setPrefixSearch("")
+    setStatusFilter("all")
+    setTeamFilter("all")
+    setRecentlyRegisteredFilter(false)
+
+    // Recarregar todos os dados
     loadAllData()
   }
 
@@ -954,42 +1048,82 @@ export default function RemovalDashboard() {
   const pieChartData = useMemo(() => getPieChartData(), [removals])
 
   // Filter and sort removals data
+  // Modify the filteredRemovals useMemo to include the recently registered filter
+  // Find the filteredRemovals useMemo (around line 600) and update it to include the new filter
+  // Replace the entire filteredRemovals useMemo with this updated version:
   const filteredRemovals = useMemo(() => {
+    // Get current date for "recently registered" filter
+    const currentDate = new Date()
+    const oneDayAgo = new Date(currentDate)
+    oneDayAgo.setDate(currentDate.getDate() - 1)
+
     return removals
-      .filter(
-        (removal) =>
-          // Busca unificada em múltiplos campos
-          (driverSearch === "" ||
-            removal.driver?.toLowerCase().includes(driverSearch.toLowerCase()) ||
-            removal.vehiclePrefix?.toLowerCase().includes(driverSearch.toLowerCase()) ||
-            removal.vehiclePrefix?.toLowerCase().includes(driverSearch.toLowerCase())) &&
-          (selectedDate === null || removal.date === selectedDate?.toISOString().split("T")[0]) &&
-          // Update the filter function to handle the new status values
-          (statusFilter === "all" ||
-            (statusFilter === "completed" && removal.status === "Finalizado") ||
-            (statusFilter === "in-progress" && removal.status === "Em andamento")) &&
-          // Filtro por equipe
-          (teamFilter === "all" ||
-            (teamFilter === "team-1" && removal.team === "Equipe1(Matutino)") ||
-            (teamFilter === "team-2" && removal.team === "Equipe2(Vespertino)") ||
-            (teamFilter === "team-3" && removal.team === "Equipe3(Noturno)")),
-      )
+      .filter((removal) => {
+        // Unified search across multiple fields
+        const searchMatch =
+          driverSearch === "" ||
+          (removal.driver && removal.driver.toLowerCase().includes(driverSearch.toLowerCase())) ||
+          (removal.vehiclePrefix && removal.vehiclePrefix.toLowerCase().includes(driverSearch.toLowerCase())) ||
+          (removal.driverId && removal.driverId.toLowerCase().includes(driverSearch.toLowerCase()))
+
+        // Date check with proper format
+        let dateMatch = true
+        if (selectedDate !== null) {
+          // Convert removal date to Date object for comparison
+          const removalDate = new Date(removal.date)
+          // Reset hours to compare only dates
+          removalDate.setHours(0, 0, 0, 0)
+          const filterDate = new Date(selectedDate)
+          filterDate.setHours(0, 0, 0, 0)
+
+          // Compare dates
+          dateMatch = removalDate.getTime() === filterDate.getTime()
+        }
+
+        // Status filter
+        const statusMatch =
+          statusFilter === "all" ||
+          (statusFilter === "completed" && removal.status === "Finalizado") ||
+          (statusFilter === "in-progress" && removal.status === "Em andamento")
+
+        // Team filter
+        const teamMatch =
+          teamFilter === "all" ||
+          (teamFilter === "team-1" && removal.team === "Equipe1(Matutino)") ||
+          (teamFilter === "team-2" && removal.team === "Equipe2(Vespertino)") ||
+          (teamFilter === "team-3" && removal.team === "Equipe3(Noturno)")
+
+        // Recently registered filter (last 24 hours)
+        const recentlyMatch = !recentlyRegisteredFilter || (removal.date && new Date(removal.date) >= oneDayAgo)
+
+        // Return true only if all filters match
+        return searchMatch && dateMatch && statusMatch && teamMatch && recentlyMatch
+      })
       .sort((a, b) => {
         const factor = sortDirection === "asc" ? 1 : -1
         if (sortField === "driver") {
-          return factor * a.driver.localeCompare(b.driver)
+          return factor * (a.driver || "").localeCompare(b.driver || "")
         } else if (sortField === "vehiclePrefix") {
-          return factor * a.vehiclePrefix.localeCompare(b.vehiclePrefix)
+          return factor * (a.vehiclePrefix || "").localeCompare(b.vehiclePrefix || "")
         } else if (sortField === "departureTime") {
-          return factor * a.departureTime.localeCompare(b.departureTime)
+          return factor * (a.departureTime || "").localeCompare(b.departureTime || "")
         } else if (sortField === "team") {
-          return factor * a.team.localeCompare(b.team)
+          return factor * (a.team || "").localeCompare(b.tipo_equipe || "")
         } else if (sortField === "status") {
-          return factor * a.status.localeCompare(b.status)
+          return factor * (a.status || "").localeCompare(b.status_frota || "")
         }
         return 0
       })
-  }, [driverSearch, selectedDate, statusFilter, teamFilter, sortField, sortDirection, removals])
+  }, [
+    driverSearch,
+    selectedDate,
+    statusFilter,
+    teamFilter,
+    sortField,
+    sortDirection,
+    removals,
+    recentlyRegisteredFilter,
+  ])
 
   // Get paginated data
   const paginatedRemovals = filteredRemovals.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
@@ -1179,15 +1313,45 @@ export default function RemovalDashboard() {
     }
   }
 
+  // Replace the existing useEffect for refreshReleasedToday
   useEffect(() => {
     refreshReleasedToday()
 
-    const interval = setInterval(() => {
-      refreshReleasedToday()
-    }, 7000) // Atualiza a cada 7 segundos
+    if (autoRefreshReleased) {
+      const interval = setInterval(() => {
+        refreshReleasedToday()
+      }, 240000) // Atualiza a cada 7 segundos
+      return () => clearInterval(interval)
+    }
+  }, [autoRefreshReleased])
 
-    return () => clearInterval(interval)
-  }, [])
+  // Add these useEffect hooks after the existing useEffect hooks
+  useEffect(() => {
+    if (autoRefreshTotal) {
+      const interval = setInterval(() => {
+        refreshTotalVehicles()
+      }, 240000) // Refresh every 15 seconds
+      return () => clearInterval(interval)
+    }
+  }, [autoRefreshTotal])
+
+  useEffect(() => {
+    if (autoRefreshActive) {
+      const interval = setInterval(() => {
+        refreshActiveVehicles()
+      }, 240000) // Refresh every 15 seconds
+      return () => clearInterval(interval)
+    }
+  }, [autoRefreshActive])
+
+  useEffect(() => {
+    if (autoRefreshInactive) {
+      const interval = setInterval(() => {
+        refreshInactiveVehicles()
+      }, 240000) // Refresh every 15 seconds
+      return () => clearInterval(interval)
+    }
+  }, [autoRefreshInactive])
 
   // Update the getStatusChip function to handle only "Finalizado" and "Em andamento"
   const getStatusChip = (status) => {
@@ -1371,7 +1535,7 @@ export default function RemovalDashboard() {
     try {
       setLoading(true)
 
-      // Primeiro, vamos criar o objeto de dados para enviar ao servidor
+      // First, create the data object to send to the server
       const newRemovalData = {
         motorista: {
           nome: registerFormData.driver,
@@ -1410,10 +1574,16 @@ export default function RemovalDashboard() {
       }
 
       // Add to local state first for immediate UI update
-      setRemovals((prev) => [newRemoval, ...prev])
+      setRemovals((prev) => {
+        const updatedRemovals = [newRemoval, ...prev]
+        // After adding the new removal, reset to first page and enable "recently registered" filter
+        setPage(0)
+        setRecentlyRegisteredFilter(true)
+        return updatedRemovals
+      })
 
-      // IMPORTANTE: Atualizar o contador de forma mais direta e visível
-      // Incrementar o contador diretamente sem esperar pela API
+      // IMPORTANT: Update the counter more directly and visibly
+      // Increment the counter directly without waiting for the API
       setStatsData((prevStats) => ({
         ...prevStats,
         releasedToday: prevStats.releasedToday + 1,
@@ -1421,25 +1591,25 @@ export default function RemovalDashboard() {
         totalVehicles: prevStats.totalVehicles + 1,
       }))
 
-      // Definir o highlightedStat para ativar o efeito visual
+      // Set the highlightedStat to activate the visual effect
       setHighlightedStat("releasedToday")
 
-      // Agora vamos fazer a chamada à API para registrar a soltura
-      // Simulando uma chamada de API bem-sucedida
+      // Now make the API call to register the release
+      // Simulating a successful API call
       await new Promise((resolve) => setTimeout(resolve, 500))
 
-      // Após o registro bem-sucedido, vamos buscar os dados atualizados do servidor
-      // para garantir que temos os números mais recentes
+      // After successful registration, fetch updated data from the server
+      // to ensure we have the most recent numbers
       const [remocoesDiaResult, remocaoAtivosResult, totalRemocaoResult] = await Promise.all([
         getTotalDeRemocaoSoltasNoDia(),
         getContagemRemocaoAtivos(),
         getContagemTotalRemocao(),
       ])
 
-      // Atualizar os stats com os dados mais recentes do servidor
+      // Update stats with the most recent data from the server
       setStatsData((prevStats) => ({
         ...prevStats,
-        // Usar os valores da API, mas se a API falhar, manter o valor incrementado localmente
+        // Use API values, but if the API fails, keep the locally incremented value
         releasedToday: remocoesDiaResult?.totalDeRemocoes || prevStats.releasedToday,
         activeVehicles: remocaoAtivosResult?.countRemocaoAtivos || prevStats.activeVehicles,
         totalVehicles: totalRemocaoResult?.totalRemocao || prevStats.totalVehicles,
@@ -1502,6 +1672,60 @@ export default function RemovalDashboard() {
       }, 1000) // Reduzido para 1 segundo
     }
   }, [highlightedStat])
+
+  // Add this useEffect to update selectedRemoval when removals change
+  useEffect(() => {
+    if (selectedRemoval) {
+      const updatedRemoval = removals.find((r) => r.id === selectedRemoval.id)
+      if (updatedRemoval) {
+        setSelectedRemoval(updatedRemoval)
+      }
+    }
+  }, [removals])
+
+  useEffect(() => {
+    return () => {
+      // Cleanup function to close modals when component unmounts
+      setModalOpen(false)
+      setDetailModalOpen(false)
+      setEditModalOpen(false)
+    }
+  }, [])
+
+  // Add a handler for the recently registered filter toggle
+  // Add this function after the other filter handlers (around line 400)
+  const handleRecentlyRegisteredFilterChange = () => {
+    setRecentlyRegisteredFilter((prev) => !prev)
+    setPage(0) // Reset to first page when filter changes
+  }
+
+  // 5. Adicionar função para formatar datas no formato brasileiro
+  // Adicione esta função auxiliar após as outras funções utilitárias (aproximadamente linha 700):
+  const formatDateBR = (dateString) => {
+    if (!dateString) return ""
+
+    try {
+      const date = new Date(dateString)
+      return date.toLocaleDateString("pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      })
+    } catch (error) {
+      console.error("Erro ao formatar data:", error)
+      return dateString
+    }
+  }
+
+  // 7. Adicionar função para atualizar os dados ao mudar o filtro de data
+  // Adicione este useEffect após os outros useEffects (aproximadamente linha 650):
+  useEffect(() => {
+    if (selectedDate) {
+      console.log("Filtro de data alterado:", selectedDate)
+      // No need to reload all data, just apply the filter
+      // filteredRemovals already handles this through useMemo
+    }
+  }, [selectedDate])
 
   return (
     <>
@@ -1641,6 +1865,12 @@ export default function RemovalDashboard() {
               padding: { xs: "1rem", sm: "1.5rem" },
               animation: "fadeIn 1s ease-out",
             }}
+            component="sec"
+            sx={{
+              flex: 1,
+              padding: { xs: "1rem", sm: "1.5rem" },
+              animation: "fadeIn 1s ease-out",
+            }}
           >
             <Container maxWidth="xl" disableGutters>
               {/* Stats Cards */}
@@ -1665,7 +1895,6 @@ export default function RemovalDashboard() {
                         icon={DirectionsCar}
                         color={themeColors.primary.main}
                         highlight={highlightedStat === "totalVehicles"}
-                        onRefresh={refreshTotalVehicles}
                       />
                     </Box>
                   </Fade>
@@ -1677,7 +1906,6 @@ export default function RemovalDashboard() {
                         icon={CheckCircle}
                         color={themeColors.success.main}
                         highlight={highlightedStat === "activeVehicles"}
-                        onRefresh={refreshActiveVehicles}
                       />
                     </Box>
                   </Fade>
@@ -1689,7 +1917,6 @@ export default function RemovalDashboard() {
                         icon={Cancel}
                         color={themeColors.error.main}
                         highlight={highlightedStat === "inactiveVehicles"}
-                        onRefresh={refreshInactiveVehicles}
                       />
                     </Box>
                   </Fade>
@@ -1701,7 +1928,6 @@ export default function RemovalDashboard() {
                         icon={Today}
                         color={themeColors.warning.main}
                         highlight={highlightedStat === "releasedToday"}
-                        onRefresh={refreshReleasedToday}
                       />
                     </Box>
                   </Fade>
@@ -1862,6 +2088,7 @@ export default function RemovalDashboard() {
                                     },
                                   },
                                 }}
+                                format="dd/MM/yyyy"
                                 clearable
                                 clearText="Limpar"
                               />
@@ -1979,6 +2206,42 @@ export default function RemovalDashboard() {
                                   )}
                                 </Box>
                               </Grid>
+                              <Grid item xs={12}>
+                                <Typography
+                                  variant="body2"
+                                  sx={{
+                                    fontWeight: 600,
+                                    mb: 1,
+                                    color: themeColors.text.secondary,
+                                    fontSize: "0.8rem",
+                                  }}
+                                >
+                                  Filtro Adicional:
+                                </Typography>
+                                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                                  <Chip
+                                    label="Cadastrados Recentemente"
+                                    clickable
+                                    onClick={handleRecentlyRegisteredFilterChange}
+                                    sx={{
+                                      borderRadius: "12px",
+                                      fontWeight: 500,
+                                      backgroundColor: recentlyRegisteredFilter
+                                        ? alpha(themeColors.secondary.main, 0.1)
+                                        : alpha(themeColors.background.default, 0.5),
+                                      color: recentlyRegisteredFilter
+                                        ? themeColors.secondary.main
+                                        : themeColors.text.secondary,
+                                      border: `1px solid ${recentlyRegisteredFilter ? themeColors.secondary.main : themeColors.divider}`,
+                                      "&:hover": {
+                                        backgroundColor: alpha(themeColors.secondary.main, 0.1),
+                                        color: themeColors.secondary.main,
+                                      },
+                                      transition: "all 0.2s ease",
+                                    }}
+                                  />
+                                </Box>
+                              </Grid>
                             </Grid>
                           </Box>
                         </Paper>
@@ -2042,7 +2305,7 @@ export default function RemovalDashboard() {
                                 sx={{
                                   cursor: "pointer",
                                   fontWeight: 600,
-                                  color: sortField === "team" ? themeColors.primary.main : themeColors.text.secondary,
+                                  color: sortField === "tipo_equite" ? themeColors.primary.main : themeColors.text.secondary,
                                   "&:hover": { color: themeColors.primary.main },
                                   borderBottom: `1px solid ${themeColors.divider}`,
                                   py: 1.5,
@@ -2062,7 +2325,7 @@ export default function RemovalDashboard() {
                                 }}
                               >
                                 Status
-                                <SortIndicator field="status" />
+                                <SortIndicator field="status_frota" />
                               </TableCell>
                               <TableCell
                                 sx={{
@@ -2130,9 +2393,9 @@ export default function RemovalDashboard() {
                                       }}
                                     />
                                   </TableCell>
-                                  <TableCell>{removal.departureTime || "-"}</TableCell>
-                                  <TableCell>{removal.team || "-"}</TableCell>
-                                  <TableCell>{getStatusChip(removal.status)}</TableCell>
+                                  <TableCell>{removal.hora_saida_frota || "-"}</TableCell>
+                                  <TableCell>{removal.tipo_equipe|| "-"}</TableCell>
+                                  <TableCell>{getStatusChip(removal.status_frota)}</TableCell>
                                   <TableCell align="center">
                                     <IconButton
                                       size="small"
@@ -2502,133 +2765,6 @@ export default function RemovalDashboard() {
                             }}
                           >
                             <Warehouse
-                              sx={{
-                                color: "white",
-                                fontSize: { xs: "1.1rem", sm: "1.3rem" },
-                              }}
-                            />
-                          </Box>
-                          <Box>
-                            <Typography
-                              sx={{
-                                fontWeight: 600,
-                                fontSize: { xs: "1.1rem", sm: "1.2rem" },
-                                color: themeColors.text.primary,
-                              }}
-                            >
-                              Distribuição por Garagem
-                            </Typography>
-                            <Typography
-                              sx={{
-                                fontSize: { xs: "0.8rem", sm: "0.85rem" },
-                                color: themeColors.text.secondary,
-                                fontWeight: 400,
-                              }}
-                            >
-                              Análise de veículos por PA
-                            </Typography>
-                          </Box>
-                        </Box>
-                      }
-                      action={
-                        <IconButton
-                          sx={{
-                            color: themeColors.text.secondary,
-                            "&:hover": { color: themeColors.info.main },
-                          }}
-                          onClick={handleRefreshData}
-                        >
-                          <Refresh />
-                        </IconButton>
-                      }
-                      sx={{
-                        paddingBottom: "0.75rem",
-                        borderBottom: `1px solid ${themeColors.divider}`,
-                        "& .MuiCardHeader-title": {
-                          fontWeight: 600,
-                          fontSize: "1.125rem",
-                          color: themeColors.text.primary,
-                        },
-                        "& .MuiCardHeader-action": {
-                          margin: 0,
-                        },
-                      }}
-                    />
-                    <CardContent sx={{ padding: "1.5rem" }}>
-                      <Box
-                        sx={{
-                          width: "100%",
-                          position: "relative",
-                          height: "350px",
-                        }}
-                      >
-                        {!chartsLoaded ? (
-                          <Box
-                            sx={{
-                              position: "absolute",
-                              top: 0,
-                              left: 0,
-                              right: 0,
-                              bottom: 0,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              backgroundColor: alpha(themeColors.background.paper, 0.7),
-                              zIndex: 10,
-                              borderRadius: "12px",
-                            }}
-                          >
-                            <Box
-                              sx={{
-                                width: "40px",
-                                height: "40px",
-                                borderRadius: "50%",
-                                background: themeColors.info.main,
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                boxShadow: "0 4px 20px rgba(0, 0, 0,",
-                              }}
-                            />
-                          </Box>
-                        ) : (
-                          <PADistributionChart chartsLoaded={chartsLoaded} themeColors={themeColors} />
-                        )}
-                      </Box>
-                    </CardContent>
-                  </Card>
-                </Zoom>
-              </Box>
-              <Box component="section" sx={{ mb: 4 }}>
-                <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "800ms" : "0ms" }}>
-                  <Card
-                    sx={{
-                      borderRadius: "16px",
-                      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
-                      transition: "all 0.3s ease",
-                      overflow: "hidden",
-                      "&:hover": {
-                        boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)",
-                        transform: "translateY(-4px)",
-                      },
-                      background: themeColors.background.card,
-                    }}
-                  >
-                    <CardHeader
-                      title={
-                        <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                          <Box
-                            sx={{
-                              width: { xs: "32px", sm: "36px" },
-                              height: { xs: "32px", sm: "36px" },
-                              borderRadius: "12px",
-                              background: themeColors.info.main,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                            }}
-                          >
-                            <LocalShipping
                               sx={{
                                 color: "white",
                                 fontSize: { xs: "1.1rem", sm: "1.3rem" },
@@ -3246,55 +3382,6 @@ export default function RemovalDashboard() {
                       >
                         {selectedRemoval.route || "Não informado"}
                       </Typography>
-                      <Typography sx={{ color: themeColors.text.secondary, fontSize: "0.75rem", mt: 0.5 }}>
-                        Rota
-                      </Typography>
-                    </Paper>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Paper
-                      elevation={0}
-                      sx={{
-                        p: 2,
-                        borderRadius: "16px",
-                        backgroundColor: alpha(themeColors.background.default, 0.5),
-                        border: `1px solid ${themeColors.divider}`,
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        transition: "all 0.3s ease",
-                        height: "100%",
-                        "&:hover": {
-                          boxShadow: "0 8px 24px rgba(0, 0, 0, 0.05)",
-                          transform: "translateY(-4px)",
-                          backgroundColor: alpha(themeColors.text.secondary, 0.05),
-                        },
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          width: "40px",
-                          height: "40px",
-                          borderRadius: "12px",
-                          backgroundColor: alpha(themeColors.text.secondary, 0.1),
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          mb: 1,
-                          animation: `${keyframes.pulse} 3s infinite ease-in-out`,
-                        }}
-                      >
-                        <Warehouse sx={{ color: themeColors.text.secondary }} />
-                      </Box>
-                      <Typography
-                        sx={{ fontWeight: 700, color: themeColors.text.primary, fontSize: "1rem", textAlign: "center" }}
-                      >
-                        {selectedRemoval.garage || "Não informado"}
-                      </Typography>
-                      <Typography sx={{ color: themeColors.text.secondary, fontSize: "0.75rem", mt: 0.5 }}>
-                        Garagem
-                      </Typography>
                     </Paper>
                   </Grid>
                 </Grid>
@@ -3376,32 +3463,13 @@ export default function RemovalDashboard() {
                     <Typography sx={{ fontWeight: 600, fontSize: "0.9rem", color: themeColors.text.secondary, mb: 1 }}>
                       Informações adicionais
                     </Typography>
-                    <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
-                      <Typography sx={{ color: themeColors.text.secondary, fontSize: "0.85rem" }}>
-                        Localização:
-                      </Typography>
-                      <Typography sx={{ fontWeight: 500, color: themeColors.text.primary, fontSize: "0.85rem" }}>
-                        {selectedRemoval.location || "Não informado"}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
-                      <Typography sx={{ color: themeColors.text.secondary, fontSize: "0.85rem" }}>Veículo:</Typography>
-                      <Typography sx={{ fontWeight: 500, color: themeColors.text.primary, fontSize: "0.85rem" }}>
-                        {selectedRemoval.vehicle || "Não informado"}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
-                      <Typography sx={{ color: themeColors.text.secondary, fontSize: "0.85rem" }}>
-                        Distância:
-                      </Typography>
-                      <Typography sx={{ fontWeight: 500, color: themeColors.text.primary, fontSize: "0.85rem" }}>
-                        {selectedRemoval.distance || "Não informado"}
-                      </Typography>
-                    </Box>
+
+                    {/* 6. Modificar a exibição de data no modal de detalhes para usar o formato brasileiro
+                    // Encontre a seção que exibe a data no modal de detalhes (aproximadamente linha 2000) e substitua por: */}
                     <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                       <Typography sx={{ color: themeColors.text.secondary, fontSize: "0.85rem" }}>Data:</Typography>
                       <Typography sx={{ fontWeight: 500, color: themeColors.text.primary, fontSize: "0.85rem" }}>
-                        {selectedRemoval.date ? new Date(selectedRemoval.date).toLocaleDateString() : "Não informado"}
+                        {selectedRemoval.date ? formatDateBR(selectedRemoval.date) : "Não informado"}
                       </Typography>
                     </Box>
                   </Paper>
@@ -3437,24 +3505,6 @@ export default function RemovalDashboard() {
                 Fechar
               </Button>
               <Box sx={{ display: "flex", gap: 1 }}>
-                <Button
-                  variant="outlined"
-                  size="medium"
-                  startIcon={<Share />}
-                  sx={{
-                    borderRadius: "12px",
-                    textTransform: "none",
-                    fontWeight: 500,
-                    borderColor: themeColors.primary.main,
-                    color: themeColors.primary.main,
-                    "&:hover": {
-                      backgroundColor: alpha(themeColors.primary.main, 0.05),
-                      boxShadow: `0 4px 12px ${alpha(themeColors.primary.main, 0.1)}`,
-                    },
-                  }}
-                >
-                  Compartilhar
-                </Button>
                 <Button
                   variant="contained"
                   size="medium"
@@ -3692,12 +3742,11 @@ export default function RemovalDashboard() {
               sx={{
                 "& .MuiOutlinedInput-root": {
                   borderRadius: "12px",
-                  backgroundColor: "white",
+                  backgroundColor: "white"
                 },
               }}
             />
             <Autocomplete
-              disablePortal
               options={["Equipe1(Matutino)", "Equipe2(Vespertino)", "Equipe3(Noturno)"]}
               value={registerFormData.team}
               onChange={(_, newValue) => handleRegisterFormChange("team", newValue)}
@@ -3731,7 +3780,7 @@ export default function RemovalDashboard() {
                 sx={{
                   "& .MuiOutlinedInput-root": {
                     borderRadius: "12px",
-                    backgroundColor: "white",
+                    backgroundColor: "#ffff",
                   },
                 }}
               />
@@ -3839,7 +3888,7 @@ export default function RemovalDashboard() {
       {/* Adicionar antes do último </> (aproximadamente linha 2900) */}
       <DetailModal
         open={detailModalOpen}
-        onClose={handleCloseModal}
+        onClose={handleCloseModalDetail}
         removal={selectedRemoval}
         onEdit={handleEditClick}
         themeColors={themeColors}

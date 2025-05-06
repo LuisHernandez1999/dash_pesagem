@@ -91,7 +91,7 @@ const PADistributionChart = ({ chartsLoaded = true, themeColors }) => {
   useEffect(() => {
     const intervalId = setInterval(() => {
       fetchData()
-    }, 3000)
+    }, 240000)
 
     // Clean up interval on component unmount
     return () => clearInterval(intervalId)

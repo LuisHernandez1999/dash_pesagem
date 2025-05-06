@@ -25,6 +25,7 @@ import {
   Paper,
   Chip,
   GlobalStyles,
+  Popper, // Add the Popper import
 } from "@mui/material"
 import {
   Close,
@@ -39,6 +40,7 @@ import {
   EventNote,
   Speed,
   LocalShipping,
+  BusinessCenter, // Add this import
 } from "@mui/icons-material"
 import {
   cadastrarSoltura,
@@ -46,6 +48,11 @@ import {
   getColaboradoresListaMotoristasAtivos,
   getColaboradoresListaColetores,
 } from "../service/dashboard"
+
+// Add these imports at the top of the file, after the existing imports
+import { LocalizationProvider, TimePicker } from "@mui/x-date-pickers"
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns"
+import { ptBR } from "date-fns/locale"
 
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />
@@ -74,7 +81,7 @@ const RegisterModal = ({ open, onClose, themeColors, onRegisterSuccess }) => {
   const [formData, setFormData] = useState({
     motorista: "",
     veiculo: "",
-    frequencia: "",
+    frequencia: "Diária",
     hora_entrega_chave: "",
     hora_saida_frota: "",
     hora_chegada: "",
@@ -88,8 +95,11 @@ const RegisterModal = ({ open, onClose, themeColors, onRegisterSuccess }) => {
     celular: "",
     coletores: ["", "", ""],
     data: getCurrentDate(),
-    tipo_veiculo_selecionado: "", // Renomeado conforme solicitado
+    tipo_veiculo_selecionado: "",
+    bairro: "", // Field name for backend is "bairro"
   })
+
+  const [errors, setErrors] = useState({})
 
   // Estados para os dados de autocomplete
   const [veiculos, setVeiculos] = useState([])
@@ -182,8 +192,16 @@ const RegisterModal = ({ open, onClose, themeColors, onRegisterSuccess }) => {
     }
   }
 
-  // Função para lidar com mudanças nos campos do formulário
   const handleChange = (field, value, index = null) => {
+    // Clear error for this field when it's being updated
+    if (errors[field]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev }
+        delete newErrors[field]
+        return newErrors
+      })
+    }
+
     if (index !== null) {
       // Para arrays como coletores
       setFormData((prev) => {
@@ -217,8 +235,51 @@ const RegisterModal = ({ open, onClose, themeColors, onRegisterSuccess }) => {
     }
   }
 
-  // Modifique a função handleSubmit para combinar a data com os horários antes de enviar
   const handleSubmit = async () => {
+    // Validate all required fields
+    const newErrors = {}
+
+    // Required fields validation
+    const requiredFields = [
+      { field: "motorista", label: "Motorista" },
+      { field: "veiculo", label: "Veículo" },
+      { field: "tipo_veiculo_selecionado", label: "Tipo de Veículo" },
+      { field: "tipo_equipe", label: "Tipo de Equipe" },
+      { field: "garagem", label: "Garagem" },
+      { field: "hora_entrega_chave", label: "Hora de Entrega da Chave" },
+      { field: "hora_saida_frota", label: "Hora de Saída da Frota" },
+      { field: "lider", label: "Líder" },
+      { field: "celular", label: "Telefone de Contato" },
+      { field: "bairro", label: "Setor" }, // Field name is "bairro" but label is "Setor"
+    ]
+
+    // Check each required field
+    requiredFields.forEach(({ field, label }) => {
+      if (!formData[field] || formData[field].trim() === "") {
+        newErrors[field] = `${label} é obrigatório`
+      }
+    })
+
+    // Special validation for status "Finalizado" - hora_chegada is required
+    if (formData.status_frota === "Finalizado" && (!formData.hora_chegada || formData.hora_chegada.trim() === "")) {
+      newErrors.hora_chegada = "Hora de Chegada é obrigatória quando o status é Finalizado"
+    }
+
+    // If there are validation errors, show alert and stop submission
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors)
+      setAlert({
+        open: true,
+        message: "Preencha todos os campos obrigatórios",
+        severity: "error",
+      })
+      return
+    }
+
+    // Clear any previous errors
+    setErrors({})
+
+    // Continue with form submission
     setLoading(true)
     try {
       // Filtra coletores vazios
@@ -279,7 +340,7 @@ const RegisterModal = ({ open, onClose, themeColors, onRegisterSuccess }) => {
           setFormData({
             motorista: "",
             veiculo: "",
-            frequencia: "",
+            frequencia: "Diária", // Set default to "Diária"
             hora_entrega_chave: "",
             hora_saida_frota: "",
             hora_chegada: "",
@@ -294,7 +355,9 @@ const RegisterModal = ({ open, onClose, themeColors, onRegisterSuccess }) => {
             coletores: ["", "", ""],
             data: getCurrentDate(),
             tipo_veiculo_selecionado: "",
+            bairro: "", // Reset bairro field
           })
+          setErrors({})
         }, 1500)
       }
     } catch (error) {
@@ -542,6 +605,8 @@ const RegisterModal = ({ open, onClose, themeColors, onRegisterSuccess }) => {
                 onChange={(event, newValue) => {
                   handleChange("motorista", newValue ? newValue.nome : "")
                 }}
+                disablePortal={false}
+                PopperComponent={(props) => <Popper {...props} placement="bottom-start" />}
                 renderInput={(params) => (
                   <TextField
                     {...params}
@@ -549,6 +614,8 @@ const RegisterModal = ({ open, onClose, themeColors, onRegisterSuccess }) => {
                     variant="outlined"
                     fullWidth
                     required
+                    error={!!errors.motorista}
+                    helperText={errors.motorista}
                     sx={fieldStyle}
                     InputProps={{
                       ...params.InputProps,
@@ -564,6 +631,21 @@ const RegisterModal = ({ open, onClose, themeColors, onRegisterSuccess }) => {
                 )}
               />
 
+              <TextField
+                fullWidth
+                label="Setor"
+                variant="outlined"
+                value={formData.bairro}
+                onChange={(e) => handleChange("bairro", e.target.value)}
+                required
+                error={!!errors.bairro}
+                helperText={errors.bairro}
+                sx={fieldStyle}
+                InputProps={{
+                  startAdornment: <BusinessCenter sx={{ color: themeColors.primary.main, mr: 1, opacity: 0.7 }} />,
+                }}
+              />
+
               <Box sx={{ display: "flex", gap: 2 }}>
                 <Box sx={{ flex: 1 }}>
                   <Autocomplete
@@ -574,6 +656,8 @@ const RegisterModal = ({ open, onClose, themeColors, onRegisterSuccess }) => {
                     onChange={(event, newValue) => {
                       handleChange("veiculo", newValue ? newValue.prefixo : "")
                     }}
+                    disablePortal={false}
+                    PopperComponent={(props) => <Popper {...props} placement="bottom-start" />}
                     renderInput={(params) => (
                       <TextField
                         {...params}
@@ -581,6 +665,8 @@ const RegisterModal = ({ open, onClose, themeColors, onRegisterSuccess }) => {
                         variant="outlined"
                         fullWidth
                         required
+                        error={!!errors.veiculo}
+                        helperText={errors.veiculo}
                         sx={fieldStyle}
                         InputProps={{
                           ...params.InputProps,
@@ -599,7 +685,7 @@ const RegisterModal = ({ open, onClose, themeColors, onRegisterSuccess }) => {
                   />
                 </Box>
                 <Box sx={{ flex: 1 }}>
-                  <FormControl fullWidth sx={fieldStyle}>
+                  <FormControl fullWidth sx={fieldStyle} error={!!errors.tipo_veiculo_selecionado}>
                     <InputLabel>Tipo de Veículo</InputLabel>
                     <Select
                       value={formData.tipo_veiculo_selecionado}
@@ -611,6 +697,11 @@ const RegisterModal = ({ open, onClose, themeColors, onRegisterSuccess }) => {
                       <MenuItem value="Baú">Baú</MenuItem>
                       <MenuItem value="Seletolix">Seletolix</MenuItem>
                     </Select>
+                    {errors.tipo_veiculo_selecionado && (
+                      <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 2 }}>
+                        {errors.tipo_veiculo_selecionado}
+                      </Typography>
+                    )}
                   </FormControl>
                 </Box>
               </Box>
@@ -646,7 +737,7 @@ const RegisterModal = ({ open, onClose, themeColors, onRegisterSuccess }) => {
                 </Box>
               </Box>
 
-              <FormControl fullWidth sx={fieldStyle}>
+              <FormControl fullWidth sx={fieldStyle} error={!!errors.tipo_equipe}>
                 <InputLabel>Tipo de Equipe</InputLabel>
                 <Select
                   value={formData.tipo_equipe}
@@ -658,6 +749,11 @@ const RegisterModal = ({ open, onClose, themeColors, onRegisterSuccess }) => {
                   <MenuItem value="Equipe2(Vespertino)">Equipe 2 (Vespertino)</MenuItem>
                   <MenuItem value="Equipe3(Noturno)">Equipe 3 (Noturno)</MenuItem>
                 </Select>
+                {errors.tipo_equipe && (
+                  <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 2 }}>
+                    {errors.tipo_equipe}
+                  </Typography>
+                )}
               </FormControl>
 
               <FormControl
@@ -715,7 +811,7 @@ const RegisterModal = ({ open, onClose, themeColors, onRegisterSuccess }) => {
 
               <Box sx={{ display: "flex", gap: 2 }}>
                 <Box sx={{ flex: 1 }}>
-                  <FormControl fullWidth sx={fieldStyle}>
+                  <FormControl fullWidth sx={fieldStyle} error={!!errors.garagem}>
                     <InputLabel>Garagem</InputLabel>
                     <Select
                       value={formData.garagem}
@@ -728,6 +824,11 @@ const RegisterModal = ({ open, onClose, themeColors, onRegisterSuccess }) => {
                       <MenuItem value="PA3">PA3</MenuItem>
                       <MenuItem value="PA4">PA4</MenuItem>
                     </Select>
+                    {errors.garagem && (
+                      <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 2 }}>
+                        {errors.garagem}
+                      </Typography>
+                    )}
                   </FormControl>
                 </Box>
                 <Box sx={{ flex: 1 }}>
@@ -812,85 +913,147 @@ const RegisterModal = ({ open, onClose, themeColors, onRegisterSuccess }) => {
                     variant="outlined"
                     value={formData.frequencia}
                     onChange={(e) => handleChange("frequencia", e.target.value)}
-                    sx={fieldStyle}
+                    disabled
+                    sx={{
+                      ...fieldStyle,
+                      "& .Mui": {
+                        backgroundColor: alpha(themeColors.text.secondary, 0.05),
+                      },
+                    }}
                   />
                 </Box>
               </Box>
 
-              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
-                <Box sx={{ flex: "1 1 300px" }}>
-                  {/* Hora de Entrega da Chave */}
-                  <TextField
-                    fullWidth
-                    label="Hora de Entrega da Chave"
-                    type="time"
-                    variant="outlined"
-                    value={formData.hora_entrega_chave}
-                    onChange={(e) => handleChange("hora_entrega_chave", e.target.value)}
-                    InputLabelProps={{
-                      shrink: true,
-                      sx: {
-                        fontSize: "1rem",
-                        whiteSpace: "nowrap",
-                      },
-                    }}
-                    sx={largeFieldStyle}
-                    InputProps={{
-                      startAdornment: <AccessTime sx={{ color: themeColors.info.main, mr: 1, opacity: 0.7 }} />,
-                    }}
-                  />
+              <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ptBR}>
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
+                  <Box sx={{ flex: "1 1 300px" }}>
+                    {/* Hora de Entrega da Chave */}
+                    <TimePicker
+                      label="Hora de Entrega da Chave"
+                      value={formData.hora_entrega_chave ? new Date(`2000-01-01T${formData.hora_entrega_chave}`) : null}
+                      onChange={(newValue) => {
+                        if (newValue) {
+                          const hours = newValue.getHours().toString().padStart(2, "0")
+                          const minutes = newValue.getMinutes().toString().padStart(2, "0")
+                          handleChange("hora_entrega_chave", `${hours}:${minutes}`)
+                        } else {
+                          handleChange("hora_entrega_chave", "")
+                        }
+                      }}
+                      closeOnSelect={false}
+                      slotProps={{
+                        textField: {
+                          fullWidth: true,
+                          variant: "outlined",
+                          error: !!errors.hora_entrega_chave,
+                          helperText: errors.hora_entrega_chave,
+                          sx: largeFieldStyle,
+                          InputProps: {
+                            startAdornment: <AccessTime sx={{ color: themeColors.info.main, mr: 1, opacity: 0.7 }} />,
+                          },
+                          onClick: (e) => e.target.blur(), // Force focus away from input to show clock
+                        },
+                        popper: {
+                          sx: {
+                            "& .MuiPaper-root": {
+                              boxShadow: "0 8px 16px rgba(0, 0, 0, 0.15)",
+                              borderRadius: "12px",
+                            },
+                          },
+                          placement: "bottom-start",
+                        },
+                      }}
+                      ampm={false}
+                    />
+                  </Box>
+                  <Box sx={{ flex: "1 1 300px" }}>
+                    {/* Hora de Saída da Frota */}
+                    <TimePicker
+                      label="Hora de Saída da Frota"
+                      value={formData.hora_saida_frota ? new Date(`2000-01-01T${formData.hora_saida_frota}`) : null}
+                      onChange={(newValue) => {
+                        if (newValue) {
+                          const hours = newValue.getHours().toString().padStart(2, "0")
+                          const minutes = newValue.getMinutes().toString().padStart(2, "0")
+                          handleChange("hora_saida_frota", `${hours}:${minutes}`)
+                        } else {
+                          handleChange("hora_saida_frota", "")
+                        }
+                      }}
+                      closeOnSelect={false}
+                      slotProps={{
+                        textField: {
+                          fullWidth: true,
+                          variant: "outlined",
+                          error: !!errors.hora_saida_frota,
+                          helperText: errors.hora_saida_frota,
+                          sx: largeFieldStyle,
+                          InputProps: {
+                            startAdornment: <AccessTime sx={{ color: themeColors.info.main, mr: 1, opacity: 0.7 }} />,
+                          },
+                          onClick: (e) => e.target.blur(), // Force focus away from input to show clock
+                        },
+                        popper: {
+                          sx: {
+                            "& .MuiPaper-root": {
+                              boxShadow: "0 8px 16px rgba(0, 0, 0, 0.15)",
+                              borderRadius: "12px",
+                            },
+                          },
+                          placement: "bottom-start",
+                        },
+                      }}
+                      ampm={false}
+                    />
+                  </Box>
+                  <Box sx={{ flex: "1 1 300px" }}>
+                    {/* Hora de Chegada */}
+                    <TimePicker
+                      label="Hora de Chegada"
+                      value={formData.hora_chegada ? new Date(`2000-01-01T${formData.hora_chegada}`) : null}
+                      onChange={(newValue) => {
+                        if (newValue) {
+                          const hours = newValue.getHours().toString().padStart(2, "0")
+                          const minutes = newValue.getMinutes().toString().padStart(2, "0")
+                          handleChange("hora_chegada", `${hours}:${minutes}`)
+                        } else {
+                          handleChange("hora_chegada", "")
+                        }
+                      }}
+                      disabled={formData.status_frota !== "Finalizado"}
+                      closeOnSelect={false}
+                      slotProps={{
+                        textField: {
+                          fullWidth: true,
+                          variant: "outlined",
+                          error: formData.status_frota === "Finalizado" && !!errors.hora_chegada,
+                          helperText: formData.status_frota === "Finalizado" ? errors.hora_chegada : "",
+                          sx: {
+                            ...largeFieldStyle,
+                            "& .Mui-disabled": {
+                              backgroundColor: alpha(themeColors.text.secondary, 0.05),
+                            },
+                          },
+                          InputProps: {
+                            startAdornment: <AccessTime sx={{ color: themeColors.info.main, mr: 1, opacity: 0.7 }} />,
+                          },
+                          onClick: (e) => !formData.status_frota !== "Finalizado" && e.target.blur(), // Force focus away from input to show clock
+                        },
+                        popper: {
+                          sx: {
+                            "& .MuiPaper-root": {
+                              boxShadow: "0 8px 16px rgba(0, 0, 0, 0.15)",
+                              borderRadius: "12px",
+                            },
+                          },
+                          placement: "bottom-start",
+                        },
+                      }}
+                      ampm={false}
+                    />
+                  </Box>
                 </Box>
-                <Box sx={{ flex: "1 1 300px" }}>
-                  {/* Hora de Saída da Frota */}
-                  <TextField
-                    fullWidth
-                    label="Hora de Saída da Frota"
-                    type="time"
-                    variant="outlined"
-                    value={formData.hora_saida_frota}
-                    onChange={(e) => handleChange("hora_saida_frota", e.target.value)}
-                    InputLabelProps={{
-                      shrink: true,
-                      sx: {
-                        fontSize: "1rem",
-                        whiteSpace: "nowrap",
-                      },
-                    }}
-                    sx={largeFieldStyle}
-                    InputProps={{
-                      startAdornment: <AccessTime sx={{ color: themeColors.info.main, mr: 1, opacity: 0.7 }} />,
-                    }}
-                  />
-                </Box>
-                <Box sx={{ flex: "1 1 300px" }}>
-                  {/* Hora de Chegada */}
-                  <TextField
-                    fullWidth
-                    label="Hora de Chegada"
-                    type="time"
-                    variant="outlined"
-                    value={formData.hora_chegada}
-                    onChange={(e) => handleChange("hora_chegada", e.target.value)}
-                    disabled={formData.status_frota !== "Finalizado"}
-                    InputLabelProps={{
-                      shrink: true,
-                      sx: {
-                        fontSize: "1rem",
-                        whiteSpace: "nowrap",
-                      },
-                    }}
-                    sx={{
-                      ...largeFieldStyle,
-                      "& .Mui-disabled": {
-                        backgroundColor: alpha(themeColors.text.secondary, 0.05),
-                      },
-                    }}
-                    InputProps={{
-                      startAdornment: <AccessTime sx={{ color: themeColors.info.main, mr: 1, opacity: 0.7 }} />,
-                    }}
-                  />
-                </Box>
-              </Box>
+              </LocalizationProvider>
             </Paper>
 
             {/* Seção: Coletores */}
@@ -935,6 +1098,8 @@ const RegisterModal = ({ open, onClose, themeColors, onRegisterSuccess }) => {
                     onChange={(event, newValue) => {
                       handleChange("coletores", newValue ? newValue.nome : "", index)
                     }}
+                    disablePortal={false}
+                    PopperComponent={(props) => <Popper {...props} placement="bottom-start" />}
                     renderInput={(params) => (
                       <TextField
                         {...params}
@@ -997,6 +1162,8 @@ const RegisterModal = ({ open, onClose, themeColors, onRegisterSuccess }) => {
                     variant="outlined"
                     value={formData.lider}
                     onChange={(e) => handleChange("lider", e.target.value)}
+                    error={!!errors.lider}
+                    helperText={errors.lider}
                     sx={fieldStyle}
                     InputProps={{
                       startAdornment: (
@@ -1012,6 +1179,8 @@ const RegisterModal = ({ open, onClose, themeColors, onRegisterSuccess }) => {
                     variant="outlined"
                     value={formData.celular}
                     onChange={(e) => handleChange("celular", e.target.value)}
+                    error={!!errors.celular}
+                    helperText={errors.celular}
                     sx={fieldStyle}
                     InputProps={{
                       startAdornment: <Phone sx={{ color: themeColors.secondary.main, mr: 1, opacity: 0.7 }} />,

@@ -24,6 +24,9 @@ export const cadastrarSoltura = async (solturaData) => {
         rota: solturaData.rota || null,
         coletores: solturaData.tipo_servico?.toLowerCase() !== "varrição" ? solturaData.coletores : undefined,
         data: solturaData.data,
+        tipo_veiculo_selecionado:solturaData. tipo_veiculo_selecionado,
+        bairro:solturaData.bairro
+
       },
       {
         headers: {
@@ -135,7 +138,7 @@ export const getColaboradoresListaColetores = async () => {
 
 
 
-export const getSolturasDetalhada = async () => {
+export const getSolturasDetalhadaTodas = async () => {
   //// sera usado pra tabela de solturas
   try {
     const response = await axios.get(`${API_URL}api/soltura/ver_solturas/`, {
@@ -189,6 +192,9 @@ export const getSolturasDetalhada = async () => {
         turno: soltura.turno,
         rota: soltura.rota,
         status_frota: soltura.status_frota,
+        tipo_veiculo_selecionado:soltura.tipo_veiculo_selecionado,
+        bairro:soltura.bairro
+        
       };
     });
     
@@ -583,6 +589,9 @@ export const editarSoltura = async (solturaId, dados) => {
         rota: dados.rota || null,
         data: dados.data || null,
         status_frota: dados.status_frota || null,
+        tipo_veiculo_selecionado :dados.tipo_veiculo_selecionado,
+        bairro:dados.bairro
+
       },
       {
         headers: {
@@ -597,3 +606,45 @@ export const editarSoltura = async (solturaId, dados) => {
     throw error.response?.data || { error: 'Erro inesperado ao editar soltura' };
   }
 };
+export async function getSolturasDetalhada() {
+  try {
+    const response = await fetch(`${API_URL}//api/soltura/ver_solturas/ `, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Erro ao buscar solturas: ${response.status}`);
+    }
+
+    const solturas = await response.json();
+
+    // Mapeamento dos campos retornados
+    return solturas.map(item => ({
+      motorista: item.motorista,
+      matriculaMotorista: item.matricula_motorista,
+      tipoEquipe: item.tipo_equipe,
+      coletores: item.coletores,
+      data: item.data,
+      prefixo: item.prefixo,
+      frequencia: item.frequencia,
+      setores: item.setores,
+      celular: item.celular,
+      lider: item.lider,
+      horaEntregaChave: item.hora_entrega_chave,
+      horaSaidaFrota: item.hora_saida_frota,
+      tipoServico: item.tipo_servico,
+      turno: item.turno,
+      rota: item.rota,
+      statusFrota: item.status_frota,
+      tipoVeiculoSelecionado: item.tipo_veiculo_selecionado,
+      bairro: item.bairro
+    }));
+
+  } catch (error) {
+    console.error('Erro ao buscar solturas:', error);
+    throw error;
+  }
+}

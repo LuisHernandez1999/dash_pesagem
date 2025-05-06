@@ -198,7 +198,7 @@ function TeamChart() {
   useEffect(() => {
     const intervalId = setInterval(() => {
       loadTeamData(true)
-    }, 10000) // Atualiza a cada 30 segundos
+    },240000) // Atualiza a cada 30 segundos
 
     return () => clearInterval(intervalId)
   }, [loadTeamData])

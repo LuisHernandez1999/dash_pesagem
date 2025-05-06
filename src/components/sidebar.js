@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import {
   Box,
   List,
@@ -30,6 +30,9 @@ import {
   Search,
   Logout,
   Menu as MenuIcon,
+  LocalShipping as TruckIcon,
+  FindInPage as InspectionIcon,
+  CommuteRounded as FleetIcon,
 } from "@mui/icons-material"
 
 const greenColors = {
@@ -48,6 +51,7 @@ export default function Sidebar({ onCollapse, user }) {
   const [openSubMenu, setOpenSubMenu] = useState(null)
   const [activeItem, setActiveItem] = useState("")
   const [filteredMenuItems, setFilteredMenuItems] = useState([])
+  const sidebarContentRef = useRef(null)
 
   // Define menu items
   const menuItems = [
@@ -61,6 +65,14 @@ export default function Sidebar({ onCollapse, user }) {
         { text: "Colaboradores", icon: TeamIcon, path: "/colaborador/colaboradores_page" },
         { text: "Veículos", icon: CarIcon, path: "/veiculos/veiculos_page" },
         { text: "Cooperativas", icon: BusinessIcon, path: "/cooperativas/cooperativa_page" },
+      ],
+    },
+    {
+      text: "Controle de Frota",
+      icon: FleetIcon,
+      subItems: [
+        { text: "Controle de Remoções", icon: TruckIcon, path: "/" },
+        { text: "Averiguação de Rotas", icon: InspectionIcon, path: "/averiguacao/averiguacao_page" },
       ],
     },
   ]
@@ -150,7 +162,18 @@ export default function Sidebar({ onCollapse, user }) {
   }
 
   const toggleSubMenu = (menuName) => {
-    setOpenSubMenu(openSubMenu === menuName ? null : menuName)
+    const isOpening = openSubMenu !== menuName
+    setOpenSubMenu(isOpening ? menuName : null)
+
+    // If opening the Controle de Frota section, scroll the sidebar down
+    if (isOpening && menuName === "Controle de Frota" && sidebarContentRef.current) {
+      setTimeout(() => {
+        const element = sidebarContentRef.current.querySelector(`[data-menu-name="${menuName}"]`)
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth", block: "center" })
+        }
+      }, 100) // Small delay to ensure the submenu is rendered
+    }
   }
 
   const handleSearchChange = (e) => {
@@ -301,6 +324,7 @@ export default function Sidebar({ onCollapse, user }) {
 
       {/* Menu items */}
       <Box
+        ref={sidebarContentRef}
         sx={{
           mt: 2,
           px: isCollapsed ? 1 : 1.5,
@@ -319,6 +343,7 @@ export default function Sidebar({ onCollapse, user }) {
               <Tooltip title={isCollapsed ? item.text : ""} placement="right" arrow>
                 <ListItem
                   button
+                  data-menu-name={item.text}
                   sx={{
                     mb: "0.6rem",
                     p: isCollapsed ? "12px 0" : "10px 12px",

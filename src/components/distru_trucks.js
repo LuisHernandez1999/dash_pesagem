@@ -103,7 +103,7 @@ const VehicleDistributionChart = ({ chartsLoaded = true, themeColors }) => {
   useEffect(() => {
     const intervalId = setInterval(() => {
       fetchData()
-    }, 3000)
+    }, 5 * 60 * 1000)
 
     // Clean up interval on component unmount
     return () => clearInterval(intervalId)

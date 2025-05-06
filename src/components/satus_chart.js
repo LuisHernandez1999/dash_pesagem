@@ -142,7 +142,7 @@ function StatusChart() {
   useEffect(() => {
     const intervalId = setInterval(() => {
       loadStatusData(true)
-    }, 10000) // Atualiza a cada 30 segundos
+    },240000) // Atualiza a cada 30 segundos
 
     return () => clearInterval(intervalId)
   }, [loadStatusData])
