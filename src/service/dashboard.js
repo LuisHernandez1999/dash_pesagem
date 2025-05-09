@@ -648,3 +648,54 @@ export async function getSolturasDetalhada() {
     throw error;
   }
 }
+
+export const getRemocoesPorDiaSemana = async () => {
+  try {
+    // Simulação de dados para demonstração
+    // Em um ambiente real, isso seria uma chamada de API
+    const data = {
+      remocoes: [
+        { day: "Segunda", removals: 42 },
+        { day: "Terça", removals: 38 },
+        { day: "Quarta", removals: 45 },
+        { day: "Quinta", removals: 52 },
+        { day: "Sexta", removals: 48 },
+        { day: "Sábado", removals: 36 },
+        { day: "Domingo", removals: 25 },
+      ],
+    }
+
+    return data
+  } catch (error) {
+    console.error("Erro ao obter remoções por dia da semana:", error)
+    throw error
+  }
+}
+const DIAS_SEMANA_ORDEM = [
+  'Domingo',
+  'Segunda-feira',
+  'Terça-feira',
+  'Quarta-feira',
+  'Quinta-feira',
+  'Sexta-feira',
+  'Sábado',
+];
+
+export const getSolturasPorDiaDaSemana = async () => {
+  try {
+    const response = await axios.get('/api/solturas-por-dia-da-semana/'); // ajuste a URL se necessário
+    const rawData = response.data.solturas_por_dia_da_semana;
+
+    // Mapeia os dados para um array ordenado
+    const dadosOrdenados = DIAS_SEMANA_ORDEM.map((dia) => ({
+      dia,
+      total: rawData[dia] ?? 0, // garante que dias ausentes sejam 0
+    }));
+
+    return dadosOrdenados;
+
+  } catch (error) {
+    console.error('Erro ao buscar solturas por dia da semana:', error);
+    throw error;
+  }
+};

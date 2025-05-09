@@ -1,10 +1,8 @@
 "use client"
 
 import { useEffect, useState, useRef } from "react"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList, Cell } from "recharts"
-import { Box, Typography, Paper, Chip, Divider, IconButton, Fade, alpha } from "@mui/material"
-import { Info, Refresh } from "@mui/icons-material"
-import { Tooltip as MuiTooltip } from "@mui/material"
+import { Box, Typography, Card, Fade, alpha, Chip, Divider } from "@mui/material"
+import { Warehouse } from "@mui/icons-material"
 import { getDistribuicaoDiaria } from "../service/dashboard"
 
 // Helper function to check if data has changed
@@ -87,7 +85,7 @@ const PADistributionChart = ({ chartsLoaded = true, themeColors }) => {
     fetchData()
   }, [])
 
-  // Auto-refresh every 3 seconds
+  // Auto-refresh every 4 minutes
   useEffect(() => {
     const intervalId = setInterval(() => {
       fetchData()
@@ -97,76 +95,8 @@ const PADistributionChart = ({ chartsLoaded = true, themeColors }) => {
     return () => clearInterval(intervalId)
   }, [])
 
-  // Custom tooltip for the chart
-  const PATooltip = ({ active, payload }) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload
-      return (
-        <Box
-          sx={{
-            backgroundColor: "rgba(255, 255, 255, 0.98)",
-            border: "none",
-            borderRadius: "16px",
-            padding: "1.2rem",
-            boxShadow: "0 10px 40px rgba(0, 0, 0, 0.15)",
-            maxWidth: "280px",
-            position: "relative",
-            "&:before": {
-              content: '""',
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              height: "6px",
-              background: `linear-gradient(90deg, ${data.color}, ${alpha(data.color, 0.7)})`,
-              borderTopLeftRadius: "16px",
-              borderTopRightRadius: "16px",
-            },
-          }}
-        >
-          <Typography
-            sx={{
-              fontWeight: 700,
-              fontSize: "1.2rem",
-              marginBottom: "0.75rem",
-              color: themeColors.text.primary,
-              borderBottom: "1px solid rgba(226, 232, 240, 0.5)",
-              paddingBottom: "0.5rem",
-            }}
-          >
-            {data.name}
-          </Typography>
-
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginBottom: "0.5rem",
-              fontSize: "0.875rem",
-            }}
-          >
-            <Box sx={{ display: "flex", alignItems: "center" }}>
-              <Box
-                component="span"
-                sx={{
-                  display: "inline-block",
-                  width: "12px",
-                  height: "12px",
-                  borderRadius: "4px",
-                  marginRight: "0.75rem",
-                  backgroundColor: data.color,
-                }}
-              />
-              <Typography sx={{ color: themeColors.text.secondary, fontWeight: 500 }}>Veículos:</Typography>
-            </Box>
-            <Typography sx={{ fontWeight: 600, color: themeColors.text.primary }}>{data.value}</Typography>
-          </Box>
-        </Box>
-      )
-    }
-    return null
-  }
+  // Calculate total vehicles
+  const totalVehicles = paData.reduce((sum, item) => sum + item.value, 0)
 
   if (loading && paData.length === 0) {
     return (
@@ -178,209 +108,126 @@ const PADistributionChart = ({ chartsLoaded = true, themeColors }) => {
 
   return (
     <Fade in={chartsLoaded} timeout={800}>
-      <Box
-        sx={{
-          width: "100%",
-          height: "100%",
-          display: "flex",
-          flexDirection: { xs: "column", md: "row" },
-          gap: 3,
-        }}
-      >
-        {/* Chart Section */}
-        <Box
-          sx={{
-            flex: 1,
-            height: { xs: "250px", md: "100%" },
-            width: { xs: "100%", md: "60%" },
-            position: "relative",
-          }}
-        >
-          {loading && (
+      <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+        <Box sx={{ mb: 2 }}></Box>
+
+        <Divider sx={{ mb: 3 }} />
+
+        {paData.length > 0 ? (
+          <>
             <Box
               sx={{
-                position: "absolute",
-                top: 0,
-                right: 0,
-                zIndex: 10,
-                backgroundColor: alpha(themeColors.info.main, 0.1),
-                color: themeColors.info.main,
-                padding: "4px 8px",
-                borderRadius: "4px",
-                fontSize: "12px",
-                fontWeight: 500,
+                display: "grid",
+                gridTemplateColumns: { xs: "repeat(1, 1fr)", sm: "repeat(2, 1fr)", md: "repeat(2, 1fr)" },
+                gap: 3,
+                mb: 3,
               }}
             >
-              <span>Atualizando...</span>
-            </Box>
-          )}
-
-          {lastUpdated && (
-            <Box
-              sx={{
-                position: "absolute",
-                bottom: 0,
-                right: 0,
-                zIndex: 10,
-                backgroundColor: alpha(themeColors.success.main, 0.1),
-                color: themeColors.success.main,
-                padding: "4px 8px",
-                borderRadius: "4px",
-                fontSize: "10px",
-                fontWeight: 500,
-              }}
-            >
-              <span>Atualizado: {lastUpdated.toLocaleTimeString()}</span>
-            </Box>
-          )}
-
-          {paData.length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={paData} layout="vertical" margin={{ top: 20, right: 30, left: 40, bottom: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
-                <XAxis type="number" />
-                <YAxis
-                  dataKey="name"
-                  type="category"
-                  tick={{ fill: themeColors.text.primary, fontSize: 12, fontWeight: 500 }}
-                />
-                <Tooltip content={<PATooltip />} />
-                <Bar dataKey="value" name="Veículos" radius={[0, 4, 4, 0]} barSize={30}>
-                  {paData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={entry.color}
-                      filter={`drop-shadow(0px 2px 3px ${alpha(entry.color, 0.3)})`}
-                    />
-                  ))}
-                  <LabelList
-                    dataKey="value"
-                    position="right"
-                    fill={themeColors.text.primary}
-                    fontSize={12}
-                    fontWeight={600}
-                    formatter={(value) => `${value} veículos`}
-                  />
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
-              <Typography>Nenhum dado de distribuição disponível</Typography>
-            </Box>
-          )}
-        </Box>
-
-        {/* Stats Section */}
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-            gap: 2,
-            width: { xs: "100%", md: "40%" },
-          }}
-        >
-          <Box>
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-              <Typography
-                variant="h6"
-                sx={{
-                  fontWeight: 600,
-                  color: themeColors.text.primary,
-                  textAlign: { xs: "center", md: "left" },
-                }}
-              >
-                Distribuição de Veículos por Garagem
-              </Typography>
-              <Box sx={{ display: "flex", gap: 1 }}>
-                <MuiTooltip title="Atualizar dados">
-                  <IconButton size="small" onClick={fetchData}>
-                    <Refresh fontSize="small" />
-                  </IconButton>
-                </MuiTooltip>
-                <MuiTooltip title="Dados atualizados a cada 3 segundos">
-                  <IconButton size="small">
-                    <Info fontSize="small" />
-                  </IconButton>
-                </MuiTooltip>
-              </Box>
-            </Box>
-
-            <Divider sx={{ mb: 2 }} />
-
-            {paData.length > 0 ? (
-              <Box
-                sx={{
-                  display: "grid",
-                  gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(2, 1fr)" },
-                  gap: 2,
-                }}
-              >
-                {paData.map((item) => (
-                  <Paper
-                    key={item.name}
-                    elevation={0}
-                    sx={{
-                      p: 2,
-                      borderRadius: "16px",
-                      border: `1px solid ${themeColors.divider}`,
-                      background: alpha(item.color, 0.05),
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      transition: "all 0.3s ease",
-                      "&:hover": {
-                        transform: "translateY(-4px)",
-                        boxShadow: `0 8px 16px ${alpha(item.color, 0.15)}`,
-                        border: `1px solid ${alpha(item.color, 0.3)}`,
-                      },
-                      position: "relative",
-                      overflow: "hidden",
-                      "&::before": {
-                        content: '""',
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
-                        width: "5px",
-                        height: "100%",
-                        background: item.color,
-                      },
-                    }}
-                  >
-                    <Box sx={{ display: "flex", justifyContent: "center", width: "100%", mb: 1 }}>
-                      <Chip
-                        label={item.name}
-                        size="small"
-                        sx={{
-                          backgroundColor: alpha(item.color, 0.1),
-                          color: item.color,
-                          fontWeight: 600,
-                          height: "24px",
-                        }}
-                      />
-                    </Box>
-                    <Typography
-                      variant="h4"
+              {paData.map((item) => (
+                <Card
+                  key={item.name}
+                  elevation={0}
+                  sx={{
+                    p: 2,
+                    borderRadius: "16px",
+                    border: `1px solid ${themeColors.divider}`,
+                    backgroundColor: alpha(item.color, 0.05),
+                    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
+                    transition: "all 0.3s ease",
+                    "&:hover": {
+                      boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)",
+                      transform: "translateY(-4px)",
+                    },
+                    position: "relative",
+                    overflow: "hidden",
+                    "&::before": {
+                      content: '""',
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "5px",
+                      height: "100%",
+                      background: item.color,
+                    },
+                  }}
+                >
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1.5 }}>
+                    <Box
                       sx={{
-                        fontWeight: 700,
-                        color: item.color,
-                        mb: 0.5,
+                        width: "40px",
+                        height: "40px",
+                        borderRadius: "12px",
+                        backgroundColor: alpha(item.color, 0.1),
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
                       }}
                     >
-                      {item.value}
+                      <Warehouse sx={{ color: item.color, fontSize: 24 }} />
+                    </Box>
+                    <Typography sx={{ fontWeight: 600, color: item.color, fontSize: "1.1rem" }}>{item.name}</Typography>
+                  </Box>
+                  <Typography sx={{ fontWeight: 700, fontSize: "2.5rem", color: themeColors.text.primary, mb: 1 }}>
+                    {item.value}
+                  </Typography>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Typography sx={{ fontSize: "0.9rem", color: themeColors.text.secondary }}>
+                      Veículos alocados
                     </Typography>
-                  </Paper>
-                ))}
-              </Box>
-            ) : (
-              <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", p: 4 }}>
-                <Typography>Nenhum dado disponível</Typography>
-              </Box>
-            )}
+                    <Chip
+                      label={`PA ${item.name.split(" ")[1] || ""}`}
+                      size="small"
+                      sx={{
+                        backgroundColor: alpha(item.color, 0.1),
+                        color: item.color,
+                        fontWeight: 600,
+                      }}
+                    />
+                  </Box>
+                </Card>
+              ))}
+            </Box>
+
+            <Box sx={{ mt: "auto" }}>
+              <Card
+                elevation={0}
+                sx={{
+                  p: 2,
+                  width: "100%",
+                  borderRadius: "16px",
+                  border: `1px solid ${themeColors.divider}`,
+                  backgroundColor: alpha(themeColors.info.main, 0.05),
+                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
+                }}
+              >
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <Typography sx={{ fontWeight: 600, color: themeColors.info.main }}>
+                    Saidas registradas por P.A:
+                  </Typography>
+                  <Typography sx={{ fontWeight: 700, fontSize: "1.5rem", color: themeColors.info.main }}>
+                    {totalVehicles}
+                  </Typography>
+                </Box>
+                {lastUpdated && (
+                  <Typography
+                    sx={{
+                      fontSize: "0.75rem",
+                      color: themeColors.text.secondary,
+                      mt: 1,
+                      textAlign: "right",
+                    }}
+                  >
+                    Atualizado: {lastUpdated.toLocaleTimeString()}
+                  </Typography>
+                )}
+              </Card>
+            </Box>
+          </>
+        ) : (
+          <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", p: 4 }}>
+            <Typography>Nenhum dado disponível</Typography>
           </Box>
-        </Box>
+        )}
       </Box>
     </Fade>
   )

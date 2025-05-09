@@ -304,7 +304,10 @@ const ImageGallery = ({ images = [], themeColors }) => {
           gap: 1,
           cursor: "pointer",
         }}
-        onClick={() => handleOpen(images[0])}
+        onClick={(e) => {
+          e.stopPropagation()
+          handleOpen(images[0])
+        }}
       >
         <Box
           sx={{

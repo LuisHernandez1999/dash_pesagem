@@ -1,20 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
-import {
-  BarChart,
-  Bar,
-  LineChart,
-  Line,
-  CartesianGrid,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-  LabelList,
-  ReferenceLine,
-} from "recharts"
+import { useState, useEffect } from "react"
 import {
   AppBar,
   Toolbar,
@@ -22,74 +8,26 @@ import {
   Card,
   CardContent,
   CardHeader,
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
-  Chip,
-  IconButton,
   Box,
-  Fade,
-  Zoom,
-  Menu,
-  MenuItem,
   Container,
-  Grid,
-  Avatar,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Tabs,
-  Tab,
-  Paper,
+  IconButton,
   Divider,
   useMediaQuery,
   useTheme,
-  Slide,
-  Stack,
-  InputBase,
+  alpha,
   Snackbar,
   Alert,
-  alpha,
-  Autocomplete,
-  TextField,
 } from "@mui/material"
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns"
-import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers"
 import {
-  BarChart as BarChartIcon,
-  PieChart as PieChartIcon,
-  ShowChart as LineChartIcon,
   DirectionsCar,
   CheckCircle,
   Cancel,
   Today,
   Refresh,
-  ArrowUpward,
-  ArrowDownward,
-  Close,
-  Person,
-  Timeline,
   Menu as MenuIcon,
-  WbSunny,
-  MoreVert,
-  Print,
-  Delete,
-  Group,
-  Route,
+  Timeline,
+  PieChart as PieChartIcon,
   Warehouse,
-  Facebook,
-  Twitter,
-  LinkedIn,
-  WhatsApp,
-  Email,
-  Search,
-  Edit,
 } from "@mui/icons-material"
 import Sidebar from "@/components/sidebar"
 import {
@@ -100,14 +38,13 @@ import {
   getContagemTotalRemocao,
   getQuantidadeSolturaEquipesDia,
   getMediaMensalDeSolturas,
-  getRemocoesPorMes,
+  getRemocoesPorDiaSemana,
 } from "../service/dashboard"
-import VehicleDistributionChart from "../components/distru_trucks"
-import RegisterModal from "../components/cadastro_soltura"
-import EditModal from "../components/edit_soltura"
-import DetailModal from "../components/deatil"
-import StatusChart from "../components/satus_chart"
-import TeamChart from "@/components/team_chart"
+import PADistributionChart from "../components/pa"
+import RemovalTable from "../components/tabela_remocao"
+import TeamChart from "../components/team_chart"
+import WeekdayChart from "@/components/grafico_remocao"
+import DriverCollectorExitChart from "../components/motorista_coletores"
 
 // Animation keyframes
 const keyframes = {
@@ -291,115 +228,6 @@ const themeColors = {
   divider: "rgba(226, 232, 240, 0.8)",
 }
 
-// Modificar o componente SearchInput para aumentar a largura
-const SearchInput = ({ icon: Icon, placeholder, value, onChange, suggestions = [] }) => {
-  return (
-    <Autocomplete
-      freeSolo
-      options={suggestions}
-      value={value}
-      onChange={(_, newValue) => onChange({ target: { value: newValue || "" } })}
-      onInputChange={(_, newInputValue) => onChange({ target: { value: newInputValue } })}
-      sx={{
-        flex: 1,
-        width: "100%", // Aumentar a largura para ocupar todo o espaço disponível
-      }}
-      renderInput={(params) => (
-        <Paper
-          elevation={0}
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            flex: 1,
-            borderRadius: "20px",
-            border: `2px solid ${themeColors.divider}`,
-            overflow: "hidden",
-            transition: "all 0.3s ease",
-            background: themeColors.background.paper,
-            height: "52px",
-            width: "100%", // Garantir que ocupe toda a largura
-            "&:hover": {
-              boxShadow: `0 4px 12px ${alpha(themeColors.primary.main, 0.15)}`,
-              borderColor: themeColors.primary.main,
-            },
-            "&:focus-within": {
-              boxShadow: `0 4px 12px ${alpha(themeColors.primary.main, 0.2)}`,
-              borderColor: themeColors.primary.main,
-              animation: `${keyframes.glow} 2s infinite ease-in-out`,
-            },
-          }}
-        >
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              p: 1.5,
-              pl: 2,
-              color: themeColors.primary.main,
-            }}
-          >
-            <Icon sx={{ fontSize: 22 }} />
-          </Box>
-          <InputBase
-            {...params.InputProps}
-            placeholder={placeholder}
-            sx={{
-              flex: 1,
-              fontSize: "1rem",
-              color: themeColors.text.primary,
-              py: 1,
-              px: 1,
-              width: "100%",
-              "& input": {
-                padding: "8px 0",
-                transition: "all 0.2s ease",
-              },
-              "& input::placeholder": {
-                color: themeColors.text.disabled,
-                opacity: 1,
-              },
-            }}
-            inputProps={{
-              ...params.inputProps,
-              style: { paddingLeft: 0 },
-            }}
-          />
-          {value && (
-            <IconButton
-              size="small"
-              onClick={() => onChange({ target: { value: "" } })}
-              sx={{ mr: 1, color: themeColors.text.secondary }}
-            >
-              <Close fontSize="small" />
-            </IconButton>
-          )}
-        </Paper>
-      )}
-      ListboxProps={{
-        sx: {
-          maxHeight: "300px",
-          borderRadius: "12px",
-          boxShadow: "0 10px 40px rgba(0, 0, 0, 0.1)",
-          mt: 1,
-          "& .MuiAutocomplete-option": {
-            padding: "10px 16px",
-            borderRadius: "8px",
-            margin: "2px 4px",
-            transition: "all 0.2s ease",
-            "&:hover": {
-              backgroundColor: alpha(themeColors.primary.main, 0.1),
-            },
-            "&.Mui-focused": {
-              backgroundColor: alpha(themeColors.primary.main, 0.15),
-            },
-          },
-        },
-      }}
-    />
-  )
-}
-
 // Custom stat card component - redesigned to be mais simples e branco
 const CustomStatCard = ({ title, value, icon: Icon, color, highlight }) => (
   <Card
@@ -478,12 +306,6 @@ export default function RemovalDashboard() {
   const [loading, setLoading] = useState(true)
   const [initialLoading, setInitialLoading] = useState(true)
   const [loadingProgress, setLoadingProgress] = useState(0)
-  const [selectedMonth, setSelectedMonth] = useState("Todos")
-  const [monthMenuAnchor, setMonthMenuAnchor] = useState(null)
-  const [page, setPage] = useState(0)
-  const [rowsPerPage, setRowsPerPage] = useState(5)
-  const [sortField, setSortField] = useState("departureTime")
-  const [sortDirection, setSortDirection] = useState("asc")
   const [chartsLoaded, setChartsLoaded] = useState(false)
   const [statsData, setStatsData] = useState({
     totalVehicles: 0,
@@ -492,48 +314,15 @@ export default function RemovalDashboard() {
     releasedToday: 0,
   })
 
-  const [chartType, setChartType] = useState(0)
-  const [teamChartType, setTeamChartType] = useState(0) // Default to bar chart
-  const [modalOpen, setModalOpen] = useState(false)
-  const [selectedRemoval, setSelectedRemoval] = useState(null)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [activeIndex, setActiveIndex] = useState(0)
-  const [filterMenuAnchor, setFilterMenuAnchor] = useState(null)
-  const [viewMode, setViewMode] = useState("list")
-  const [statusFilter, setStatusFilter] = useState("all")
-  const [actionMenuAnchor, setActionMenuAnchor] = useState(null)
-  const [selectedRowId, setSelectedRowId] = useState(null)
-  const [selectedDate, setSelectedDate] = useState(null)
-  const [driverSearch, setDriverSearch] = useState("")
-  const [prefixSearch, setPrefixSearch] = useState("")
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarMessage, setSnackbarMessage] = useState("")
   const [snackbarSeverity, setSnackbarSeverity] = useState("success")
-  const [shareMenuAnchor, setShareMenuAnchor] = useState(null)
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
-  const [teamFilter, setTeamFilter] = useState("all")
-  const [setDeleteConfirmClose, setSetDeleteConfirmClose] = useState(false)
-  const [detailModalOpen, setDetailModalOpen] = useState(false)
-  const [editModalOpen, setEditModalOpen] = useState(false)
   const [refreshStats, setRefreshStats] = useState(false)
-  const [registerModalOpen, setRegisterModalOpen] = useState(false)
-  const [registerFormData, setRegisterFormData] = useState({
-    driver: "",
-    driverId: "",
-    team: "Equipe1(Matutino)",
-    vehiclePrefix: "",
-    shift: "Manhã",
-    collectors: ["", "", ""],
-    vehicleType: "Caminhão Reboque",
-    garage: "PA1",
-    route: "",
-    leaders: ["", ""],
-    leaderPhones: ["", ""],
-  })
 
   // Estados para armazenar dados da API
   const [removals, setRemovals] = useState([])
-  const [monthlyData, setMonthlyData] = useState([])
+  const [weekdayData, setWeekdayData] = useState([])
   const [teamData, setTeamData] = useState([])
 
   // Add these state variables in the component
@@ -541,13 +330,8 @@ export default function RemovalDashboard() {
   const [autoRefreshActive, setAutoRefreshActive] = useState(true)
   const [autoRefreshInactive, setAutoRefreshInactive] = useState(true)
   const [autoRefreshReleased, setAutoRefreshReleased] = useState(true)
+  const [highlightedStat, setHighlightedStat] = useState(null)
 
-  // Add a new state variable for the "recently registered" filter
-  // Add this after the other filter state variables (around line 190)
-  const [recentlyRegisteredFilter, setRecentlyRegisteredFilter] = useState(false)
-
-  // Vamos modificar a função loadAllData para garantir que os dados sejam processados corretamente
-  // Substitua a função loadAllData (aproximadamente linha 300) com esta versão atualizada:
   const loadAllData = async () => {
     console.log("Iniciando carregamento de dados...")
     setLoading(true)
@@ -562,7 +346,7 @@ export default function RemovalDashboard() {
         remocaoInativosResult,
         remocoesDiaResult,
         equipesDiaResult,
-        remocoesPorMesResult,
+        remocoesPorDiaSemanaResult,
         mediaMensalResult,
       ] = await Promise.all([
         getSolturasDetalhada(),
@@ -571,7 +355,7 @@ export default function RemovalDashboard() {
         getContagemRemocaoInativos(),
         getTotalDeRemocaoSoltasNoDia(),
         getQuantidadeSolturaEquipesDia(),
-        getRemocoesPorMes(),
+        getRemocoesPorDiaSemana(),
         getMediaMensalDeSolturas(),
       ])
 
@@ -582,7 +366,7 @@ export default function RemovalDashboard() {
         remocaoInativosResult,
         remocoesDiaResult,
         equipesDiaResult,
-        remocoesPorMesResult,
+        remocoesPorDiaSemanaResult,
       })
 
       // Create a Map to store only the most recent version of each record
@@ -688,17 +472,12 @@ export default function RemovalDashboard() {
           }))
         : []
 
-      // Format monthly data for the chart
-      const formattedMonthlyData = remocoesPorMesResult?.remocoes
-        ? remocoesPorMesResult.remocoes.map((item) => ({
-            month: item.mes,
-            removals: item.total,
-          }))
-        : []
+      // Format weekday data for the chart
+      const formattedWeekdayData = remocoesPorDiaSemanaResult?.remocoes || []
 
       // Update states with received data
       setRemovals(formattedRemovals)
-      setMonthlyData(formattedMonthlyData)
+      setWeekdayData(formattedWeekdayData)
       setTeamData(formattedTeamData)
 
       // Update statistics
@@ -736,516 +515,9 @@ export default function RemovalDashboard() {
     setSidebarCollapsed(collapsed)
   }
 
-  // Handle month menu
-  const handleMonthMenuOpen = (event) => {
-    setMonthMenuAnchor(event.currentTarget)
-  }
-
-  const handleMonthMenuClose = () => {
-    setMonthMenuAnchor(null)
-  }
-
-  const handleMonthChange = (month) => {
-    setSelectedMonth(month)
-    setMonthMenuAnchor(null)
-  }
-
-  // Handle filter menu
-  const handleFilterMenuOpen = (event) => {
-    setFilterMenuAnchor(event.currentTarget)
-  }
-
-  const handleFilterMenuClose = () => {
-    setFilterMenuAnchor(null)
-  }
-
-  // Handle action menu
-  const handleActionMenuOpen = (event, id) => {
-    event.stopPropagation()
-    setActionMenuAnchor(event.currentTarget)
-    setSelectedRowId(id)
-  }
-
-  const handleActionMenuClose = () => {
-    setActionMenuAnchor(null)
-    setSelectedRowId(null)
-  }
-
-  // Handle view mode change
-  const handleViewModeChange = (newMode) => {
-    if (newMode !== null) {
-      setViewMode(newMode)
-    }
-  }
-
-  // Handle status filter change
-  const handleStatusFilterChange = (event) => {
-    setStatusFilter(event.target.value)
-  }
-
-  // Handle pagination
-  const handlePageChange = (event, newPage) => {
-    setPage(newPage)
-  }
-
-  const handleRowsPerPageChange = (event) => {
-    setRowsPerPage(Number.parseInt(event.target.value, 10))
-    setPage(0)
-  }
-
-  // Handle sorting
-  const handleSort = (field) => {
-    const isAsc = sortField === field && sortDirection === "asc"
-    setSortDirection(isAsc ? "desc" : "asc")
-    setSortField(field)
-  }
-
-  // Handle chart type change
-  const handleChartTypeChange = (event, newValue) => {
-    setChartType(newValue)
-  }
-
-  // Handle team chart type change
-  const handleTeamChartTypeChange = (event, newValue) => {
-    setTeamChartType(newValue)
-  }
-
-  const handleEditClick = () => {
-    const removalToEdit = removals.find((removal) => removal.id === selectedRowId)
-    if (removalToEdit) {
-      setSelectedRemoval(removalToEdit)
-      setEditModalOpen(true)
-      setActionMenuAnchor(null)
-    }
-  }
-
-  // Handle save edit
-  const handleSaveEdit = (editedData) => {
-    try {
-      // Find the index of the record to be edited
-      const indexToUpdate = removals.findIndex((removal) => removal.id === selectedRemoval.id)
-
-      if (indexToUpdate !== -1) {
-        // Create a copy of the removals array
-        const updatedRemovals = [...removals]
-
-        // Replace the old record completely with the edited data
-        // while preserving the id and other metadata
-        updatedRemovals[indexToUpdate] = {
-          ...updatedRemovals[indexToUpdate], // Keep the original id and any other metadata
-          ...editedData, // Completely overwrite with new data
-          lastEditDate: new Date().toISOString(), // Add edit timestamp
-        }
-
-        // Update the state with the modified array
-        setRemovals(updatedRemovals)
-
-        // Also update selectedRemoval to reflect changes in the detailed view
-        setSelectedRemoval({ ...selectedRemoval, ...editedData })
-
-        // Update team chart data if the team was changed
-        if (editedData.team && editedData.team !== selectedRemoval.team) {
-          updateTeamChartData(selectedRemoval.team, editedData.team)
-        }
-
-        // Update status chart data if the status was changed
-        if (editedData.status && editedData.status !== selectedRemoval.status) {
-          // Trigger refresh of stats
-          setRefreshStats(true)
-        }
-
-        // Show success message
-        setSnackbarMessage("Registro atualizado com sucesso!")
-        setSnackbarSeverity("success")
-        setSnackbarOpen(true)
-
-        // Close modals
-        setEditModalOpen(false)
-        setDetailModalOpen(false)
-      }
-    } catch (error) {
-      console.error("Erro ao atualizar:", error)
-      setSnackbarMessage("Erro ao atualizar registro. Tente novamente.")
-      setSnackbarSeverity("error")
-      setSnackbarOpen(true)
-    }
-  }
-
-  // Function to update team chart data when a removal's team is changed
-  const updateTeamChartData = (oldTeam, newTeam) => {
-    setTeamData((prevTeamData) => {
-      const newTeamData = [...prevTeamData]
-
-      // Find indices for old and new teams
-      const oldTeamIndex = newTeamData.findIndex((team) => team.name === oldTeam)
-      const newTeamIndex = newTeamData.findIndex((team) => team.name === newTeam)
-
-      // Update counts if teams were found
-      if (oldTeamIndex !== -1) {
-        newTeamData[oldTeamIndex] = {
-          ...newTeamData[oldTeamIndex],
-          releases: Math.max(0, newTeamData[oldTeamIndex].releases - 1),
-          label: `${Math.max(0, newTeamData[oldTeamIndex].releases - 1)} solturas`,
-        }
-      }
-
-      if (newTeamIndex !== -1) {
-        newTeamData[newTeamIndex] = {
-          ...newTeamData[newTeamIndex],
-          releases: newTeamData[newTeamIndex].releases + 1,
-          label: `${newTeamData[newTeamIndex].releases + 1} solturas`,
-        }
-      }
-
-      return newTeamData
-    })
-  }
-
-  // Handle modal open
-  const handleOpenModal = (removal) => {
-    // Find the most up-to-date version of this removal in the state
-    const currentRemoval = removals.find((r) => r.id === removal.id) || removal
-    setSelectedRemoval(currentRemoval)
-    setModalOpen(true)
-  }
-
-  // Handle modal close
-  const handleCloseModal = () => {
-    setModalOpen(false)
-  }
-
-  // Handle delete confirmation dialog
-  const handleDeleteConfirmOpen = () => {
-    setDeleteConfirmOpen(true)
-    setActionMenuAnchor(null)
-  }
-
-  const handleDeleteConfirmClose = () => {
-    setDeleteConfirmOpen(false)
-  }
-
-  // Update the handleOpenModalDetail function to ensure it gets the most up-to-date data
-  const handleOpenModalDetail = (removal) => {
-    // Close any existing modal first to prevent duplicates
-    setDetailModalOpen(false)
-
-    // Small delay to ensure the previous modal is fully closed
-    setTimeout(() => {
-      // Find the most up-to-date version of this removal in the state
-      const currentRemoval = removals.find((r) => r.id === removal.id) || removal
-      setSelectedRemoval(currentRemoval)
-      setDetailModalOpen(true)
-    }, 50)
-  }
-
-  // Update the handleCloseModalDetail function
-  const handleCloseModalDetail = () => {
-    setDetailModalOpen(false)
-  }
-
-  // Handle delete action
-  const handleDelete = async () => {
-    try {
-      setLoading(true)
-
-      // Aqui seria a chamada real para a API de exclusão
-      // Como não temos uma função específica para excluir, vamos simular
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // Atualizar estado local
-      const updatedRemovals = removals.filter((removal) => removal.id !== selectedRowId)
-      setRemovals(updatedRemovals)
-
-      // Show success message
-      setSnackbarMessage("Registro removido com sucesso!")
-      setSnackbarSeverity("success")
-      setSnackbarOpen(true)
-
-      // Close dialog
-      handleDeleteConfirmClose()
-      setSelectedRowId(null)
-    } catch (error) {
-      console.error("Erro ao excluir:", error)
-      setSnackbarMessage("Erro ao excluir registro. Tente novamente.")
-      setSnackbarSeverity("error")
-      setSnackbarOpen(true)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    if (refreshStats) {
-      // Aqui você pode resetar o estado de refresh após um ciclo de renderização
-      setRefreshStats(false)
-    }
-  }, [refreshStats])
-
-  // Handle share menu
-  const handleShareMenuOpen = (event) => {
-    event.stopPropagation()
-    setShareMenuAnchor(event.currentTarget)
-    setActionMenuAnchor(null)
-  }
-
-  const handleShareMenuClose = () => {
-    setShareMenuAnchor(null)
-  }
-
-  // Handle share action
-  const handleShare = (platform) => {
-    const removal = removals.find((r) => r.id === selectedRowId)
-    let shareMessage = ""
-
-    if (removal) {
-      shareMessage = `Detalhes da Remoção: ${removal.driver} - ${removal.vehiclePrefix} - ${removal.status}`
-    }
-
-    // Show success message
-    setSnackbarMessage(`Compartilhado via ${platform}!`)
-    setSnackbarSeverity("success")
-    setSnackbarOpen(true)
-
-    // Close menu
-    handleShareMenuClose()
-  }
-
-  // Handle snackbar close
-  const handleSnackbarClose = () => {
-    setSnackbarOpen(false)
-  }
-
-  // Modificar a função handleRefreshData para limpar os filtros
-  // Substitua a função handleRefreshData (aproximadamente linha 550) com esta versão:
+  // Handle refresh data
   const handleRefreshData = () => {
-    // Opcionalmente, limpar os filtros ao atualizar
-    setSelectedDate(null)
-    setDriverSearch("")
-    setPrefixSearch("")
-    setStatusFilter("all")
-    setTeamFilter("all")
-    setRecentlyRegisteredFilter(false)
-
-    // Recarregar todos os dados
     loadAllData()
-  }
-
-  // Função para obter dados do gráfico de pizza
-  const getPieChartData = () => {
-    const statusCounts = { Finalizado: 0, "Em andamento": 0 }
-
-    removals.forEach((removal) => {
-      statusCounts[removal.status] = (statusCounts[removal.status] || 0) + 1
-    })
-
-    return [
-      { name: "Finalizado", value: statusCounts["Finalizado"], color: themeColors.success.main },
-      { name: "Em andamento", value: statusCounts["Em andamento"], color: themeColors.primary.main },
-    ]
-  }
-
-  // Calcular dados derivados
-  const pieChartData = useMemo(() => getPieChartData(), [removals])
-
-  // Filter and sort removals data
-  // Modify the filteredRemovals useMemo to include the recently registered filter
-  // Find the filteredRemovals useMemo (around line 600) and update it to include the new filter
-  // Replace the entire filteredRemovals useMemo with this updated version:
-  const filteredRemovals = useMemo(() => {
-    // Get current date for "recently registered" filter
-    const currentDate = new Date()
-    const oneDayAgo = new Date(currentDate)
-    oneDayAgo.setDate(currentDate.getDate() - 1)
-
-    return removals
-      .filter((removal) => {
-        // Unified search across multiple fields
-        const searchMatch =
-          driverSearch === "" ||
-          (removal.driver && removal.driver.toLowerCase().includes(driverSearch.toLowerCase())) ||
-          (removal.vehiclePrefix && removal.vehiclePrefix.toLowerCase().includes(driverSearch.toLowerCase())) ||
-          (removal.driverId && removal.driverId.toLowerCase().includes(driverSearch.toLowerCase()))
-
-        // Date check with proper format
-        let dateMatch = true
-        if (selectedDate !== null) {
-          // Convert removal date to Date object for comparison
-          const removalDate = new Date(removal.date)
-          // Reset hours to compare only dates
-          removalDate.setHours(0, 0, 0, 0)
-          const filterDate = new Date(selectedDate)
-          filterDate.setHours(0, 0, 0, 0)
-
-          // Compare dates
-          dateMatch = removalDate.getTime() === filterDate.getTime()
-        }
-
-        // Status filter
-        const statusMatch =
-          statusFilter === "all" ||
-          (statusFilter === "completed" && removal.status === "Finalizado") ||
-          (statusFilter === "in-progress" && removal.status === "Em andamento")
-
-        // Team filter
-        const teamMatch =
-          teamFilter === "all" ||
-          (teamFilter === "team-1" && removal.team === "Equipe1(Matutino)") ||
-          (teamFilter === "team-2" && removal.team === "Equipe2(Vespertino)") ||
-          (teamFilter === "team-3" && removal.team === "Equipe3(Noturno)")
-
-        // Recently registered filter (last 24 hours)
-        const recentlyMatch = !recentlyRegisteredFilter || (removal.date && new Date(removal.date) >= oneDayAgo)
-
-        // Return true only if all filters match
-        return searchMatch && dateMatch && statusMatch && teamMatch && recentlyMatch
-      })
-      .sort((a, b) => {
-        const factor = sortDirection === "asc" ? 1 : -1
-        if (sortField === "driver") {
-          return factor * (a.driver || "").localeCompare(b.driver || "")
-        } else if (sortField === "vehiclePrefix") {
-          return factor * (a.vehiclePrefix || "").localeCompare(b.vehiclePrefix || "")
-        } else if (sortField === "departureTime") {
-          return factor * (a.departureTime || "").localeCompare(b.departureTime || "")
-        } else if (sortField === "team") {
-          return factor * (a.team || "").localeCompare(b.tipo_equipe || "")
-        } else if (sortField === "status") {
-          return factor * (a.status || "").localeCompare(b.status_frota || "")
-        }
-        return 0
-      })
-  }, [
-    driverSearch,
-    selectedDate,
-    statusFilter,
-    teamFilter,
-    sortField,
-    sortDirection,
-    removals,
-    recentlyRegisteredFilter,
-  ])
-
-  // Get paginated data
-  const paginatedRemovals = filteredRemovals.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-
-  // Filter chart data based on selected month
-  const chartData = useMemo(() => {
-    if (selectedMonth === "Todos") {
-      return monthlyData
-    }
-    return monthlyData.filter((data) => data.month === selectedMonth)
-  }, [selectedMonth, monthlyData])
-
-  // Calculate total removals
-  const totalRemovalsCount = removals.length
-
-  // Calculate monthly average
-  const monthlyAverage = useMemo(() => {
-    if (monthlyData.length === 0) return 0
-    return Math.round(monthlyData.reduce((sum, item) => sum + item.removals, 0) / monthlyData.length)
-  }, [monthlyData])
-
-  // Obter sugestões para o campo de busca
-  const searchSuggestions = useMemo(() => {
-    const driverNames = [...new Set(removals.map((r) => r.driver).filter(Boolean))]
-    const vehiclePrefixes = [...new Set(removals.map((r) => r.vehiclePrefix).filter(Boolean))]
-    return [...driverNames, ...vehiclePrefixes]
-  }, [removals])
-
-  // Custom tooltip for the chart
-  const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-      const data = monthlyData.find((item) => item.month === label)
-      const removals = data?.removals || 0
-
-      return (
-        <Box
-          sx={{
-            backgroundColor: "rgba(255, 255, 255, 0.98)",
-            border: "none",
-            borderRadius: "16px",
-            padding: "1.2rem",
-            boxShadow: "0 10px 40px rgba(0, 0, 0, 0.15)",
-            maxWidth: "280px",
-            position: "relative",
-            "&:before": {
-              content: '""',
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              height: "6px",
-              background: `linear-gradient(90deg, ${themeColors.primary.main}, ${themeColors.primary.light})`,
-              borderTopLeftRadius: "16px",
-              borderTopRightRadius: "16px",
-            },
-          }}
-        >
-          <Typography
-            sx={{
-              fontWeight: 700,
-              fontSize: "1.2rem",
-              marginBottom: "0.75rem",
-              color: themeColors.text.primary,
-              borderBottom: "1px solid rgba(226, 232, 240, 0.5)",
-              paddingBottom: "0.5rem",
-            }}
-          >
-            {`${label} - ${removals} Remoções`}
-          </Typography>
-
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginBottom: "0.5rem",
-              fontSize: "0.875rem",
-            }}
-          >
-            <Box sx={{ display: "flex", alignItems: "center" }}>
-              <Box
-                component="span"
-                sx={{
-                  display: "inline-block",
-                  width: "12px",
-                  height: "12px",
-                  borderRadius: "4px",
-                  marginRight: "0.75rem",
-                  backgroundColor: themeColors.primary.main,
-                }}
-              />
-              <Typography sx={{ color: themeColors.text.secondary, fontWeight: 500 }}>Remoções:</Typography>
-            </Box>
-            <Typography sx={{ fontWeight: 600, color: themeColors.text.primary }}>{removals}</Typography>
-          </Box>
-
-          <Box sx={{ marginTop: "0.75rem", paddingTop: "0.75rem", borderTop: "1px dashed rgba(226, 232, 240, 0.8)" }}>
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <Typography sx={{ color: themeColors.text.secondary, fontWeight: 500, fontSize: "0.875rem" }}>
-                Média Mensal:
-              </Typography>
-              <Typography
-                sx={{
-                  fontWeight: 700,
-                  fontSize: "0.875rem",
-                  color: themeColors.success.main,
-                }}
-              >
-                {monthlyAverage}
-              </Typography>
-            </Box>
-          </Box>
-        </Box>
-      )
-    }
-    return null
   }
 
   // Funções para atualizar cards individuais
@@ -1313,24 +585,23 @@ export default function RemovalDashboard() {
     }
   }
 
-  // Replace the existing useEffect for refreshReleasedToday
+  // Auto-refresh effects
   useEffect(() => {
     refreshReleasedToday()
 
     if (autoRefreshReleased) {
       const interval = setInterval(() => {
         refreshReleasedToday()
-      }, 240000) // Atualiza a cada 7 segundos
+      }, 240000) // Atualiza a cada 4 minutos
       return () => clearInterval(interval)
     }
   }, [autoRefreshReleased])
 
-  // Add these useEffect hooks after the existing useEffect hooks
   useEffect(() => {
     if (autoRefreshTotal) {
       const interval = setInterval(() => {
         refreshTotalVehicles()
-      }, 240000) // Refresh every 15 seconds
+      }, 240000) // Refresh every 4 minutes
       return () => clearInterval(interval)
     }
   }, [autoRefreshTotal])
@@ -1339,7 +610,7 @@ export default function RemovalDashboard() {
     if (autoRefreshActive) {
       const interval = setInterval(() => {
         refreshActiveVehicles()
-      }, 240000) // Refresh every 15 seconds
+      }, 240000) // Refresh every 4 minutes
       return () => clearInterval(interval)
     }
   }, [autoRefreshActive])
@@ -1348,321 +619,10 @@ export default function RemovalDashboard() {
     if (autoRefreshInactive) {
       const interval = setInterval(() => {
         refreshInactiveVehicles()
-      }, 240000) // Refresh every 15 seconds
+      }, 240000) // Refresh every 4 minutes
       return () => clearInterval(interval)
     }
   }, [autoRefreshInactive])
-
-  // Update the getStatusChip function to handle only "Finalizado" and "Em andamento"
-  const getStatusChip = (status) => {
-    if (status === "Finalizado") {
-      return (
-        <Chip
-          label="Finalizado"
-          sx={{
-            backgroundColor: alpha(themeColors.success.main, 0.1),
-            color: themeColors.success.main,
-            fontWeight: 600,
-            borderRadius: "12px",
-            transition: "all 0.3s ease",
-            "&:hover": {
-              backgroundColor: alpha(themeColors.success.main, 0.2),
-            },
-          }}
-          size="small"
-        />
-      )
-    } else {
-      return (
-        <Chip
-          label="Em andamento"
-          sx={{
-            backgroundColor: alpha(themeColors.primary.main, 0.1),
-            color: themeColors.primary.main,
-            fontWeight: 600,
-            borderRadius: "12px",
-            transition: "all 0.3s ease",
-            "&:hover": {
-              backgroundColor: alpha(themeColors.primary.main, 0.2),
-            },
-          }}
-          size="small"
-        />
-      )
-    }
-  }
-
-  // Sort indicator component
-  const SortIndicator = ({ field }) => {
-    if (sortField !== field) return null
-    return sortDirection === "asc" ? (
-      <ArrowUpward sx={{ fontSize: 16, ml: 0.5 }} />
-    ) : (
-      <ArrowDownward sx={{ fontSize: 16, ml: 0.5 }} />
-    )
-  }
-
-  // Render chart based on selected type
-  const renderChart = () => {
-    switch (chartType) {
-      case 0: // Bar Chart
-        return (
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={chartData}
-              margin={{ top: 30, right: 30, left: 20, bottom: 60 }}
-              barGap={12}
-              barCategoryGap={40}
-            >
-              <defs>
-                <linearGradient id="colorRemovals" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={themeColors.primary.main} stopOpacity={1} />
-                  <stop offset="100%" stopColor={themeColors.primary.light} stopOpacity={0.8} />
-                </linearGradient>
-                <filter id="shadow" height="200%">
-                  <feDropShadow
-                    dx="0"
-                    dy="4"
-                    stdDeviation="6"
-                    floodColor={themeColors.primary.main}
-                    floodOpacity="0.2"
-                  />
-                </filter>
-              </defs>
-              <CartesianGrid vertical={false} strokeDasharray="5 5" stroke={themeColors.divider} strokeOpacity={0.6} />
-              <XAxis
-                dataKey="month"
-                tickLine={false}
-                axisLine={{ stroke: themeColors.divider, strokeWidth: 1 }}
-                tick={{ fill: themeColors.text.primary, fontSize: 12, fontWeight: 500 }}
-                dy={10}
-              />
-              <YAxis
-                tickLine={false}
-                axisLine={{ stroke: themeColors.divider, strokeWidth: 1 }}
-                tick={{ fill: themeColors.text.primary, fontSize: 12, fontWeight: 500 }}
-                tickFormatter={(value) => `${value}`}
-                dx={-10}
-              />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(241, 245, 249, 0.5)" }} />
-              <Legend verticalAlign="bottom" wrapperStyle={{ paddingTop: 20 }} />
-              <ReferenceLine y={0} stroke={themeColors.divider} strokeWidth={1} />
-              <Bar
-                dataKey="removals"
-                fill="url(#colorRemovals)"
-                radius={[8, 8, 0, 0]}
-                name="Remoções"
-                animationDuration={1500}
-                barSize={40}
-                filter="url(#shadow)"
-              >
-                <LabelList
-                  dataKey="removals"
-                  position="top"
-                  fill={themeColors.primary.main}
-                  fontSize={12}
-                  fontWeight={600}
-                />
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        )
-      case 1: // Line Chart
-        return (
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData} margin={{ top: 30, right: 30, left: 20, bottom: 60 }}>
-              <defs>
-                <linearGradient id="colorRemovals" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={themeColors.primary.main} stopOpacity={1} />
-                  <stop offset="100%" stopColor={themeColors.primary.light} stopOpacity={0.8} />
-                </linearGradient>
-                <filter id="glow" height="200%">
-                  <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
-                  <feMerge>
-                    <feMergeNode in="coloredBlur" />
-                    <feMergeNode in="SourceGraphic" />
-                  </feMerge>
-                </filter>
-              </defs>
-              <CartesianGrid strokeDasharray="5 5" stroke={themeColors.divider} strokeOpacity={0.6} />
-              <XAxis
-                dataKey="month"
-                tickLine={false}
-                axisLine={{ stroke: themeColors.divider, strokeWidth: 1 }}
-                tick={{ fill: themeColors.text.primary, fontSize: 12, fontWeight: 500 }}
-              />
-              <YAxis
-                tickLine={false}
-                axisLine={{ stroke: themeColors.divider, strokeWidth: 1 }}
-                tick={{ fill: themeColors.text.primary, fontSize: 12, fontWeight: 500 }}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend verticalAlign="bottom" wrapperStyle={{ paddingTop: 20 }} />
-              <Line
-                type="monotone"
-                dataKey="removals"
-                stroke="url(#colorRemovals)"
-                strokeWidth={4}
-                dot={{ r: 6, fill: themeColors.primary.main, strokeWidth: 2, stroke: "#ffffff" }}
-                activeDot={{ r: 8, fill: themeColors.primary.main, strokeWidth: 2, stroke: "#ffffff" }}
-                name="Remoções"
-                filter="url(#glow)"
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        )
-      default:
-        return null
-    }
-  }
-
-  const handleRegisterFormChange = (field, value, index = null) => {
-    if (index !== null) {
-      // Para campos com múltiplos valores (collectors, leaders, leaderPhones)
-      setRegisterFormData((prev) => {
-        const newValues = [...prev[field]]
-        newValues[index] = value
-        return { ...prev, [field]: newValues }
-      })
-    } else {
-      // Para campos simples
-      setRegisterFormData((prev) => ({ ...prev, [field]: value }))
-    }
-  }
-
-  // Adicionar a função para lidar com o envio do formulário
-  const handleRegisterSubmit = async () => {
-    try {
-      setLoading(true)
-
-      // First, create the data object to send to the server
-      const newRemovalData = {
-        motorista: {
-          nome: registerFormData.driver,
-          matricula: registerFormData.driverId,
-        },
-        prefixo: registerFormData.vehiclePrefix,
-        tipo_equipe: registerFormData.team,
-        coletores: registerFormData.collectors.filter(Boolean).map((name) => ({ nome: name })),
-        garagem: registerFormData.garage,
-        rota: registerFormData.route,
-        veiculo: registerFormData.vehicleType,
-        hora_saida_frota: new Date().toLocaleTimeString(),
-        status_frota: "Em andamento",
-        data: new Date().toISOString().split("T")[0],
-      }
-
-      // Create the new removal object for local state
-      const newRemoval = {
-        id: removals.length + 1,
-        driver: registerFormData.driver,
-        driverId: registerFormData.driverId,
-        collectors: registerFormData.collectors.filter(Boolean),
-        collectorsIds: [],
-        garage: registerFormData.garage,
-        route: registerFormData.route,
-        vehiclePrefix: registerFormData.vehiclePrefix,
-        departureTime: new Date().toLocaleTimeString(),
-        status: "Em andamento",
-        arrivalTime: "",
-        date: new Date().toISOString().split("T")[0],
-        team: registerFormData.team,
-        location: "",
-        vehicle: registerFormData.vehicleType,
-        distance: "0 km",
-        notes: "",
-      }
-
-      // Add to local state first for immediate UI update
-      setRemovals((prev) => {
-        const updatedRemovals = [newRemoval, ...prev]
-        // After adding the new removal, reset to first page and enable "recently registered" filter
-        setPage(0)
-        setRecentlyRegisteredFilter(true)
-        return updatedRemovals
-      })
-
-      // IMPORTANT: Update the counter more directly and visibly
-      // Increment the counter directly without waiting for the API
-      setStatsData((prevStats) => ({
-        ...prevStats,
-        releasedToday: prevStats.releasedToday + 1,
-        activeVehicles: prevStats.activeVehicles + 1,
-        totalVehicles: prevStats.totalVehicles + 1,
-      }))
-
-      // Set the highlightedStat to activate the visual effect
-      setHighlightedStat("releasedToday")
-
-      // Now make the API call to register the release
-      // Simulating a successful API call
-      await new Promise((resolve) => setTimeout(resolve, 500))
-
-      // After successful registration, fetch updated data from the server
-      // to ensure we have the most recent numbers
-      const [remocoesDiaResult, remocaoAtivosResult, totalRemocaoResult] = await Promise.all([
-        getTotalDeRemocaoSoltasNoDia(),
-        getContagemRemocaoAtivos(),
-        getContagemTotalRemocao(),
-      ])
-
-      // Update stats with the most recent data from the server
-      setStatsData((prevStats) => ({
-        ...prevStats,
-        // Use API values, but if the API fails, keep the locally incremented value
-        releasedToday: remocoesDiaResult?.totalDeRemocoes || prevStats.releasedToday,
-        activeVehicles: remocaoAtivosResult?.countRemocaoAtivos || prevStats.activeVehicles,
-        totalVehicles: totalRemocaoResult?.totalRemocao || prevStats.totalVehicles,
-      }))
-
-      // Update team data for charts
-      const teamIndex =
-        registerFormData.team === "Equipe1(Matutino)" ? 0 : registerFormData.team === "Equipe2(Vespertino)" ? 1 : 2
-
-      setTeamData((prevTeamData) => {
-        const newTeamData = [...prevTeamData]
-        if (newTeamData[teamIndex]) {
-          newTeamData[teamIndex] = {
-            ...newTeamData[teamIndex],
-            releases: newTeamData[teamIndex].releases + 1,
-            label: `${newTeamData[teamIndex].releases + 1} solturas`,
-          }
-        }
-        return newTeamData
-      })
-
-      // Show success message
-      setSnackbarMessage("Soltura cadastrada com sucesso!")
-      setSnackbarSeverity("success")
-      setSnackbarOpen(true)
-
-      // Close modal and reset form
-      setRegisterModalOpen(false)
-      setRegisterFormData({
-        driver: "",
-        driverId: "",
-        team: "Equipe1(Matutino)",
-        vehiclePrefix: "",
-        shift: "Manhã",
-        collectors: ["", "", ""],
-        vehicleType: "Caminhão Reboque",
-        garage: "PA1",
-        route: "",
-        leaders: ["", ""],
-        leaderPhones: ["", ""],
-      })
-    } catch (error) {
-      console.error("Erro ao cadastrar soltura:", error)
-      setSnackbarMessage("Erro ao cadastrar soltura. Tente novamente.")
-      setSnackbarSeverity("error")
-      setSnackbarOpen(true)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // Add this new state to track which stat was just updated
-  const [highlightedStat, setHighlightedStat] = useState(null)
 
   // Add a timeout to clear the highlight after 3 seconds
   useEffect(() => {
@@ -1673,59 +633,10 @@ export default function RemovalDashboard() {
     }
   }, [highlightedStat])
 
-  // Add this useEffect to update selectedRemoval when removals change
-  useEffect(() => {
-    if (selectedRemoval) {
-      const updatedRemoval = removals.find((r) => r.id === selectedRemoval.id)
-      if (updatedRemoval) {
-        setSelectedRemoval(updatedRemoval)
-      }
-    }
-  }, [removals])
-
-  useEffect(() => {
-    return () => {
-      // Cleanup function to close modals when component unmounts
-      setModalOpen(false)
-      setDetailModalOpen(false)
-      setEditModalOpen(false)
-    }
-  }, [])
-
-  // Add a handler for the recently registered filter toggle
-  // Add this function after the other filter handlers (around line 400)
-  const handleRecentlyRegisteredFilterChange = () => {
-    setRecentlyRegisteredFilter((prev) => !prev)
-    setPage(0) // Reset to first page when filter changes
+  // Handle snackbar close
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false)
   }
-
-  // 5. Adicionar função para formatar datas no formato brasileiro
-  // Adicione esta função auxiliar após as outras funções utilitárias (aproximadamente linha 700):
-  const formatDateBR = (dateString) => {
-    if (!dateString) return ""
-
-    try {
-      const date = new Date(dateString)
-      return date.toLocaleDateString("pt-BR", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      })
-    } catch (error) {
-      console.error("Erro ao formatar data:", error)
-      return dateString
-    }
-  }
-
-  // 7. Adicionar função para atualizar os dados ao mudar o filtro de data
-  // Adicione este useEffect após os outros useEffects (aproximadamente linha 650):
-  useEffect(() => {
-    if (selectedDate) {
-      console.log("Filtro de data alterado:", selectedDate)
-      // No need to reload all data, just apply the filter
-      // filteredRemovals already handles this through useMemo
-    }
-  }, [selectedDate])
 
   return (
     <>
@@ -1865,12 +776,6 @@ export default function RemovalDashboard() {
               padding: { xs: "1rem", sm: "1.5rem" },
               animation: "fadeIn 1s ease-out",
             }}
-            component="sec"
-            sx={{
-              flex: 1,
-              padding: { xs: "1rem", sm: "1.5rem" },
-              animation: "fadeIn 1s ease-out",
-            }}
           >
             <Container maxWidth="xl" disableGutters>
               {/* Stats Cards */}
@@ -1887,1735 +792,358 @@ export default function RemovalDashboard() {
                     mb: 3,
                   }}
                 >
-                  <Fade in={!loading} timeout={500}>
-                    <Box>
-                      <CustomStatCard
-                        title="Veículos de remoção total"
-                        value={statsData.totalVehicles === null ? "..." : statsData.totalVehicles}
-                        icon={DirectionsCar}
-                        color={themeColors.primary.main}
-                        highlight={highlightedStat === "totalVehicles"}
-                      />
-                    </Box>
-                  </Fade>
-                  <Fade in={!loading} timeout={500} style={{ transitionDelay: !loading ? "100ms" : "0ms" }}>
-                    <Box>
-                      <CustomStatCard
-                        title="Veículos remoção ativos"
-                        value={statsData.activeVehicles === null ? "..." : statsData.activeVehicles}
-                        icon={CheckCircle}
-                        color={themeColors.success.main}
-                        highlight={highlightedStat === "activeVehicles"}
-                      />
-                    </Box>
-                  </Fade>
-                  <Fade in={!loading} timeout={500} style={{ transitionDelay: !loading ? "200ms" : "0ms" }}>
-                    <Box>
-                      <CustomStatCard
-                        title="Veículos remoção inativo"
-                        value={statsData.inactiveVehicles === null ? "..." : statsData.inactiveVehicles}
-                        icon={Cancel}
-                        color={themeColors.error.main}
-                        highlight={highlightedStat === "inactiveVehicles"}
-                      />
-                    </Box>
-                  </Fade>
-                  <Fade in={!loading} timeout={500} style={{ transitionDelay: !loading ? "300ms" : "0ms" }}>
-                    <Box>
-                      <CustomStatCard
-                        title="Veículos remoção soltos hoje"
-                        value={statsData.releasedToday === null ? "..." : statsData.releasedToday}
-                        icon={Today}
-                        color={themeColors.warning.main}
-                        highlight={highlightedStat === "releasedToday"}
-                      />
-                    </Box>
-                  </Fade>
+                  <Box>
+                    <CustomStatCard
+                      title="Veículos de remoção total"
+                      value={statsData.totalVehicles === null ? "..." : statsData.totalVehicles}
+                      icon={DirectionsCar}
+                      color={themeColors.primary.main}
+                      highlight={highlightedStat === "totalVehicles"}
+                    />
+                  </Box>
+                  <Box>
+                    <CustomStatCard
+                      title="Veículos remoção ativos"
+                      value={statsData.activeVehicles === null ? "..." : statsData.activeVehicles}
+                      icon={CheckCircle}
+                      color={themeColors.success.main}
+                      highlight={highlightedStat === "activeVehicles"}
+                    />
+                  </Box>
+                  <Box>
+                    <CustomStatCard
+                      title="Veículos remoção inativo"
+                      value={statsData.inactiveVehicles === null ? "..." : statsData.inactiveVehicles}
+                      icon={Cancel}
+                      color={themeColors.error.main}
+                      highlight={highlightedStat === "inactiveVehicles"}
+                    />
+                  </Box>
+                  <Box>
+                    <CustomStatCard
+                      title="Veículos remoção soltos hoje"
+                      value={statsData.releasedToday === null ? "..." : statsData.releasedToday}
+                      icon={Today}
+                      color={themeColors.warning.main}
+                      highlight={highlightedStat === "releasedToday"}
+                    />
+                  </Box>
                 </Box>
               </Box>
 
               {/* Unified Table Section */}
-              <Box component="section">
-                <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "600ms" : "0ms" }}>
-                  <Card
-                    sx={{
-                      borderRadius: "16px",
-                      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
-                      transition: "all 0.3s ease",
-                      overflow: "hidden",
-                      "&:hover": {
-                        boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)",
-                        transform: "translateY(-4px)",
-                      },
-                      background: themeColors.background.card,
-                      mb: 4,
-                    }}
-                  >
-                    <CardHeader
-                      title={
-                        <Box
-                          sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}
-                        >
-                          <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                            <Box
-                              sx={{
-                                width: { xs: "32px", sm: "36px" },
-                                height: { xs: "32px", sm: "36px" },
-                                borderRadius: "12px",
-                                background: themeColors.primary.main,
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                animation: `${keyframes.pulse} 2s ease-in-out infinite`,
-                              }}
-                            >
-                              <DirectionsCar sx={{ color: "white", fontSize: "2rem" }} />
-                            </Box>
-                            <Box>
-                              <Typography
-                                sx={{
-                                  fontWeight: 600,
-                                  fontSize: { xs: "1.1rem", sm: "1.2rem" },
-                                  color: themeColors.text.primary,
-                                }}
-                              >
-                                Registros de Remoções
-                              </Typography>
-                              <Typography
-                                sx={{
-                                  fontSize: { xs: "0.8rem", sm: "0.85rem" },
-                                  color: themeColors.text.secondary,
-                                  fontWeight: 400,
-                                }}
-                              >
-                                Todos os registros de remoções
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </Box>
-                      }
-                      action={
-                        <Box sx={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                          <Button
-                            variant="contained"
-                            startIcon={<DirectionsCar />}
-                            onClick={() => setRegisterModalOpen(true)}
-                            sx={{
-                              borderRadius: "12px",
-                              textTransform: "none",
-                              fontWeight: 600,
-                              backgroundColor: themeColors.primary.main,
-                              boxShadow: `0 4px 12px ${alpha(themeColors.primary.main, 0.2)}`,
-                              "&:hover": {
-                                backgroundColor: themeColors.primary.dark,
-                                boxShadow: `0 6px 16px ${alpha(themeColors.primary.main, 0.3)}`,
-                              },
-                            }}
-                          >
-                            Cadastrar Soltura
-                          </Button>
-                          <IconButton
-                            sx={{
-                              color: themeColors.text.secondary,
-                              "&:hover": { color: themeColors.primary.main },
-                            }}
-                            onClick={handleRefreshData}
-                          >
-                            <Refresh />
-                          </IconButton>
-                        </Box>
-                      }
-                      sx={{
-                        paddingBottom: "0.75rem",
-                        borderBottom: `1px solid ${themeColors.divider}`,
-                        "& .MuiCardHeader-title": {
-                          fontWeight: 600,
-                          fontSize: "1.125rem",
-                          color: themeColors.text.primary,
-                        },
-                        "& .MuiCardHeader-action": {
-                          margin: 0,
-                        },
-                      }}
-                    />
-                    <CardContent sx={{ padding: "1.5rem" }}>
-                      {/* Search and Filter Section */}
-
-                      <Box sx={{ mb: 3, display: "flex", flexDirection: "column", gap: 2 }}>
-                        <Paper
-                          elevation={0}
-                          sx={{
-                            p: 2,
-                            borderRadius: "16px",
-                            border: `1px solid ${themeColors.divider}`,
-                            background: alpha(themeColors.background.paper, 0.8),
-                            backdropFilter: "blur(8px)",
-                          }}
-                        >
-                          {/* Modificar o layout da seção de pesquisa para dar mais espaço ao autocomplete */}
-                          <Box sx={{ display: "flex", gap: 2, flexWrap: { xs: "wrap", md: "nowrap" }, mb: 2 }}>
-                            {/* 1. Corrigir o input de pesquisa para usar motorista.nome da mesma forma que o autocomplete: */}
-                            <Box sx={{ flex: 1, width: "100%" }}>
-                              <SearchInput
-                                icon={Search}
-                                placeholder="Buscar por matrícula, motorista ou prefixo..."
-                                value={driverSearch}
-                                onChange={(e) => {
-                                  setDriverSearch(e.target.value)
-                                  setPrefixSearch(e.target.value)
-                                }}
-                                suggestions={searchSuggestions}
-                              />
-                            </Box>
-                            {/* Substitua também o DatePicker na seção de busca */}
-                            {/* Encontre o trecho com LocalizationProvider dentro do Box de busca e substitua por: */}
-                            <LocalizationProvider dateAdapter={AdapterDateFns}>
-                              <DatePicker
-                                label="Filtrar por data"
-                                value={selectedDate}
-                                onChange={(newDate) => setSelectedDate(newDate)}
-                                slotProps={{
-                                  textField: {
-                                    variant: "outlined",
-                                    size: "small",
-                                    sx: {
-                                      minWidth: "180px",
-                                      "& .MuiOutlinedInput-root": {
-                                        borderRadius: "12px",
-                                        backgroundColor: "white",
-                                        height: "52px",
-                                      },
-                                    },
-                                  },
-                                }}
-                                format="dd/MM/yyyy"
-                                clearable
-                                clearText="Limpar"
-                              />
-                            </LocalizationProvider>
-                          </Box>
-
-                          <Box sx={{ mb: 2 }}>
-                            <Typography
-                              variant="subtitle2"
-                              sx={{
-                                fontWeight: 600,
-                                mb: 1.5,
-                                color: themeColors.text.secondary,
-                                fontSize: "0.85rem",
-                              }}
-                            >
-                              Filtros:
-                            </Typography>
-                            <Grid container spacing={2}>
-                              <Grid item xs={12} md={6}>
-                                <Typography
-                                  variant="body2"
-                                  sx={{
-                                    fontWeight: 600,
-                                    mb: 1,
-                                    color: themeColors.text.secondary,
-                                    fontSize: "0.8rem",
-                                  }}
-                                >
-                                  Por Status:
-                                </Typography>
-                                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                                  {[
-                                    { id: "all", label: "Todos", color: themeColors.text.secondary },
-                                    { id: "completed", label: "Finalizado", color: themeColors.success.main },
-                                    { id: "in-progress", label: "Em andamento", color: themeColors.primary.main },
-                                  ].map((status) => (
-                                    <Chip
-                                      key={status.id}
-                                      label={status.label}
-                                      clickable
-                                      onClick={() => setStatusFilter(status.id)}
-                                      sx={{
-                                        borderRadius: "12px",
-                                        fontWeight: 500,
-                                        backgroundColor:
-                                          statusFilter === status.id
-                                            ? alpha(status.color, 0.1)
-                                            : alpha(themeColors.background.default, 0.5),
-                                        color: statusFilter === status.id ? status.color : themeColors.text.secondary,
-                                        border: `1px solid ${
-                                          statusFilter === status.id ? status.color : themeColors.divider
-                                        }`,
-                                        "&:hover": {
-                                          backgroundColor: alpha(status.color, 0.1),
-                                          color: status.color,
-                                        },
-                                        transition: "all 0.2s ease",
-                                      }}
-                                    />
-                                  ))}
-                                </Box>
-                              </Grid>
-                              <Grid item xs={12} md={6}>
-                                <Typography
-                                  variant="body2"
-                                  sx={{
-                                    fontWeight: 600,
-                                    mb: 1,
-                                    color: themeColors.text.secondary,
-                                    fontSize: "0.8rem",
-                                  }}
-                                >
-                                  Por Equipe:
-                                </Typography>
-                                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                                  {["Todas", "Equipe1(Matutino)", "Equipe2(Vespertino)", "Equipe3(Noturno)"].map(
-                                    (team, index) => (
-                                      <Chip
-                                        key={team}
-                                        label={team}
-                                        clickable
-                                        onClick={() => {
-                                          // Update only the team filter
-                                          if (index === 0) {
-                                            setTeamFilter("all")
-                                          } else {
-                                            setTeamFilter(`team-${index}`)
-                                          }
-                                        }}
-                                        sx={{
-                                          borderRadius: "12px",
-                                          fontWeight: 500,
-                                          backgroundColor:
-                                            teamFilter === (index === 0 ? "all" : `team-${index}`)
-                                              ? alpha(themeColors.success.main, 0.1)
-                                              : alpha(themeColors.background.default, 0.5),
-                                          color:
-                                            teamFilter === (index === 0 ? "all" : `team-${index}`)
-                                              ? themeColors.success.main
-                                              : themeColors.text.secondary,
-                                          border: `1px solid ${
-                                            teamFilter === (index === 0 ? "all" : `team-${index}`)
-                                              ? themeColors.success.main
-                                              : themeColors.divider
-                                          }`,
-                                          "&:hover": {
-                                            backgroundColor: alpha(themeColors.success.main, 0.1),
-                                            color: themeColors.success.main,
-                                          },
-                                          transition: "all 0.2s ease",
-                                        }}
-                                      />
-                                    ),
-                                  )}
-                                </Box>
-                              </Grid>
-                              <Grid item xs={12}>
-                                <Typography
-                                  variant="body2"
-                                  sx={{
-                                    fontWeight: 600,
-                                    mb: 1,
-                                    color: themeColors.text.secondary,
-                                    fontSize: "0.8rem",
-                                  }}
-                                >
-                                  Filtro Adicional:
-                                </Typography>
-                                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                                  <Chip
-                                    label="Cadastrados Recentemente"
-                                    clickable
-                                    onClick={handleRecentlyRegisteredFilterChange}
-                                    sx={{
-                                      borderRadius: "12px",
-                                      fontWeight: 500,
-                                      backgroundColor: recentlyRegisteredFilter
-                                        ? alpha(themeColors.secondary.main, 0.1)
-                                        : alpha(themeColors.background.default, 0.5),
-                                      color: recentlyRegisteredFilter
-                                        ? themeColors.secondary.main
-                                        : themeColors.text.secondary,
-                                      border: `1px solid ${recentlyRegisteredFilter ? themeColors.secondary.main : themeColors.divider}`,
-                                      "&:hover": {
-                                        backgroundColor: alpha(themeColors.secondary.main, 0.1),
-                                        color: themeColors.secondary.main,
-                                      },
-                                      transition: "all 0.2s ease",
-                                    }}
-                                  />
-                                </Box>
-                              </Grid>
-                            </Grid>
-                          </Box>
-                        </Paper>
-                      </Box>
-
-                      {/* Table */}
-                      <TableContainer>
-                        <Table>
-                          <TableHead>
-                            <TableRow>
-                              <TableCell
-                                onClick={() => handleSort("driver")}
-                                sx={{
-                                  cursor: "pointer",
-                                  fontWeight: 600,
-                                  color: sortField === "driver" ? themeColors.primary.main : themeColors.text.secondary,
-                                  "&:hover": { color: themeColors.primary.main },
-                                  borderBottom: `1px solid ${themeColors.divider}`,
-                                  py: 1.5,
-                                }}
-                              >
-                                Motorista
-                                <SortIndicator field="driver" />
-                              </TableCell>
-                              <TableCell
-                                onClick={() => handleSort("vehiclePrefix")}
-                                sx={{
-                                  cursor: "pointer",
-                                  fontWeight: 600,
-                                  color:
-                                    sortField === "vehiclePrefix"
-                                      ? themeColors.primary.main
-                                      : themeColors.text.secondary,
-                                  "&:hover": { color: themeColors.primary.main },
-                                  borderBottom: `1px solid ${themeColors.divider}`,
-                                  py: 1.5,
-                                }}
-                              >
-                                Prefixo
-                                <SortIndicator field="vehiclePrefix" />
-                              </TableCell>
-                              <TableCell
-                                onClick={() => handleSort("departureTime")}
-                                sx={{
-                                  cursor: "pointer",
-                                  fontWeight: 600,
-                                  color:
-                                    sortField === "departureTime"
-                                      ? themeColors.primary.main
-                                      : themeColors.text.secondary,
-                                  "&:hover": { color: themeColors.primary.main },
-                                  borderBottom: `1px solid ${themeColors.divider}`,
-                                  py: 1.5,
-                                }}
-                              >
-                                Horário
-                                <SortIndicator field="departureTime" />
-                              </TableCell>
-                              <TableCell
-                                onClick={() => handleSort("team")}
-                                sx={{
-                                  cursor: "pointer",
-                                  fontWeight: 600,
-                                  color: sortField === "tipo_equite" ? themeColors.primary.main : themeColors.text.secondary,
-                                  "&:hover": { color: themeColors.primary.main },
-                                  borderBottom: `1px solid ${themeColors.divider}`,
-                                  py: 1.5,
-                                }}
-                              >
-                                Equipe
-                                <SortIndicator field="team" />
-                              </TableCell>
-                              <TableCell
-                                onClick={() => handleSort("status")}
-                                sx={{
-                                  fontWeight: 600,
-                                  color: sortField === "status" ? themeColors.primary.main : themeColors.text.secondary,
-                                  "&:hover": { color: themeColors.primary.main },
-                                  borderBottom: `1px solid ${themeColors.divider}`,
-                                  py: 1.5,
-                                }}
-                              >
-                                Status
-                                <SortIndicator field="status_frota" />
-                              </TableCell>
-                              <TableCell
-                                sx={{
-                                  fontWeight: 600,
-                                  color: themeColors.text.secondary,
-                                  borderBottom: `1px solid ${themeColors.divider}`,
-                                  py: 1.5,
-                                  textAlign: "center",
-                                }}
-                              >
-                                Ações
-                              </TableCell>
-                            </TableRow>
-                          </TableHead>
-                          <TableBody>
-                            {paginatedRemovals.length > 0 ? (
-                              paginatedRemovals.map((removal) => (
-                                <TableRow
-                                  key={removal.id}
-                                  sx={{
-                                    "&:hover": {
-                                      backgroundColor: alpha(themeColors.background.default, 0.5),
-                                    },
-                                    transition: "background-color 0.2s",
-                                    cursor: "pointer",
-                                  }}
-                                  onClick={() => handleOpenModal(removal)}
-                                >
-                                  <TableCell>
-                                    <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                                      <Avatar
-                                        sx={{
-                                          width: 32,
-                                          height: 32,
-                                          backgroundColor: alpha(themeColors.primary.main, 0.1),
-                                          color: themeColors.primary.main,
-                                          fontWeight: 600,
-                                        }}
-                                      >
-                                        {/* Garantir que o primeiro caractere do nome do motorista seja exibido */}
-                                        {(typeof removal.driver === "string" && removal.driver.charAt(0)) || "?"}
-                                      </Avatar>
-                                      <Typography sx={{ fontWeight: 500 }}>
-                                        {/* Exibir o nome do motorista corretamente */}
-                                        {isMobile
-                                          ? typeof removal.driver === "string"
-                                            ? removal.driver.split(" ")[0]
-                                            : "-"
-                                          : typeof removal.driver === "string"
-                                            ? removal.driver
-                                            : "-"}
-                                      </Typography>
-                                    </Box>
-                                  </TableCell>
-                                  <TableCell>
-                                    <Chip
-                                      label={removal.vehiclePrefix || "-"}
-                                      size="small"
-                                      sx={{
-                                        backgroundColor: alpha(themeColors.success.main, 0.1),
-                                        color: themeColors.success.main,
-                                        fontWeight: 600,
-                                        height: "1.5rem",
-                                        borderRadius: "12px",
-                                      }}
-                                    />
-                                  </TableCell>
-                                  <TableCell>{removal.hora_saida_frota || "-"}</TableCell>
-                                  <TableCell>{removal.tipo_equipe|| "-"}</TableCell>
-                                  <TableCell>{getStatusChip(removal.status_frota)}</TableCell>
-                                  <TableCell align="center">
-                                    <IconButton
-                                      size="small"
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        handleActionMenuOpen(e, removal.id)
-                                      }}
-                                    >
-                                      <MoreVert fontSize="small" />
-                                    </IconButton>
-                                  </TableCell>
-                                </TableRow>
-                              ))
-                            ) : (
-                              <TableRow>
-                                <TableCell colSpan={6} align="center" sx={{ py: 3 }}>
-                                  <Typography variant="body1" sx={{ color: themeColors.text.secondary }}>
-                                    {loading ? "Carregando dados..." : "Nenhum registro encontrado"}
-                                  </Typography>
-                                </TableCell>
-                              </TableRow>
-                            )}
-                          </TableBody>
-                        </Table>
-                      </TableContainer>
-
-                      <TablePagination
-                        component="div"
-                        count={filteredRemovals.length}
-                        page={page}
-                        onPageChange={handlePageChange}
-                        rowsPerPage={rowsPerPage}
-                        onRowsPerPageChange={handleRowsPerPageChange}
-                        rowsPerPageOptions={[5, 10, 25, 50]}
-                        labelRowsPerPage="Linhas por página:"
-                        labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
-                        sx={{
-                          ".MuiTablePagination-actions": {
-                            "& .MuiIconButton-root": {
-                              color: themeColors.text.secondary,
-                              "&:hover": {
-                                backgroundColor: alpha(themeColors.primary.main, 0.1),
-                                color: themeColors.primary.main,
-                              },
-                            },
-                          },
-                        }}
-                      />
-                    </CardContent>
-                  </Card>
-                </Zoom>
-              </Box>
+              <RemovalTable
+                removals={removals}
+                loading={loading}
+                themeColors={themeColors}
+                keyframes={keyframes}
+                onRefresh={handleRefreshData}
+              />
 
               {/* Team Performance and Status Charts */}
               <Box sx={{ display: "flex", gap: 3, flexWrap: { xs: "wrap", md: "nowrap" }, mb: 4 }}>
                 {/* Team Performance Chart - Now half width */}
-                <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "500ms" : "0ms" }}>
-                  <Card
-                    sx={{
-                      borderRadius: "16px",
-                      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
-                      transition: "all 0.3s ease",
-                      overflow: "hidden",
-                      "&:hover": {
-                        boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)",
-                        transform: "translateY(-4px)",
-                      },
-                      background: themeColors.background.card,
-                      width: { xs: "100%", md: "50%" },
-                    }}
-                  >
-                    <CardHeader
-                      title={
-                        <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                          <Box
-                            sx={{
-                              width: { xs: "32px", sm: "36px" },
-                              height: { xs: "32px", sm: "36px" },
-                              borderRadius: "12px",
-                              background: themeColors.warning.main,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              animation: `${keyframes.pulse} 2s ease-in-out infinite`,
-                            }}
-                          >
-                            <Timeline
-                              sx={{
-                                color: "white",
-                                fontSize: { xs: "1.1rem", sm: "1.3rem" },
-                              }}
-                            />
-                          </Box>
-                          <Box>
-                            <Typography
-                              sx={{
-                                fontWeight: 600,
-                                fontSize: { xs: "1.1rem", sm: "1.2rem" },
-                                color: themeColors.text.primary,
-                              }}
-                            >
-                              Equipes
-                            </Typography>
-                            <Typography
-                              sx={{
-                                fontSize: { xs: "0.8rem", sm: "0.85rem" },
-                                color: themeColors.text.secondary,
-                                fontWeight: 400,
-                              }}
-                            >
-                              Análise comparativa por turno
-                            </Typography>
-                          </Box>
-                        </Box>
-                      }
-                      action={
-                        <IconButton
+                <Card
+                  sx={{
+                    borderRadius: "16px",
+                    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
+                    transition: "all 0.3s ease",
+                    overflow: "hidden",
+                    "&:hover": {
+                      boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)",
+                      transform: "translateY(-4px)",
+                    },
+                    background: themeColors.background.card,
+                    width: { xs: "100%", md: "50%" },
+                  }}
+                >
+                  <CardHeader
+                    title={
+                      <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                        <Box
                           sx={{
-                            color: themeColors.text.secondary,
-                            "&:hover": { color: themeColors.warning.main },
+                            width: { xs: "32px", sm: "36px" },
+                            height: { xs: "32px", sm: "36px" },
+                            borderRadius: "12px",
+                            background: themeColors.warning.main,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            animation: `${keyframes.pulse} 2s ease-in-out infinite`,
                           }}
-                          onClick={handleRefreshData}
                         >
-                          <Refresh />
-                        </IconButton>
-                      }
-                      sx={{
-                        paddingBottom: "0.75rem",
-                        borderBottom: `1px solid ${themeColors.divider}`,
-                        "& .MuiCardHeader-title": {
-                          fontWeight: 600,
-                          fontSize: "1.125rem",
-                          color: themeColors.text.primary,
-                        },
-                        "& .MuiCardHeader-action": {
-                          margin: 0,
-                        },
-                      }}
-                    />
-                    <CardContent sx={{ padding: "1.5rem" }}>
-                      <Box
-                        sx={{
-                          width: "100%",
-                          position: "relative",
-                          height: "300px",
-                        }}
-                      >
-                        {!chartsLoaded && (
-                          <Box
+                          <Timeline
                             sx={{
-                              position: "absolute",
-                              top: 0,
-                              left: 0,
-                              right: 0,
-                              bottom: 0,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              backgroundColor: alpha(themeColors.background.paper, 0.7),
-                              zIndex: 10,
-                              borderRadius: "12px",
+                              color: "white",
+                              fontSize: { xs: "1.1rem", sm: "1.3rem" },
                             }}
-                          >
-                            <Box
-                              sx={{
-                                width: "40px",
-                                height: "40px",
-                                borderRadius: "50%",
-                                background: themeColors.warning.main,
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
-                                animation: `${keyframes.pulse} 1.5s ease-in-out infinite`,
-                              }}
-                            />
-                          </Box>
-                        )}
-                        <Fade in={chartsLoaded} timeout={800}>
-                          <Box
-                            sx={{
-                              width: "100%",
-                              height: "100%",
-                            }}
-                          >
-                            <TeamChart teamData={teamData} themeColors={themeColors} chartsLoaded={chartsLoaded} />
-                          </Box>
-                        </Fade>
-                      </Box>
-                    </CardContent>
-                  </Card>
-                </Zoom>
-
-                {/* Status Pie Chart */}
-                <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "600ms" : "0ms" }}>
-                  <Card
-                    sx={{
-                      borderRadius: "16px",
-                      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
-                      transition: "all 0.3s ease",
-                      overflow: "hidden",
-                      "&:hover": {
-                        boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)",
-                        transform: "translateY(-4px)",
-                      },
-                      background: themeColors.background.card,
-                      width: { xs: "100%", md: "50%" },
-                    }}
-                  >
-                    <CardHeader
-                      title={
-                        <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                          <Box
-                            sx={{
-                              width: { xs: "32px", sm: "36px" },
-                              height: { xs: "32px", sm: "36px" },
-                              borderRadius: "12px",
-                              background: themeColors.success.main,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              animation: `${keyframes.pulse} 2s ease-in-out infinite`,
-                            }}
-                          >
-                            <PieChartIcon
-                              sx={{
-                                color: "white",
-                                fontSize: { xs: "1.1rem", sm: "1.3rem" },
-                              }}
-                            />
-                          </Box>
-                          <Box>
-                            <Typography
-                              sx={{
-                                fontWeight: 600,
-                                fontSize: { xs: "1.1rem", sm: "1.2rem" },
-                                color: themeColors.text.primary,
-                              }}
-                            >
-                              Status
-                            </Typography>
-                            <Typography
-                              sx={{
-                                fontSize: { xs: "0.8rem", sm: "0.85rem" },
-                                color: themeColors.text.secondary,
-                                fontWeight: 400,
-                              }}
-                            >
-                              Distribuição por status
-                            </Typography>
-                          </Box>
+                          />
                         </Box>
-                      }
-                      action={
-                        <IconButton
-                          sx={{
-                            color: themeColors.text.secondary,
-                            "&:hover": { color: themeColors.success.main },
-                          }}
-                          onClick={handleRefreshData}
-                        >
-                          <Refresh />
-                        </IconButton>
-                      }
-                      sx={{
-                        paddingBottom: "0.75rem",
-                        borderBottom: `1px solid ${themeColors.divider}`,
-                        "& .MuiCardHeader-title": {
-                          fontWeight: 600,
-                          fontSize: "1.125rem",
-                          color: themeColors.text.primary,
-                        },
-                        "& .MuiCardHeader-action": {
-                          margin: 0,
-                        },
-                      }}
-                    />
-                    <CardContent sx={{ padding: "1.5rem" }}>
-                      <Box
-                        sx={{
-                          width: "100%",
-                          position: "relative",
-                          height: "300px",
-                        }}
-                      >
-                        {!chartsLoaded && (
-                          <Box
+                        <Box>
+                          <Typography
                             sx={{
-                              position: "absolute",
-                              top: 0,
-                              left: 0,
-                              right: 0,
-                              bottom: 0,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              backgroundColor: alpha(themeColors.background.paper, 0.7),
-                              zIndex: 10,
-                              borderRadius: "12px",
-                            }}
-                          >
-                            <Box
-                              sx={{
-                                width: "40px",
-                                height: "40px",
-                                borderRadius: "50%",
-                                background: themeColors.success.main,
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
-                                animation: `${keyframes.pulse} 1.5s ease-in-out infinite`,
-                              }}
-                            />
-                          </Box>
-                        )}
-                        <Fade in={chartsLoaded} timeout={800}>
-                          <Box
-                            sx={{
-                              width: "100%",
-                              height: "100%",
-                            }}
-                          >
-                            <StatusChart
-                              pieChartData={pieChartData}
-                              themeColors={themeColors}
-                              chartsLoaded={chartsLoaded}
-                            />
-                          </Box>
-                        </Fade>
-                      </Box>
-                    </CardContent>
-                  </Card>
-                </Zoom>
-              </Box>
-
-              {/* Rest of the dashboard components */}
-              {/* PA Distribution Chart */}
-              <Box component="section" sx={{ mb: 4 }}>
-                <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "700ms" : "0ms" }}>
-                  <Card
-                    sx={{
-                      borderRadius: "16px",
-                      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
-                      transition: "all 0.3s ease",
-                      overflow: "hidden",
-                      "&:hover": {
-                        boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)",
-                        transform: "translateY(-4px)",
-                      },
-                      background: themeColors.background.card,
-                    }}
-                  >
-                    <CardHeader
-                      title={
-                        <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                          <Box
-                            sx={{
-                              width: { xs: "32px", sm: "36px" },
-                              height: { xs: "32px", sm: "36px" },
-                              borderRadius: "12px",
-                              background: themeColors.info.main,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              animation: `${keyframes.pulse} 2s ease-in-out infinite`,
-                            }}
-                          >
-                            <Warehouse
-                              sx={{
-                                color: "white",
-                                fontSize: { xs: "1.1rem", sm: "1.3rem" },
-                              }}
-                            />
-                          </Box>
-                          <Box>
-                            <Typography
-                              sx={{
-                                fontWeight: 600,
-                                fontSize: { xs: "1.1rem", sm: "1.2rem" },
-                                color: themeColors.text.primary,
-                              }}
-                            >
-                              Distribuição por Tipo de Veículo
-                            </Typography>
-                            <Typography
-                              sx={{
-                                fontSize: { xs: "0.8rem", sm: "0.85rem" },
-                                color: themeColors.text.secondary,
-                                fontWeight: 400,
-                              }}
-                            >
-                              BAU, BASCULANTES e SELETOLIX
-                            </Typography>
-                          </Box>
-                        </Box>
-                      }
-                      action={
-                        <IconButton
-                          sx={{
-                            color: themeColors.text.secondary,
-                            "&:hover": { color: themeColors.info.main },
-                          }}
-                          onClick={handleRefreshData}
-                        >
-                          <Refresh />
-                        </IconButton>
-                      }
-                      sx={{
-                        paddingBottom: "0.75rem",
-                        borderBottom: `1px solid ${themeColors.divider}`,
-                        "& .MuiCardHeader-title": {
-                          fontWeight: 600,
-                          fontSize: "1.125rem",
-                          color: themeColors.text.primary,
-                        },
-                        "& .MuiCardHeader-action": {
-                          margin: 0,
-                        },
-                      }}
-                    />
-                    <CardContent sx={{ padding: "1.5rem" }}>
-                      <Box
-                        sx={{
-                          width: "100%",
-                          position: "relative",
-                        }}
-                      >
-                        {!chartsLoaded ? (
-                          <Box
-                            sx={{
-                              position: "absolute",
-                              top: 0,
-                              left: 0,
-                              right: 0,
-                              bottom: 0,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              backgroundColor: alpha(themeColors.background.paper, 0.7),
-                              zIndex: 10,
-                              borderRadius: "12px",
-                            }}
-                          >
-                            <Box
-                              sx={{
-                                width: "40px",
-                                height: "40px",
-                                borderRadius: "50%",
-                                background: themeColors.info.main,
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.2)",
-                              }}
-                            />
-                          </Box>
-                        ) : (
-                          <VehicleDistributionChart chartsLoaded={chartsLoaded} themeColors={themeColors} />
-                        )}
-                      </Box>
-                    </CardContent>
-                  </Card>
-                </Zoom>
-              </Box>
-
-              {/* Monthly Distribution Chart - Now at the bottom */}
-              <Box component="section" sx={{ mb: 3 }}>
-                <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "400ms" : "0ms" }}>
-                  <Card
-                    sx={{
-                      borderRadius: "16px",
-                      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
-                      transition: "all 0.3s ease",
-                      overflow: "hidden",
-                      "&:hover": {
-                        boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)",
-                        transform: "translateY(-4px)",
-                      },
-                      background: themeColors.background.card,
-                    }}
-                  >
-                    <CardHeader
-                      title={
-                        <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                          <Box
-                            sx={{
-                              width: { xs: "32px", sm: "36px" },
-                              height: { xs: "32px", sm: "36px" },
-                              borderRadius: "12px",
-                              background: themeColors.primary.main,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              animation: `${keyframes.pulse} 2s ease-in-out infinite`,
-                            }}
-                          >
-                            <BarChartIcon
-                              sx={{
-                                color: "white",
-                                fontSize: { xs: "1.1rem", sm: "1.3rem" },
-                              }}
-                            />
-                          </Box>
-                          <Box>
-                            <Typography
-                              sx={{
-                                fontWeight: 600,
-                                fontSize: { xs: "1.1rem", sm: "1.2rem" },
-                                color: themeColors.text.primary,
-                              }}
-                            >
-                              Histórico de Remoções
-                            </Typography>
-                            <Typography
-                              sx={{
-                                fontSize: { xs: "0.8rem", sm: "0.85rem" },
-                                color: themeColors.text.secondary,
-                                fontWeight: 400,
-                              }}
-                            >
-                              Análise detalhada de remoções por período
-                            </Typography>
-                          </Box>
-                        </Box>
-                      }
-                      action={
-                        <Box sx={{ display: "flex", gap: "0.5rem" }}>
-                          <IconButton
-                            onClick={handleRefreshData}
-                            sx={{
-                              color: themeColors.text.secondary,
-                              "&:hover": { color: themeColors.primary.main },
-                            }}
-                          >
-                            <Refresh />
-                          </IconButton>
-                        </Box>
-                      }
-                      sx={{
-                        paddingBottom: "0.75rem",
-                        borderBottom: `1px solid ${themeColors.divider}`,
-                        "& .MuiCardHeader-title": {
-                          fontWeight: 600,
-                          fontSize: "1.125rem",
-                          color: themeColors.text.primary,
-                        },
-                        "& .MuiCardHeader-action": {
-                          margin: 0,
-                        },
-                      }}
-                    />
-                    <Box sx={{ padding: "0.5rem 1.5rem" }}>
-                      <Tabs
-                        value={chartType}
-                        onChange={handleChartTypeChange}
-                        variant="scrollable"
-                        scrollButtons="auto"
-                        sx={{
-                          "& .MuiTabs-indicator": {
-                            backgroundColor: themeColors.primary.main,
-                            height: "3px",
-                            borderRadius: "3px",
-                          },
-                          "& .MuiTab-root": {
-                            textTransform: "none",
-                            minWidth: { xs: "80px", sm: "120px" },
-                            fontWeight: 500,
-                            color: themeColors.text.secondary,
-                            fontSize: { xs: "0.8rem", sm: "0.9rem" },
-                            "&.Mui-selected": {
-                              color: themeColors.primary.main,
                               fontWeight: 600,
-                            },
-                          },
-                        }}
-                      >
-                        <Tab icon={<BarChartIcon />} label="Barras" iconPosition="start" sx={{ gap: "0.5rem" }} />
-                        <Tab icon={<LineChartIcon />} label="Linhas" iconPosition="start" sx={{ gap: "0.5rem" }} />
-                      </Tabs>
-                    </Box>
-                    <CardContent sx={{ padding: "1.5rem" }}>
-                      <Box
-                        sx={{
-                          width: "100%",
-                          height: { xs: "300px", sm: "400px" },
-                          position: "relative",
-                        }}
-                      >
-                        {!chartsLoaded && (
-                          <Box
-                            sx={{
-                              position: "absolute",
-                              top: 0,
-                              left: 0,
-                              right: 0,
-                              bottom: 0,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              backgroundColor: alpha(themeColors.background.paper, 0.7),
-                              zIndex: 10,
-                              borderRadius: "12px",
+                              fontSize: { xs: "1.1rem", sm: "1.2rem" },
+                              color: themeColors.text.primary,
                             }}
                           >
-                            <Box
-                              sx={{
-                                width: "40px",
-                                height: "40px",
-                                borderRadius: "50%",
-                                background: themeColors.primary.main,
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
-                                animation: `${keyframes.pulse} 1.5s ease-in-out infinite`,
-                              }}
-                            />
-                          </Box>
-                        )}
-                        <Fade in={chartsLoaded} timeout={800}>
-                          <Box
+                            Equipes
+                          </Typography>
+                          <Typography
                             sx={{
-                              width: "100%",
-                              height: "100%",
+                              fontSize: { xs: "0.8rem", sm: "0.85rem" },
+                              color: themeColors.text.secondary,
+                              fontWeight: 400,
                             }}
                           >
-                            {monthlyData.length > 0 ? (
-                              renderChart()
-                            ) : (
-                              <Box
-                                sx={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  height: "100%",
-                                }}
-                              >
-                                <Typography sx={{ color: themeColors.text.secondary }}>
-                                  Nenhum dado mensal disponível
-                                </Typography>
-                              </Box>
-                            )}
-                          </Box>
-                        </Fade>
+                            Análise comparativa por turno
+                          </Typography>
+                        </Box>
                       </Box>
-                    </CardContent>
-                  </Card>
-                </Zoom>
+                    }
+                    action={
+                      <IconButton
+                        sx={{
+                          color: themeColors.text.secondary,
+                          "&:hover": { color: themeColors.warning.main },
+                        }}
+                        onClick={handleRefreshData}
+                      >
+                        <Refresh />
+                      </IconButton>
+                    }
+                    sx={{
+                      paddingBottom: "0.75rem",
+                      borderBottom: `1px solid ${themeColors.divider}`,
+                      "& .MuiCardHeader-title": {
+                        fontWeight: 600,
+                        fontSize: "1.125rem",
+                        color: themeColors.text.primary,
+                      },
+                      "& .MuiCardHeader-action": {
+                        margin: 0,
+                      },
+                    }}
+                  />
+                  <CardContent sx={{ padding: "1.5rem" }}>
+                    <Box
+                      sx={{
+                        width: "100%",
+                        position: "relative",
+                        height: "300px",
+                      }}
+                    >
+                      <TeamChart teamData={teamData} themeColors={themeColors} chartsLoaded={chartsLoaded} />
+                    </Box>
+                  </CardContent>
+                </Card>
+
+                {/* Driver/Collector Exit Chart - replacing Status Pie Chart */}
+                <Card
+                  sx={{
+                    borderRadius: "16px",
+                    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
+                    transition: "all 0.3s ease",
+                    overflow: "hidden",
+                    "&:hover": {
+                      boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)",
+                      transform: "translateY(-4px)",
+                    },
+                    background: themeColors.background.card,
+                    width: { xs: "100%", md: "50%" },
+                  }}
+                >
+                  <CardHeader
+                    title={
+                      <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                        <Box
+                          sx={{
+                            width: { xs: "32px", sm: "36px" },
+                            height: { xs: "32px", sm: "36px" },
+                            borderRadius: "12px",
+                            background: themeColors.success.main,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            animation: `${keyframes.pulse} 2s ease-in-out infinite`,
+                          }}
+                        >
+                          <PieChartIcon
+                            sx={{
+                              color: "white",
+                              fontSize: { xs: "1.1rem", sm: "1.3rem" },
+                            }}
+                          />
+                        </Box>
+                        <Box>
+                          <Typography
+                            sx={{
+                              fontWeight: 600,
+                              fontSize: { xs: "1.1rem", sm: "1.2rem" },
+                              color: themeColors.text.primary,
+                            }}
+                          >
+                            Saídas de Funcionários
+                          </Typography>
+                          <Typography
+                            sx={{
+                              fontSize: { xs: "0.8rem", sm: "0.85rem" },
+                              color: themeColors.text.secondary,
+                              fontWeight: 400,
+                            }}
+                          >
+                            Motoristas e coletores que saíram
+                          </Typography>
+                        </Box>
+                      </Box>
+                    }
+                    action={
+                      <IconButton
+                        sx={{
+                          color: themeColors.text.secondary,
+                          "&:hover": { color: themeColors.success.main },
+                        }}
+                        onClick={handleRefreshData}
+                      >
+                        <Refresh />
+                      </IconButton>
+                    }
+                    sx={{
+                      paddingBottom: "0.75rem",
+                      borderBottom: `1px solid ${themeColors.divider}`,
+                      "& .MuiCardHeader-title": {
+                        fontWeight: 600,
+                        fontSize: "1.125rem",
+                        color: themeColors.text.primary,
+                      },
+                      "& .MuiCardHeader-action": {
+                        margin: 0,
+                      },
+                    }}
+                  />
+                  <CardContent sx={{ padding: "1.5rem" }}>
+                    <Box
+                      sx={{
+                        width: "100%",
+                        position: "relative",
+                        height: "300px",
+                      }}
+                    >
+                      <DriverCollectorExitChart themeColors={themeColors} chartsLoaded={chartsLoaded} />
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Box>
+
+              {/* PA Distribution Chart - replacing Vehicle Distribution */}
+              <Box component="section" sx={{ mb: 4 }}>
+                <Card
+                  sx={{
+                    borderRadius: "16px",
+                    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
+                    transition: "all 0.3s ease",
+                    overflow: "hidden",
+                    "&:hover": {
+                      boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)",
+                      transform: "translateY(-4px)",
+                    },
+                    background: themeColors.background.card,
+                  }}
+                >
+                  <CardHeader
+                    title={
+                      <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                        <Box
+                          sx={{
+                            width: { xs: "32px", sm: "36px" },
+                            height: { xs: "32px", sm: "36px" },
+                            borderRadius: "12px",
+                            background: themeColors.info.main,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            animation: `${keyframes.pulse} 2s ease-in-out infinite`,
+                          }}
+                        >
+                          <Warehouse
+                            sx={{
+                              color: "white",
+                              fontSize: { xs: "1.1rem", sm: "1.3rem" },
+                            }}
+                          />
+                        </Box>
+                        <Box>
+                          <Typography
+                            sx={{
+                              fontWeight: 600,
+                              fontSize: { xs: "1.1rem", sm: "1.2rem" },
+                              color: themeColors.text.primary,
+                            }}
+                          >
+                            Distribuição por PA
+                          </Typography>
+                          <Typography
+                            sx={{
+                              fontSize: { xs: "0.8rem", sm: "0.85rem" },
+                              color: themeColors.text.secondary,
+                              fontWeight: 400,
+                            }}
+                          >
+                            Veículos por ponto de apoio
+                          </Typography>
+                        </Box>
+                      </Box>
+                    }
+                    action={
+                      <IconButton
+                        sx={{
+                          color: themeColors.text.secondary,
+                          "&:hover": { color: themeColors.info.main },
+                        }}
+                        onClick={handleRefreshData}
+                      >
+                        <Refresh />
+                      </IconButton>
+                    }
+                    sx={{
+                      paddingBottom: "0.75rem",
+                      borderBottom: `1px solid ${themeColors.divider}`,
+                      "& .MuiCardHeader-title": {
+                        fontWeight: 600,
+                        fontSize: "1.125rem",
+                        color: themeColors.text.primary,
+                      },
+                      "& .MuiCardHeader-action": {
+                        margin: 0,
+                      },
+                    }}
+                  />
+                  <CardContent sx={{ padding: "1.5rem" }}>
+                    <Box
+                      sx={{
+                        width: "100%",
+                        position: "relative",
+                      }}
+                    >
+                      <PADistributionChart chartsLoaded={chartsLoaded} themeColors={themeColors} />
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Box>
+
+              {/* Weekday Distribution Chart */}
+              <Box component="section" sx={{ mb: 3 }}>
+                <WeekdayChart
+                  weekdayData={weekdayData}
+                  themeColors={themeColors}
+                  chartsLoaded={chartsLoaded}
+                  onRefresh={handleRefreshData}
+                />
               </Box>
             </Container>
           </Box>
         </Box>
       </Box>
-
-      {/* Modals and dialogs */}
-      <Dialog
-        open={modalOpen}
-        onClose={handleCloseModal}
-        maxWidth="xs"
-        PaperProps={{
-          sx: {
-            borderRadius: "24px",
-            boxShadow: "0 24px 48px rgba(0, 0, 0, 0.2)",
-            overflow: "hidden",
-            background: "linear-gradient(to bottom, #ffffff, #f8fafc)",
-          },
-        }}
-        TransitionComponent={Slide}
-        TransitionProps={{
-          direction: "up",
-        }}
-      >
-        {selectedRemoval && (
-          <>
-            <DialogTitle
-              sx={{
-                background: `linear-gradient(135deg, ${themeColors.primary.main} 0%, ${themeColors.primary.light} 100%)`,
-                color: "white",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "1rem 1.5rem",
-                position: "relative",
-                overflow: "hidden",
-                "&::after": {
-                  content: '""',
-                  position: "absolute",
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  height: "4px",
-                  background: "rgba(255, 255, 255, 0.2)",
-                  animation: `${keyframes.shimmer} 2s infinite linear`,
-                  backgroundSize: "200% 100%",
-                },
-              }}
-            >
-              <Box sx={{ display: "flex", alignItems: "center" }}>
-                <Avatar
-                  sx={{
-                    backgroundColor: "rgba(255, 255, 255, 0.2)",
-                    color: "white",
-                    fontWeight: 600,
-                    width: 36,
-                    height: 36,
-                    mr: 1.5,
-                    animation: `${keyframes.pulse} 2s infinite ease-in-out`,
-                  }}
-                >
-                  <DirectionsCar />
-                </Avatar>
-                <Typography variant="h6" sx={{ fontWeight: 700, fontSize: "1.1rem" }}>
-                  Detalhes da Remoção
-                </Typography>
-              </Box>
-              <IconButton
-                onClick={handleCloseModal}
-                sx={{
-                  color: "white",
-                  padding: "0.5rem",
-                  "&:hover": {
-                    backgroundColor: "rgba(255, 255, 255, 0.2)",
-                    transform: "rotate(90deg)",
-                    transition: "transform 0.3s ease",
-                  },
-                }}
-              >
-                <Close fontSize="small" />
-              </IconButton>
-            </DialogTitle>
-            <DialogContent sx={{ padding: "1.5rem" }}>
-              <Stack spacing={2.5}>
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 2,
-                    animation: `${keyframes.fadeIn} 0.5s ease-out, ${keyframes.slideInUp} 0.5s ease-out`,
-                  }}
-                >
-                  <Avatar
-                    sx={{
-                      backgroundColor: alpha(themeColors.primary.main, 0.1),
-                      color: themeColors.primary.main,
-                      fontWeight: 600,
-                      width: 48,
-                      height: 48,
-                      boxShadow: `0 4px 12px ${alpha(themeColors.primary.main, 0.15)}`,
-                      animation: `${keyframes.pulse} 3s infinite ease-in-out`,
-                    }}
-                  >
-                    <Person />
-                  </Avatar>
-                  <Box>
-                    <Typography
-                      sx={{
-                        fontWeight: 700,
-                        color: themeColors.text.primary,
-                        fontSize: "1.1rem",
-                        animation: `${keyframes.fadeIn} 0.5s ease-out`,
-                      }}
-                    >
-                      {selectedRemoval.driver || "Não informado"}
-                    </Typography>
-                    <Typography
-                      sx={{
-                        color: themeColors.text.secondary,
-                        fontSize: "0.85rem",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 0.5,
-                        animation: `${keyframes.fadeIn} 0.5s ease-out 0.1s both`,
-                      }}
-                    >
-                      <Person fontSize="small" sx={{ fontSize: 14, opacity: 0.7 }} /> Motorista
-                    </Typography>
-                  </Box>
-                </Box>
-
-                <Divider
-                  sx={{
-                    "&::before, &::after": {
-                      borderColor: themeColors.divider,
-                    },
-                    animation: `${keyframes.fadeIn} 0.5s ease-out 0.2s both`,
-                  }}
-                >
-                  <Chip
-                    label="Equipe"
-                    size="small"
-                    sx={{
-                      backgroundColor: alpha(themeColors.primary.main, 0.1),
-                      color: themeColors.primary.main,
-                      fontWeight: 600,
-                      borderRadius: "12px",
-                    }}
-                  />
-                </Divider>
-
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 2,
-                    animation: `${keyframes.fadeIn} 0.5s ease-out 0.3s both, ${keyframes.slideInUp} 0.5s ease-out 0.3s both`,
-                  }}
-                >
-                  <Avatar
-                    sx={{
-                      backgroundColor: alpha(themeColors.success.main, 0.1),
-                      color: themeColors.success.main,
-                      fontWeight: 600,
-                      width: 48,
-                      height: 48,
-                      boxShadow: `0 4px 12px ${alpha(themeColors.success.main, 0.15)}`,
-                      animation: `${keyframes.pulse} 3s infinite ease-in-out`,
-                    }}
-                  >
-                    <Group />
-                  </Avatar>
-                  <Box>
-                    <Typography
-                      sx={{
-                        fontWeight: 700,
-                        color: themeColors.text.primary,
-                        fontSize: "1.1rem",
-                      }}
-                    >
-                      {selectedRemoval.collectors?.join(", ") || "Não informado"}
-                    </Typography>
-                    <Typography
-                      sx={{
-                        color: themeColors.text.secondary,
-                        fontSize: "0.85rem",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 0.5,
-                      }}
-                    >
-                      <Group fontSize="small" sx={{ fontSize: 14, opacity: 0.7 }} /> Coletores
-                    </Typography>
-                  </Box>
-                </Box>
-
-                <Grid
-                  container
-                  spacing={2}
-                  sx={{
-                    mt: 1,
-                    animation: `${keyframes.fadeIn} 0.5s ease-out 0.4s both, ${keyframes.slideInUp} 0.5s ease-out 0.4s both`,
-                  }}
-                >
-                  <Grid item xs={6}>
-                    <Paper
-                      elevation={0}
-                      sx={{
-                        p: 2,
-                        borderRadius: "16px",
-                        backgroundColor: alpha(themeColors.background.default, 0.5),
-                        border: `1px solid ${themeColors.divider}`,
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        transition: "all 0.3s ease",
-                        height: "100%",
-                        "&:hover": {
-                          boxShadow: "0 8px 24px rgba(0, 0, 0, 0.05)",
-                          transform: "translateY(-4px)",
-                          backgroundColor: alpha(themeColors.primary.main, 0.05),
-                        },
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          width: "40px",
-                          height: "40px",
-                          borderRadius: "12px",
-                          backgroundColor: alpha(themeColors.primary.main, 0.1),
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          mb: 1,
-                          animation: `${keyframes.pulse} 3s infinite ease-in-out`,
-                        }}
-                      >
-                        <DirectionsCar sx={{ color: themeColors.primary.main }} />
-                      </Box>
-                      <Typography
-                        sx={{ fontWeight: 700, color: themeColors.text.primary, fontSize: "1rem", textAlign: "center" }}
-                      >
-                        {selectedRemoval.vehiclePrefix || "Não informado"}
-                      </Typography>
-                      <Typography sx={{ color: themeColors.text.secondary, fontSize: "0.75rem", mt: 0.5 }}>
-                        Prefixo
-                      </Typography>
-                    </Paper>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Paper
-                      elevation={0}
-                      sx={{
-                        p: 2,
-                        borderRadius: "16px",
-                        backgroundColor: alpha(themeColors.background.default, 0.5),
-                        border: `1px solid ${themeColors.divider}`,
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        transition: "all 0.3s ease",
-                        height: "100%",
-                        "&:hover": {
-                          boxShadow: "0 8px 24px rgba(0, 0, 0, 0.05)",
-                          transform: "translateY(-4px)",
-                          backgroundColor: alpha(themeColors.warning.main, 0.05),
-                        },
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          width: "40px",
-                          height: "40px",
-                          borderRadius: "12px",
-                          backgroundColor: alpha(themeColors.warning.main, 0.1),
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          mb: 1,
-                          animation: `${keyframes.pulse} 3s infinite ease-in-out`,
-                        }}
-                      >
-                        <WbSunny sx={{ color: themeColors.warning.main }} />
-                      </Box>
-                      <Typography
-                        sx={{ fontWeight: 700, color: themeColors.text.primary, fontSize: "1rem", textAlign: "center" }}
-                      >
-                        {selectedRemoval.team || "Não informado"}
-                      </Typography>
-                      <Typography sx={{ color: themeColors.text.secondary, fontSize: "0.75rem", mt: 0.5 }}>
-                        Equipe
-                      </Typography>
-                    </Paper>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Paper
-                      elevation={0}
-                      sx={{
-                        p: 2,
-                        borderRadius: "16px",
-                        backgroundColor: alpha(themeColors.background.default, 0.5),
-                        border: `1px solid ${themeColors.divider}`,
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        transition: "all 0.3s ease",
-                        height: "100%",
-                        "&:hover": {
-                          boxShadow: "0 8px 24px rgba(0, 0, 0, 0.05)",
-                          transform: "translateY(-4px)",
-                          backgroundColor: alpha(themeColors.error.main, 0.05),
-                        },
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          width: "40px",
-                          height: "40px",
-                          borderRadius: "12px",
-                          backgroundColor: alpha(themeColors.error.main, 0.1),
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          mb: 1,
-                          animation: `${keyframes.pulse} 3s infinite ease-in-out`,
-                        }}
-                      >
-                        <Route sx={{ color: themeColors.error.main }} />
-                      </Box>
-                      <Typography
-                        sx={{ fontWeight: 700, color: themeColors.text.primary, fontSize: "1rem", textAlign: "center" }}
-                      >
-                        {selectedRemoval.route || "Não informado"}
-                      </Typography>
-                    </Paper>
-                  </Grid>
-                </Grid>
-
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "center",
-                    mt: 1,
-                    animation: `${keyframes.fadeIn} 0.5s ease-out 0.5s both, ${keyframes.slideInUp} 0.5s ease-out 0.5s both`,
-                  }}
-                >
-                  <Box
-                    sx={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      gap: 1,
-                      p: 2,
-                      borderRadius: "16px",
-                      backgroundColor:
-                        selectedRemoval.status === "Finalizado"
-                          ? alpha(themeColors.success.main, 0.1)
-                          : alpha(themeColors.primary.main, 0.1),
-                      width: "100%",
-                    }}
-                  >
-                    <Typography sx={{ fontWeight: 600, fontSize: "0.85rem", color: themeColors.text.secondary }}>
-                      Status
-                    </Typography>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                      }}
-                    >
-                      {/* Update the status icon in the detail modal */}
-                      {selectedRemoval.status === "Finalizado" ? (
-                        <CheckCircle sx={{ color: themeColors.success.main }} />
-                      ) : (
-                        <Timeline sx={{ color: themeColors.primary.main }} />
-                      )}
-                      <Typography
-                        sx={{
-                          fontWeight: 700,
-                          /* Update the status color in the detail modal */
-                          color:
-                            selectedRemoval.status === "Finalizado"
-                              ? themeColors.success.main
-                              : themeColors.primary.main,
-                          fontSize: "1.1rem",
-                        }}
-                      >
-                        {selectedRemoval.status || "Não informado"}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Box>
-
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "center",
-                    mt: 1,
-                    animation: `${keyframes.fadeIn} 0.5s ease-out 0.6s both, ${keyframes.slideInUp} 0.5s ease-out 0.6s both`,
-                  }}
-                >
-                  <Paper
-                    elevation={0}
-                    sx={{
-                      p: 2,
-                      borderRadius: "16px",
-                      backgroundColor: alpha(themeColors.background.default, 0.5),
-                      border: `1px solid ${themeColors.divider}`,
-                      width: "100%",
-                    }}
-                  >
-                    <Typography sx={{ fontWeight: 600, fontSize: "0.9rem", color: themeColors.text.secondary, mb: 1 }}>
-                      Informações adicionais
-                    </Typography>
-
-                    {/* 6. Modificar a exibição de data no modal de detalhes para usar o formato brasileiro
-                    // Encontre a seção que exibe a data no modal de detalhes (aproximadamente linha 2000) e substitua por: */}
-                    <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                      <Typography sx={{ color: themeColors.text.secondary, fontSize: "0.85rem" }}>Data:</Typography>
-                      <Typography sx={{ fontWeight: 500, color: themeColors.text.primary, fontSize: "0.85rem" }}>
-                        {selectedRemoval.date ? formatDateBR(selectedRemoval.date) : "Não informado"}
-                      </Typography>
-                    </Box>
-                  </Paper>
-                </Box>
-              </Stack>
-            </DialogContent>
-            <DialogActions
-              sx={{
-                padding: "1rem 1.5rem",
-                borderTop: `1px solid ${themeColors.divider}`,
-                justifyContent: "space-between",
-                background: alpha(themeColors.background.default, 0.5),
-              }}
-            >
-              <Button
-                onClick={handleCloseModal}
-                variant="outlined"
-                size="medium"
-                startIcon={<Close />}
-                sx={{
-                  borderRadius: "12px",
-                  textTransform: "none",
-                  fontWeight: 500,
-                  borderColor: themeColors.divider,
-                  color: themeColors.text.secondary,
-                  "&:hover": {
-                    borderColor: themeColors.primary.main,
-                    color: themeColors.primary.main,
-                    backgroundColor: alpha(themeColors.primary.main, 0.05),
-                  },
-                }}
-              >
-                Fechar
-              </Button>
-              <Box sx={{ display: "flex", gap: 1 }}>
-                <Button
-                  variant="contained"
-                  size="medium"
-                  startIcon={<Print />}
-                  sx={{
-                    borderRadius: "12px",
-                    textTransform: "none",
-                    fontWeight: 500,
-                    backgroundColor: themeColors.primary.main,
-                    boxShadow: `0 4px 12px ${alpha(themeColors.primary.main, 0.2)}`,
-                    "&:hover": {
-                      backgroundColor: themeColors.primary.dark,
-                      boxShadow: `0 6px 16px ${alpha(themeColors.primary.main, 0.3)}`,
-                    },
-                  }}
-                >
-                  Imprimir
-                </Button>
-              </Box>
-            </DialogActions>
-          </>
-        )}
-      </Dialog>
-
-      <Menu
-        anchorEl={actionMenuAnchor}
-        open={Boolean(actionMenuAnchor)}
-        onClose={handleActionMenuClose}
-        PaperProps={{
-          sx: {
-            borderRadius: "12px",
-            boxShadow: "0 10px 40px rgba(0, 0, 0, 0.1)",
-            padding: "0.5rem",
-          },
-        }}
-      >
-        <MenuItem
-          onClick={handleEditClick}
-          sx={{
-            borderRadius: "8px",
-          }}
-        >
-          <Edit fontSize="small" sx={{ mr: 1 }} />
-          Editar
-        </MenuItem>
-        <MenuItem
-          onClick={handleDeleteConfirmOpen}
-          sx={{
-            borderRadius: "8px",
-          }}
-        >
-          <Delete fontSize="small" sx={{ mr: 1 }} />
-          Excluir
-        </MenuItem>
-      </Menu>
-
-      <Dialog
-        open={deleteConfirmOpen}
-        onClose={handleDeleteConfirmClose}
-        aria-labelledby="alert-dialog-title"
-        aria-describedby="alert-dialog-description"
-      >
-        <DialogTitle id="alert-dialog-title">{"Confirmar Exclusão?"}</DialogTitle>
-        <DialogContent>
-          <Typography id="alert-dialog-description">
-            Você tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleDeleteConfirmClose} color="primary">
-            Cancelar
-          </Button>
-          <Button onClick={handleDelete} color="error" autoFocus>
-            Excluir
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Menu
-        anchorEl={shareMenuAnchor}
-        open={Boolean(shareMenuAnchor)}
-        onClose={handleShareMenuClose}
-        PaperProps={{
-          sx: {
-            borderRadius: "12px",
-            boxShadow: "0 10px 40px rgba(0, 0, 0, 0.1)",
-            padding: "0.5rem",
-          },
-        }}
-      >
-        <MenuItem onClick={() => handleShare("Facebook")} sx={{ borderRadius: "8px" }}>
-          <Facebook fontSize="small" sx={{ mr: 1 }} />
-          Facebook
-        </MenuItem>
-        <MenuItem onClick={() => handleShare("Twitter")} sx={{ borderRadius: "8px" }}>
-          <Twitter fontSize="small" sx={{ mr: 1 }} />
-          Twitter
-        </MenuItem>
-        <MenuItem onClick={() => handleShare("LinkedIn")} sx={{ borderRadius: "8px" }}>
-          <LinkedIn fontSize="small" sx={{ mr: 1 }} />
-          LinkedIn
-        </MenuItem>
-        <MenuItem onClick={() => handleShare("WhatsApp")} sx={{ borderRadius: "8px" }}>
-          <WhatsApp fontSize="small" sx={{ mr: 1 }} />
-          WhatsApp
-        </MenuItem>
-        <MenuItem onClick={() => handleShare("Email")} sx={{ borderRadius: "8px" }}>
-          <Email fontSize="small" sx={{ mr: 1 }} />
-          Email
-        </MenuItem>
-      </Menu>
 
       {/* Snackbar for notifications */}
       <Snackbar
@@ -3628,289 +1156,7 @@ export default function RemovalDashboard() {
           {snackbarMessage}
         </Alert>
       </Snackbar>
-      <Dialog
-        open={registerModalOpen}
-        onClose={() => setRegisterModalOpen(false)}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: "24px",
-            boxShadow: "0 24px 48px rgba(0, 0, 0, 0.2)",
-            overflow: "hidden",
-            background: "linear-gradient(to bottom, #ffffff, #f8fafc)",
-          },
-        }}
-        TransitionComponent={Slide}
-        TransitionProps={{
-          direction: "up",
-        }}
-      >
-        <DialogTitle
-          sx={{
-            background: `linear-gradient(135deg, ${themeColors.primary.main} 0%, ${themeColors.primary.light} 100%)`,
-            color: "white",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "1rem 1.5rem",
-            position: "relative",
-            overflow: "hidden",
-            "&::after": {
-              content: '""',
-              position: "absolute",
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: "4px",
-              background: "rgba(255, 255, 255, 0.2)",
-              animation: `${keyframes.shimmer} 2s infinite linear`,
-              backgroundSize: "200% 100%",
-            },
-          }}
-        >
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <Avatar
-              sx={{
-                backgroundColor: "rgba(255, 255, 255, 0.2)",
-                color: "white",
-                fontWeight: 600,
-                width: 36,
-                height: 36,
-                mr: 1.5,
-                animation: `${keyframes.pulse} 2s infinite ease-in-out`,
-              }}
-            >
-              <DirectionsCar />
-            </Avatar>
-            <Typography variant="h6" sx={{ fontWeight: 700, fontSize: "1.1rem" }}>
-              Cadastrar Soltura
-            </Typography>
-          </Box>
-          <IconButton
-            onClick={() => setRegisterModalOpen(false)}
-            sx={{
-              color: "white",
-              padding: "0.5rem",
-              "&:hover": {
-                backgroundColor: "rgba(255, 255, 255, 0.2)",
-                transform: "rotate(90deg)",
-                transition: "transform 0.3s ease",
-              },
-            }}
-          >
-            <Close fontSize="small" />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent sx={{ padding: "1.5rem" }}>
-          <Stack spacing={2.5}>
-            <TextField
-              label="Nome do Motorista"
-              fullWidth
-              variant="outlined"
-              size="small"
-              value={registerFormData.driver}
-              onChange={(e) => handleRegisterFormChange("driver", e.target.value)}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "12px",
-                  backgroundColor: "white",
-                },
-              }}
-            />
-            <TextField
-              label="Matrícula do Motorista"
-              fullWidth
-              variant="outlined"
-              size="small"
-              value={registerFormData.driverId}
-              onChange={(e) => handleRegisterFormChange("driverId", e.target.value)}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "12px",
-                  backgroundColor: "white",
-                },
-              }}
-            />
-            <TextField
-              label="Prefixo do Veículo"
-              fullWidth
-              variant="outlined"
-              size="small"
-              value={registerFormData.vehiclePrefix}
-              onChange={(e) => handleRegisterFormChange("vehiclePrefix", e.target.value)}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "12px",
-                  backgroundColor: "white"
-                },
-              }}
-            />
-            <Autocomplete
-              options={["Equipe1(Matutino)", "Equipe2(Vespertino)", "Equipe3(Noturno)"]}
-              value={registerFormData.team}
-              onChange={(_, newValue) => handleRegisterFormChange("team", newValue)}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Equipe"
-                  variant="outlined"
-                  size="small"
-                  sx={{
-                    "& .MuiOutlinedInput-root": {
-                      borderRadius: "12px",
-                      backgroundColor: "white",
-                    },
-                  }}
-                />
-              )}
-            />
-            <Typography variant="subtitle2" sx={{ fontWeight: 600, color: themeColors.text.secondary }}>
-              Coletores:
-            </Typography>
-            {Array.from({ length: 3 }).map((_, index) => (
-              <TextField
-                key={index}
-                label={`Coletor ${index + 1}`}
-                fullWidth
-                variant="outlined"
-                size="small"
-                value={registerFormData.collectors[index] || ""}
-                onChange={(e) => handleRegisterFormChange("collectors", e.target.value, index)}
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: "12px",
-                    backgroundColor: "#ffff",
-                  },
-                }}
-              />
-            ))}
-            <Autocomplete
-              disablePortal
-              options={["Caminhão Reboque", "Van", "Outro"]}
-              value={registerFormData.vehicleType}
-              onChange={(_, newValue) => handleRegisterFormChange("vehicleType", newValue)}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Tipo de Veículo"
-                  variant="outlined"
-                  size="small"
-                  sx={{
-                    "& .MuiOutlinedInput-root": {
-                      borderRadius: "12px",
-                      backgroundColor: "white",
-                    },
-                  }}
-                />
-              )}
-            />
-            <TextField
-              label="Garagem"
-              fullWidth
-              variant="outlined"
-              size="small"
-              value={registerFormData.garage}
-              onChange={(e) => handleRegisterFormChange("garage", e.target.value)}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "12px",
-                  backgroundColor: "white",
-                },
-              }}
-            />
-            <TextField
-              label="Rota"
-              fullWidth
-              variant="outlined"
-              size="small"
-              value={registerFormData.route}
-              onChange={(e) => handleRegisterFormChange("route", e.target.value)}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "12px",
-                  backgroundColor: "white",
-                },
-              }}
-            />
-          </Stack>
-        </DialogContent>
-        <DialogActions
-          sx={{
-            padding: "1rem 1.5rem",
-            borderTop: `1px solid ${themeColors.divider}`,
-            justifyContent: "space-between",
-            background: alpha(themeColors.background.default, 0.5),
-          }}
-        >
-          <Button
-            onClick={() => setRegisterModalOpen(false)}
-            variant="outlined"
-            size="medium"
-            startIcon={<Close />}
-            sx={{
-              borderRadius: "12px",
-              textTransform: "none",
-              fontWeight: 500,
-              borderColor: themeColors.divider,
-              color: themeColors.text.secondary,
-              "&:hover": {
-                borderColor: themeColors.primary.main,
-                color: themeColors.primary.main,
-                backgroundColor: alpha(themeColors.primary.main, 0.05),
-              },
-            }}
-          >
-            Cancelar
-          </Button>
-          <Button
-            onClick={handleRegisterSubmit}
-            variant="contained"
-            size="medium"
-            startIcon={<CheckCircle />}
-            sx={{
-              borderRadius: "12px",
-              textTransform: "none",
-              fontWeight: 500,
-              backgroundColor: themeColors.primary.main,
-              boxShadow: `0 4px 12px ${alpha(themeColors.primary.main, 0.2)}`,
-              "&:hover": {
-                backgroundColor: themeColors.primary.dark,
-                boxShadow: `0 6px 16px ${alpha(themeColors.primary.main, 0.3)}`,
-              },
-            }}
-          >
-            Cadastrar
-          </Button>
-        </DialogActions>
-      </Dialog>
-      {/* Adicionar o componente RegisterModal no final do componente, antes do último fechamento de tag */}
-      {/* Adicionar antes do último </> (aproximadamente linha 2900) */}
-      <DetailModal
-        open={detailModalOpen}
-        onClose={handleCloseModalDetail}
-        removal={selectedRemoval}
-        onEdit={handleEditClick}
-        themeColors={themeColors}
-        keyframes={keyframes}
-      />
-      <EditModal
-        open={editModalOpen}
-        onClose={() => setEditModalOpen(false)}
-        data={selectedRemoval}
-        onSave={handleSaveEdit}
-        themeColors={themeColors}
-        keyframes={keyframes}
-      />
-      <RegisterModal
-        open={registerModalOpen}
-        onClose={() => setRegisterModalOpen(false)}
-        formData={registerFormData}
-        onChange={handleRegisterFormChange}
-        onSubmit={handleRegisterSubmit}
-        themeColors={themeColors}
-        loading={loading}
-      />
     </>
   )
 }
+

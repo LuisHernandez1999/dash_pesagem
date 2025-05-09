@@ -511,7 +511,7 @@ const DetailModal = ({ open, onClose, inspection, themeColors, keyframes }) => {
             )}
           </Grid>
 
-          {/* Observations */}
+          {/* Form Questions */}
           <Divider
             sx={{
               "&::before, &::after": {
@@ -521,7 +521,7 @@ const DetailModal = ({ open, onClose, inspection, themeColors, keyframes }) => {
             }}
           >
             <Chip
-              label="Observações"
+              label="Formulário de Averiguação"
               size="small"
               sx={{
                 backgroundColor: alpha(themeColors.info.main, 0.1),
@@ -542,12 +542,599 @@ const DetailModal = ({ open, onClose, inspection, themeColors, keyframes }) => {
               animation: `${keyframes.fadeIn} 0.5s ease-out 0.8s both, ${keyframes.slideInUp} 0.5s ease-out 0.8s both`,
             }}
           >
-            <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
-              <Notes sx={{ color: themeColors.info.main, mt: 0.5 }} />
-              <Typography sx={{ color: themeColors.text.primary, lineHeight: 1.6 }}>
-                {inspection.observations || "Nenhuma observação registrada."}
-              </Typography>
-            </Box>
+            <Grid container spacing={3}>
+              {/* Question 1 */}
+              <Grid item xs={12}>
+                <Box
+                  sx={{
+                    mb: 2,
+                    pb: 2,
+                    borderBottom: `1px dashed ${alpha(themeColors.divider, 0.8)}`,
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontWeight: 600,
+                      color: themeColors.text.primary,
+                      mb: 1.5,
+                      fontSize: "0.95rem",
+                      display: "flex",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: "50%",
+                        backgroundColor: themeColors.primary.main,
+                        mr: 1.5,
+                        boxShadow: `0 0 0 3px ${alpha(themeColors.primary.main, 0.15)}`,
+                      }}
+                    />
+                    Velocidade da coleta:
+                  </Typography>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      gap: 4,
+                      ml: 3,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <input
+                        type="checkbox"
+                        id="velocidade-adequado"
+                        name="velocidade"
+                        value="adequado"
+                        style={{
+                          width: "18px",
+                          height: "18px",
+                          cursor: "pointer",
+                        }}
+                      />
+                      <label
+                        htmlFor="velocidade-adequado"
+                        style={{
+                          cursor: "pointer",
+                          fontSize: "0.9rem",
+                        }}
+                      >
+                        Adequado
+                      </label>
+                    </Box>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <input
+                        type="checkbox"
+                        id="velocidade-medio"
+                        name="velocidade"
+                        value="medio"
+                        style={{
+                          width: "18px",
+                          height: "18px",
+                          cursor: "pointer",
+                        }}
+                      />
+                      <label
+                        htmlFor="velocidade-medio"
+                        style={{
+                          cursor: "pointer",
+                          fontSize: "0.9rem",
+                        }}
+                      >
+                        Médio
+                      </label>
+                    </Box>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <input
+                        type="checkbox"
+                        id="velocidade-baixo"
+                        name="velocidade"
+                        value="baixo"
+                        style={{
+                          width: "18px",
+                          height: "18px",
+                          cursor: "pointer",
+                        }}
+                      />
+                      <label
+                        htmlFor="velocidade-baixo"
+                        style={{
+                          cursor: "pointer",
+                          fontSize: "0.9rem",
+                        }}
+                      >
+                        Baixo
+                      </label>
+                    </Box>
+                  </Box>
+                </Box>
+              </Grid>
+
+              {/* Questions 2 and 3 in a row */}
+              <Grid item xs={12} md={6}>
+                <Box
+                  sx={{
+                    mb: 2,
+                    pb: 2,
+                    height: "100%",
+                    borderBottom: { xs: `1px dashed ${alpha(themeColors.divider, 0.8)}`, md: "none" },
+                    borderRight: { xs: "none", md: `1px dashed ${alpha(themeColors.divider, 0.8)}` },
+                    pr: { md: 2 },
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontWeight: 600,
+                      color: themeColors.text.primary,
+                      mb: 1.5,
+                      fontSize: "0.95rem",
+                      display: "flex",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: "50%",
+                        backgroundColor: themeColors.success.main,
+                        mr: 1.5,
+                        boxShadow: `0 0 0 3px ${alpha(themeColors.success.main, 0.15)}`,
+                      }}
+                    />
+                    Largura da rua:
+                  </Typography>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      gap: 4,
+                      ml: 3,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <input
+                        type="checkbox"
+                        id="largura-adequada"
+                        name="largura"
+                        value="adequada"
+                        style={{
+                          width: "18px",
+                          height: "18px",
+                          cursor: "pointer",
+                        }}
+                      />
+                      <label
+                        htmlFor="largura-adequada"
+                        style={{
+                          cursor: "pointer",
+                          fontSize: "0.9rem",
+                        }}
+                      >
+                        Adequada
+                      </label>
+                    </Box>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <input
+                        type="checkbox"
+                        id="largura-inadequado"
+                        name="largura"
+                        value="inadequado"
+                        style={{
+                          width: "18px",
+                          height: "18px",
+                          cursor: "pointer",
+                        }}
+                      />
+                      <label
+                        htmlFor="largura-inadequado"
+                        style={{
+                          cursor: "pointer",
+                          fontSize: "0.9rem",
+                        }}
+                      >
+                        Inadequado
+                      </label>
+                    </Box>
+                  </Box>
+                </Box>
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <Box
+                  sx={{
+                    mb: 2,
+                    pb: 2,
+                    borderBottom: `1px dashed ${alpha(themeColors.divider, 0.8)}`,
+                    pl: { md: 2 },
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontWeight: 600,
+                      color: themeColors.text.primary,
+                      mb: 1.5,
+                      fontSize: "0.95rem",
+                      display: "flex",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: "50%",
+                        backgroundColor: themeColors.warning.main,
+                        mr: 1.5,
+                        boxShadow: `0 0 0 3px ${alpha(themeColors.warning.main, 0.15)}`,
+                      }}
+                    />
+                    Altura de fios:
+                  </Typography>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      gap: 4,
+                      ml: 3,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <input
+                        type="checkbox"
+                        id="altura-adequada"
+                        name="altura"
+                        value="adequada"
+                        style={{
+                          width: "18px",
+                          height: "18px",
+                          cursor: "pointer",
+                        }}
+                      />
+                      <label
+                        htmlFor="altura-adequada"
+                        style={{
+                          cursor: "pointer",
+                          fontSize: "0.9rem",
+                        }}
+                      >
+                        Adequada
+                      </label>
+                    </Box>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <input
+                        type="checkbox"
+                        id="altura-inadequado"
+                        name="altura"
+                        value="inadequado"
+                        style={{
+                          width: "18px",
+                          height: "18px",
+                          cursor: "pointer",
+                        }}
+                      />
+                      <label
+                        htmlFor="altura-inadequado"
+                        style={{
+                          cursor: "pointer",
+                          fontSize: "0.9rem",
+                        }}
+                      >
+                        Inadequado
+                      </label>
+                    </Box>
+                  </Box>
+                </Box>
+              </Grid>
+
+              {/* Questions 4, 5, and 6 */}
+              <Grid item xs={12} md={4}>
+                <Box
+                  sx={{
+                    mb: 2,
+                    pb: 2,
+                    height: "100%",
+                    borderBottom: { xs: `1px dashed ${alpha(themeColors.divider, 0.8)}`, md: "none" },
+                    borderRight: { xs: "none", md: `1px dashed ${alpha(themeColors.divider, 0.8)}` },
+                    pr: { md: 2 },
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontWeight: 600,
+                      color: themeColors.text.primary,
+                      mb: 1.5,
+                      fontSize: "0.95rem",
+                      display: "flex",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: "50%",
+                        backgroundColor: themeColors.error.main,
+                        mr: 1.5,
+                        boxShadow: `0 0 0 3px ${alpha(themeColors.error.main, 0.15)}`,
+                      }}
+                    />
+                    Caminhão usado:
+                  </Typography>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      gap: 4,
+                      ml: 3,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <input
+                        type="checkbox"
+                        id="caminhao-trucado"
+                        name="caminhao"
+                        value="trucado"
+                        style={{
+                          width: "18px",
+                          height: "18px",
+                          cursor: "pointer",
+                        }}
+                      />
+                      <label
+                        htmlFor="caminhao-trucado"
+                        style={{
+                          cursor: "pointer",
+                          fontSize: "0.9rem",
+                        }}
+                      >
+                        Trucado
+                      </label>
+                    </Box>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <input
+                        type="checkbox"
+                        id="caminhao-toco"
+                        name="caminhao"
+                        value="toco"
+                        style={{
+                          width: "18px",
+                          height: "18px",
+                          cursor: "pointer",
+                        }}
+                      />
+                      <label
+                        htmlFor="caminhao-toco"
+                        style={{
+                          cursor: "pointer",
+                          fontSize: "0.9rem",
+                        }}
+                      >
+                        Toco
+                      </label>
+                    </Box>
+                  </Box>
+                </Box>
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <Box
+                  sx={{
+                    mb: 2,
+                    pb: 2,
+                    height: "100%",
+                    borderBottom: { xs: `1px dashed ${alpha(themeColors.divider, 0.8)}`, md: "none" },
+                    borderRight: { xs: "none", md: `1px dashed ${alpha(themeColors.divider, 0.8)}` },
+                    px: { md: 2 },
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontWeight: 600,
+                      color: themeColors.text.primary,
+                      mb: 1.5,
+                      fontSize: "0.95rem",
+                      display: "flex",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: "50%",
+                        backgroundColor: themeColors.info.main,
+                        mr: 1.5,
+                        boxShadow: `0 0 0 3px ${alpha(themeColors.info.main, 0.15)}`,
+                      }}
+                    />
+                    Coleta com puxada:
+                  </Typography>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      gap: 4,
+                      ml: 3,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <input
+                        type="checkbox"
+                        id="puxada-sim"
+                        name="puxada"
+                        value="sim"
+                        style={{
+                          width: "18px",
+                          height: "18px",
+                          cursor: "pointer",
+                        }}
+                      />
+                      <label
+                        htmlFor="puxada-sim"
+                        style={{
+                          cursor: "pointer",
+                          fontSize: "0.9rem",
+                        }}
+                      >
+                        Sim
+                      </label>
+                    </Box>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <input
+                        type="checkbox"
+                        id="puxada-nao"
+                        name="puxada"
+                        value="nao"
+                        style={{
+                          width: "18px",
+                          height: "18px",
+                          cursor: "pointer",
+                        }}
+                      />
+                      <label
+                        htmlFor="puxada-nao"
+                        style={{
+                          cursor: "pointer",
+                          fontSize: "0.9rem",
+                        }}
+                      >
+                        Não
+                      </label>
+                    </Box>
+                  </Box>
+                </Box>
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <Box
+                  sx={{
+                    mb: 2,
+                    pb: 2,
+                    borderBottom: `1px dashed ${alpha(themeColors.divider, 0.8)}`,
+                    pl: { md: 2 },
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontWeight: 600,
+                      color: themeColors.text.primary,
+                      mb: 1.5,
+                      fontSize: "0.95rem",
+                      display: "flex",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: "50%",
+                        backgroundColor: themeColors.secondary.main,
+                        mr: 1.5,
+                        boxShadow: `0 0 0 3px ${alpha(themeColors.secondary.main, 0.15)}`,
+                      }}
+                    />
+                    Se sim, adequadas:
+                  </Typography>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      gap: 4,
+                      ml: 3,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <input
+                        type="checkbox"
+                        id="adequadas-sim"
+                        name="adequadas"
+                        value="sim"
+                        style={{
+                          width: "18px",
+                          height: "18px",
+                          cursor: "pointer",
+                        }}
+                      />
+                      <label
+                        htmlFor="adequadas-sim"
+                        style={{
+                          cursor: "pointer",
+                          fontSize: "0.9rem",
+                        }}
+                      >
+                        Sim
+                      </label>
+                    </Box>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <input
+                        type="checkbox"
+                        id="adequadas-nao"
+                        name="adequadas"
+                        value="nao"
+                        style={{
+                          width: "18px",
+                          height: "18px",
+                          cursor: "pointer",
+                        }}
+                      />
+                      <label
+                        htmlFor="adequadas-nao"
+                        style={{
+                          cursor: "pointer",
+                          fontSize: "0.9rem",
+                        }}
+                      >
+                        Não
+                      </label>
+                    </Box>
+                  </Box>
+                </Box>
+              </Grid>
+
+              {/* Observations field */}
+              <Grid item xs={12}>
+                <Box
+                  sx={{
+                    mt: 1,
+                    pt: 2,
+                    borderTop: `1px solid ${alpha(themeColors.divider, 0.5)}`,
+                    backgroundColor: alpha(themeColors.background.paper, 0.3),
+                    borderRadius: "8px",
+                    p: 2,
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontWeight: 600,
+                      color: themeColors.text.primary,
+                      mb: 1.5,
+                      display: "flex",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Notes sx={{ color: themeColors.info.main, mr: 1, fontSize: "1.1rem" }} />
+                    Observações:
+                  </Typography>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 2,
+                      borderRadius: "8px",
+                      backgroundColor: alpha(themeColors.background.paper, 0.7),
+                      border: `1px solid ${themeColors.divider}`,
+                    }}
+                  >
+                    <Typography sx={{ color: themeColors.text.primary, lineHeight: 1.6 }}>
+                      {inspection.observations || "Nenhuma observação registrada."}
+                    </Typography>
+                  </Paper>
+                </Box>
+              </Grid>
+            </Grid>
           </Paper>
         </Stack>
       </DialogContent>

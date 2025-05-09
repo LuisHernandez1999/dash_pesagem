@@ -1,18 +1,7 @@
 "use client"
 import { useState, useEffect, useRef, useCallback } from "react"
 import { Box, Typography, alpha, useTheme, CircularProgress } from "@mui/material"
-import {
-  BarChart,
-  Bar,
-  CartesianGrid,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-  LabelList,
-  Cell,
-} from "recharts"
+import { BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, LabelList, Cell } from "recharts"
 import { getQuantidadeSolturaEquipesDiaTipo } from "../service/dashboard"
 
 // Componente de gráfico de equipes
@@ -23,29 +12,35 @@ function TeamChart() {
   const [error, setError] = useState(null)
   const [refreshing, setRefreshing] = useState(false)
   const previousDataRef = useRef(null)
-  
-  // Cores vibrantes para as equipes
+
+  // Mapeamento de equipes para turnos
+  const TEAM_TURNOS = {
+    "Equipe1(Matutino)": "Matutino",
+    "Equipe2(Vespertino)": "Vespertino",
+    "Equipe3(Noturno)": "Noturno",
+  }
+
+  // Cores vibrantes para as equipes com gradientes mais suaves
   const TEAM_COLORS = {
     "Equipe1(Matutino)": {
       main: "#4361ee",
-      gradient: ["#4361ee", "#3a0ca3"]
+      gradient: ["#4361ee", "#3a0ca3"],
     },
     "Equipe2(Vespertino)": {
       main: "#f72585",
-      gradient: ["#f72585", "#7209b7"]
+      gradient: ["#f72585", "#7209b7"],
     },
     "Equipe3(Noturno)": {
       main: "#ffd60a",
-      gradient: ["#ffd60a", "#fb8500"]
-    }
+      gradient: ["#ffd60a", "#fb8500"],
+    },
   }
 
   // Função para verificar se os dados mudaram
   const haveDataChanged = (newData, oldData) => {
     if (!oldData || oldData.length !== newData.length) return true
-    
-    return JSON.stringify(newData.map(item => item.value)) !== 
-           JSON.stringify(oldData.map(item => item.value))
+
+    return JSON.stringify(newData.map((item) => item.value)) !== JSON.stringify(oldData.map((item) => item.value))
   }
 
   // Função para carregar dados
@@ -76,16 +71,23 @@ function TeamChart() {
           const teamKey = item.tipoEquipe || `Equipe${index + 1}`
           const teamColor = TEAM_COLORS[teamKey] || {
             main: ["#4cc9f0", "#4895ef", "#4361ee"][index % 3],
-            gradient: [["#4cc9f0", "#4895ef"], ["#f72585", "#7209b7"], ["#ffd60a", "#fb8500"]][index % 3]
+            gradient: [
+              ["#4cc9f0", "#4895ef"],
+              ["#f72585", "#7209b7"],
+              ["#ffd60a", "#fb8500"],
+            ][index % 3],
           }
-          
+
+          // Extrair apenas o turno do nome da equipe
+          const turno = TEAM_TURNOS[teamKey] || teamKey.split("(")[1]?.replace(")", "") || `Turno ${index + 1}`
+
           return {
-            name: item.tipoEquipe || `Equipe ${index + 1}`,
+            name: turno, // Mostrar apenas o turno
             value: item.quantidade || 0,
             color: teamColor.main,
             gradient: teamColor.gradient,
             label: `${item.quantidade || 0}`,
-            fullName: item.tipoEquipe || `Equipe ${index + 1}`
+            fullName: item.tipoEquipe || `Equipe ${index + 1}`,
           }
         })
       } else {
@@ -93,16 +95,23 @@ function TeamChart() {
         formattedData = Object.entries(equipesData).map(([name, value], index) => {
           const teamColor = TEAM_COLORS[name] || {
             main: ["#4cc9f0", "#4895ef", "#4361ee"][index % 3],
-            gradient: [["#4cc9f0", "#4895ef"], ["#f72585", "#7209b7"], ["#ffd60a", "#fb8500"]][index % 3]
+            gradient: [
+              ["#4cc9f0", "#4895ef"],
+              ["#f72585", "#7209b7"],
+              ["#ffd60a", "#fb8500"],
+            ][index % 3],
           }
-          
+
+          // Extrair apenas o turno do nome da equipe
+          const turno = TEAM_TURNOS[name] || name.split("(")[1]?.replace(")", "") || `Turno ${index + 1}`
+
           return {
-            name: name.split("(")[0],
+            name: turno, // Mostrar apenas o turno
             value: typeof value === "number" ? value : 0,
             color: teamColor.main,
             gradient: teamColor.gradient,
             label: `${typeof value === "number" ? value : 0}`,
-            fullName: name
+            fullName: name,
           }
         })
       }
@@ -112,29 +121,29 @@ function TeamChart() {
       // Se não temos dados, usar dados de exemplo para desenvolvimento
       if (formattedData.length === 0) {
         formattedData = [
-          { 
-            name: "Equipe1", 
-            value: 35, 
-            color: "#4361ee", 
+          {
+            name: "Matutino",
+            value: 35,
+            color: "#4361ee",
             gradient: ["#4361ee", "#3a0ca3"],
-            label: "35", 
-            fullName: "Equipe1(Matutino)" 
+            label: "35",
+            fullName: "Equipe1(Matutino)",
           },
-          { 
-            name: "Equipe2", 
-            value: 25, 
-            color: "#f72585", 
+          {
+            name: "Vespertino",
+            value: 25,
+            color: "#f72585",
             gradient: ["#f72585", "#7209b7"],
-            label: "25", 
-            fullName: "Equipe2(Vespertino)" 
+            label: "25",
+            fullName: "Equipe2(Vespertino)",
           },
-          { 
-            name: "Equipe3", 
-            value: 40, 
-            color: "#ffd60a", 
+          {
+            name: "Noturno",
+            value: 40,
+            color: "#ffd60a",
             gradient: ["#ffd60a", "#fb8500"],
-            label: "40", 
-            fullName: "Equipe3(Noturno)" 
+            label: "40",
+            fullName: "Equipe3(Noturno)",
           },
         ]
         console.log("Usando dados de exemplo:", formattedData)
@@ -155,29 +164,29 @@ function TeamChart() {
       // Usar dados de exemplo em caso de erro
       if (!previousDataRef.current) {
         const fallbackData = [
-          { 
-            name: "Equipe1", 
-            value: 35, 
-            color: "#4361ee", 
+          {
+            name: "Matutino",
+            value: 35,
+            color: "#4361ee",
             gradient: ["#4361ee", "#3a0ca3"],
-            label: "35", 
-            fullName: "Equipe1(Matutino)" 
+            label: "35",
+            fullName: "Equipe1(Matutino)",
           },
-          { 
-            name: "Equipe2", 
-            value: 25, 
-            color: "#f72585", 
+          {
+            name: "Vespertino",
+            value: 25,
+            color: "#f72585",
             gradient: ["#f72585", "#7209b7"],
-            label: "25", 
-            fullName: "Equipe2(Vespertino)" 
+            label: "25",
+            fullName: "Equipe2(Vespertino)",
           },
-          { 
-            name: "Equipe3", 
-            value: 40, 
-            color: "#ffd60a", 
+          {
+            name: "Noturno",
+            value: 40,
+            color: "#ffd60a",
             gradient: ["#ffd60a", "#fb8500"],
-            label: "40", 
-            fullName: "Equipe3(Noturno)" 
+            label: "40",
+            fullName: "Equipe3(Noturno)",
           },
         ]
         setTeamData(fallbackData)
@@ -198,7 +207,7 @@ function TeamChart() {
   useEffect(() => {
     const intervalId = setInterval(() => {
       loadTeamData(true)
-    },240000) // Atualiza a cada 30 segundos
+    }, 240000) // Atualiza a cada 4 minutos
 
     return () => clearInterval(intervalId)
   }, [loadTeamData])
@@ -240,7 +249,7 @@ function TeamChart() {
               paddingBottom: "0.5rem",
             }}
           >
-            {`${data.fullName}`}
+            {`Turno ${data.name}`}
           </Typography>
 
           <Box
@@ -281,6 +290,12 @@ function TeamChart() {
         width: "100%",
         height: 300,
         position: "relative",
+        borderRadius: "16px",
+        padding: "10px",
+        background: "linear-gradient(145deg, rgba(255,255,255,0.9), rgba(248,250,252,0.95))",
+        boxShadow: "0 8px 32px rgba(0, 0, 0, 0.05)",
+        backdropFilter: "blur(8px)",
+        border: "1px solid rgba(255, 255, 255, 0.2)",
       }}
     >
       <style>
@@ -312,6 +327,11 @@ function TeamChart() {
             50% { transform: translateY(-5px); }
             100% { transform: translateY(0px); }
           }
+          @keyframes glow {
+            0% { box-shadow: 0 0 5px rgba(67, 97, 238, 0.3); }
+            50% { box-shadow: 0 0 20px rgba(67, 97, 238, 0.6); }
+            100% { box-shadow: 0 0 5px rgba(67, 97, 238, 0.3); }
+          }
         `}
       </style>
 
@@ -326,21 +346,23 @@ function TeamChart() {
             gap: 2,
           }}
         >
-          <CircularProgress 
-            size={50} 
-            sx={{ 
+          <CircularProgress
+            size={50}
+            sx={{
               color: "#4361ee",
-              boxShadow: "0 0 20px rgba(67, 97, 238, 0.3)",
-            }} 
+              animation: "glow 2s infinite ease-in-out",
+            }}
           />
-          <Typography 
-            sx={{ 
+          <Typography
+            sx={{
               color: theme.palette.text.secondary,
               animation: "pulse 1.5s infinite ease-in-out",
               fontWeight: 500,
+              textAlign: "center",
+              fontSize: "0.95rem",
             }}
           >
-            Carregando dados das equipes...
+            Carregando dados dos turnos...
           </Typography>
         </Box>
       ) : teamData.length > 0 ? (
@@ -349,7 +371,7 @@ function TeamChart() {
             width: "100%",
             height: "100%",
             position: "relative",
-            animation: refreshing ? "refreshPulse 1.5s infinite ease-in-out" : "none",
+            animation: refreshing ? "refreshPulse 1.5s infinite ease-in-out" : "fadeIn 0.8s ease-out",
           }}
         >
           {refreshing && (
@@ -370,15 +392,13 @@ function TeamChart() {
               }}
             >
               <CircularProgress size={16} sx={{ color: "#4361ee" }} />
-              <Typography sx={{ fontSize: "0.75rem", fontWeight: 500, color: "#4361ee" }}>
-                Atualizando...
-              </Typography>
+              <Typography sx={{ fontSize: "0.75rem", fontWeight: 500, color: "#4361ee" }}>Atualizando...</Typography>
             </Box>
           )}
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart 
-              data={teamData} 
-              margin={{ top: 30, right: 30, left: 20, bottom: 40 }}
+            <BarChart
+              data={teamData}
+              margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
               barGap={12}
               barCategoryGap={40}
               animationDuration={1000}
@@ -387,12 +407,12 @@ function TeamChart() {
             >
               <defs>
                 {teamData.map((entry, index) => (
-                  <linearGradient 
-                    key={`gradient-${index}`} 
-                    id={`colorTeam${index}`} 
-                    x1="0" 
-                    y1="0" 
-                    x2="0" 
+                  <linearGradient
+                    key={`gradient-${index}`}
+                    id={`colorTeam${index}`}
+                    x1="0"
+                    y1="0"
+                    x2="0"
                     y2="1"
                     gradientTransform="rotate(10)"
                   >
@@ -411,74 +431,49 @@ function TeamChart() {
                   </feMerge>
                 </filter>
               </defs>
-              <CartesianGrid 
-                strokeDasharray="5 5" 
-                vertical={false} 
-                stroke={theme.palette.divider} 
-                strokeOpacity={0.6} 
+              <CartesianGrid
+                strokeDasharray="5 5"
+                vertical={false}
+                stroke={theme.palette.divider}
+                strokeOpacity={0.6}
               />
               <XAxis
                 dataKey="name"
-                tick={{ 
-                  fill: theme.palette.text.primary, 
-                  fontSize: 13, 
-                  fontWeight: 600 
+                tick={{
+                  fill: theme.palette.text.primary,
+                  fontSize: 13,
+                  fontWeight: 600,
                 }}
                 tickLine={false}
                 axisLine={{ stroke: theme.palette.divider, strokeWidth: 1 }}
                 dy={10}
               />
               <YAxis
-                tick={{ 
-                  fill: theme.palette.text.primary, 
-                  fontSize: 12, 
-                  fontWeight: 500 
+                tick={{
+                  fill: theme.palette.text.primary,
+                  fontSize: 12,
+                  fontWeight: 500,
                 }}
                 tickLine={false}
                 axisLine={{ stroke: theme.palette.divider, strokeWidth: 1 }}
                 tickFormatter={(value) => `${value}`}
                 dx={-10}
               />
-              <Tooltip 
-                content={<CustomTooltip />} 
-                cursor={{ fill: "rgba(241, 245, 249, 0.5)" }}
-              />
-              <Legend 
-                verticalAlign="top" 
-                height={36}
-                iconType="circle"
-                iconSize={10}
-                wrapperStyle={{ paddingBottom: 20 }}
-                formatter={(value, entry, index) => (
-                  <span
-                    style={{
-                      color: teamData[index]?.color,
-                      fontWeight: 600,
-                      fontSize: "14px",
-                      padding: "6px 12px",
-                      borderRadius: "8px",
-                      backgroundColor: alpha(teamData[index]?.color || "#3a86ff", 0.1),
-                      boxShadow: `0 2px 8px ${alpha(teamData[index]?.color || "#3a86ff", 0.15)}`,
-                      transition: "all 0.3s ease",
-                    }}
-                  >
-                    {value}
-                  </span>
-                )}
-              />
-              <Bar 
-                dataKey="value" 
-                name="Solturas" 
-                radius={[8, 8, 0, 0]} 
-                filter="url(#teamShadow)" 
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(241, 245, 249, 0.5)" }} />
+              {/* Legenda removida conforme solicitado */}
+              <Bar
+                dataKey="value"
+                name="Solturas"
+                radius={[8, 8, 0, 0]}
+                filter="url(#teamShadow)"
                 barSize={60}
                 animationDuration={1200}
                 animationEasing="ease-out"
               >
                 {teamData.map((entry, index) => (
-                  <Cell 
-                    key={`cell-${index}`} 
-                    fill={`url(#colorTeam${index})`} 
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={`url(#colorTeam${index})`}
                     filter="url(#glow)"
                     style={{
                       transition: "all 0.3s ease",
@@ -516,17 +511,17 @@ function TeamChart() {
             border: `1px dashed ${theme.palette.divider}`,
           }}
         >
-          <Typography 
-            sx={{ 
+          <Typography
+            sx={{
               color: theme.palette.text.secondary,
               fontWeight: 500,
               textAlign: "center",
             }}
           >
-            {error ? `Erro: ${error}` : "Nenhum dado de equipe disponível"}
+            {error ? `Erro: ${error}` : "Nenhum dado de turno disponível"}
           </Typography>
-          <Typography 
-            sx={{ 
+          <Typography
+            sx={{
               color: alpha(theme.palette.text.secondary, 0.7),
               fontSize: "0.875rem",
               textAlign: "center",
