@@ -301,34 +301,7 @@ export const getContagemTotalRemocao = async () => {
   }
 }
 
-export const getQuantidadeSolturaEquipesDia = async () => {
-  //// pro elemento Equipes:Análise comparativa por turno
-  try {
-    const response = await axios.get(`${API_URL}api/solturas/quantidade_soltura_equipes/`, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
 
-    if (response.data && response.data.dados) {
-      const dadosEquipes = response.data.dados.map((item) => ({
-        tipoEquipe: item.tipo_equipe,
-        quantidade: item.quantidade,
-      }))
-      return { dadosEquipes }
-    } else {
-      return { error: "Nenhum dado encontrado para a quantidade de solturas por equipe no dia" }
-    }
-  } catch (error) {
-    if (error.response) {
-      console.error("Erro ao buscar quantidade de solturas por equipe no dia:", error.response.data)
-      return { error: error.response.data }
-    } else {
-      console.error("Erro inesperado:", error.message)
-      return { error: "Erro inesperado ao buscar quantidade de solturas por equipe no dia" }
-    }
-  }
-}
 
 export const getMediaMensalDeSolturas = async () => {
   try {
@@ -456,49 +429,7 @@ export const getDistribuicaoPorTipoVeiculo = async () => {
   }
 };
 
-export const getDistribuicaoDiaria = async () => {
-  try {
-    // Realizando a requisição à API
-    const response = await axios.get(`${API_URL}api/soltura/distribuicao_pa/`, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
 
-    // Verificar se a resposta foi recebida corretamente
-    if (!response || !response.data) {
-      throw new Error("A resposta da API está vazia ou indefinida");
-    }
-
-    console.log("Resposta da API:", response.data);
-
-    // Garantir que os dados estejam no formato correto
-    const distribuicao = response.data;
-
-    // Verificando se a estrutura da resposta é válida
-    if (distribuicao && distribuicao.PA1 !== undefined && distribuicao.PA2 !== undefined) {
-      console.log('Distribuição diária por PA:', distribuicao);
-
-      // Mapeando os valores de PA1, PA2, PA3 e PA4
-      const distribuicaoPorPA = {
-        PA1: distribuicao.PA1 || 0,
-        PA2: distribuicao.PA2 || 0,
-        PA3: distribuicao.PA3 || 0,
-        PA4: distribuicao.PA4 || 0
-      };
-
-      // Exibindo os dados mapeados
-      console.log('Distribuição mapeada por PA:', distribuicaoPorPA);
-      return distribuicaoPorPA;  // Retorna os dados mapeados
-    } else {
-      console.error('Estrutura de dados inválida:', distribuicao);
-      return null;
-    }
-  } catch (error) {
-    console.error(`Erro ao buscar dados da API: ${error.message}`);
-    return null;
-  }
-}
 
 export const getQuantidadeSolturaEquipesDiaTipo = async () => {
   try {
@@ -683,19 +614,95 @@ const DIAS_SEMANA_ORDEM = [
 
 export const getSolturasPorDiaDaSemana = async () => {
   try {
-    const response = await axios.get('/api/solturas-por-dia-da-semana/'); // ajuste a URL se necessário
+    const response = await axios.get(`${API_URL}/api/soltura/solturas_de_semana_/`);
     const rawData = response.data.solturas_por_dia_da_semana;
 
-    // Mapeia os dados para um array ordenado
     const dadosOrdenados = DIAS_SEMANA_ORDEM.map((dia) => ({
       dia,
-      total: rawData[dia] ?? 0, // garante que dias ausentes sejam 0
+      total: rawData[dia] ?? 0,
     }));
 
     return dadosOrdenados;
-
   } catch (error) {
     console.error('Erro ao buscar solturas por dia da semana:', error);
     throw error;
+  }
+};
+
+
+
+export const contarSolturasPorGaragemHoje = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/api/soltura/distribuicao_pa/`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    // Verificação da resposta
+    if (!response || !response.data) {
+      throw new Error("A resposta da API está vazia ou indefinida");
+    }
+
+    const data = response.data;
+
+    // Mapeamento seguro com fallback para 0
+    const resultado = {
+      'PA1': data['PA1'] ?? 0,
+      'PA2': data['PA2'] ?? 0,
+      'PA3': data['PA3'] ?? 0,
+      'PA4': data['PA4'] ?? 0,
+      'total': data['total'] ?? 0,
+    };
+
+    console.log('Distribuição mapeada por garagem:', resultado);
+    return resultado;
+
+  } catch (error) {
+    console.error(`Erro ao buscar dados da API: ${error.message}`);
+    return {
+      'PA1': 0,
+      'PA2': 0,
+      'PA3': 0,
+      'PA4': 0,
+      'total': 0,
+    };
+  }
+};
+
+
+
+export const contarMotoristasEColetorsHoje = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/api/soltura/colaboradores_hoje/`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    // Verificação da resposta
+    if (!response || !response.data) {
+      throw new Error("A resposta da API está vazia ou indefinida");
+    }
+
+    const data = response.data;
+
+    // Mapeamento seguro com fallback para 0
+    const resultado = {
+      'total_motoristas': data['total_motoristas'] ?? 0,
+      'total_coletores': data['total_coletores'] ?? 0,
+      'total_geral': data['total_geral'] ?? 0,
+    };
+
+    console.log('Distribuição mapeada de motoristas e coletores:', resultado);
+    return resultado;
+
+  } catch (error) {
+    console.error(`Erro ao buscar dados da API: ${error.message}`);
+    return {
+      'total_motoristas': 0,
+      'total_coletores': 0,
+      'total_geral': 0,
+    };
   }
 };

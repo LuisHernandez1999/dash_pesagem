@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   BarChart,
   Bar,
@@ -17,13 +17,62 @@ import {
 import { Card, CardContent, CardHeader, Box, Typography, IconButton, Tabs, Tab, alpha } from "@mui/material"
 import { BarChart as BarChartIcon, ShowChart as LineChartIcon, Refresh, CalendarToday } from "@mui/icons-material"
 import { Cell, Area } from "recharts"
+import { getSolturasPorDiaDaSemana } from "../service/dashboard" // Import the API function
 
-const WeekdayChart = ({ weekdayData, themeColors, chartsLoaded, onRefresh }) => {
+const WeekdayChart = ({ themeColors, chartsLoaded, onRefresh }) => {
   const [chartType, setChartType] = useState(0)
+  const [weekdayData, setWeekdayData] = useState([])
+  const [loading, setLoading] = useState(true)
 
   // Handle chart type change
   const handleChartTypeChange = (event, newValue) => {
     setChartType(newValue)
+  }
+
+  // Load data from API
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true)
+        const data = await getSolturasPorDiaDaSemana()
+
+        // Transform data to match the expected format
+        const formattedData = data.map((item) => ({
+          day: item.dia.split("-")[0], // Get just the day name without '-feira'
+          removals: item.total,
+        }))
+
+        setWeekdayData(formattedData)
+        setLoading(false)
+      } catch (error) {
+        console.error("Erro ao carregar dados do gráfico de dias da semana:", error)
+        setLoading(false)
+      }
+    }
+
+    loadData()
+  }, [])
+
+  // Handle refresh
+  const handleRefresh = async () => {
+    try {
+      setLoading(true)
+      const data = await getSolturasPorDiaDaSemana()
+
+      // Transform data to match the expected format
+      const formattedData = data.map((item) => ({
+        day: item.dia.split("-")[0], // Get just the day name without '-feira'
+        removals: item.total,
+      }))
+
+      setWeekdayData(formattedData)
+      setLoading(false)
+
+      if (onRefresh) onRefresh()
+    } catch (error) {
+      console.error("Erro ao atualizar dados do gráfico de dias da semana:", error)
+      setLoading(false)
+    }
   }
 
   // Calculate daily average
@@ -206,17 +255,17 @@ const WeekdayChart = ({ weekdayData, themeColors, chartsLoaded, onRefresh }) => 
                   <Cell
                     key={`cell-${entry.day}`}
                     fill={`url(#colorBar-${entry.day})`}
-                    filter={entry.day === maxRemovalsDay.day ? `url(#glow-${entry.day})` : undefined}
+                    filter={entry.day === maxRemovalsDay?.day ? `url(#glow-${entry.day})` : undefined}
                     radius={[8, 8, 0, 0]}
-                    stroke={entry.day === maxRemovalsDay.day ? "#fff" : "none"}
-                    strokeWidth={entry.day === maxRemovalsDay.day ? 1 : 0}
+                    stroke={entry.day === maxRemovalsDay?.day ? "#fff" : "none"}
+                    strokeWidth={entry.day === maxRemovalsDay?.day ? 1 : 0}
                   />
                 ))}
                 <LabelList
                   dataKey="removals"
                   position="top"
                   fill={(entry) =>
-                    entry.day === maxRemovalsDay.day ? dayColors[entry.day] : themeColors.text.secondary
+                    entry.day === maxRemovalsDay?.day ? dayColors[entry.day] : themeColors.text.secondary
                   }
                   fontSize={12}
                   fontWeight={700}
@@ -285,7 +334,7 @@ const WeekdayChart = ({ weekdayData, themeColors, chartsLoaded, onRefresh }) => 
                 filter="url(#glow)"
                 name="Remoções"
                 dot={(props) => {
-                  const isMax = props.payload.day === maxRemovalsDay.day
+                  const isMax = props.payload.day === maxRemovalsDay?.day
                   return (
                     <svg>
                       <circle
@@ -397,7 +446,7 @@ const WeekdayChart = ({ weekdayData, themeColors, chartsLoaded, onRefresh }) => 
         action={
           <Box sx={{ display: "flex", gap: "0.5rem" }}>
             <IconButton
-              onClick={onRefresh}
+              onClick={handleRefresh}
               sx={{
                 color: themeColors.text.secondary,
                 background: alpha(themeColors.primary.main, 0.05),
@@ -495,7 +544,7 @@ const WeekdayChart = ({ weekdayData, themeColors, chartsLoaded, onRefresh }) => 
             boxShadow: "inset 0 0 15px rgba(0,0,0,0.03)",
           }}
         >
-          {!chartsLoaded ? (
+          {!chartsLoaded || loading ? (
             <Box
               sx={{
                 position: "absolute",

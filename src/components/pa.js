@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react"
 import { Box, Typography, Card, Fade, alpha, Chip, Divider } from "@mui/material"
 import { Warehouse } from "@mui/icons-material"
-import { getDistribuicaoDiaria } from "../service/dashboard"
+import { contarSolturasPorGaragemHoje } from "../service/dashboard"
 
 // Helper function to check if data has changed
 const hasDataChanged = (oldData, newData) => {
@@ -35,7 +35,7 @@ const PADistributionChart = ({ chartsLoaded = true, themeColors }) => {
       setError(null)
 
       console.log("Fetching distribution data...")
-      const distribuicaoPorPA = await getDistribuicaoDiaria()
+      const distribuicaoPorPA = await contarSolturasPorGaragemHoje()
 
       // Log the raw response
       console.log("Raw API response:", distribuicaoPorPA)
@@ -47,21 +47,23 @@ const PADistributionChart = ({ chartsLoaded = true, themeColors }) => {
         console.log("Data has changed, updating chart...")
 
         // Transform API data to the format needed by the chart
-        const transformedData = Object.entries(distribuicaoPorPA).map(([name, value], index) => {
-          // Assign colors based on index
-          const colors = [
-            themeColors.info.main,
-            themeColors.primary.main,
-            themeColors.warning.main,
-            themeColors.success.main,
-          ]
+        const transformedData = Object.entries(distribuicaoPorPA)
+          .filter(([key]) => key !== "total") // Exclude the total from individual cards
+          .map(([name, value], index) => {
+            // Assign colors based on index
+            const colors = [
+              themeColors.info.main,
+              themeColors.primary.main,
+              themeColors.warning.main,
+              themeColors.success.main,
+            ]
 
-          return {
-            name,
-            value: Number(value),
-            color: colors[index % colors.length],
-          }
-        })
+            return {
+              name,
+              value: Number(value),
+              color: colors[index % colors.length],
+            }
+          })
 
         console.log("Transformed data for chart:", transformedData)
         setPaData(transformedData)
@@ -172,10 +174,10 @@ const PADistributionChart = ({ chartsLoaded = true, themeColors }) => {
                   </Typography>
                   <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <Typography sx={{ fontSize: "0.9rem", color: themeColors.text.secondary }}>
-                      Veículos alocados
+                      Veículos soltos
                     </Typography>
                     <Chip
-                      label={`PA ${item.name.split(" ")[1] || ""}`}
+                      label={`${item.name}`}
                       size="small"
                       sx={{
                         backgroundColor: alpha(item.color, 0.1),

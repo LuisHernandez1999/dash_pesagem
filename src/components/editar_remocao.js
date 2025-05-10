@@ -8,18 +8,16 @@ import {
   Button,
   Box,
   Typography,
-  Avatar,
   IconButton,
   TextField,
   Autocomplete,
-  Stack,
-  alpha,
+  CircularProgress,
 } from "@mui/material"
-import { DirectionsCar, Close, CheckCircle } from "@mui/icons-material"
+import { Close, Save } from "@mui/icons-material"
 import { Slide } from "@mui/material"
 import { useState, useEffect } from "react"
 
-const EditModal = ({ open, onClose, data, onSave, themeColors, keyframes }) => {
+const EditModal = ({ open, onClose, data, onSave, themeColors }) => {
   const [formData, setFormData] = useState({
     driver: "",
     driverId: "",
@@ -28,22 +26,23 @@ const EditModal = ({ open, onClose, data, onSave, themeColors, keyframes }) => {
     collectors: ["", "", ""],
     vehicleType: "",
     garage: "",
-    route: "",
     status: "",
+    location: "",
   })
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     if (data) {
       setFormData({
         driver: data.driver || "",
         driverId: data.driverId || "",
-        team: data.team || "",
-        vehiclePrefix: data.vehiclePrefix || "",
+        team: data.tipo_equipe || data.team || "",
+        vehiclePrefix: data.vehiclePrefix || data.prefixo || "",
         collectors: Array.isArray(data.collectors) ? [...data.collectors] : ["", "", ""],
-        vehicleType: data.vehicle || "",
+        vehicleType: data.vehicle || data.tipo_veiculo_selecionado || "",
         garage: data.garage || "",
-        route: data.route || "",
-        status: data.status || "",
+        status: data.status || data.status_frota || "",
+        location: data.location || data.bairro || data.setores || "",
       })
     }
   }, [data])
@@ -62,8 +61,56 @@ const EditModal = ({ open, onClose, data, onSave, themeColors, keyframes }) => {
     }
   }
 
-  const handleSubmit = () => {
-    onSave(formData)
+  const handleSubmit = async () => {
+    try {
+      setLoading(true)
+
+      // Prepare data for API
+      const apiData = {
+        id: data.id,
+        motorista: formData.driver,
+        matricula_motorista: formData.driverId,
+        tipo_equipe: formData.team,
+        prefixo: formData.vehiclePrefix,
+        coletores: formData.collectors.filter(Boolean),
+        tipo_veiculo_selecionado: formData.vehicleType,
+        garagem: formData.garage,
+        status_frota: formData.status,
+        bairro: formData.location,
+        // Preserve other fields from original data
+        data: data.data,
+        hora_saida_frota: data.hora_saida_frota,
+      }
+
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 500))
+
+      // Call the onSave callback with the updated data
+      onSave({
+        ...data,
+        driver: formData.driver,
+        driverId: formData.driverId,
+        team: formData.team,
+        tipo_equipe: formData.team,
+        vehiclePrefix: formData.vehiclePrefix,
+        prefixo: formData.vehiclePrefix,
+        collectors: formData.collectors.filter(Boolean),
+        vehicle: formData.vehicleType,
+        tipo_veiculo_selecionado: formData.vehicleType,
+        garage: formData.garage,
+        status: formData.status,
+        status_frota: formData.status,
+        location: formData.location,
+        bairro: formData.location,
+      })
+
+      // Close the modal
+      onClose()
+    } catch (err) {
+      console.error("Erro ao salvar alterações:", err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   if (!data) return null
@@ -72,14 +119,12 @@ const EditModal = ({ open, onClose, data, onSave, themeColors, keyframes }) => {
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth="sm"
+      maxWidth="md"
       fullWidth
       PaperProps={{
         sx: {
-          borderRadius: "24px",
-          boxShadow: "0 24px 48px rgba(0, 0, 0, 0.2)",
+          borderRadius: "12px",
           overflow: "hidden",
-          background: "linear-gradient(to bottom, #ffffff, #f8fafc)",
         },
       }}
       TransitionComponent={Slide}
@@ -89,258 +134,383 @@ const EditModal = ({ open, onClose, data, onSave, themeColors, keyframes }) => {
     >
       <DialogTitle
         sx={{
-          background: `linear-gradient(135deg, ${themeColors.primary.main} 0%, ${themeColors.primary.light} 100%)`,
+          backgroundColor: "#4285F4",
           color: "white",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "1rem 1.5rem",
-          position: "relative",
-          overflow: "hidden",
-          "&::after": {
-            content: '""',
-            position: "absolute",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: "4px",
-            background: "rgba(255, 255, 255, 0.2)",
-            animation: `${keyframes.shimmer} 2s infinite linear`,
-            backgroundSize: "200% 100%",
-          },
+          padding: "16px 24px",
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center" }}>
-          <Avatar
-            sx={{
-              backgroundColor: "rgba(255, 255, 255, 0.2)",
-              color: "white",
-              fontWeight: 600,
-              width: 36,
-              height: 36,
-              mr: 1.5,
-              animation: `${keyframes.pulse} 2s infinite ease-in-out`,
-            }}
-          >
-            <DirectionsCar />
-          </Avatar>
-          <Typography variant="h6" sx={{ fontWeight: 700, fontSize: "1.1rem" }}>
+        <Box sx={{ display: "flex", flexDirection: "column" }}>
+          <Typography variant="h6" sx={{ fontWeight: 600, fontSize: "1.1rem" }}>
             Editar Remoção
+          </Typography>
+          <Typography variant="body2" sx={{ opacity: 0.9, fontSize: "0.85rem", mt: 0.5 }}>
+            Prefixo: {data.vehiclePrefix || data.prefixo || "N/A"}
           </Typography>
         </Box>
         <IconButton
           onClick={onClose}
           sx={{
             color: "white",
-            padding: "0.5rem",
-            "&:hover": {
-              backgroundColor: "rgba(255, 255, 255, 0.2)",
-              transform: "rotate(90deg)",
-              transition: "transform 0.3s ease",
-            },
+            padding: "8px",
           }}
         >
           <Close fontSize="small" />
         </IconButton>
       </DialogTitle>
-      <DialogContent sx={{ padding: "1.5rem" }}>
-        <Stack spacing={2.5}>
-          <TextField
-            label="Nome do Motorista"
-            fullWidth
-            variant="outlined"
-            size="small"
-            value={formData.driver}
-            onChange={(e) => handleChange("driver", e.target.value)}
+
+      <DialogContent sx={{ padding: "24px" }}>
+        {/* Informações do Motorista */}
+        <Box sx={{ mb: 3 }}>
+          <Typography
+            variant="subtitle1"
             sx={{
-              "& .MuiOutlinedInput-root": {
-                borderRadius: "12px",
-                backgroundColor: "white",
-              },
+              fontWeight: 600,
+              color: "#4285F4",
+              display: "flex",
+              alignItems: "center",
+              mb: 2,
+              pb: 1,
+              borderBottom: "1px solid #E0E0E0",
             }}
-          />
-          <TextField
-            label="Matrícula do Motorista"
-            fullWidth
-            variant="outlined"
-            size="small"
-            value={formData.driverId}
-            onChange={(e) => handleChange("driverId", e.target.value)}
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                borderRadius: "12px",
-                backgroundColor: "white",
-              },
-            }}
-          />
-          <TextField
-            label="Prefixo do Veículo"
-            fullWidth
-            variant="outlined"
-            size="small"
-            value={formData.vehiclePrefix}
-            onChange={(e) => handleChange("vehiclePrefix", e.target.value)}
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                borderRadius: "12px",
-                backgroundColor: "white",
-              },
-            }}
-          />
-          <Autocomplete
-            options={["Equipe1(Matutino)", "Equipe2(Vespertino)", "Equipe3(Noturno)"]}
-            value={formData.team}
-            onChange={(_, newValue) => handleChange("team", newValue)}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Equipe"
-                variant="outlined"
-                size="small"
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: "12px",
-                    backgroundColor: "white",
-                  },
-                }}
-              />
-            )}
-          />
-          <Typography variant="subtitle2" sx={{ fontWeight: 600, color: themeColors.text.secondary }}>
-            Coletores:
+          >
+            <Box component="span" sx={{ mr: 1, display: "flex", alignItems: "center" }}>
+              👤
+            </Box>
+            Informações do Motorista
           </Typography>
-          {Array.from({ length: 3 }).map((_, index) => (
+
+          <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
             <TextField
-              key={index}
-              label={`Coletor ${index + 1}`}
+              label="Nome do Motorista"
               fullWidth
               variant="outlined"
-              size="small"
-              value={formData.collectors[index] || ""}
-              onChange={(e) => handleChange("collectors", e.target.value, index)}
+              value={formData.driver}
+              onChange={(e) => handleChange("driver", e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <Box component="span" sx={{ mr: 1, color: "#757575" }}>
+                    👤
+                  </Box>
+                ),
+              }}
               sx={{
                 "& .MuiOutlinedInput-root": {
-                  borderRadius: "12px",
-                  backgroundColor: "#ffff",
+                  borderRadius: "8px",
                 },
               }}
             />
-          ))}
-          <Autocomplete
-            disablePortal
-            options={["Caminhão Reboque", "Van", "Outro"]}
-            value={formData.vehicleType}
-            onChange={(_, newValue) => handleChange("vehicleType", newValue)}
-            renderInput={(params) => (
+
+            <TextField
+              label="Matrícula do Motorista"
+              fullWidth
+              variant="outlined"
+              value={formData.driverId}
+              onChange={(e) => handleChange("driverId", e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <Box component="span" sx={{ mr: 1, color: "#757575" }}>
+                    🆔
+                  </Box>
+                ),
+              }}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: "8px",
+                },
+              }}
+            />
+          </Box>
+        </Box>
+
+        {/* Informações do Veículo */}
+        <Box sx={{ mb: 3 }}>
+          <Typography
+            variant="subtitle1"
+            sx={{
+              fontWeight: 600,
+              color: "#4285F4",
+              display: "flex",
+              alignItems: "center",
+              mb: 2,
+              pb: 1,
+              borderBottom: "1px solid #E0E0E0",
+            }}
+          >
+            <Box component="span" sx={{ mr: 1, display: "flex", alignItems: "center" }}>
+              🚗
+            </Box>
+            Informações do Veículo
+          </Typography>
+
+          <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
+            <TextField
+              label="Prefixo do Veículo"
+              fullWidth
+              variant="outlined"
+              value={formData.vehiclePrefix}
+              onChange={(e) => handleChange("vehiclePrefix", e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <Box component="span" sx={{ mr: 1, color: "#757575" }}>
+                    🚗
+                  </Box>
+                ),
+              }}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: "8px",
+                },
+              }}
+            />
+
+            <Autocomplete
+              disablePortal
+              options={["Caminhão Reboque", "Van", "Outro"]}
+              value={formData.vehicleType}
+              onChange={(_, newValue) => handleChange("vehicleType", newValue)}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Tipo de Veículo"
+                  variant="outlined"
+                  InputProps={{
+                    ...params.InputProps,
+                    startAdornment: (
+                      <>
+                        <Box component="span" sx={{ mr: 1, color: "#757575" }}>
+                          🚗
+                        </Box>
+                        {params.InputProps.startAdornment}
+                      </>
+                    ),
+                  }}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "8px",
+                    },
+                  }}
+                />
+              )}
+            />
+          </Box>
+
+          <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
+            <TextField
+              label="Garagem"
+              fullWidth
+              variant="outlined"
+              value={formData.garage}
+              onChange={(e) => handleChange("garage", e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <Box component="span" sx={{ mr: 1, color: "#757575" }}>
+                    🏢
+                  </Box>
+                ),
+              }}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: "8px",
+                },
+              }}
+            />
+
+            <TextField
+              label="Setor"
+              fullWidth
+              variant="outlined"
+              value={formData.location}
+              onChange={(e) => handleChange("location", e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <Box component="span" sx={{ mr: 1, color: "#757575" }}>
+                    📍
+                  </Box>
+                ),
+              }}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: "8px",
+                },
+              }}
+            />
+          </Box>
+        </Box>
+
+        {/* Informações da Equipe */}
+        <Box sx={{ mb: 3 }}>
+          <Typography
+            variant="subtitle1"
+            sx={{
+              fontWeight: 600,
+              color: "#4285F4",
+              display: "flex",
+              alignItems: "center",
+              mb: 2,
+              pb: 1,
+              borderBottom: "1px solid #E0E0E0",
+            }}
+          >
+            <Box component="span" sx={{ mr: 1, display: "flex", alignItems: "center" }}>
+              👥
+            </Box>
+            Informações da Equipe
+          </Typography>
+
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 2 }}>
+            <Autocomplete
+              options={["Equipe1(Matutino)", "Equipe2(Vespertino)", "Equipe3(Noturno)"]}
+              value={formData.team}
+              onChange={(_, newValue) => handleChange("team", newValue)}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Equipe"
+                  variant="outlined"
+                  InputProps={{
+                    ...params.InputProps,
+                    startAdornment: (
+                      <>
+                        <Box component="span" sx={{ mr: 1, color: "#757575" }}>
+                          👥
+                        </Box>
+                        {params.InputProps.startAdornment}
+                      </>
+                    ),
+                  }}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "8px",
+                    },
+                  }}
+                />
+              )}
+            />
+
+            <Autocomplete
+              options={["Em andamento", "Finalizado"]}
+              value={formData.status}
+              onChange={(_, newValue) => handleChange("status", newValue)}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Status"
+                  variant="outlined"
+                  InputProps={{
+                    ...params.InputProps,
+                    startAdornment: (
+                      <>
+                        <Box component="span" sx={{ mr: 1, color: "#757575" }}>
+                          🕒
+                        </Box>
+                        {params.InputProps.startAdornment}
+                      </>
+                    ),
+                  }}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "8px",
+                    },
+                  }}
+                />
+              )}
+            />
+          </Box>
+        </Box>
+
+        {/* Coletores */}
+        <Box sx={{ mb: 2 }}>
+          <Typography
+            variant="subtitle1"
+            sx={{
+              fontWeight: 600,
+              color: "#4285F4",
+              display: "flex",
+              alignItems: "center",
+              mb: 2,
+              pb: 1,
+              borderBottom: "1px solid #E0E0E0",
+            }}
+          >
+            <Box component="span" sx={{ mr: 1, display: "flex", alignItems: "center" }}>
+              👥
+            </Box>
+            Coletores
+          </Typography>
+
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            {Array.from({ length: 3 }).map((_, index) => (
               <TextField
-                {...params}
-                label="Tipo de Veículo"
+                key={index}
+                label={`Coletor ${index + 1}`}
+                fullWidth
                 variant="outlined"
-                size="small"
+                value={formData.collectors[index] || ""}
+                onChange={(e) => handleChange("collectors", e.target.value, index)}
+                InputProps={{
+                  startAdornment: (
+                    <Box component="span" sx={{ mr: 1, color: "#757575" }}>
+                      👤
+                    </Box>
+                  ),
+                }}
                 sx={{
                   "& .MuiOutlinedInput-root": {
-                    borderRadius: "12px",
-                    backgroundColor: "white",
+                    borderRadius: "8px",
                   },
                 }}
               />
-            )}
-          />
-          <TextField
-            label="Garagem"
-            fullWidth
-            variant="outlined"
-            size="small"
-            value={formData.garage}
-            onChange={(e) => handleChange("garage", e.target.value)}
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                borderRadius: "12px",
-                backgroundColor: "white",
-              },
-            }}
-          />
-          <TextField
-            label="Rota"
-            fullWidth
-            variant="outlined"
-            size="small"
-            value={formData.route}
-            onChange={(e) => handleChange("route", e.target.value)}
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                borderRadius: "12px",
-                backgroundColor: "white",
-              },
-            }}
-          />
-          <Autocomplete
-            options={["Em andamento", "Finalizado"]}
-            value={formData.status}
-            onChange={(_, newValue) => handleChange("status", newValue)}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Status"
-                variant="outlined"
-                size="small"
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: "12px",
-                    backgroundColor: "white",
-                  },
-                }}
-              />
-            )}
-          />
-        </Stack>
+            ))}
+          </Box>
+        </Box>
       </DialogContent>
+
       <DialogActions
         sx={{
-          padding: "1rem 1.5rem",
-          borderTop: `1px solid ${themeColors.divider}`,
+          padding: "16px 24px",
+          borderTop: "1px solid #E0E0E0",
           justifyContent: "space-between",
-          background: alpha(themeColors.background.default, 0.5),
         }}
       >
         <Button
           onClick={onClose}
           variant="outlined"
-          size="medium"
           startIcon={<Close />}
           sx={{
-            borderRadius: "12px",
+            borderRadius: "8px",
             textTransform: "none",
             fontWeight: 500,
-            borderColor: themeColors.divider,
-            color: themeColors.text.secondary,
+            borderColor: "#E0E0E0",
+            color: "#757575",
             "&:hover": {
-              borderColor: themeColors.primary.main,
-              color: themeColors.primary.main,
-              backgroundColor: alpha(themeColors.primary.main, 0.05),
+              borderColor: "#4285F4",
+              color: "#4285F4",
+              backgroundColor: "rgba(66, 133, 244, 0.05)",
             },
           }}
         >
           Cancelar
         </Button>
+
         <Button
           onClick={handleSubmit}
           variant="contained"
-          size="medium"
-          startIcon={<CheckCircle />}
+          disabled={loading}
+          startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <Save />}
           sx={{
-            borderRadius: "12px",
+            borderRadius: "8px",
             textTransform: "none",
             fontWeight: 500,
-            backgroundColor: themeColors.primary.main,
-            boxShadow: `0 4px 12px ${alpha(themeColors.primary.main, 0.2)}`,
+            backgroundColor: "#4285F4",
             "&:hover": {
-              backgroundColor: themeColors.primary.dark,
-              boxShadow: `0 6px 16px ${alpha(themeColors.primary.main, 0.3)}`,
+              backgroundColor: "#3367D6",
             },
           }}
         >
-          Salvar Alterações
+          {loading ? "Salvando..." : "Salvar Alterações"}
         </Button>
       </DialogActions>
     </Dialog>

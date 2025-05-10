@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useEffect, useMemo } from "react"
 import {
   Card,
   CardContent,
@@ -29,6 +29,7 @@ import {
   Autocomplete,
   Zoom,
   InputBase,
+  CircularProgress,
 } from "@mui/material"
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers"
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns"
@@ -42,903 +43,925 @@ import {
   Edit,
   Search,
   Refresh,
+  LocationOn,
 } from "@mui/icons-material"
-import RegisterModal from "../components/registro_remocao"
-import EditModal from "../components/editar_remocao"
-import DetailModal from "../components/visualizar_remocao"
+import RegisterModal from "./registro_remocao"
+import EditModal from "./editar_remocao"
+import DetailModal from "./visualizar_remocao"
+import { getSolturasDetalhadaTodas } from "../service/dashboard"
 
 // Modificar o componente SearchInput para aumentar a largura
-const SearchInput = ({ icon: Icon, placeholder, value, onChange, suggestions = [] }) => {
-    return (
-      <Autocomplete
-        freeSolo
-        options={suggestions}
-        value={value}
-        onChange={(_, newValue) => onChange({ target: { value: newValue || "" } })}
-        onInputChange={(_, newInputValue) => onChange({ target: { value: newInputValue } })}
-        sx={{
-          flex: 1,
-          width: "100%", // Aumentar a largura para ocupar todo o espaço disponível
-        }}
-        renderInput={(params) => (
-          <Paper
-            elevation={0}
+const SearchInput = ({ icon: Icon, placeholder, value, onChange, suggestions = [], themeColors, keyframes }) => {
+  return (
+    <Autocomplete
+      freeSolo
+      options={suggestions}
+      value={value}
+      onChange={(_, newValue) => onChange({ target: { value: newValue || "" } })}
+      onInputChange={(_, newInputValue) => onChange({ target: { value: newInputValue } })}
+      sx={{
+        flex: 1,
+        width: "100%", // Aumentar a largura para ocupar todo o espaço disponível
+      }}
+      renderInput={(params) => (
+        <Paper
+          elevation={0}
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            flex: 1,
+            borderRadius: "20px",
+            border: `2px solid ${themeColors.divider}`,
+            overflow: "hidden",
+            transition: "all 0.3s ease",
+            background: themeColors.background.paper,
+            height: "52px",
+            width: "100%", // Garantir que ocupe toda a largura
+            "&:hover": {
+              boxShadow: `0 4px 12px ${alpha(themeColors.primary.main, 0.15)}`,
+              borderColor: themeColors.primary.main,
+            },
+            "&:focus-within": {
+              boxShadow: `0 4px 12px ${alpha(themeColors.primary.main, 0.2)}`,
+              borderColor: themeColors.primary.main,
+              animation: `${keyframes.glow} 2s infinite ease-in-out`,
+            },
+          }}
+        >
+          <Box
             sx={{
               display: "flex",
               alignItems: "center",
-              flex: 1,
-              borderRadius: "20px",
-              border: `2px solid ${themeColors.divider}`,
-              overflow: "hidden",
-              transition: "all 0.3s ease",
-              background: themeColors.background.paper,
-              height: "52px",
-              width: "100%", // Garantir que ocupe toda a largura
-              "&:hover": {
-                boxShadow: `0 4px 12px ${alpha(themeColors.primary.main, 0.15)}`,
-                borderColor: themeColors.primary.main,
-              },
-              "&:focus-within": {
-                boxShadow: `0 4px 12px ${alpha(themeColors.primary.main, 0.2)}`,
-                borderColor: themeColors.primary.main,
-                animation: `${keyframes.glow} 2s infinite ease-in-out`,
-              },
+              justifyContent: "center",
+              p: 1.5,
+              pl: 2,
+              color: themeColors.primary.main,
             }}
           >
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                p: 1.5,
-                pl: 2,
-                color: themeColors.primary.main,
-              }}
+            <Icon sx={{ fontSize: 22 }} />
+          </Box>
+          <InputBase
+            {...params.InputProps}
+            placeholder={placeholder}
+            sx={{
+              flex: 1,
+              fontSize: "1rem",
+              color: themeColors.text.primary,
+              py: 1,
+              px: 1,
+              width: "100%",
+              "& input": {
+                padding: "8px 0",
+                transition: "all 0.2s ease",
+              },
+              "& input::placeholder": {
+                color: themeColors.text.disabled,
+                opacity: 1,
+              },
+            }}
+            inputProps={{
+              ...params.inputProps,
+              style: { paddingLeft: 0 },
+            }}
+          />
+          {value && (
+            <IconButton
+              size="small"
+              onClick={() => onChange({ target: { value: "" } })}
+              sx={{ mr: 1, color: themeColors.text.secondary }}
             >
-              <Icon sx={{ fontSize: 22 }} />
-            </Box>
-            <InputBase
-              {...params.InputProps}
-              placeholder={placeholder}
-              sx={{
-                flex: 1,
-                fontSize: "1rem",
-                color: themeColors.text.primary,
-                py: 1,
-                px: 1,
-                width: "100%",
-                "& input": {
-                  padding: "8px 0",
-                  transition: "all 0.2s ease",
-                },
-                "& input::placeholder": {
-                  color: themeColors.text.disabled,
-                  opacity: 1,
-                },
-              }}
-              inputProps={{
-                ...params.inputProps,
-                style: { paddingLeft: 0 },
-              }}
-            />
-            {value && (
-              <IconButton
-                size="small"
-                onClick={() => onChange({ target: { value: "" } })}
-                sx={{ mr: 1, color: themeColors.text.secondary }}
-              >
-                <Close fontSize="small" />
-              </IconButton>
-            )}
-          </Paper>
-        )}
-        ListboxProps={{
-          sx: {
-            maxHeight: "300px",
-            borderRadius: "12px",
-            boxShadow: "0 10px 40px rgba(0, 0, 0, 0.1)",
-            mt: 1,
-            "& .MuiAutocomplete-option": {
-              padding: "10px 16px",
-              borderRadius: "8px",
-              margin: "2px 4px",
-              transition: "all 0.2s ease",
-              "&:hover": {
-                backgroundColor: alpha(themeColors.primary.main, 0.1),
-              },
-              "&.Mui-focused": {
-                backgroundColor: alpha(themeColors.primary.main, 0.15),
-              },
+              <Close fontSize="small" />
+            </IconButton>
+          )}
+        </Paper>
+      )}
+      ListboxProps={{
+        sx: {
+          maxHeight: "300px",
+          borderRadius: "12px",
+          boxShadow: "0 10px 40px rgba(0, 0, 0, 0.1)",
+          mt: 1,
+          "& .MuiAutocomplete-option": {
+            padding: "10px 16px",
+            borderRadius: "8px",
+            margin: "2px 4px",
+            transition: "all 0.2s ease",
+            "&:hover": {
+              backgroundColor: alpha(themeColors.primary.main, 0.1),
+            },
+            "&.Mui-focused": {
+              backgroundColor: alpha(themeColors.primary.main, 0.15),
             },
           },
-        }}
-      />
-    )
-  }
-  
-  // Theme colors and keyframes are passed as props
-  const themeColors = {
-    primary: {
-      main: "#3a86ff",
-      light: "#5e9bff",
-      dark: "#2970e6",
-      contrastText: "#ffffff",
-    },
-    secondary: {
-      main: "#ff006e",
-      light: "#ff4b93",
-      dark: "#c8005a",
-      contrastText: "#ffffff",
-    },
-    success: {
-      main: "#00c896",
-      light: "#33d3aa",
-      dark: "#00a078",
-      contrastText: "#ffffff",
-    },
-    warning: {
-      main: "#ffbe0b",
-      light: "#ffcb3d",
-      dark: "#e6aa00",
-      contrastText: "#ffffff",
-    },
-    error: {
-      main: "#fb5607",
-      light: "#fc7739",
-      dark: "#e64e00",
-      contrastText: "#ffffff",
-    },
-    info: {
-      main: "#8338ec",
-      light: "#9c5ff0",
-      dark: "#6a2dbd",
-      contrastText: "#ffffff",
-    },
-    text: {
-      primary: "#1e293b",
-      secondary: "#64748b",
-      disabled: "#94a3b8",
-    },
-    background: {
-      default: "#f8fafc",
-      paper: "#ffffff",
-      card: "#ffffff",
-      dark: "#0f172a",
-    },
-    divider: "rgba(226, 232, 240, 0.8)",
-  }
-  
-  const keyframes = {
-    glow: `
-      @keyframes glow {
-        0% { box-shadow: 0 0 5px rgba(26, 35, 126, 0.2); }
-        50% { box-shadow: 0 0 15px rgba(26, 35, 126, 0.4); }
-        100% { box-shadow: 0 0 5px rgba(26, 35, 126, 0.2); }
+        },
+      }}
+    />
+  )
+}
+
+const RemovalTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }) => {
+  // State variables
+  const [page, setPage] = useState(0)
+  const [rowsPerPage, setRowsPerPage] = useState(5)
+  const [sortField, setSortField] = useState("hora_saida_frota")
+  const [sortDirection, setSortDirection] = useState("asc")
+  const [driverSearch, setDriverSearch] = useState("")
+  const [prefixSearch, setPrefixSearch] = useState("")
+  const [selectedDate, setSelectedDate] = useState(null)
+  const [statusFilter, setStatusFilter] = useState("all")
+  const [teamFilter, setTeamFilter] = useState("all")
+  const [recentlyRegisteredFilter, setRecentlyRegisteredFilter] = useState(false)
+  const [actionMenuAnchor, setActionMenuAnchor] = useState(null)
+  const [selectedRowId, setSelectedRowId] = useState(null)
+  const [detailModalOpen, setDetailModalOpen] = useState(false)
+  const [editModalOpen, setEditModalOpen] = useState(false)
+  const [registerModalOpen, setRegisterModalOpen] = useState(false)
+  const [selectedRemoval, setSelectedRemoval] = useState(null)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const [snackbarMessage, setSnackbarMessage] = useState("")
+  const [snackbarSeverity, setSnackbarSeverity] = useState("success")
+  const [registerFormData, setRegisterFormData] = useState({
+    driver: "",
+    driverId: "",
+    team: "Equipe1(Matutino)",
+    vehiclePrefix: "",
+    shift: "Manhã",
+    collectors: ["", "", ""],
+    vehicleType: "Caminhão Reboque",
+    garage: "PA1",
+    route: "",
+    leaders: ["", ""],
+    leaderPhones: ["", ""],
+  })
+
+  // State for API data
+  const [removals, setRemovals] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  // Fetch data from API
+  const fetchData = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      const data = await getSolturasDetalhadaTodas()
+
+      if (data && !data.error) {
+        // Transform API data to match the expected format for the table
+        const formattedData = data.map((item, index) => ({
+          id: index + 1,
+          driver: item.motorista,
+          driverId: item.matricula_motorista,
+          collectors: Array.isArray(item.coletores)
+            ? item.coletores.map((c) => (typeof c === "object" ? c.nome : c))
+            : [],
+          collectorsIds: Array.isArray(item.coletores)
+            ? item.coletores.map((c) => (typeof c === "object" ? c.matricula : ""))
+            : [],
+          prefixo: item.prefixo,
+          hora_saida_frota: item.hora_saida_frota,
+          tipo_equipe: item.tipo_equipe,
+          status_frota: item.status_frota,
+          data: item.data,
+          rota: item.rota,
+          // Use bairro as setor/location as requested
+          location: item.bairro || item.setores || "Não informado",
+          vehiclePrefix: item.prefixo,
+          departureTime: item.hora_saida_frota,
+          status: item.status_frota,
+          team: item.tipo_equipe,
+          vehicle: item.tipo_veiculo_selecionado,
+          // Additional fields
+          frequencia: item.frequencia,
+          celular: item.celular,
+          lider: item.lider,
+          hora_entrega_chave: item.hora_entrega_chave,
+          tipo_servico: item.tipo_servico,
+          turno: item.turno,
+          bairro: item.bairro,
+          setores: item.setores,
+        }))
+
+        setRemovals(formattedData)
+      } else {
+        setError(data?.error || "Erro ao carregar dados")
       }
-    `,
+    } catch (err) {
+      console.error("Erro ao buscar dados de remoções:", err)
+      setError("Falha ao carregar dados de remoções")
+    } finally {
+      setLoading(false)
+    }
   }
-  
-  const RemovalTable = ({ removals: initialRemovals, loading, themeColors, keyframes, onRefresh }) => {
-    // State variables
-    const [page, setPage] = useState(0)
-    const [rowsPerPage, setRowsPerPage] = useState(5)
-    const [sortField, setSortField] = useState("departureTime")
-    const [sortDirection, setSortDirection] = useState("asc")
-    const [driverSearch, setDriverSearch] = useState("")
-    const [prefixSearch, setPrefixSearch] = useState("")
-    const [selectedDate, setSelectedDate] = useState(null)
-    const [statusFilter, setStatusFilter] = useState("all")
-    const [teamFilter, setTeamFilter] = useState("all")
-    const [recentlyRegisteredFilter, setRecentlyRegisteredFilter] = useState(false)
-    const [actionMenuAnchor, setActionMenuAnchor] = useState(null)
-    const [selectedRowId, setSelectedRowId] = useState(null)
-    const [detailModalOpen, setDetailModalOpen] = useState(false)
-    const [editModalOpen, setEditModalOpen] = useState(false)
-    const [registerModalOpen, setRegisterModalOpen] = useState(false)
-    const [selectedRemoval, setSelectedRemoval] = useState(null)
-    const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
-    const [snackbarOpen, setSnackbarOpen] = useState(false)
-    const [snackbarMessage, setSnackbarMessage] = useState("")
-    const [snackbarSeverity, setSnackbarSeverity] = useState("success")
-    const [registerFormData, setRegisterFormData] = useState({
-      driver: "",
-      driverId: "",
-      team: "Equipe1(Matutino)",
-      vehiclePrefix: "",
-      shift: "Manhã",
-      collectors: ["", "", ""],
-      vehicleType: "Caminhão Reboque",
-      garage: "PA1",
-      route: "",
-      leaders: ["", ""],
-      leaderPhones: ["", ""],
-    })
-    const [removals, setRemovals] = useState(initialRemovals)
-  
-    // Handle pagination
-    const handlePageChange = (event, newPage) => {
-      setPage(newPage)
-    }
-  
-    const handleRowsPerPageChange = (event) => {
-      setRowsPerPage(Number.parseInt(event.target.value, 10))
-      setPage(0)
-    }
-  
-    // Handle sorting
-    const handleSort = (field) => {
-      const isAsc = sortField === field && sortDirection === "asc"
-      setSortDirection(isAsc ? "desc" : "asc")
-      setSortField(field)
-    }
-  
-    // Handle action menu
-    const handleActionMenuOpen = (event, id) => {
-      event.stopPropagation()
-      setActionMenuAnchor(event.currentTarget)
-      setSelectedRowId(id)
-    }
-  
-    const handleActionMenuClose = () => {
+
+  // Load data on component mount and when refresh is triggered
+  useEffect(() => {
+    fetchData()
+  }, [])
+
+  // Handle pagination
+  const handlePageChange = (event, newPage) => {
+    setPage(newPage)
+  }
+
+  const handleRowsPerPageChange = (event) => {
+    setRowsPerPage(Number.parseInt(event.target.value, 10))
+    setPage(0)
+  }
+
+  // Handle sorting
+  const handleSort = (field) => {
+    const isAsc = sortField === field && sortDirection === "asc"
+    setSortDirection(isAsc ? "desc" : "asc")
+    setSortField(field)
+  }
+
+  // Handle action menu
+  const handleActionMenuOpen = (event, id) => {
+    event.stopPropagation()
+    setActionMenuAnchor(event.currentTarget)
+    setSelectedRowId(id)
+  }
+
+  const handleActionMenuClose = () => {
+    setActionMenuAnchor(null)
+    setSelectedRowId(null)
+  }
+
+  // Handle edit click
+  const handleEditClick = () => {
+    const removalToEdit = removals.find((removal) => removal.id === selectedRowId)
+    if (removalToEdit) {
+      setSelectedRemoval(removalToEdit)
+      setEditModalOpen(true)
       setActionMenuAnchor(null)
-      setSelectedRowId(null)
     }
-  
-    // Handle edit click
-    const handleEditClick = () => {
-      const removalToEdit = removals.find((removal) => removal.id === selectedRowId)
-      if (removalToEdit) {
-        setSelectedRemoval(removalToEdit)
-        setEditModalOpen(true)
-        setActionMenuAnchor(null)
-      }
-    }
-  
-    // Handle save edit
-    const handleSaveEdit = (editedData) => {
-      try {
-        // Find the index of the record to be edited
-        const indexToUpdate = removals.findIndex((removal) => removal.id === selectedRemoval.id)
-  
-        if (indexToUpdate !== -1) {
-          // Create a copy of the removals array
-          const updatedRemovals = [...removals]
-  
-          // Replace the old record completely with the edited data
-          // while preserving the id and other metadata
-          updatedRemovals[indexToUpdate] = {
-            ...updatedRemovals[indexToUpdate], // Keep the original id and any other metadata
-            ...editedData, // Completely overwrite with new data
-            lastEditDate: new Date().toISOString(), // Add edit timestamp
-          }
-  
-          // Update the state with the modified array
-          setRemovals(updatedRemovals)
-  
-          // Also update selectedRemoval to reflect changes in the detailed view
-          setSelectedRemoval({ ...selectedRemoval, ...editedData })
-  
-          // Show success message
-          setSnackbarMessage("Registro atualizado com sucesso!")
-          setSnackbarSeverity("success")
-          setSnackbarOpen(true)
-  
-          // Close modals
-          setEditModalOpen(false)
-          setDetailModalOpen(false)
+  }
+
+  // Handle save edit
+  const handleSaveEdit = (editedData) => {
+    try {
+      // Find the index of the record to be edited
+      const indexToUpdate = removals.findIndex((removal) => removal.id === selectedRemoval.id)
+
+      if (indexToUpdate !== -1) {
+        // Create a copy of the removals array
+        const updatedRemovals = [...removals]
+
+        // Replace the old record completely with the edited data
+        // while preserving the id and other metadata
+        updatedRemovals[indexToUpdate] = {
+          ...updatedRemovals[indexToUpdate], // Keep the original id and any other metadata
+          ...editedData, // Completely overwrite with new data
+          lastEditDate: new Date().toISOString(), // Add edit timestamp
         }
-      } catch (error) {
-        console.error("Erro ao atualizar:", error)
-        setSnackbarMessage("Erro ao atualizar registro. Tente novamente.")
-        setSnackbarSeverity("error")
-        setSnackbarOpen(true)
-      }
-    }
-  
-    // Handle modal open
-    const handleOpenModal = (removal) => {
-      // Find the most up-to-date version of this removal in the state
-      const currentRemoval = removals.find((r) => r.id === removal.id) || removal
-      setSelectedRemoval(currentRemoval)
-      setDetailModalOpen(true)
-    }
-  
-    // Handle delete confirmation dialog
-    const handleDeleteConfirmOpen = () => {
-      setDeleteConfirmOpen(true)
-      setActionMenuAnchor(null)
-    }
-  
-    const handleDeleteConfirmClose = () => {
-      setDeleteConfirmOpen(false)
-    }
-  
-    // Handle delete action
-    const handleDelete = async () => {
-      try {
-        // Aqui seria a chamada real para a API de exclusão
-        // Como não temos uma função específica para excluir, vamos simular
-        await new Promise((resolve) => setTimeout(resolve, 1000))
-  
-        // Atualizar estado local
-        const updatedRemovals = removals.filter((removal) => removal.id !== selectedRowId)
+
+        // Update the state with the modified array
         setRemovals(updatedRemovals)
-  
+
+        // Also update selectedRemoval to reflect changes in the detailed view
+        setSelectedRemoval({ ...selectedRemoval, ...editedData })
+
         // Show success message
-        setSnackbarMessage("Registro removido com sucesso!")
+        setSnackbarMessage("Registro atualizado com sucesso!")
         setSnackbarSeverity("success")
         setSnackbarOpen(true)
-  
-        // Close dialog
-        handleDeleteConfirmClose()
-        setSelectedRowId(null)
-      } catch (error) {
-        console.error("Erro ao excluir:", error)
-        setSnackbarMessage("Erro ao excluir registro. Tente novamente.")
-        setSnackbarSeverity("error")
-        setSnackbarOpen(true)
+
+        // Close modals
+        setEditModalOpen(false)
+        setDetailModalOpen(false)
       }
+    } catch (error) {
+      console.error("Erro ao atualizar:", error)
+      setSnackbarMessage("Erro ao atualizar registro. Tente novamente.")
+      setSnackbarSeverity("error")
+      setSnackbarOpen(true)
     }
-  
-    // Handle register form change
-    const handleRegisterFormChange = (field, value, index = null) => {
-      if (index !== null) {
-        // Para campos com múltiplos valores (collectors, leaders, leaderPhones)
-        setRegisterFormData((prev) => {
-          const newValues = [...prev[field]]
-          newValues[index] = value
-          return { ...prev, [field]: newValues }
-        })
-      } else {
-        // Para campos simples
-        setRegisterFormData((prev) => ({ ...prev, [field]: value }))
+  }
+
+  // Handle modal open
+  const handleOpenModal = (removal) => {
+    // Find the most up-to-date version of this removal in the state
+    const currentRemoval = removals.find((r) => r.id === removal.id) || removal
+    setSelectedRemoval(currentRemoval)
+    setDetailModalOpen(true)
+  }
+
+  // Handle delete confirmation dialog
+  const handleDeleteConfirmOpen = () => {
+    setDeleteConfirmOpen(true)
+    setActionMenuAnchor(null)
+  }
+
+  const handleDeleteConfirmClose = () => {
+    setDeleteConfirmOpen(false)
+  }
+
+  // Handle delete action
+  const handleDelete = async () => {
+    try {
+      // Aqui seria a chamada real para a API de exclusão
+      // Como não temos uma função específica para excluir, vamos simular
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
+      // Atualizar estado local
+      const updatedRemovals = removals.filter((removal) => removal.id !== selectedRowId)
+      setRemovals(updatedRemovals)
+
+      // Show success message
+      setSnackbarMessage("Registro removido com sucesso!")
+      setSnackbarSeverity("success")
+      setSnackbarOpen(true)
+
+      // Close dialog
+      handleDeleteConfirmClose()
+      setSelectedRowId(null)
+    } catch (error) {
+      console.error("Erro ao excluir:", error)
+      setSnackbarMessage("Erro ao excluir registro. Tente novamente.")
+      setSnackbarSeverity("error")
+      setSnackbarOpen(true)
+    }
+  }
+
+  // Handle register form change
+  const handleRegisterFormChange = (field, value, index = null) => {
+    if (index !== null) {
+      // Para campos com múltiplos valores (collectors, leaders, leaderPhones)
+      setRegisterFormData((prev) => {
+        const newValues = [...prev[field]]
+        newValues[index] = value
+        return { ...prev, [field]: newValues }
+      })
+    } else {
+      // Para campos simples
+      setRegisterFormData((prev) => ({ ...prev, [field]: value }))
+    }
+  }
+
+  // Handle register submit
+  const handleRegisterSubmit = async () => {
+    try {
+      // First, create the data object to send to the server
+      const newRemovalData = {
+        motorista: {
+          nome: registerFormData.driver,
+          matricula: registerFormData.driverId,
+        },
+        prefixo: registerFormData.vehiclePrefix,
+        tipo_equipe: registerFormData.team,
+        coletores: registerFormData.collectors.filter(Boolean).map((name) => ({ nome: name })),
+        garagem: registerFormData.garage,
+        rota: registerFormData.route,
+        veiculo: registerFormData.vehicleType,
+        hora_saida_frota: new Date().toLocaleTimeString(),
+        status_frota: "Em andamento",
+        data: new Date().toISOString().split("T")[0],
       }
-    }
-  
-    // Handle register submit
-    const handleRegisterSubmit = async () => {
-      try {
-        // First, create the data object to send to the server
-        const newRemovalData = {
-          motorista: {
-            nome: registerFormData.driver,
-            matricula: registerFormData.driverId,
-          },
-          prefixo: registerFormData.vehiclePrefix,
-          tipo_equipe: registerFormData.team,
-          coletores: registerFormData.collectors.filter(Boolean).map((name) => ({ nome: name })),
-          garagem: registerFormData.garage,
-          rota: registerFormData.route,
-          veiculo: registerFormData.vehicleType,
-          hora_saida_frota: new Date().toLocaleTimeString(),
-          status_frota: "Em andamento",
-          data: new Date().toISOString().split("T")[0],
-        }
-  
-        // Create the new removal object for local state
-        const newRemoval = {
-          id: removals.length + 1,
-          driver: registerFormData.driver,
-          driverId: registerFormData.driverId,
-          collectors: registerFormData.collectors.filter(Boolean),
-          collectorsIds: [],
-          garage: registerFormData.garage,
-          route: registerFormData.route,
-          vehiclePrefix: registerFormData.vehiclePrefix,
-          departureTime: new Date().toLocaleTimeString(),
-          status: "Em andamento",
-          arrivalTime: "",
-          date: new Date().toISOString().split("T")[0],
-          team: registerFormData.team,
-          location: "",
-          vehicle: registerFormData.vehicleType,
-          distance: "0 km",
-          notes: "",
-        }
-  
-        // Add to local state first for immediate UI update
-        setRemovals((prev) => {
-          const updatedRemovals = [newRemoval, ...prev]
-          // After adding the new removal, reset to first page and enable "recently registered" filter
-          setPage(0)
-          setRecentlyRegisteredFilter(true)
-          return updatedRemovals
-        })
-  
-        // Show success message
-        setSnackbarMessage("Soltura cadastrada com sucesso!")
-        setSnackbarSeverity("success")
-        setSnackbarOpen(true)
-  
-        // Close modal and reset form
-        setRegisterModalOpen(false)
-        setRegisterFormData({
-          driver: "",
-          driverId: "",
-          team: "Equipe1(Matutino)",
-          vehiclePrefix: "",
-          shift: "Manhã",
-          collectors: ["", "", ""],
-          vehicleType: "Caminhão Reboque",
-          garage: "PA1",
-          route: "",
-          leaders: ["", ""],
-          leaderPhones: ["", ""],
-        })
-      } catch (error) {
-        console.error("Erro ao cadastrar soltura:", error)
-        setSnackbarMessage("Erro ao cadastrar soltura. Tente novamente.")
-        setSnackbarSeverity("error")
-        setSnackbarOpen(true)
+
+      // Create the new removal object for local state
+      const newRemoval = {
+        id: removals.length + 1,
+        driver: registerFormData.driver,
+        driverId: registerFormData.driverId,
+        collectors: registerFormData.collectors.filter(Boolean),
+        collectorsIds: [],
+        garage: registerFormData.garage,
+        route: registerFormData.route,
+        vehiclePrefix: registerFormData.vehiclePrefix,
+        departureTime: new Date().toLocaleTimeString(),
+        status: "Em andamento",
+        arrivalTime: "",
+        date: new Date().toISOString().split("T")[0],
+        team: registerFormData.team,
+        location: "",
+        vehicle: registerFormData.vehicleType,
+        distance: "0 km",
+        notes: "",
       }
+
+      // Add to local state first for immediate UI update
+      setRemovals((prev) => {
+        const updatedRemovals = [newRemoval, ...prev]
+        // After adding the new removal, reset to first page and enable "recently registered" filter
+        setPage(0)
+        setRecentlyRegisteredFilter(true)
+        return updatedRemovals
+      })
+
+      // Show success message
+      setSnackbarMessage("Soltura cadastrada com sucesso!")
+      setSnackbarSeverity("success")
+      setSnackbarOpen(true)
+
+      // Close modal and reset form
+      setRegisterModalOpen(false)
+      setRegisterFormData({
+        driver: "",
+        driverId: "",
+        team: "Equipe1(Matutino)",
+        vehiclePrefix: "",
+        shift: "Manhã",
+        collectors: ["", "", ""],
+        vehicleType: "Caminhão Reboque",
+        garage: "PA1",
+        route: "",
+        leaders: ["", ""],
+        leaderPhones: ["", ""],
+      })
+    } catch (error) {
+      console.error("Erro ao cadastrar soltura:", error)
+      setSnackbarMessage("Erro ao cadastrar soltura. Tente novamente.")
+      setSnackbarSeverity("error")
+      setSnackbarOpen(true)
     }
-  
-    // Handle recently registered filter toggle
-    const handleRecentlyRegisteredFilterChange = () => {
-      setRecentlyRegisteredFilter((prev) => !prev)
-      setPage(0) // Reset to first page when filter changes
+  }
+
+  // Handle recently registered filter toggle
+  const handleRecentlyRegisteredFilterChange = () => {
+    setRecentlyRegisteredFilter((prev) => !prev)
+    setPage(0) // Reset to first page when filter changes
+  }
+
+  // Format date in Brazilian format
+  const formatDateBR = (dateString) => {
+    if (!dateString) return ""
+
+    try {
+      const date = new Date(dateString)
+      return date.toLocaleDateString("pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      })
+    } catch (error) {
+      console.error("Erro ao formatar data:", error)
+      return dateString
     }
-  
-    // Format date in Brazilian format
-    const formatDateBR = (dateString) => {
-      if (!dateString) return ""
-  
-      try {
-        const date = new Date(dateString)
-        return date.toLocaleDateString("pt-BR", {
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
-        })
-      } catch (error) {
-        console.error("Erro ao formatar data:", error)
-        return dateString
-      }
-    }
-  
-    // Get status chip
-    const getStatusChip = (status) => {
-      if (status === "Finalizado") {
-        return (
-          <Chip
-            label="Finalizado"
-            sx={{
-              backgroundColor: alpha(themeColors.success.main, 0.1),
-              color: themeColors.success.main,
-              fontWeight: 600,
-              borderRadius: "12px",
-              transition: "all 0.3s ease",
-              "&:hover": {
-                backgroundColor: alpha(themeColors.success.main, 0.2),
-              },
-            }}
-            size="small"
-          />
-        )
-      } else {
-        return (
-          <Chip
-            label="Em andamento"
-            sx={{
-              backgroundColor: alpha(themeColors.primary.main, 0.1),
-              color: themeColors.primary.main,
-              fontWeight: 600,
-              borderRadius: "12px",
-              transition: "all 0.3s ease",
-              "&:hover": {
-                backgroundColor: alpha(themeColors.primary.main, 0.2),
-              },
-            }}
-            size="small"
-          />
-        )
-      }
-    }
-  
-    // Sort indicator component
-    const SortIndicator = ({ field }) => {
-      if (sortField !== field) return null
-      return sortDirection === "asc" ? (
-        <ArrowUpward sx={{ fontSize: 16, ml: 0.5 }} />
-      ) : (
-        <ArrowDownward sx={{ fontSize: 16, ml: 0.5 }} />
+  }
+
+  // Get status chip
+  const getStatusChip = (status) => {
+    if (status === "Finalizado") {
+      return (
+        <Chip
+          label="Finalizado"
+          sx={{
+            backgroundColor: alpha(themeColors.success.main, 0.1),
+            color: themeColors.success.main,
+            fontWeight: 600,
+            borderRadius: "12px",
+            transition: "all 0.3s ease",
+            "&:hover": {
+              backgroundColor: alpha(themeColors.success.main, 0.2),
+            },
+          }}
+          size="small"
+        />
+      )
+    } else {
+      return (
+        <Chip
+          label="Em andamento"
+          sx={{
+            backgroundColor: alpha(themeColors.primary.main, 0.1),
+            color: themeColors.primary.main,
+            fontWeight: 600,
+            borderRadius: "12px",
+            transition: "all 0.3s ease",
+            "&:hover": {
+              backgroundColor: alpha(themeColors.primary.main, 0.2),
+            },
+          }}
+          size="small"
+        />
       )
     }
-  
-    // Filter and sort removals data
-    const filteredRemovals = useMemo(() => {
-      // Get current date for "recently registered" filter
-      const currentDate = new Date()
-      const oneDayAgo = new Date(currentDate)
-      oneDayAgo.setDate(currentDate.getDate() - 1)
-  
-      return initialRemovals
-        .filter((removal) => {
-          // Unified search across multiple fields
-          const searchMatch =
-            driverSearch === "" ||
-            (removal.driver && removal.driver.toLowerCase().includes(driverSearch.toLowerCase())) ||
-            (removal.vehiclePrefix && removal.vehiclePrefix.toLowerCase().includes(driverSearch.toLowerCase())) ||
-            (removal.driverId && removal.driverId.toLowerCase().includes(driverSearch.toLowerCase()))
-  
-          // Date check with proper format
-          let dateMatch = true
-          if (selectedDate !== null) {
-            // Convert removal date to Date object for comparison
-            const removalDate = new Date(removal.date)
-            // Reset hours to compare only dates
-            removalDate.setHours(0, 0, 0, 0)
-            const filterDate = new Date(selectedDate)
-            filterDate.setHours(0, 0, 0, 0)
-  
-            // Compare dates
-            dateMatch = removalDate.getTime() === filterDate.getTime()
-          }
-  
-          // Status filter
-          const statusMatch =
-            statusFilter === "all" ||
-            (statusFilter === "completed" && removal.status === "Finalizado") ||
-            (statusFilter === "in-progress" && removal.status === "Em andamento")
-  
-          // Team filter
-          const teamMatch =
-            teamFilter === "all" ||
-            (teamFilter === "team-1" && removal.team === "Equipe1(Matutino)") ||
-            (teamFilter === "team-2" && removal.team === "Equipe2(Vespertino)") ||
-            (teamFilter === "team-3" && removal.team === "Equipe3(Noturno)")
-  
-          // Recently registered filter (last 24 hours)
-          const recentlyMatch = !recentlyRegisteredFilter || (removal.date && new Date(removal.date) >= oneDayAgo)
-  
-          // Return true only if all filters match
-          return searchMatch && dateMatch && statusMatch && teamMatch && recentlyMatch
-        })
-        .sort((a, b) => {
-          const factor = sortDirection === "asc" ? 1 : -1
-          if (sortField === "driver") {
-            return factor * (a.driver || "").localeCompare(b.driver || "")
-          } else if (sortField === "vehiclePrefix") {
-            return factor * (a.vehiclePrefix || "").localeCompare(b.vehiclePrefix || "")
-          } else if (sortField === "departureTime") {
-            return factor * (a.departureTime || "").localeCompare(b.departureTime || "")
-          } else if (sortField === "team") {
-            return factor * (a.team || "").localeCompare(b.tipo_equipe || "")
-          } else if (sortField === "status") {
-            return factor * (a.status || "").localeCompare(b.status_frota || "")
-          } else if (sortField === "location") {
-            return factor * (a.location || "").localeCompare(b.location || "")
-          }
-          return 0
-        })
-    }, [
-      driverSearch,
-      selectedDate,
-      statusFilter,
-      teamFilter,
-      sortField,
-      sortDirection,
-      initialRemovals,
-      recentlyRegisteredFilter,
-    ])
-  
-    // Get paginated data
-    const paginatedRemovals = filteredRemovals.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-  
-    // Obter sugestões para o campo de busca
-    const searchSuggestions = useMemo(() => {
-      const driverNames = [...new Set(initialRemovals.map((r) => r.driver).filter(Boolean))]
-      const vehiclePrefixes = [...new Set(initialRemovals.map((r) => r.vehiclePrefix).filter(Boolean))]
-      return [...driverNames, ...vehiclePrefixes]
-    }, [initialRemovals])
-  
-    return (
-      <Box component="section">
-        <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "600ms" : "0ms" }}>
-          <Card
-            sx={{
-              borderRadius: "16px",
-              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
-              transition: "all 0.3s ease",
-              overflow: "hidden",
-              "&:hover": {
-                boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)",
-                transform: "translateY(-4px)",
-              },
-              background: themeColors.background.card,
-              mb: 4,
-            }}
-          >
-            <CardHeader
-              title={
-                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                    <Box
-                      sx={{
-                        width: { xs: "32px", sm: "36px" },
-                        height: { xs: "32px", sm: "36px" },
-                        borderRadius: "12px",
-                        background: themeColors.primary.main,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        animation: `${keyframes.pulse} 2s ease-in-out infinite`,
-                      }}
-                    >
-                      <DirectionsCar sx={{ color: "white", fontSize: "2rem" }} />
-                    </Box>
-                    <Box>
-                      <Typography
-                        sx={{
-                          fontWeight: 600,
-                          fontSize: { xs: "1.1rem", sm: "1.2rem" },
-                          color: themeColors.text.primary,
-                        }}
-                      >
-                        Registros de Remoções
-                      </Typography>
-                      <Typography
-                        sx={{
-                          fontSize: { xs: "0.8rem", sm: "0.85rem" },
-                          color: themeColors.text.secondary,
-                          fontWeight: 400,
-                        }}
-                      >
-                        Todos os registros de remoções
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Box>
-              }
-              action={
-                <Box sx={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                  <Button
-                    variant="contained"
-                    startIcon={<DirectionsCar />}
-                    onClick={() => setRegisterModalOpen(true)}
+  }
+
+  // Sort indicator component
+  const SortIndicator = ({ field }) => {
+    if (sortField !== field) return null
+    return sortDirection === "asc" ? (
+      <ArrowUpward sx={{ fontSize: 16, ml: 0.5 }} />
+    ) : (
+      <ArrowDownward sx={{ fontSize: 16, ml: 0.5 }} />
+    )
+  }
+
+  // Filter and sort removals data
+  const filteredRemovals = useMemo(() => {
+    // Get current date for "recently registered" filter
+    const currentDate = new Date()
+    const oneDayAgo = new Date(currentDate)
+    oneDayAgo.setDate(currentDate.getDate() - 1)
+
+    return removals
+      .filter((removal) => {
+        // Unified search across multiple fields
+        const searchMatch =
+          driverSearch === "" ||
+          (removal.driver && removal.driver.toLowerCase().includes(driverSearch.toLowerCase())) ||
+          (removal.vehiclePrefix && removal.vehiclePrefix.toLowerCase().includes(driverSearch.toLowerCase())) ||
+          (removal.driverId && removal.driverId.toLowerCase().includes(driverSearch.toLowerCase()))
+
+        // Date check with proper format
+        let dateMatch = true
+        if (selectedDate !== null) {
+          // Convert removal date to Date object for comparison
+          const removalDate = new Date(removal.data)
+          // Reset hours to compare only dates
+          removalDate.setHours(0, 0, 0, 0)
+          const filterDate = new Date(selectedDate)
+          filterDate.setHours(0, 0, 0, 0)
+
+          // Compare dates
+          dateMatch = removalDate.getTime() === filterDate.getTime()
+        }
+
+        // Status filter
+        const statusMatch =
+          statusFilter === "all" ||
+          (statusFilter === "completed" && removal.status_frota === "Finalizado") ||
+          (statusFilter === "in-progress" && removal.status_frota === "Em andamento")
+
+        // Team filter
+        const teamMatch =
+          teamFilter === "all" ||
+          (teamFilter === "team-1" && removal.tipo_equipe === "Equipe1(Matutino)") ||
+          (teamFilter === "team-2" && removal.tipo_equipe === "Equipe2(Vespertino)") ||
+          (teamFilter === "team-3" && removal.tipo_equipe === "Equipe3(Noturno)")
+
+        // Recently registered filter (last 24 hours)
+        const recentlyMatch = !recentlyRegisteredFilter || (removal.data && new Date(removal.data) >= oneDayAgo)
+
+        // Return true only if all filters match
+        return searchMatch && dateMatch && statusMatch && teamMatch && recentlyMatch
+      })
+      .sort((a, b) => {
+        const factor = sortDirection === "asc" ? 1 : -1
+        if (sortField === "driver") {
+          return factor * (a.driver || "").localeCompare(b.driver || "")
+        } else if (sortField === "vehiclePrefix") {
+          return factor * (a.prefixo || "").localeCompare(b.prefixo || "")
+        } else if (sortField === "hora_saida_frota") {
+          return factor * (a.hora_saida_frota || "").localeCompare(b.hora_saida_frota || "")
+        } else if (sortField === "team") {
+          return factor * (a.tipo_equipe || "").localeCompare(b.tipo_equipe || "")
+        } else if (sortField === "status") {
+          return factor * (a.status_frota || "").localeCompare(b.status_frota || "")
+        } else if (sortField === "location") {
+          return factor * (a.location || "").localeCompare(b.location || "")
+        }
+        return 0
+      })
+  }, [
+    driverSearch,
+    selectedDate,
+    statusFilter,
+    teamFilter,
+    sortField,
+    sortDirection,
+    removals,
+    recentlyRegisteredFilter,
+  ])
+
+  // Get paginated data
+  const paginatedRemovals = filteredRemovals.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+
+  // Obter sugestões para o campo de busca
+  const searchSuggestions = useMemo(() => {
+    const driverNames = [...new Set(removals.map((r) => r.driver).filter(Boolean))]
+    const vehiclePrefixes = [...new Set(removals.map((r) => r.prefixo).filter(Boolean))]
+    return [...driverNames, ...vehiclePrefixes]
+  }, [removals])
+
+  // Handle refresh
+  const handleRefresh = () => {
+    fetchData()
+    if (onRefresh) onRefresh()
+  }
+
+  return (
+    <Box component="section">
+      <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "600ms" : "0ms" }}>
+        <Card
+          sx={{
+            borderRadius: "16px",
+            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
+            transition: "all 0.3s ease",
+            overflow: "hidden",
+            "&:hover": {
+              boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)",
+              transform: "translateY(-4px)",
+            },
+            background: themeColors.background.card,
+            mb: 4,
+          }}
+        >
+          <CardHeader
+            title={
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                  <Box
                     sx={{
+                      width: { xs: "32px", sm: "36px" },
+                      height: { xs: "32px", sm: "36px" },
                       borderRadius: "12px",
-                      textTransform: "none",
-                      fontWeight: 600,
-                      backgroundColor: themeColors.primary.main,
-                      boxShadow: `0 4px 12px ${alpha(themeColors.primary.main, 0.2)}`,
-                      "&:hover": {
-                        backgroundColor: themeColors.primary.dark,
-                        boxShadow: `0 6px 16px ${alpha(themeColors.primary.main, 0.3)}`,
-                      },
+                      background: themeColors.primary.main,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      animation: `${keyframes.pulse} 2s ease-in-out infinite`,
                     }}
                   >
-                    Cadastrar Soltura
-                  </Button>
-                  <IconButton
-                    sx={{
-                      color: themeColors.text.secondary,
-                      "&:hover": { color: themeColors.primary.main },
-                    }}
-                    onClick={onRefresh}
-                  >
-                    <Refresh />
-                  </IconButton>
-                </Box>
-              }
-              sx={{
-                paddingBottom: "0.75rem",
-                borderBottom: `1px solid ${themeColors.divider}`,
-                "& .MuiCardHeader-title": {
-                  fontWeight: 600,
-                  fontSize: "1.125rem",
-                  color: themeColors.text.primary,
-                },
-                "& .MuiCardHeader-action": {
-                  margin: 0,
-                },
-              }}
-            />
-            <CardContent sx={{ padding: "1.5rem" }}>
-              {/* Search and Filter Section */}
-              <Box sx={{ mb: 3, display: "flex", flexDirection: "column", gap: 2 }}>
-                <Paper
-                  elevation={0}
-                  sx={{
-                    p: 2,
-                    borderRadius: "16px",
-                    border: `1px solid ${themeColors.divider}`,
-                    background: alpha(themeColors.background.paper, 0.8),
-                    backdropFilter: "blur(8px)",
-                  }}
-                >
-                  {/* Modificar o layout da seção de pesquisa para dar mais espaço ao autocomplete */}
-                  <Box sx={{ display: "flex", gap: 2, flexWrap: { xs: "wrap", md: "nowrap" }, mb: 2 }}>
-                    {/* 1. Corrigir o input de pesquisa para usar motorista.nome da mesma forma que o autocomplete: */}
-                    <Box sx={{ flex: 1, width: "100%" }}>
-                      <SearchInput
-                        icon={Search}
-                        placeholder="Buscar por matrícula, motorista ou prefixo..."
-                        value={driverSearch}
-                        onChange={(e) => {
-                          setDriverSearch(e.target.value)
-                          setPrefixSearch(e.target.value)
-                        }}
-                        suggestions={searchSuggestions}
-                      />
-                    </Box>
-                    {/* Substitua também o DatePicker na seção de busca */}
-                    {/* Encontre o trecho com LocalizationProvider dentro do Box de busca e substitua por: */}
-                    <LocalizationProvider dateAdapter={AdapterDateFns}>
-                      <DatePicker
-                        label="Filtrar por data"
-                        value={selectedDate}
-                        onChange={(newDate) => setSelectedDate(newDate)}
-                        slotProps={{
-                          textField: {
-                            variant: "outlined",
-                            size: "small",
-                            sx: {
-                              minWidth: "180px",
-                              "& .MuiOutlinedInput-root": {
-                                borderRadius: "12px",
-                                backgroundColor: "white",
-                                height: "52px",
-                              },
-                            },
-                          },
-                        }}
-                        format="dd/MM/yyyy"
-                        clearable
-                        clearText="Limpar"
-                      />
-                    </LocalizationProvider>
+                    <DirectionsCar sx={{ color: "white", fontSize: "2rem" }} />
                   </Box>
-  
-                  <Box sx={{ mb: 2 }}>
+                  <Box>
                     <Typography
-                      variant="subtitle2"
                       sx={{
                         fontWeight: 600,
-                        mb: 1.5,
-                        color: themeColors.text.secondary,
-                        fontSize: "0.85rem",
+                        fontSize: { xs: "1.1rem", sm: "1.2rem" },
+                        color: themeColors.text.primary,
                       }}
                     >
-                      Filtros:
+                      Registros de Remoções
                     </Typography>
-                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
-                      <Box sx={{ flex: "1 1 300px" }}>
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            fontWeight: 600,
-                            mb: 1,
-                            color: themeColors.text.secondary,
-                            fontSize: "0.8rem",
-                          }}
-                        >
-                          Por Status:
-                        </Typography>
-                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                          {[
-                            { id: "all", label: "Todos", color: themeColors.text.secondary },
-                            { id: "completed", label: "Finalizado", color: themeColors.success.main },
-                            { id: "in-progress", label: "Em andamento", color: themeColors.primary.main },
-                          ].map((status) => (
-                            <Chip
-                              key={status.id}
-                              label={status.label}
-                              clickable
-                              onClick={() => setStatusFilter(status.id)}
-                              sx={{
-                                borderRadius: "12px",
-                                fontWeight: 500,
-                                backgroundColor:
-                                  statusFilter === status.id
-                                    ? alpha(status.color, 0.1)
-                                    : alpha(themeColors.background.default, 0.5),
-                                color: statusFilter === status.id ? status.color : themeColors.text.secondary,
-                                border: `1px solid ${statusFilter === status.id ? status.color : themeColors.divider}`,
-                                "&:hover": {
-                                  backgroundColor: alpha(status.color, 0.1),
-                                  color: status.color,
-                                },
-                                transition: "all 0.2s ease",
-                              }}
-                            />
-                          ))}
-                        </Box>
-                      </Box>
-                      <Box sx={{ flex: "1 1 300px" }}>
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            fontWeight: 600,
-                            mb: 1,
-                            color: themeColors.text.secondary,
-                            fontSize: "0.8rem",
-                          }}
-                        >
-                          Por Equipe:
-                        </Typography>
-                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                          {["Todas", "Equipe1(Matutino)", "Equipe2(Vespertino)", "Equipe3(Noturno)"].map(
-                            (team, index) => (
-                              <Chip
-                                key={team}
-                                label={team}
-                                clickable
-                                onClick={() => {
-                                  // Update only the team filter
-                                  if (index === 0) {
-                                    setTeamFilter("all")
-                                  } else {
-                                    setTeamFilter(`team-${index}`)
-                                  }
-                                }}
-                                sx={{
-                                  borderRadius: "12px",
-                                  fontWeight: 500,
-                                  backgroundColor:
-                                    teamFilter === (index === 0 ? "all" : `team-${index}`)
-                                      ? alpha(themeColors.success.main, 0.1)
-                                      : alpha(themeColors.background.default, 0.5),
-                                  color:
-                                    teamFilter === (index === 0 ? "all" : `team-${index}`)
-                                      ? themeColors.success.main
-                                      : themeColors.text.secondary,
-                                  border: `1px solid ${
-                                    teamFilter === (index === 0 ? "all" : `team-${index}`)
-                                      ? themeColors.success.main
-                                      : themeColors.divider
-                                  }`,
-                                  "&:hover": {
-                                    backgroundColor: alpha(themeColors.success.main, 0.1),
-                                    color: themeColors.success.main,
-                                  },
-                                  transition: "all 0.2s ease",
-                                }}
-                              />
-                            ),
-                          )}
-                        </Box>
-                      </Box>
-                      <Box sx={{ flex: "1 1 300px" }}>
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            fontWeight: 600,
-                            mb: 1,
-                            color: themeColors.text.secondary,
-                            fontSize: "0.8rem",
-                          }}
-                        >
-                          Filtro Adicional:
-                        </Typography>
-                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                    <Typography
+                      sx={{
+                        fontSize: { xs: "0.8rem", sm: "0.85rem" },
+                        color: themeColors.text.secondary,
+                        fontWeight: 400,
+                      }}
+                    >
+                      Todos os registros de remoções
+                    </Typography>
+                  </Box>
+                </Box>
+              </Box>
+            }
+            action={
+              <Box sx={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                <Button
+                  variant="contained"
+                  startIcon={<DirectionsCar />}
+                  onClick={() => setRegisterModalOpen(true)}
+                  sx={{
+                    borderRadius: "12px",
+                    textTransform: "none",
+                    fontWeight: 600,
+                    backgroundColor: themeColors.primary.main,
+                    boxShadow: `0 4px 12px ${alpha(themeColors.primary.main, 0.2)}`,
+                    "&:hover": {
+                      backgroundColor: themeColors.primary.dark,
+                      boxShadow: `0 6px 16px ${alpha(themeColors.primary.main, 0.3)}`,
+                    },
+                  }}
+                >
+                  Cadastrar Soltura
+                </Button>
+                <IconButton
+                  sx={{
+                    color: themeColors.text.secondary,
+                    "&:hover": { color: themeColors.primary.main },
+                  }}
+                  onClick={handleRefresh}
+                >
+                  <Refresh />
+                </IconButton>
+              </Box>
+            }
+            sx={{
+              paddingBottom: "0.75rem",
+              borderBottom: `1px solid ${themeColors.divider}`,
+              "& .MuiCardHeader-title": {
+                fontWeight: 600,
+                fontSize: "1.125rem",
+                color: themeColors.text.primary,
+              },
+              "& .MuiCardHeader-action": {
+                margin: 0,
+              },
+            }}
+          />
+          <CardContent sx={{ padding: "1.5rem" }}>
+            {/* Search and Filter Section */}
+            <Box sx={{ mb: 3, display: "flex", flexDirection: "column", gap: 2 }}>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 2,
+                  borderRadius: "16px",
+                  border: `1px solid ${themeColors.divider}`,
+                  background: alpha(themeColors.background.paper, 0.8),
+                  backdropFilter: "blur(8px)",
+                }}
+              >
+                {/* Modificar o layout da seção de pesquisa para dar mais espaço ao autocomplete */}
+                <Box sx={{ display: "flex", gap: 2, flexWrap: { xs: "wrap", md: "nowrap" }, mb: 2 }}>
+                  {/* 1. Corrigir o input de pesquisa para usar motorista.nome da mesma forma que o autocomplete: */}
+                  <Box sx={{ flex: 1, width: "100%" }}>
+                    <SearchInput
+                      icon={Search}
+                      placeholder="Buscar por matrícula, motorista ou prefixo..."
+                      value={driverSearch}
+                      onChange={(e) => {
+                        setDriverSearch(e.target.value)
+                        setPrefixSearch(e.target.value)
+                      }}
+                      suggestions={searchSuggestions}
+                      themeColors={themeColors}
+                      keyframes={keyframes}
+                    />
+                  </Box>
+                  {/* Substitua também o DatePicker na seção de busca */}
+                  {/* Encontre o trecho com LocalizationProvider dentro do Box de busca e substitua por: */}
+                  <LocalizationProvider dateAdapter={AdapterDateFns}>
+                    <DatePicker
+                      label="Filtrar por data"
+                      value={selectedDate}
+                      onChange={(newDate) => setSelectedDate(newDate)}
+                      slotProps={{
+                        textField: {
+                          variant: "outlined",
+                          size: "small",
+                          sx: {
+                            minWidth: "180px",
+                            "& .MuiOutlinedInput-root": {
+                              borderRadius: "12px",
+                              backgroundColor: "white",
+                              height: "52px",
+                            },
+                          },
+                        },
+                      }}
+                      format="dd/MM/yyyy"
+                      clearable
+                      clearText="Limpar"
+                    />
+                  </LocalizationProvider>
+                </Box>
+
+                <Box sx={{ mb: 2 }}>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{
+                      fontWeight: 600,
+                      mb: 1.5,
+                      color: themeColors.text.secondary,
+                      fontSize: "0.85rem",
+                    }}
+                  >
+                    Filtros:
+                  </Typography>
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
+                    <Box sx={{ flex: "1 1 300px" }}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontWeight: 600,
+                          mb: 1,
+                          color: themeColors.text.secondary,
+                          fontSize: "0.8rem",
+                        }}
+                      >
+                        Por Status:
+                      </Typography>
+                      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                        {[
+                          { id: "all", label: "Todos", color: themeColors.text.secondary },
+                          { id: "completed", label: "Finalizado", color: themeColors.success.main },
+                          { id: "in-progress", label: "Em andamento", color: themeColors.primary.main },
+                        ].map((status) => (
                           <Chip
-                            label="Cadastrados Recentemente"
+                            key={status.id}
+                            label={status.label}
                             clickable
-                            onClick={handleRecentlyRegisteredFilterChange}
+                            onClick={() => setStatusFilter(status.id)}
                             sx={{
                               borderRadius: "12px",
                               fontWeight: 500,
-                              backgroundColor: recentlyRegisteredFilter
-                                ? alpha(themeColors.secondary.main, 0.1)
-                                : alpha(themeColors.background.default, 0.5),
-                              color: recentlyRegisteredFilter ? themeColors.secondary.main : themeColors.text.secondary,
-                              border: `1px solid ${recentlyRegisteredFilter ? themeColors.secondary.main : themeColors.divider}`,
+                              backgroundColor:
+                                statusFilter === status.id
+                                  ? alpha(status.color, 0.1)
+                                  : alpha(themeColors.background.default, 0.5),
+                              color: statusFilter === status.id ? status.color : themeColors.text.secondary,
+                              border: `1px solid ${statusFilter === status.id ? status.color : themeColors.divider}`,
                               "&:hover": {
-                                backgroundColor: alpha(themeColors.secondary.main, 0.1),
-                                color: themeColors.secondary.main,
+                                backgroundColor: alpha(status.color, 0.1),
+                                color: status.color,
                               },
                               transition: "all 0.2s ease",
                             }}
                           />
-                        </Box>
+                        ))}
+                      </Box>
+                    </Box>
+                    <Box sx={{ flex: "1 1 300px" }}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontWeight: 600,
+                          mb: 1,
+                          color: themeColors.text.secondary,
+                          fontSize: "0.8rem",
+                        }}
+                      >
+                        Por Equipe:
+                      </Typography>
+                      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                        {["Todas", "Equipe1(Matutino)", "Equipe2(Vespertino)", "Equipe3(Noturno)"].map(
+                          (team, index) => (
+                            <Chip
+                              key={team}
+                              label={team}
+                              clickable
+                              onClick={() => {
+                                // Update only the team filter
+                                if (index === 0) {
+                                  setTeamFilter("all")
+                                } else {
+                                  setTeamFilter(`team-${index}`)
+                                }
+                              }}
+                              sx={{
+                                borderRadius: "12px",
+                                fontWeight: 500,
+                                backgroundColor:
+                                  teamFilter === (index === 0 ? "all" : `team-${index}`)
+                                    ? alpha(themeColors.success.main, 0.1)
+                                    : alpha(themeColors.background.default, 0.5),
+                                color:
+                                  teamFilter === (index === 0 ? "all" : `team-${index}`)
+                                    ? themeColors.success.main
+                                    : themeColors.text.secondary,
+                                border: `1px solid ${
+                                  teamFilter === (index === 0 ? "all" : `team-${index}`)
+                                    ? themeColors.success.main
+                                    : themeColors.divider
+                                }`,
+                                "&:hover": {
+                                  backgroundColor: alpha(themeColors.success.main, 0.1),
+                                  color: themeColors.success.main,
+                                },
+                                transition: "all 0.2s ease",
+                              }}
+                            />
+                          ),
+                        )}
+                      </Box>
+                    </Box>
+                    <Box sx={{ flex: "1 1 300px" }}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontWeight: 600,
+                          mb: 1,
+                          color: themeColors.text.secondary,
+                          fontSize: "0.8rem",
+                        }}
+                      >
+                        Filtro Adicional:
+                      </Typography>
+                      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                        <Chip
+                          label="Cadastrados Recentemente"
+                          clickable
+                          onClick={handleRecentlyRegisteredFilterChange}
+                          sx={{
+                            borderRadius: "12px",
+                            fontWeight: 500,
+                            backgroundColor: recentlyRegisteredFilter
+                              ? alpha(themeColors.secondary.main, 0.1)
+                              : alpha(themeColors.background.default, 0.5),
+                            color: recentlyRegisteredFilter ? themeColors.secondary.main : themeColors.text.secondary,
+                            border: `1px solid ${recentlyRegisteredFilter ? themeColors.secondary.main : themeColors.divider}`,
+                            "&:hover": {
+                              backgroundColor: alpha(themeColors.secondary.main, 0.1),
+                              color: themeColors.secondary.main,
+                            },
+                            transition: "all 0.2s ease",
+                          }}
+                        />
                       </Box>
                     </Box>
                   </Box>
-                </Paper>
+                </Box>
+              </Paper>
+            </Box>
+
+            {/* Table */}
+            {loading ? (
+              <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 5 }}>
+                <CircularProgress size={40} sx={{ color: themeColors.primary.main }} />
               </Box>
-  
-              {/* Table */}
+            ) : error ? (
+              <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 5 }}>
+                <Typography color="error">{error}</Typography>
+              </Box>
+            ) : (
               <TableContainer>
                 <Table>
                   <TableHead>
@@ -972,25 +995,26 @@ const SearchInput = ({ icon: Icon, placeholder, value, onChange, suggestions = [
                         <SortIndicator field="vehiclePrefix" />
                       </TableCell>
                       <TableCell
-                        onClick={() => handleSort("departureTime")}
+                        onClick={() => handleSort("hora_saida_frota")}
                         sx={{
                           cursor: "pointer",
                           fontWeight: 600,
-                          color: sortField === "departureTime" ? themeColors.primary.main : themeColors.text.secondary,
+                          color:
+                            sortField === "hora_saida_frota" ? themeColors.primary.main : themeColors.text.secondary,
                           "&:hover": { color: themeColors.primary.main },
                           borderBottom: `1px solid ${themeColors.divider}`,
                           py: 1.5,
                         }}
                       >
                         Horário
-                        <SortIndicator field="departureTime" />
+                        <SortIndicator field="hora_saida_frota" />
                       </TableCell>
                       <TableCell
                         onClick={() => handleSort("team")}
                         sx={{
                           cursor: "pointer",
                           fontWeight: 600,
-                          color: sortField === "tipo_equite" ? themeColors.primary.main : themeColors.text.secondary,
+                          color: sortField === "team" ? themeColors.primary.main : themeColors.text.secondary,
                           "&:hover": { color: themeColors.primary.main },
                           borderBottom: `1px solid ${themeColors.divider}`,
                           py: 1.5,
@@ -999,7 +1023,7 @@ const SearchInput = ({ icon: Icon, placeholder, value, onChange, suggestions = [
                         Equipe
                         <SortIndicator field="team" />
                       </TableCell>
-                      {/* Nova coluna de Setor */}
+                      {/* Setor column (using bairro field) */}
                       <TableCell
                         onClick={() => handleSort("location")}
                         sx={{
@@ -1025,7 +1049,7 @@ const SearchInput = ({ icon: Icon, placeholder, value, onChange, suggestions = [
                         }}
                       >
                         Status
-                        <SortIndicator field="status_frota" />
+                        <SortIndicator field="status" />
                       </TableCell>
                       <TableCell
                         sx={{
@@ -1076,7 +1100,7 @@ const SearchInput = ({ icon: Icon, placeholder, value, onChange, suggestions = [
                           </TableCell>
                           <TableCell>
                             <Chip
-                              label={removal.vehiclePrefix || "-"}
+                              label={removal.prefixo || "-"}
                               size="small"
                               sx={{
                                 backgroundColor: alpha(themeColors.success.main, 0.1),
@@ -1089,11 +1113,14 @@ const SearchInput = ({ icon: Icon, placeholder, value, onChange, suggestions = [
                           </TableCell>
                           <TableCell>{removal.hora_saida_frota || "-"}</TableCell>
                           <TableCell>{removal.tipo_equipe || "-"}</TableCell>
-                          {/* Nova célula para Setor */}
+                          {/* Setor cell (using bairro field) */}
                           <TableCell>
                             {removal.location ? (
                               <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                                <LocationOn fontSize="small" sx={{ color: themeColors.info.main, fontSize: "0.9rem" }} />
+                                <LocationOn
+                                  fontSize="small"
+                                  sx={{ color: themeColors.info.main, fontSize: "0.9rem" }}
+                                />
                                 <Typography variant="body2">{removal.location}</Typography>
                               </Box>
                             ) : (
@@ -1128,118 +1155,118 @@ const SearchInput = ({ icon: Icon, placeholder, value, onChange, suggestions = [
                   </TableBody>
                 </Table>
               </TableContainer>
-  
-              <TablePagination
-                component="div"
-                count={filteredRemovals.length}
-                page={page}
-                onPageChange={handlePageChange}
-                rowsPerPage={rowsPerPage}
-                onRowsPerPageChange={handleRowsPerPageChange}
-                rowsPerPageOptions={[5, 10, 25, 50]}
-                labelRowsPerPage="Linhas por página:"
-                labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
-                sx={{
-                  ".MuiTablePagination-actions": {
-                    "& .MuiIconButton-root": {
-                      color: themeColors.text.secondary,
-                      "&:hover": {
-                        backgroundColor: alpha(themeColors.primary.main, 0.1),
-                        color: themeColors.primary.main,
-                      },
+            )}
+
+            <TablePagination
+              component="div"
+              count={filteredRemovals.length}
+              page={page}
+              onPageChange={handlePageChange}
+              rowsPerPage={rowsPerPage}
+              onRowsPerPageChange={handleRowsPerPageChange}
+              rowsPerPageOptions={[5, 10, 25, 50]}
+              labelRowsPerPage="Linhas por página:"
+              labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
+              sx={{
+                ".MuiTablePagination-actions": {
+                  "& .MuiIconButton-root": {
+                    color: themeColors.text.secondary,
+                    "&:hover": {
+                      backgroundColor: alpha(themeColors.primary.main, 0.1),
+                      color: themeColors.primary.main,
                     },
                   },
-                }}
-              />
-            </CardContent>
-          </Card>
-        </Zoom>
-  
-        {/* Modals and dialogs */}
-        <Menu
-          anchorEl={actionMenuAnchor}
-          open={Boolean(actionMenuAnchor)}
-          onClose={handleActionMenuClose}
-          PaperProps={{
-            sx: {
-              borderRadius: "12px",
-              boxShadow: "0 10px 40px rgba(0, 0, 0, 0.1)",
-              padding: "0.5rem",
-            },
+                },
+              }}
+            />
+          </CardContent>
+        </Card>
+      </Zoom>
+
+      {/* Modals and dialogs */}
+      <Menu
+        anchorEl={actionMenuAnchor}
+        open={Boolean(actionMenuAnchor)}
+        onClose={handleActionMenuClose}
+        PaperProps={{
+          sx: {
+            borderRadius: "12px",
+            boxShadow: "0 10px 40px rgba(0, 0, 0, 0.1)",
+            padding: "0.5rem",
+          },
+        }}
+      >
+        <MenuItem
+          onClick={handleEditClick}
+          sx={{
+            borderRadius: "8px",
           }}
         >
-          <MenuItem
-            onClick={handleEditClick}
-            sx={{
-              borderRadius: "8px",
-            }}
-          >
-            <Edit fontSize="small" sx={{ mr: 1 }} />
-            Editar
-          </MenuItem>
-          <MenuItem
-            onClick={handleDeleteConfirmOpen}
-            sx={{
-              borderRadius: "8px",
-            }}
-          >
-            <Delete fontSize="small" sx={{ mr: 1 }} />
-            Excluir
-          </MenuItem>
-        </Menu>
-  
-        <Dialog
-          open={deleteConfirmOpen}
-          onClose={handleDeleteConfirmClose}
-          aria-labelledby="alert-dialog-title"
-          aria-describedby="alert-dialog-description"
+          <Edit fontSize="small" sx={{ mr: 1 }} />
+          Editar
+        </MenuItem>
+        <MenuItem
+          onClick={handleDeleteConfirmOpen}
+          sx={{
+            borderRadius: "8px",
+          }}
         >
-          <DialogTitle id="alert-dialog-title">{"Confirmar Exclusão?"}</DialogTitle>
-          <DialogContent>
-            <Typography id="alert-dialog-description">
-              Você tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.
-            </Typography>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleDeleteConfirmClose} color="primary">
-              Cancelar
-            </Button>
-            <Button onClick={handleDelete} color="error" autoFocus>
-              Excluir
-            </Button>
-          </DialogActions>
-        </Dialog>
-  
-        <DetailModal
-          open={detailModalOpen}
-          onClose={() => setDetailModalOpen(false)}
-          removal={selectedRemoval}
-          onEdit={handleEditClick}
-          themeColors={themeColors}
-          keyframes={keyframes}
-        />
-  
-        <EditModal
-          open={editModalOpen}
-          onClose={() => setEditModalOpen(false)}
-          data={selectedRemoval}
-          onSave={handleSaveEdit}
-          themeColors={themeColors}
-          keyframes={keyframes}
-        />
-  
-        <RegisterModal
-          open={registerModalOpen}
-          onClose={() => setRegisterModalOpen(false)}
-          formData={registerFormData}
-          onChange={handleRegisterFormChange}
-          onSubmit={handleRegisterSubmit}
-          themeColors={themeColors}
-          loading={loading}
-        />
-      </Box>
-    )
-  }
-  
-  export default RemovalTable
-  
+          <Delete fontSize="small" sx={{ mr: 1 }} />
+          Excluir
+        </MenuItem>
+      </Menu>
+
+      <Dialog
+        open={deleteConfirmOpen}
+        onClose={handleDeleteConfirmClose}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">{"Confirmar Exclusão?"}</DialogTitle>
+        <DialogContent>
+          <Typography id="alert-dialog-description">
+            Você tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteConfirmClose} color="primary">
+            Cancelar
+          </Button>
+          <Button onClick={handleDelete} color="error" autoFocus>
+            Excluir
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <DetailModal
+        open={detailModalOpen}
+        onClose={() => setDetailModalOpen(false)}
+        removal={selectedRemoval}
+        onEdit={handleEditClick}
+        themeColors={themeColors}
+        keyframes={keyframes}
+      />
+
+      <EditModal
+        open={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        data={selectedRemoval}
+        onSave={handleSaveEdit}
+        themeColors={themeColors}
+        keyframes={keyframes}
+      />
+
+      <RegisterModal
+        open={registerModalOpen}
+        onClose={() => setRegisterModalOpen(false)}
+        formData={registerFormData}
+        onChange={handleRegisterFormChange}
+        onSubmit={handleRegisterSubmit}
+        themeColors={themeColors}
+        loading={loading}
+      />
+    </Box>
+  )
+}
+
+export default RemovalTable

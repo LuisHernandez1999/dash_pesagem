@@ -36,7 +36,6 @@ import {
   getContagemRemocaoAtivos,
   getContagemRemocaoInativos,
   getContagemTotalRemocao,
-  getQuantidadeSolturaEquipesDia,
   getMediaMensalDeSolturas,
   getRemocoesPorDiaSemana,
 } from "../service/dashboard"
@@ -354,7 +353,6 @@ export default function RemovalDashboard() {
         getContagemRemocaoAtivos(),
         getContagemRemocaoInativos(),
         getTotalDeRemocaoSoltasNoDia(),
-        getQuantidadeSolturaEquipesDia(),
         getRemocoesPorDiaSemana(),
         getMediaMensalDeSolturas(),
       ])
