@@ -57,13 +57,12 @@ import {
   ErrorOutline,
 } from "@mui/icons-material"
 import Sidebar from "@/components/sidebar"
-import DetailModal from "../../components/visualizar_averiguacao"
-import DataTable from "../../components/averiguacao_tabela"
-import { getTodasAveriguacoes } from "../../service/averiguacao" // Usando a função existente
-import AveriguacaoGrafico from "../../components/averiguacao_grafico"
+import DetailModal from "@/components/visualizar_averiguacao"
+import DataTable from "@/components/averiguacao_tabela"
+import { getTodasAveriguacoes } from "@/service/averiguacao"
+import AveriguacaoGrafico from "@/components/averiguacao_grafico"
 
 // Adicione esta constante no início do arquivo, logo após a definição de API_BASE_URL no import
-// Adicione esta linha após a importação da função getTodasAveriguacoes
 const API_BASE_URL = "http://127.0.0.1:8000"
 
 // Animation keyframes
@@ -248,9 +247,6 @@ const themeColors = {
   divider: "rgba(226, 232, 240, 0.8)",
 }
 
-// Modifique o componente ImageGallery para adicionar o domínio base às URLs das imagens
-// Substitua a função ImageGallery existente por esta versão atualizada:
-
 // Image Gallery component for displaying images in the table
 const ImageGallery = ({ images = [], themeColors }) => {
   // Adicionar no início do componente ImageGallery
@@ -268,17 +264,69 @@ const ImageGallery = ({ images = [], themeColors }) => {
     setOpen(false)
   }
 
-  // Função para obter a URL completa da imagem
-  const getFullImageUrl = (imagePath) => {
-    if (!imagePath) return null
+  // Função para renderizar imagens base64 ou URLs
+  const renderImage = (imageSrc) => {
+    if (!imageSrc) return null
+
+    // Verificar se é uma string base64
+    if (typeof imageSrc === "string" && imageSrc.startsWith("data:image")) {
+      return imageSrc
+    }
+
+    // Verificar se é uma string base64 sem o prefixo data:image
+    if (
+      typeof imageSrc === "string" &&
+      (imageSrc.startsWith("/9j/") || imageSrc.startsWith("iVBOR") || imageSrc.startsWith("/4AA"))
+    ) {
+      return `data:image/jpeg;base64,${imageSrc}`
+    }
+
     // Se a imagem já começa com http, é uma URL completa
-    if (imagePath.startsWith("http")) return imagePath
-    // Caso contrário, adiciona o domínio base
-    return `${API_BASE_URL}${imagePath}`
+    if (typeof imageSrc === "string" && imageSrc.startsWith("http")) {
+      return imageSrc
+    }
+
+    // Check if the path already includes /media/
+    if (typeof imageSrc === "string" && imageSrc.startsWith("/media/")) {
+      // If the path has duplicate /media/media/, fix it
+      if (imageSrc.startsWith("/media/media/")) {
+        const fixedPath = imageSrc.replace("/media/media/", "/media/")
+        return `${API_BASE_URL}${fixedPath}`
+      }
+      // Otherwise, just add the API base URL
+      return `${API_BASE_URL}${imageSrc}`
+    }
+
+    // For other paths, add the API base URL and /media/
+    if (typeof imageSrc === "string") {
+      return `${API_BASE_URL}/media/${imageSrc}`
+    }
+
+    return "/placeholder.svg"
   }
 
   // Se não há imagens, mostrar um placeholder
   if (!images || !Array.isArray(images) || images.length === 0) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: themeColors.text.secondary,
+          height: "100%",
+        }}
+      >
+        <ImageIcon sx={{ mr: 1, fontSize: "1rem" }} />
+        <Typography variant="caption">Sem imagens</Typography>
+      </Box>
+    )
+  }
+
+  // Filtrar imagens nulas ou vazias
+  const validImages = images.filter((img) => img !== null && img !== "")
+
+  if (validImages.length === 0) {
     return (
       <Box
         sx={{
@@ -306,7 +354,7 @@ const ImageGallery = ({ images = [], themeColors }) => {
         }}
         onClick={(e) => {
           e.stopPropagation()
-          handleOpen(images[0])
+          handleOpen(validImages[0])
         }}
       >
         <Box
@@ -324,7 +372,7 @@ const ImageGallery = ({ images = [], themeColors }) => {
           }}
         >
           <img
-            src={getFullImageUrl(images[0]) || "/placeholder.svg"}
+            src={renderImage(validImages[0]) || "/placeholder.svg"}
             alt="Imagem da averiguação"
             style={{
               width: "100%",
@@ -332,15 +380,15 @@ const ImageGallery = ({ images = [], themeColors }) => {
               objectFit: "cover",
             }}
             onError={(e) => {
-              console.error("Erro ao carregar imagem:", images[0])
+              console.error("Erro ao carregar imagem:", validImages[0])
               e.target.onerror = null
-              e.target.src = "/abstract-geometric-shapes.png"
+              e.target.src = "/broken-image-icon.png" // Fallback image
             }}
           />
         </Box>
         <Box sx={{ display: "flex", alignItems: "center" }}>
           <Typography variant="body2" sx={{ color: themeColors.primary.main, fontWeight: 500 }}>
-            {images.length} {images.length === 1 ? "imagem" : "imagens"}
+            {validImages.length} {validImages.length === 1 ? "imagem" : "imagens"}
           </Typography>
           <ZoomIn
             sx={{
@@ -389,13 +437,13 @@ const ImageGallery = ({ images = [], themeColors }) => {
               width: "100%",
               maxHeight: "70vh",
             }}
-            cols={images.length > 1 ? 2 : 1}
+            cols={validImages.length > 1 ? 2 : 1}
             gap={8}
           >
-            {images.map((img, index) => (
+            {validImages.map((img, index) => (
               <ImageListItem key={index}>
                 <img
-                  src={getFullImageUrl(img) || "/placeholder.svg"}
+                  src={renderImage(img) || "/placeholder.svg"}
                   alt={`Imagem ${index + 1}`}
                   loading="lazy"
                   style={{
@@ -407,7 +455,7 @@ const ImageGallery = ({ images = [], themeColors }) => {
                   onError={(e) => {
                     console.error("Erro ao carregar imagem no modal:", img)
                     e.target.onerror = null
-                    e.target.src = "/abstract-geometric-shapes.png"
+                    e.target.src = "/broken-image-icon.png" // Fallback image
                   }}
                 />
               </ImageListItem>
@@ -817,7 +865,7 @@ export default function AveriguacaoDashboard() {
   const [selectedInspection, setSelectedInspection] = useState(null)
 
   // API data
-  const [inspections, setInspections] = useState([])
+  const [averiguacoes, setAveriguacoes] = useState([])
 
   // Fetch data from API
   const fetchData = async () => {
@@ -826,18 +874,14 @@ export default function AveriguacaoDashboard() {
       setError(null)
 
       // Buscar todas as averiguações usando a função correta
-      const averiguacoes = await getTodasAveriguacoes()
-      console.log("Dados obtidos da API:", averiguacoes)
+      const result = await getTodasAveriguacoes()
+      console.log("Dados obtidos:", result)
 
-      if (!averiguacoes || !Array.isArray(averiguacoes) || averiguacoes.length === 0) {
-        throw new Error("Nenhuma averiguação encontrada ou formato inválido")
-      }
-
-      // Modifique a função fetchData para incluir os campos garagem e tipo_servico
-      // Substitua o trecho dentro da função fetchData onde os dados são transformados:
+      // Armazenar os dados originais da API
+      setAveriguacoes(result.data)
 
       // Transform the API response to match the table's expected format
-      const formattedData = averiguacoes.map((averiguacao) => {
+      const formattedData = result.data.map((averiguacao) => {
         console.log(
           "Processando averiguação:",
           averiguacao.id,
@@ -846,29 +890,35 @@ export default function AveriguacaoDashboard() {
           "garagem:",
           averiguacao.garagem,
           "tipo_servico:",
-          averiguacao.tipo_servico,
+          averiguacao.tipoServico,
         )
 
-        // Transformar tipo_servico "1" em "Seletiva"
-        let fleetType = averiguacao.tipo_servico
-        if (fleetType === "1" || fleetType === 1) {
+        // Transformar tipo_servico em um tipo de frota legível
+        let fleetType = averiguacao.tipoServico
+        if (averiguacao.tipoServico === "1" || averiguacao.tipoServico === 1) {
           fleetType = "Seletiva"
+        } else if (averiguacao.tipoServico === "2" || averiguacao.tipoServico === 2) {
+          fleetType = "Remoção"
+        } else if (averiguacao.tipoServico === "3" || averiguacao.tipoServico === 3) {
+          fleetType = "Varrição"
+        } else {
+          // Se for uma string, manter o valor original
+          fleetType = averiguacao.tipoServico || "Não especificado"
         }
 
         return {
           id: averiguacao.id,
-          date: averiguacao.data,
-          time: averiguacao.hora_averiguacao,
+          date: new Date().toISOString().split("T")[0], // Usando data atual como exemplo
+          time: averiguacao.horaAveriguacao,
           pa: averiguacao.garagem, // Usar garagem como PA
           route: averiguacao.rota,
           fleetType: fleetType, // Usar o valor transformado
           photos: Array.isArray(averiguacao.imagens)
-            ? averiguacao.imagens
-            : averiguacao.imagens
-              ? [averiguacao.imagens]
-              : [],
+            ? averiguacao.imagens.filter((img) => img !== null && img !== "")
+            : [],
           inspector: averiguacao.averiguador,
-          observations: "",
+          observations: averiguacao.observacoesOperacao || "",
+          originalData: averiguacao, // Armazenar os dados originais para uso no modal
         }
       })
 
@@ -882,95 +932,10 @@ export default function AveriguacaoDashboard() {
     } catch (error) {
       console.error("Erro ao processar dados:", error)
       setError(`Erro ao carregar dados: ${error.message}`)
-      setSnackbarMessage("Erro ao carregar dados")
+      setSnackbarMessage("Erro ao carregar dados: " + error.message)
       setSnackbarSeverity("error")
       setSnackbarOpen(true)
       setLoading(false)
-
-      // Dados de exemplo para quando a API falhar
-      const mockData = [
-        {
-          id: 1,
-          data: new Date().toISOString().split("T")[0],
-          hora_averiguacao: new Date().toTimeString().split(" ")[0],
-          imagens: [
-            "https://via.placeholder.com/300/3a86ff/ffffff?text=Foto+Averiguação+1",
-            "https://via.placeholder.com/300/4CAF50/ffffff?text=Foto+Averiguação+2",
-          ],
-          averiguador: "Sistema (Mock 1)",
-          rota: "PA1-R101",
-          garagem: "PA1", // Adicionado
-          tipo_servico: "Remoção", // Adicionado
-        },
-        {
-          id: 2,
-          data: new Date(Date.now() - 86400000).toISOString().split("T")[0],
-          hora_averiguacao: "10:30:00",
-          imagens: ["https://via.placeholder.com/300/fb5607/ffffff?text=Foto+Averiguação+3"],
-          averiguador: "Sistema (Mock 2)",
-          rota: "PA2-V202",
-          garagem: "PA2", // Adicionado
-          tipo_servico: "Varrição", // Adicionado
-        },
-        {
-          id: 3,
-          data: new Date(Date.now() - 172800000).toISOString().split("T")[0],
-          hora_averiguacao: "14:15:00",
-          imagens: [],
-          averiguador: "Sistema (Mock 3)",
-          rota: "PA3-S303",
-          garagem: "PA3", // Adicionado
-          tipo_servico: "Seletiva", // Adicionado
-        },
-        {
-          id: 4,
-          data: new Date(Date.now() - 259200000).toISOString().split("T")[0],
-          hora_averiguacao: "09:45:00",
-          imagens: [
-            "https://via.placeholder.com/300/8338ec/ffffff?text=Foto+Averiguação+4",
-            "https://via.placeholder.com/300/ffbe0b/ffffff?text=Foto+Averiguação+5",
-          ],
-          averiguador: "Sistema (Mock 4)",
-          rota: "PA4-R404",
-          garagem: "PA4", // Adicionado
-          tipo_servico: "Remoção", // Adicionado
-        },
-        {
-          id: 5,
-          data: new Date(Date.now() - 345600000).toISOString().split("T")[0],
-          hora_averiguacao: "16:20:00",
-          imagens: ["https://via.placeholder.com/300/3a86ff/ffffff?text=Foto+Averiguação+7"],
-          averiguador: "Sistema (Mock 5)",
-          rota: "PA1-V105",
-          garagem: "PA1", // Adicionado
-          tipo_servico: "Varrição", // Adicionado
-        },
-      ]
-
-      const formattedMockData = mockData.map((averiguacao) => {
-        // Transformar tipo_servico "1" em "Seletiva"
-        let fleetType = averiguacao.tipo_servico
-        if (fleetType === "1" || fleetType === 1) {
-          fleetType = "Seletiva"
-        }
-
-        return {
-          id: averiguacao.id,
-          date: averiguacao.data,
-          time: averiguacao.hora_averiguacao,
-          pa: averiguacao.garagem, // Usar garagem diretamente
-          route: averiguacao.rota,
-          fleetType: fleetType, // Usar o valor transformado
-          photos: averiguacao.imagens || [],
-          inspector: averiguacao.averiguador,
-          observations: "",
-        }
-      })
-
-      setInspections(formattedMockData)
-      setSnackbarMessage("Usando dados de exemplo devido a erro na API")
-      setSnackbarSeverity("warning")
-      setSnackbarOpen(true)
     }
   }
 
@@ -979,26 +944,8 @@ export default function AveriguacaoDashboard() {
     fetchData()
   }, [])
 
-  // Remova ou comente as funções extractPAFromRoute e determineFleetType, pois não serão mais necessárias
-  // E substitua todas as chamadas a essas funções nos dados de exemplo:
-
-  // Helper function to extract PA from route
-  // const extractPAFromRoute = (route) => {
-  //   // This is a placeholder - implement the actual logic based on your route format
-  //   if (route && route.startsWith("PA")) {
-  //     return route.substring(0, 3)
-  //   }
-  //   return "PA1" // Default value
-  // }
-
-  // Helper function to determine fleet type from route or other data
-  // const determineFleetType = (route) => {
-  //   // This is a placeholder - implement the actual logic based on your business rules
-  //   if (route && route.includes("R")) return "Remoção"
-  //   if (route && route.includes("V")) return "Varrição"
-  //   if (route && route.includes("S")) return "Seletiva"
-  //   return "Seletiva" // Default value
-  // }
+  // API data transformed for the table
+  const [inspections, setInspections] = useState([])
 
   // Calculate fleet counts by PA
   const getFleetCountsByPA = (pa) => {
@@ -1042,7 +989,7 @@ export default function AveriguacaoDashboard() {
       pa1Inspections: pa1FleetFilter === "all" ? pa1Counts.total : pa1Counts[pa1FleetFilter] || 0,
       pa2Inspections: pa2FleetFilter === "all" ? pa2Counts.total : pa2Counts[pa2FleetFilter] || 0,
       pa3Inspections: pa3FleetFilter === "all" ? pa3Counts.total : pa3Counts[pa3FleetFilter] || 0,
-      pa4Inspections: pa4FleetFilter === "all" ? pa4Counts.total : pa4Counts[pa4FleetFilter] || 0,
+      pa4Inspections: pa4FleetFilter === "all" ? pa4Counts.total : pa4FleetFilter[pa4FleetFilter] || 0,
       pa1Counts,
       pa2Counts,
       pa3Counts,
@@ -1051,20 +998,12 @@ export default function AveriguacaoDashboard() {
     }
   }, [inspections, pa1FleetFilter, pa2FleetFilter, pa3FleetFilter, pa4FleetFilter])
 
-  // Modifique a função fleetTypeData para tratar o valor "1" como "Seletiva"
-  // Substitua o useMemo do fleetTypeData por:
-
   // Fleet type distribution data
   const fleetTypeData = useMemo(() => {
-    // Primeiro, agrupe os dados por tipo de frota, tratando "1" como "Seletiva"
+    // Primeiro, agrupe os dados por tipo de frota
     const groupedData = inspections.reduce((acc, item) => {
-      // Determinar o tipo de frota a ser exibido
-      let displayType = item.fleetType
-
-      // Se o tipo for "1", exibir como "Seletiva"
-      if (displayType === "1" || displayType === 1) {
-        displayType = "Seletiva"
-      }
+      // Usar o tipo de frota já processado
+      const displayType = item.fleetType
 
       // Agrupar por tipo de exibição
       acc[displayType] = (acc[displayType] || 0) + 1
@@ -1198,26 +1137,8 @@ export default function AveriguacaoDashboard() {
       // Fleet type filter - mapear os tipos de frota para os filtros fixos
       let fleetMatch = fleetTypeFilter === "all"
       if (!fleetMatch) {
-        if (fleetTypeFilter === "Remoção") {
-          fleetMatch =
-            item.fleetType === "Remoção" ||
-            item.fleetType === "remocao" ||
-            item.fleetType.toLowerCase().includes("remo")
-        } else if (fleetTypeFilter === "Varrição") {
-          fleetMatch =
-            item.fleetType === "Varrição" ||
-            item.fleetType === "varricao" ||
-            item.fleetType.toLowerCase().includes("varri")
-        } else if (fleetTypeFilter === "Seletiva") {
-          fleetMatch =
-            item.fleetType === "Seletiva" ||
-            item.fleetType === "seletiva" ||
-            item.fleetType.toLowerCase().includes("selet") ||
-            item.fleetType === "1" ||
-            item.fleetType === 1
-        } else {
-          fleetMatch = item.fleetType === fleetTypeFilter
-        }
+        // Usar comparação direta com o tipo de frota já processado
+        fleetMatch = item.fleetType === fleetTypeFilter
       }
 
       return searchMatch && dateMatch && paMatch && fleetMatch

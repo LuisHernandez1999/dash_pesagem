@@ -706,3 +706,44 @@ export const contarMotoristasEColetorsHoje = async () => {
     };
   }
 };
+
+
+export const getAveriguacoes = async () => {
+    try {
+        const response = await fetch(`${API_URL}/averiguacao/ver_averiguacao/get/`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error('Erro ao buscar averiguações');
+        }
+        const data = await response.json();
+        return data.map(item => ({
+            id: item.id,
+            horaAveriguacao: item.hora_averiguacao,
+            horaInicio: item.hora_inicio,
+            horaEncerramento: item.hora_encerramento,
+            quantidadeViagens: item.quantidade_viagens,
+            velocidadeColeta: item.velocidade_coleta,
+            larguraRua: item.largura_rua,
+            alturaFios: item.altura_fios,
+            caminhaoUsado: item.caminhao_usado,
+            equipamentoProtecao: item.equipamento_protecao,
+            uniformeCompleto: item.uniforme_completo,
+            documentacaoVeiculo: item.documentacao_veiculo,
+            inconformidades: item.inconformidades,
+            acoesCorretivas: item.acoes_corretivas,
+            observacoesOperacao: item.observacoes_operacao,
+            averiguador: item.averiguador,
+            garagem: item.garagem,
+            rota: item.rota,
+            imagens: item.imagens || [],
+        }));
+    } catch (error) {
+        console.error('Erro ao buscar averiguações:', error);
+        throw error;
+    }
+};
