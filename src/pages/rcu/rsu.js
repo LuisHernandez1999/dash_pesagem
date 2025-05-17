@@ -17,33 +17,14 @@ import {
   alpha,
   Snackbar,
   Alert,
-  Tabs,
-  Tab,
-  Fade,
-  Zoom,
 } from "@mui/material"
-import {
-  LocalShipping,
-  People,
-  Engineering,
-  Today,
-  Refresh,
-  Menu as MenuIcon,
-  Timeline,
-  PieChart as PieChartIcon,
-  Warehouse,
-  RecyclingRounded,
-  Home,
-} from "@mui/icons-material"
+import { Refresh, Menu as MenuIcon, Timeline, Warehouse, BarChart } from "@mui/icons-material"
 import Sidebar from "@/components/sidebar"
-import StatCard from "../../components/rsu_stats"
-import SummaryCard from "../../components/summary_rsu"
-import EquipmentCard from "../../components/rsu_equipaments"
-import WorkforceCard from "../../components/work"
-import EquipmentChart from "../../components/equipament_chart"
-import WorkforceChart from "../../components/work_chart"
-import PADistributionChart from "../../components/pa_chart"
-import CollectionTypeChart from "../../components/coleta_chart"
+import RSUTable from "../../components/rsu_tabela"
+import ShiftDistributionChart from "../../components/rsu_shift"
+import PADistributionChart from "../../components/rsu_pa"
+import WeeklyDistributionChart from "../../components/grafico_rsu_semana"
+import StatsCards from "../../components/rsu_cards"
 
 // Animation keyframes
 const keyframes = {
@@ -184,9 +165,9 @@ const themeColors = {
     contrastText: "#ffffff",
   },
   secondary: {
-    main: "#4CAF50",
-    light: "#81C784",
-    dark: "#388E3C",
+    main: "#ff006e",
+    light: "#ff4b93",
+    dark: "#c8005a",
     contrastText: "#ffffff",
   },
   success: {
@@ -227,112 +208,98 @@ const themeColors = {
   divider: "rgba(226, 232, 240, 0.8)",
 }
 
-// Dados de exemplo para Coleta Domiciliar
-const domiciliarEquipamentos = [
-  { pa: "1", previsto: 15, realizado: 15, manutencao: 0, reservas: 0 },
-  { pa: "2", previsto: 14, realizado: 15, manutencao: 0, reservas: 1 },
-  { pa: "3", previsto: 15, realizado: 15, manutencao: 0, reservas: 0 },
-  { pa: "4", previsto: 15, realizado: 14, manutencao: 1, reservas: 2 },
-]
-
-const domiciliarMaoDeObra = [
-  { pa: "1", previstoMotorista: 15, realizadoMotorista: 15, previstoColetores: 45, realizadoColetores: 44, faltas: 1 },
-  { pa: "2", previstoMotorista: 14, realizadoMotorista: 15, previstoColetores: 42, realizadoColetores: 34, faltas: 8 },
-  { pa: "3", previstoMotorista: 15, realizadoMotorista: 15, previstoColetores: 45, realizadoColetores: 44, faltas: 1 },
-  { pa: "4", previstoMotorista: 15, realizadoMotorista: 14, previstoColetores: 45, realizadoColetores: 31, faltas: 14 },
-]
-
-const domiciliarResumo = [
-  { label: "Mot. Previsto", value: 59 },
-  { label: "Mot. Realizado", value: 59 },
-  { label: "Col. Previsto", value: 178 },
-  { label: "Col. Realizado", value: 142 },
-  { label: "Faltas", value: 36 },
-  { label: "Faltas Totais", value: 36 },
-]
-
-// Dados de exemplo para Coleta Seletiva
-const seletivaEquipamentos = [
-  { pa: "1", previsto: 5, realizado: 6, manutencao: 0, reservas: 0 },
-  { pa: "2", previsto: 5, realizado: 5, manutencao: 0, reservas: 0 },
-  { pa: "3", previsto: 4, realizado: 4, manutencao: 0, reservas: 0 },
-  { pa: "4", previsto: 5, realizado: 5, manutencao: 0, reservas: 0 },
-]
-
-const seletivaMaoDeObra = [
-  { pa: "1", previstoMotorista: 4, realizadoMotorista: 6, previstoColetores: 8, realizadoColetores: 8, faltas: 0 },
-  { pa: "2", previstoMotorista: 5, realizadoMotorista: 5, previstoColetores: 10, realizadoColetores: 10, faltas: 0 },
-  { pa: "3", previstoMotorista: 4, realizadoMotorista: 4, previstoColetores: 8, realizadoColetores: 4, faltas: 4 },
-  { pa: "4", previstoMotorista: 5, realizadoMotorista: 5, previstoColetores: 10, realizadoColetores: 10, faltas: 0 },
-]
-
-const seletivaResumo = [
-  { label: "Mot. Previsto", value: 18 },
-  { label: "Mot. Realizado", value: 20 },
-  { label: "Col. Previsto", value: 36 },
-  { label: "Col. Realizado", value: 32 },
-  { label: "Faltas", value: 4 },
-  { label: "Faltas Totais", value: 4 },
-]
-
-// Dados para gráficos
-const equipamentosChartData = [
-  { name: "PA1", previsto: 20, realizado: 21, manutencao: 0, reservas: 0 },
-  { name: "PA2", previsto: 19, realizado: 20, manutencao: 0, reservas: 1 },
-  { name: "PA3", previsto: 19, realizado: 19, manutencao: 0, reservas: 0 },
-  { name: "PA4", previsto: 20, realizado: 19, manutencao: 1, reservas: 2 },
-]
-
-const maoDeObraChartData = [
-  { name: "PA1", motoristas: 21, coletores: 52 },
-  { name: "PA2", motoristas: 20, coletores: 44 },
-  { name: "PA3", motoristas: 19, coletores: 48 },
-  { name: "PA4", motoristas: 19, coletores: 41 },
-]
-
-const paDistributionData = [
-  { name: "PA1", value: 21, color: themeColors.primary.main },
-  { name: "PA2", value: 20, color: themeColors.success.main },
-  { name: "PA3", value: 19, color: themeColors.warning.main },
-  { name: "PA4", value: 19, color: themeColors.error.main },
-]
-
-const collectionTypeData = [
-  { name: "Domiciliar", value: 70, color: themeColors.primary.main },
-  { name: "Seletiva", value: 20, color: themeColors.success.main },
-]
-
-export default function RCUControlDashboard() {
+export default function RSUDashboard() {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
   const isTablet = useMediaQuery(theme.breakpoints.down("md"))
 
   // State variables
   const [loading, setLoading] = useState(true)
+  const [initialLoading, setInitialLoading] = useState(true)
+  const [chartsLoaded, setChartsLoaded] = useState(false)
+
+  // Weekly distribution data
+  const [weeklyData, setWeeklyData] = useState([
+    { day: "Segunda", value: 42, label: "42 saídas" },
+    { day: "Terça", value: 38, label: "38 saídas" },
+    { day: "Quarta", value: 45, label: "45 saídas" },
+    { day: "Quinta", value: 40, label: "40 saídas" },
+    { day: "Sexta", value: 50, label: "50 saídas" },
+    { day: "Sábado", value: 25, label: "25 saídas" },
+    { day: "Domingo", value: 15, label: "15 saídas" },
+  ])
+
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarMessage, setSnackbarMessage] = useState("")
   const [snackbarSeverity, setSnackbarSeverity] = useState("success")
-  const [tabValue, setTabValue] = useState(0)
-  const [highlightedStat, setHighlightedStat] = useState(null)
-  const [chartsLoaded, setChartsLoaded] = useState(false)
 
-  // Estatísticas gerais
-  const [statsData, setStatsData] = useState({
-    totalEquipamentos: 78,
-    totalMotoristas: 77,
-    totalColetores: 174,
-    totalFaltas: 40,
-  })
+  // Mock data for RSU collections
+  const [rsuData, setRsuData] = useState([])
 
-  // Simular carregamento de dados
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false)
+  const loadAllData = async () => {
+    console.log("Iniciando carregamento de dados...")
+    setLoading(true)
+    setInitialLoading(true)
+
+    try {
+      // Simulate API calls with mock data
+      // In a real application, these would be actual API calls
+
+      // Mock RSU collection data
+      const mockRsuData = Array.from({ length: 20 }, (_, index) => ({
+        id: index + 1,
+        route: `Rota ${Math.floor(Math.random() * 10) + 1}`,
+        driver: `Motorista ${Math.floor(Math.random() * 15) + 1}`,
+        driverId: `M${Math.floor(Math.random() * 1000) + 1000}`,
+        collectors: Array.from(
+          { length: Math.floor(Math.random() * 3) + 1 },
+          (_, i) => `Coletor ${Math.floor(Math.random() * 15) + 1}`,
+        ),
+        collectorsIds: Array.from(
+          { length: Math.floor(Math.random() * 3) + 1 },
+          (_, i) => `C${Math.floor(Math.random() * 1000) + 1000}`,
+        ),
+        vehicle: `Caminhão ${Math.floor(Math.random() * 20) + 1}`,
+        vehiclePrefix: `RSU-${Math.floor(Math.random() * 100) + 100}`,
+        departureTime: `${Math.floor(Math.random() * 12) + 7}:${Math.floor(Math.random() * 60)
+          .toString()
+          .padStart(2, "0")}`,
+        status: Math.random() > 0.3 ? "Finalizado" : "Em andamento",
+        arrivalTime:
+          Math.random() > 0.3
+            ? `${Math.floor(Math.random() * 12) + 13}:${Math.floor(Math.random() * 60)
+                .toString()
+                .padStart(2, "0")}`
+            : "",
+        date: new Date().toISOString().split("T")[0],
+        garage: `PA${Math.floor(Math.random() * 4) + 1}`,
+        shift: ["Matutino", "Vespertino", "Noturno"][Math.floor(Math.random() * 3)],
+        collectedWeight: `${(Math.random() * 10 + 5).toFixed(2)} ton`,
+      }))
+
+      setRsuData(mockRsuData)
+
+      // Mark loading as complete
       setChartsLoaded(true)
-    }, 1500)
+      setLoading(false)
+      setInitialLoading(false)
+    } catch (error) {
+      console.error("Erro ao carregar dados:", error)
+      // Show error message
+      setSnackbarMessage("Erro ao carregar dados. Tente novamente.")
+      setSnackbarSeverity("error")
+      setSnackbarOpen(true)
 
-    return () => clearTimeout(timer)
+      // Even with error, mark loading as complete
+      setLoading(false)
+      setInitialLoading(false)
+    }
+  }
+
+  // Load data on component mount
+  useEffect(() => {
+    loadAllData()
   }, [])
 
   // Handle sidebar collapse
@@ -340,22 +307,9 @@ export default function RCUControlDashboard() {
     setSidebarCollapsed(collapsed)
   }
 
-  // Handle tab change
-  const handleTabChange = (event, newValue) => {
-    setTabValue(newValue)
-  }
-
   // Handle refresh data
   const handleRefreshData = () => {
-    setLoading(true)
-    setSnackbarMessage("Dados atualizados com sucesso!")
-    setSnackbarSeverity("success")
-    setSnackbarOpen(true)
-
-    // Simular atualização de dados
-    setTimeout(() => {
-      setLoading(false)
-    }, 1000)
+    loadAllData()
   }
 
   // Handle snackbar close
@@ -431,47 +385,77 @@ export default function RCUControlDashboard() {
                   flexGrow: 1,
                 }}
               >
-                <Box sx={{ display: "flex", alignItems: "center" }}>
-                  <Box
-                    sx={{
-                      width: "52px",
-                      height: "52px",
-                      borderRadius: "14px",
-                      background: `linear-gradient(135deg, ${themeColors.primary.main} 0%, ${themeColors.primary.light} 100%)`,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      mr: 2,
-                      boxShadow: `0 6px 16px ${alpha(themeColors.primary.main, 0.4)}`,
-                      animation: `${keyframes.pulse} 2s ease-in-out infinite, ${keyframes.glow} 3s infinite ease-in-out`,
-                    }}
-                  >
-                    <LocalShipping sx={{ color: "white", fontSize: "2rem" }} />
-                  </Box>
-                  <Typography
-                    variant="h5"
-                    sx={{
-                      fontWeight: 800,
-                      fontSize: { xs: "1.35rem", sm: "1.8rem" },
-                      color: themeColors.text.primary,
-                      letterSpacing: "-0.02em",
-                    }}
-                  >
-                    Controle de RCU
-                  </Typography>
-                </Box>
-                <Typography
-                  variant="subtitle1"
+                <Box
                   sx={{
-                    color: themeColors.text.secondary,
-                    fontSize: { xs: "0.85rem", sm: "0.95rem" },
-                    ml: { xs: "0", sm: "4.5rem" },
-                    mt: "-0.3rem",
-                    fontWeight: 500,
+                    display: "flex",
+                    alignItems: "center",
+                    position: "relative",
+                    pl: { xs: 0, sm: 2 },
                   }}
                 >
-                  12/05/2025
-                </Typography>
+                  <Box
+                    sx={{
+                      width: "5px",
+                      height: { xs: "36px", sm: "48px" },
+                      borderRadius: "8px",
+                      background: `linear-gradient(180deg, ${themeColors.primary.main} 0%, ${themeColors.info.main} 100%)`,
+                      mr: 3,
+                      boxShadow: `0 4px 12px ${alpha(themeColors.primary.main, 0.4)}`,
+                    }}
+                  />
+                  <Box sx={{ position: "relative" }}>
+                    <Typography
+                      variant="h4"
+                      sx={{
+                        fontWeight: 600,
+                        fontSize: { xs: "1.6rem", sm: "2.2rem" },
+                        color: themeColors.text.primary,
+                        letterSpacing: "0.01em",
+                        fontFamily: "'Poppins', sans-serif",
+                        position: "relative",
+                        display: "inline-block",
+                        "&::after": {
+                          content: '""',
+                          position: "absolute",
+                          bottom: "-4px",
+                          left: "0",
+                          width: "40%",
+                          height: "3px",
+                          background: `linear-gradient(90deg, ${themeColors.primary.main}, ${alpha(themeColors.primary.light, 0)})`,
+                          borderRadius: "2px",
+                        },
+                      }}
+                    >
+                      Dashboard RSU
+                    </Typography>
+                    <Typography
+                      variant="subtitle1"
+                      sx={{
+                        color: themeColors.text.secondary,
+                        fontSize: { xs: "0.9rem", sm: "1rem" },
+                        mt: "0.5rem",
+                        fontWeight: 400,
+                        letterSpacing: "0.03em",
+                        opacity: 0.9,
+                        pl: 0.5,
+                        fontStyle: "italic",
+                        position: "relative",
+                        "&::before": {
+                          content: '""',
+                          position: "absolute",
+                          left: "-10px",
+                          top: "50%",
+                          width: "3px",
+                          height: "3px",
+                          borderRadius: "50%",
+                          backgroundColor: themeColors.primary.main,
+                        },
+                      }}
+                    >
+                      Gerenciamento de coletas e equipes
+                    </Typography>
+                  </Box>
+                </Box>
               </Box>
               <Box sx={{ display: "flex", gap: 1 }}>
                 <IconButton
@@ -493,40 +477,6 @@ export default function RCUControlDashboard() {
             />
           </AppBar>
 
-          {/* Tabs */}
-          <Box sx={{ backgroundColor: "#fff", boxShadow: "0 2px 4px rgba(0, 0, 0, 0.05)" }}>
-            <Container maxWidth="xl">
-              <Tabs
-                value={tabValue}
-                onChange={handleTabChange}
-                variant="scrollable"
-                scrollButtons="auto"
-                sx={{
-                  "& .MuiTab-root": {
-                    textTransform: "none",
-                    fontWeight: 600,
-                    fontSize: "0.95rem",
-                    minHeight: 56,
-                  },
-                  "& .Mui-selected": {
-                    color: theme.palette.primary.main,
-                  },
-                  "& .MuiTabs-indicator": {
-                    backgroundColor: theme.palette.primary.main,
-                    height: 3,
-                  },
-                }}
-              >
-                <Tab icon={<Home sx={{ fontSize: 20 }} />} iconPosition="start" label="Coleta Domiciliar - Diurno" />
-                <Tab
-                  icon={<RecyclingRounded sx={{ fontSize: 20 }} />}
-                  iconPosition="start"
-                  label="Coleta Seletiva - Diurno"
-                />
-              </Tabs>
-            </Container>
-          </Box>
-
           {/* Main Content */}
           <Box
             component="main"
@@ -534,339 +484,312 @@ export default function RCUControlDashboard() {
               flex: 1,
               padding: { xs: "1rem", sm: "1.5rem" },
               animation: "fadeIn 1s ease-out",
-              backgroundColor: "#f5f5f5",
             }}
           >
-            <Container maxWidth="xl">
-              {/* Coleta Domiciliar */}
-              {tabValue === 0 && (
-                <>
-                  <Box sx={{ mb: 4 }}>
-                    <Box
-                      sx={{
-                        backgroundColor: "#009fe3",
-                        color: "white",
-                        py: 2,
-                        px: 3,
-                        borderRadius: "8px",
-                        mb: 3,
-                        textAlign: "center",
-                      }}
-                    >
-                      <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                        COLETA DOMICILIAR - DIURNO
-                      </Typography>
-                    </Box>
+            <Container maxWidth="xl" disableGutters>
+              {/* Stats Cards - Agora usando o componente reutilizável */}
+              <StatsCards themeColors={themeColors} keyframes={keyframes} />
 
-                    {/* Stats Cards */}
-                    <Box
-                      sx={{
-                        display: "grid",
-                        gap: "1rem",
-                        gridTemplateColumns: {
-                          xs: "repeat(1, 1fr)",
-                          sm: "repeat(2, 1fr)",
-                          lg: "repeat(4, 1fr)",
-                        },
-                        mb: 3,
-                      }}
-                    >
-                      <Fade in={!loading} timeout={500}>
-                        <Box>
-                          <StatCard
-                            title="Total de Equipamentos"
-                            value="59"
-                            icon={<LocalShipping />}
-                            color={themeColors.primary.main}
-                            highlight={highlightedStat === "totalEquipamentos"}
-                          />
-                        </Box>
-                      </Fade>
-                      <Fade in={!loading} timeout={500} style={{ transitionDelay: !loading ? "100ms" : "0ms" }}>
-                        <Box>
-                          <StatCard
-                            title="Total de Motoristas"
-                            value="59"
-                            icon={<People />}
-                            color={themeColors.secondary.main}
-                            highlight={highlightedStat === "totalMotoristas"}
-                          />
-                        </Box>
-                      </Fade>
-                      <Fade in={!loading} timeout={500} style={{ transitionDelay: !loading ? "200ms" : "0ms" }}>
-                        <Box>
-                          <StatCard
-                            title="Total de Coletores"
-                            value="142"
-                            icon={<Engineering />}
-                            color={themeColors.warning.main}
-                            highlight={highlightedStat === "totalColetores"}
-                          />
-                        </Box>
-                      </Fade>
-                      <Fade in={!loading} timeout={500} style={{ transitionDelay: !loading ? "300ms" : "0ms" }}>
-                        <Box>
-                          <StatCard
-                            title="Total de Faltas"
-                            value="36"
-                            icon={<Today />}
-                            color={themeColors.error.main}
-                            highlight={highlightedStat === "totalFaltas"}
-                          />
-                        </Box>
-                      </Fade>
-                    </Box>
+              {/* RSU Table Section */}
+              <RSUTable
+                rsuData={rsuData}
+                loading={loading}
+                themeColors={themeColors}
+                keyframes={keyframes}
+                onRefresh={handleRefreshData}
+              />
 
-                    {/* Equipamentos e Mão de Obra */}
-                    <Box sx={{ display: "flex", gap: 3, flexWrap: { xs: "wrap", md: "nowrap" }, mb: 3 }}>
-                      <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "400ms" : "0ms" }}>
-                        <Box sx={{ width: { xs: "100%", md: "50%" } }}>
-                          <EquipmentCard
-                            title="EQUIPAMENTOS"
-                            data={domiciliarEquipamentos}
-                            color="#c0c0c0"
-                            textColor="#000"
-                          />
-                        </Box>
-                      </Zoom>
-                      <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "500ms" : "0ms" }}>
-                        <Box sx={{ width: { xs: "100%", md: "50%" } }}>
-                          <WorkforceCard
-                            title="MÃO DE OBRA"
-                            data={domiciliarMaoDeObra}
-                            color="#c0c0c0"
-                            textColor="#000"
-                          />
-                        </Box>
-                      </Zoom>
-                    </Box>
+              {/* Driver/Collector Exit Chart */}
 
-                    {/* Resumo Geral */}
-                    <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "600ms" : "0ms" }}>
-                      <Box sx={{ mb: 3 }}>
-                        <SummaryCard
-                          title="RESUMO GERAL M.O. - DOMICILIAR"
-                          data={domiciliarResumo}
-                          color="#ffff00"
-                          textColor="#000"
-                        />
+              {/* Shift Distribution Chart */}
+              <Box sx={{ mb: 4 }}>
+                <Card
+                  sx={{
+                    borderRadius: "16px",
+                    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
+                    transition: "all 0.3s ease",
+                    overflow: "hidden",
+                    "&:hover": {
+                      boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)",
+                      transform: "translateY(-4px)",
+                    },
+                    background: themeColors.background.card,
+                  }}
+                >
+                  <CardHeader
+                    title={
+                      <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                        <Box
+                          sx={{
+                            width: { xs: "32px", sm: "36px" },
+                            height: { xs: "32px", sm: "36px" },
+                            borderRadius: "12px",
+                            background: themeColors.warning.main,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            animation: `${keyframes.pulse} 2s ease-in-out infinite`,
+                          }}
+                        >
+                          <Timeline
+                            sx={{
+                              color: "white",
+                              fontSize: { xs: "1.1rem", sm: "1.3rem" },
+                            }}
+                          />
+                        </Box>
+                        <Box>
+                          <Typography
+                            sx={{
+                              fontWeight: 600,
+                              fontSize: { xs: "1.1rem", sm: "1.2rem" },
+                              color: themeColors.text.primary,
+                            }}
+                          >
+                            Distribuição por Turno
+                          </Typography>
+                          <Typography
+                            sx={{
+                              fontSize: { xs: "0.8rem", sm: "0.85rem" },
+                              color: themeColors.text.secondary,
+                              fontWeight: 400,
+                            }}
+                          >
+                            Colaboradores nos turnos matutino, vespertino e noturno
+                          </Typography>
+                        </Box>
                       </Box>
-                    </Zoom>
-
-                    {/* Gráficos */}
-                    <Box sx={{ display: "flex", gap: 3, flexWrap: { xs: "wrap", md: "nowrap" }, mb: 3 }}>
-                      <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "700ms" : "0ms" }}>
-                        <Box sx={{ width: { xs: "100%", md: "50%" } }}>
-                          <EquipmentChart
-                            title="Equipamentos por PA"
-                            data={equipamentosChartData}
-                            themeColors={themeColors}
-                            chartsLoaded={chartsLoaded}
-                          />
-                        </Box>
-                      </Zoom>
-                      <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "800ms" : "0ms" }}>
-                        <Box sx={{ width: { xs: "100%", md: "50%" } }}>
-                          <WorkforceChart
-                            title="Mão de Obra por PA"
-                            data={maoDeObraChartData}
-                            themeColors={themeColors}
-                            chartsLoaded={chartsLoaded}
-                          />
-                        </Box>
-                      </Zoom>
-                    </Box>
-
-                    <Box sx={{ display: "flex", gap: 3, flexWrap: { xs: "wrap", md: "nowrap" } }}>
-                      <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "900ms" : "0ms" }}>
-                        <Box sx={{ width: { xs: "100%", md: "50%" } }}>
-                          <PADistributionChart
-                            title="Distribuição por PA"
-                            data={paDistributionData}
-                            themeColors={themeColors}
-                            chartsLoaded={chartsLoaded}
-                          />
-                        </Box>
-                      </Zoom>
-                      <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "1000ms" : "0ms" }}>
-                        <Box sx={{ width: { xs: "100%", md: "50%" } }}>
-                          <CollectionTypeChart
-                            title="Tipos de Coleta"
-                            data={collectionTypeData}
-                            themeColors={themeColors}
-                            chartsLoaded={chartsLoaded}
-                          />
-                        </Box>
-                      </Zoom>
-                    </Box>
-                  </Box>
-                </>
-              )}
-
-              {/* Coleta Seletiva */}
-              {tabValue === 1 && (
-                <>
-                  <Box sx={{ mb: 4 }}>
+                    }
+                    action={
+                      <IconButton
+                        sx={{
+                          color: themeColors.text.secondary,
+                          "&:hover": { color: themeColors.warning.main },
+                        }}
+                        onClick={handleRefreshData}
+                      >
+                        <Refresh />
+                      </IconButton>
+                    }
+                    sx={{
+                      paddingBottom: "0.75rem",
+                      borderBottom: `1px solid ${themeColors.divider}`,
+                      "& .MuiCardHeader-title": {
+                        fontWeight: 600,
+                        fontSize: "1.125rem",
+                        color: themeColors.text.primary,
+                      },
+                      "& .MuiCardHeader-action": {
+                        margin: 0,
+                      },
+                    }}
+                  />
+                  <CardContent sx={{ padding: "1.5rem" }}>
                     <Box
                       sx={{
-                        backgroundColor: "#00a651",
-                        color: "white",
-                        py: 2,
-                        px: 3,
-                        borderRadius: "8px",
-                        mb: 3,
-                        textAlign: "center",
+                        width: "100%",
+                        position: "relative",
+                        height: "300px",
                       }}
                     >
-                      <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                        COLETA SELETIVA - DIURNO
-                      </Typography>
+                      <ShiftDistributionChart themeColors={themeColors} chartsLoaded={chartsLoaded} />
                     </Box>
+                  </CardContent>
+                </Card>
+              </Box>
 
-                    {/* Stats Cards */}
-                    <Box
-                      sx={{
-                        display: "grid",
-                        gap: "1rem",
-                        gridTemplateColumns: {
-                          xs: "repeat(1, 1fr)",
-                          sm: "repeat(2, 1fr)",
-                          lg: "repeat(4, 1fr)",
-                        },
-                        mb: 3,
-                      }}
-                    >
-                      <Fade in={!loading} timeout={500}>
+              {/* PA Distribution Chart */}
+              <Box component="section" sx={{ mb: 4 }}>
+                <Card
+                  sx={{
+                    borderRadius: "16px",
+                    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
+                    transition: "all 0.3s ease",
+                    overflow: "hidden",
+                    "&:hover": {
+                      boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)",
+                      transform: "translateY(-4px)",
+                    },
+                    background: themeColors.background.card,
+                  }}
+                >
+                  <CardHeader
+                    title={
+                      <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                        <Box
+                          sx={{
+                            width: { xs: "32px", sm: "36px" },
+                            height: { xs: "32px", sm: "36px" },
+                            borderRadius: "12px",
+                            background: themeColors.info.main,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            animation: `${keyframes.pulse} 2s ease-in-out infinite`,
+                          }}
+                        >
+                          <Warehouse
+                            sx={{
+                              color: "white",
+                              fontSize: { xs: "1.1rem", sm: "1.3rem" },
+                            }}
+                          />
+                        </Box>
                         <Box>
-                          <StatCard
-                            title="Total de Equipamentos"
-                            value="19"
-                            icon={<LocalShipping />}
-                            color={themeColors.primary.main}
-                            highlight={highlightedStat === "totalEquipamentos"}
-                          />
+                          <Typography
+                            sx={{
+                              fontWeight: 600,
+                              fontSize: { xs: "1.1rem", sm: "1.2rem" },
+                              color: themeColors.text.primary,
+                            }}
+                          >
+                            Distribuição por PA
+                          </Typography>
+                          <Typography
+                            sx={{
+                              fontSize: { xs: "0.8rem", sm: "0.85rem" },
+                              color: themeColors.text.secondary,
+                              fontWeight: 400,
+                            }}
+                          >
+                            Saídas por ponto de apoio
+                          </Typography>
                         </Box>
-                      </Fade>
-                      <Fade in={!loading} timeout={500} style={{ transitionDelay: !loading ? "100ms" : "0ms" }}>
-                        <Box>
-                          <StatCard
-                            title="Total de Motoristas"
-                            value="20"
-                            icon={<People />}
-                            color={themeColors.secondary.main}
-                            highlight={highlightedStat === "totalMotoristas"}
-                          />
-                        </Box>
-                      </Fade>
-                      <Fade in={!loading} timeout={500} style={{ transitionDelay: !loading ? "200ms" : "0ms" }}>
-                        <Box>
-                          <StatCard
-                            title="Total de Coletores"
-                            value="32"
-                            icon={<Engineering />}
-                            color={themeColors.warning.main}
-                            highlight={highlightedStat === "totalColetores"}
-                          />
-                        </Box>
-                      </Fade>
-                      <Fade in={!loading} timeout={500} style={{ transitionDelay: !loading ? "300ms" : "0ms" }}>
-                        <Box>
-                          <StatCard
-                            title="Total de Faltas"
-                            value="4"
-                            icon={<Today />}
-                            color={themeColors.error.main}
-                            highlight={highlightedStat === "totalFaltas"}
-                          />
-                        </Box>
-                      </Fade>
-                    </Box>
-
-                    {/* Equipamentos e Mão de Obra */}
-                    <Box sx={{ display: "flex", gap: 3, flexWrap: { xs: "wrap", md: "nowrap" }, mb: 3 }}>
-                      <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "400ms" : "0ms" }}>
-                        <Box sx={{ width: { xs: "100%", md: "50%" } }}>
-                          <EquipmentCard
-                            title="EQUIPAMENTOS"
-                            data={seletivaEquipamentos}
-                            color="#c0c0c0"
-                            textColor="#000"
-                          />
-                        </Box>
-                      </Zoom>
-                      <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "500ms" : "0ms" }}>
-                        <Box sx={{ width: { xs: "100%", md: "50%" } }}>
-                          <WorkforceCard
-                            title="MÃO DE OBRA"
-                            data={seletivaMaoDeObra}
-                            color="#c0c0c0"
-                            textColor="#000"
-                          />
-                        </Box>
-                      </Zoom>
-                    </Box>
-
-                    {/* Resumo Geral */}
-                    <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "600ms" : "0ms" }}>
-                      <Box sx={{ mb: 3 }}>
-                        <SummaryCard
-                          title="RESUMO GERAL M.O. - SELETIVA"
-                          data={seletivaResumo}
-                          color="#ffff00"
-                          textColor="#000"
-                        />
                       </Box>
-                    </Zoom>
-
-                    {/* Gráficos */}
-                    <Box sx={{ display: "flex", gap: 3, flexWrap: { xs: "wrap", md: "nowrap" }, mb: 3 }}>
-                      <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "700ms" : "0ms" }}>
-                        <Box sx={{ width: { xs: "100%", md: "50%" } }}>
-                          <EquipmentChart
-                            title="Equipamentos por PA"
-                            data={equipamentosChartData}
-                            themeColors={themeColors}
-                            chartsLoaded={chartsLoaded}
-                          />
-                        </Box>
-                      </Zoom>
-                      <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "800ms" : "0ms" }}>
-                        <Box sx={{ width: { xs: "100%", md: "50%" } }}>
-                          <WorkforceChart
-                            title="Mão de Obra por PA"
-                            data={maoDeObraChartData}
-                            themeColors={themeColors}
-                            chartsLoaded={chartsLoaded}
-                          />
-                        </Box>
-                      </Zoom>
+                    }
+                    action={
+                      <IconButton
+                        sx={{
+                          color: themeColors.text.secondary,
+                          "&:hover": { color: themeColors.info.main },
+                        }}
+                        onClick={handleRefreshData}
+                      >
+                        <Refresh />
+                      </IconButton>
+                    }
+                    sx={{
+                      paddingBottom: "0.75rem",
+                      borderBottom: `1px solid ${themeColors.divider}`,
+                      "& .MuiCardHeader-title": {
+                        fontWeight: 600,
+                        fontSize: "1.125rem",
+                        color: themeColors.text.primary,
+                      },
+                      "& .MuiCardHeader-action": {
+                        margin: 0,
+                      },
+                    }}
+                  />
+                  <CardContent sx={{ padding: "1.5rem" }}>
+                    <Box
+                      sx={{
+                        width: "100%",
+                        position: "relative",
+                      }}
+                    >
+                      <PADistributionChart chartsLoaded={chartsLoaded} themeColors={themeColors} />
                     </Box>
+                  </CardContent>
+                </Card>
+              </Box>
 
-                    <Box sx={{ display: "flex", gap: 3, flexWrap: { xs: "wrap", md: "nowrap" } }}>
-                      <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "900ms" : "0ms" }}>
-                        <Box sx={{ width: { xs: "100%", md: "50%" } }}>
-                          <PADistributionChart
-                            title="Distribuição por PA"
-                            data={paDistributionData}
-                            themeColors={themeColors}
-                            chartsLoaded={chartsLoaded}
+              {/* Weekly Distribution Chart */}
+              <Box component="section" sx={{ mb: 4 }}>
+                <Card
+                  sx={{
+                    borderRadius: "16px",
+                    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
+                    transition: "all 0.3s ease",
+                    overflow: "hidden",
+                    "&:hover": {
+                      boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)",
+                      transform: "translateY(-4px)",
+                    },
+                    background: themeColors.background.card,
+                  }}
+                >
+                  <CardHeader
+                    title={
+                      <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                        <Box
+                          sx={{
+                            width: { xs: "32px", sm: "36px" },
+                            height: { xs: "32px", sm: "36px" },
+                            borderRadius: "12px",
+                            background: themeColors.info.main,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            animation: `${keyframes.pulse} 2s ease-in-out infinite`,
+                          }}
+                        >
+                          <BarChart
+                            sx={{
+                              color: "white",
+                              fontSize: { xs: "1.1rem", sm: "1.3rem" },
+                            }}
                           />
                         </Box>
-                      </Zoom>
-                      <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "1000ms" : "0ms" }}>
-                        <Box sx={{ width: { xs: "100%", md: "50%" } }}>
-                          <CollectionTypeChart
-                            title="Tipos de Coleta"
-                            data={collectionTypeData}
-                            themeColors={themeColors}
-                            chartsLoaded={chartsLoaded}
-                          />
+                        <Box>
+                          <Typography
+                            sx={{
+                              fontWeight: 600,
+                              fontSize: { xs: "1.1rem", sm: "1.2rem" },
+                              color: themeColors.text.primary,
+                            }}
+                          >
+                            Distribuição Semanal
+                          </Typography>
+                          <Typography
+                            sx={{
+                              fontSize: { xs: "0.8rem", sm: "0.85rem" },
+                              color: themeColors.text.secondary,
+                              fontWeight: 400,
+                            }}
+                          >
+                            Saídas por dia da semana
+                          </Typography>
                         </Box>
-                      </Zoom>
+                      </Box>
+                    }
+                    action={
+                      <IconButton
+                        sx={{
+                          color: themeColors.text.secondary,
+                          "&:hover": { color: themeColors.info.main },
+                        }}
+                        onClick={handleRefreshData}
+                      >
+                        <Refresh />
+                      </IconButton>
+                    }
+                    sx={{
+                      paddingBottom: "0.75rem",
+                      borderBottom: `1px solid ${themeColors.divider}`,
+                      "& .MuiCardHeader-title": {
+                        fontWeight: 600,
+                        fontSize: "1.125rem",
+                        color: themeColors.text.primary,
+                      },
+                      "& .MuiCardHeader-action": {
+                        margin: 0,
+                      },
+                    }}
+                  />
+                  <CardContent sx={{ padding: "1.5rem" }}>
+                    <Box
+                      sx={{
+                        width: "100%",
+                        position: "relative",
+                        height: "350px",
+                      }}
+                    >
+                      <WeeklyDistributionChart data={weeklyData} themeColors={themeColors} height={300} />
                     </Box>
-                  </Box>
-                </>
-              )}
+                  </CardContent>
+                </Card>
+              </Box>
             </Container>
           </Box>
         </Box>

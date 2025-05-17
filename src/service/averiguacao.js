@@ -84,3 +84,34 @@ export const getTodasAveriguacoes = async (page = 1, page_size = 10) => {
     throw new Error(errorMessage);
   }
 };
+
+export async function updateAveriguacao(averiguacaoId, data) {
+  try {
+    const response =  await axios.get(`${API_BASE_URL}/api/averiguacao/${averiguacaoId}/update/`, {
+      hora_averiguacao: data.hora_averiguacao,
+      tipo_servico: data.tipo_servico,
+      hora_inicio: data.hora_inicio,
+      hora_encerramento: data.hora_encerramento,
+      quantidade_viagens: data.quantidade_viagens,
+      velocidade_coleta: data.velocidade_coleta,
+      largura_rua: data.largura_rua,
+      altura_fios: data.altura_fios,
+      caminhao_usado: data.caminhao_usado,
+      equipamento_protecao: data.equipamento_protecao,
+      uniforme_completo: data.uniforme_completo,
+      documentacao_veiculo: data.documentacao_veiculo,
+      inconformidades: data.inconformidades,
+      acoes_corretivas: data.acoes_corretivas,
+      observacoes_operacao: data.observacoes_operacao,
+      quantidade_coletores: data.quantidade_coletores,
+      averiguador: data.averiguador,
+      garagem: data.garagem,
+      rota: data.rota
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao atualizar averiguação:', error);
+    throw error;
+  }
+}

@@ -24,6 +24,10 @@ import {
   Backdrop,
   Fade,
   Zoom,
+  TextField,
+  FormControl,
+  Select,
+  MenuItem,
 } from "@mui/material"
 import {
   Close,
@@ -52,6 +56,7 @@ import {
   ArrowBack,
   ArrowForward,
   FullscreenExit,
+  Save,
 } from "@mui/icons-material"
 import { useState } from "react"
 
@@ -98,7 +103,7 @@ const getFullImageUrl = (imagePath) => {
 }
 
 // Componente para exibir status com ícone e cor
-const StatusChip = ({ label, status }) => {
+const StatusChip = ({ label, status, isEditMode, onChange }) => {
   let color = "default"
   let backgroundColor = "rgba(0, 0, 0, 0.08)"
   let textColor = "#666"
@@ -126,6 +131,31 @@ const StatusChip = ({ label, status }) => {
     IconComponent = Warning
   }
 
+  if (isEditMode) {
+    return (
+      <FormControl fullWidth size="small">
+        <Select
+          value={status || ""}
+          onChange={onChange}
+          sx={{
+            borderRadius: "8px",
+            backgroundColor: "white",
+            "& .MuiOutlinedInput-notchedOutline": {
+              borderColor: textColor,
+            },
+          }}
+        >
+          <MenuItem value="conforme">Conforme</MenuItem>
+          <MenuItem value="não conforme">Não Conforme</MenuItem>
+          <MenuItem value="adequado">Adequado</MenuItem>
+          <MenuItem value="inadequado">Inadequado</MenuItem>
+          <MenuItem value="médio">Médio</MenuItem>
+          <MenuItem value="baixo">Baixo</MenuItem>
+        </Select>
+      </FormControl>
+    )
+  }
+
   return (
     <Chip
       icon={<IconComponent style={{ fontSize: "0.9rem" }} />}
@@ -145,7 +175,7 @@ const StatusChip = ({ label, status }) => {
 }
 
 // Componente para exibir informações em cards
-const InfoCard = ({ title, value, icon: Icon, color, animation }) => {
+const InfoCard = ({ title, value, icon: Icon, color, animation, isEditMode, onChange, name }) => {
   return (
     <Card
       elevation={0}
@@ -156,9 +186,9 @@ const InfoCard = ({ title, value, icon: Icon, color, animation }) => {
         height: "100%",
         transition: "all 0.3s ease",
         "&:hover": {
-          transform: "translateY(-3px)",
-          boxShadow: `0 8px 16px ${alpha(color.main, 0.15)}`,
-          backgroundColor: alpha(color.main, 0.12),
+          transform: isEditMode ? "none" : "translateY(-3px)",
+          boxShadow: isEditMode ? "none" : `0 8px 16px ${alpha(color.main, 0.15)}`,
+          backgroundColor: isEditMode ? alpha(color.main, 0.08) : alpha(color.main, 0.12),
         },
         animation: animation,
       }}
@@ -187,17 +217,31 @@ const InfoCard = ({ title, value, icon: Icon, color, animation }) => {
             {title}
           </Typography>
         </Box>
-        <Typography
-          variant="body1"
-          sx={{
-            fontWeight: 500,
-            color: "text.primary",
-            fontSize: "1rem",
-            ml: 0.5,
-          }}
-        >
-          {value || "Não informado"}
-        </Typography>
+        {isEditMode ? (
+          <TextField
+            fullWidth
+            size="small"
+            value={value || ""}
+            onChange={(e) => onChange(name, e.target.value)}
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                borderRadius: "8px",
+              },
+            }}
+          />
+        ) : (
+          <Typography
+            variant="body1"
+            sx={{
+              fontWeight: 500,
+              color: "text.primary",
+              fontSize: "1rem",
+              ml: 0.5,
+            }}
+          >
+            {value || "Não informado"}
+          </Typography>
+        )}
       </CardContent>
     </Card>
   )
@@ -658,17 +702,28 @@ const ImageGallery = ({ images = [], themeColors, keyframes }) => {
 }
 
 // Detail Modal Component
-const DetailModal = ({ open, onClose, inspection, themeColors, keyframes }) => {
+const DetailModal = ({ open, onClose, inspection, themeColors, keyframes, onSave }) => {
+  // Estado para controlar o modo de edição
+  const [isEditMode, setIsEditMode] = useState(false)
+
+  // Estado para armazenar os valores editados
+  const [editedData, setEditedData] = useState({})
+
   if (!inspection) return null
 
   // Obter os dados originais da API a partir do objeto inspection
   const originalData = inspection.originalData || {}
 
+  // Inicializar os dados editados quando o modal é aberto e ainda não foram inicializados
+  if (open && Object.keys(editedData).length === 0 && originalData) {
+    setEditedData({ ...originalData })
+  }
+
   // Log para depuração
   console.log("Dados da averiguação no modal:", originalData)
 
   // Determinar o tipo de serviço
-  let tipoServico = originalData.tipoServico
+  let tipoServico = editedData.tipoServico || originalData.tipoServico
   if (tipoServico === "1" || tipoServico === 1) {
     tipoServico = "Seletiva"
   } else if (tipoServico === "2" || tipoServico === 2) {
@@ -685,6 +740,36 @@ const DetailModal = ({ open, onClose, inspection, themeColors, keyframes }) => {
     servicoColor = themeColors.success
   } else {
     servicoColor = themeColors.warning
+  }
+
+  // Função para alternar o modo de edição
+  const toggleEditMode = () => {
+    if (isEditMode) {
+      // Se estiver saindo do modo de edição, resetar para os valores originais
+      setEditedData({ ...originalData })
+    }
+    setIsEditMode(!isEditMode)
+  }
+
+  // Função para atualizar os valores editados
+  const handleChange = (field, value) => {
+    setEditedData((prev) => ({
+      ...prev,
+      [field]: value,
+    }))
+  }
+
+  // Função para salvar as alterações
+  const handleSave = () => {
+    if (onSave) {
+      onSave(editedData)
+    }
+    setIsEditMode(false)
+  }
+
+  // Função para lidar com a mudança de status
+  const handleStatusChange = (field, event) => {
+    handleChange(field, event.target.value)
   }
 
   return (
@@ -742,7 +827,7 @@ const DetailModal = ({ open, onClose, inspection, themeColors, keyframes }) => {
           </Avatar>
           <Box>
             <Typography variant="h6" sx={{ fontWeight: 700, fontSize: "1.2rem" }}>
-              Detalhes da Averiguação #{originalData.id || inspection.id}
+              {isEditMode ? "Editar Averiguação" : "Detalhes da Averiguação"} #{originalData.id || inspection.id}
             </Typography>
             <Typography variant="caption" sx={{ color: "rgba(255, 255, 255, 0.8)", fontWeight: 400 }}>
               Registrado em {inspection.date || new Date().toLocaleDateString()}
@@ -794,7 +879,7 @@ const DetailModal = ({ open, onClose, inspection, themeColors, keyframes }) => {
             }}
           >
             {/* Averiguador */}
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2, width: isEditMode ? "100%" : "auto" }}>
               <Avatar
                 sx={{
                   backgroundColor: alpha(themeColors.primary.main, 0.1),
@@ -808,17 +893,34 @@ const DetailModal = ({ open, onClose, inspection, themeColors, keyframes }) => {
               >
                 <Person sx={{ fontSize: 28 }} />
               </Avatar>
-              <Box>
-                <Typography
-                  sx={{
-                    fontWeight: 700,
-                    color: themeColors.text.primary,
-                    fontSize: "1.25rem",
-                    animation: `${keyframes.fadeIn} 0.5s ease-out`,
-                  }}
-                >
-                  {originalData.averiguador || inspection.inspector || "Não informado"}
-                </Typography>
+              <Box sx={{ width: "100%" }}>
+                {isEditMode ? (
+                  <TextField
+                    fullWidth
+                    label="Averiguador"
+                    variant="outlined"
+                    size="small"
+                    value={editedData.averiguador || ""}
+                    onChange={(e) => handleChange("averiguador", e.target.value)}
+                    sx={{
+                      mb: 1,
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: "8px",
+                      },
+                    }}
+                  />
+                ) : (
+                  <Typography
+                    sx={{
+                      fontWeight: 700,
+                      color: themeColors.text.primary,
+                      fontSize: "1.25rem",
+                      animation: `${keyframes.fadeIn} 0.5s ease-out`,
+                    }}
+                  >
+                    {originalData.averiguador || inspection.inspector || "Não informado"}
+                  </Typography>
+                )}
                 <Typography
                   sx={{
                     color: themeColors.text.secondary,
@@ -841,6 +943,7 @@ const DetailModal = ({ open, onClose, inspection, themeColors, keyframes }) => {
                 flexDirection: "column",
                 alignItems: { xs: "flex-start", md: "flex-end" },
                 gap: 1,
+                width: isEditMode ? "100%" : "auto",
               }}
             >
               <Typography
@@ -852,20 +955,37 @@ const DetailModal = ({ open, onClose, inspection, themeColors, keyframes }) => {
               >
                 Tipo de Serviço
               </Typography>
-              <Chip
-                label={tipoServico || "Não especificado"}
-                sx={{
-                  backgroundColor: alpha(servicoColor.main, 0.1),
-                  color: servicoColor.main,
-                  fontWeight: 600,
-                  borderRadius: "8px",
-                  padding: "0.25rem 0.5rem",
-                  height: "auto",
-                  "& .MuiChip-label": {
+              {isEditMode ? (
+                <FormControl fullWidth size="small">
+                  <Select
+                    value={editedData.tipoServico || ""}
+                    onChange={(e) => handleChange("tipoServico", e.target.value)}
+                    sx={{
+                      borderRadius: "8px",
+                      backgroundColor: "white",
+                    }}
+                  >
+                    <MenuItem value="1">Seletiva</MenuItem>
+                    <MenuItem value="2">Remoção</MenuItem>
+                    <MenuItem value="3">Varrição</MenuItem>
+                  </Select>
+                </FormControl>
+              ) : (
+                <Chip
+                  label={tipoServico || "Não especificado"}
+                  sx={{
+                    backgroundColor: alpha(servicoColor.main, 0.1),
+                    color: servicoColor.main,
+                    fontWeight: 600,
+                    borderRadius: "8px",
                     padding: "0.25rem 0.5rem",
-                  },
-                }}
-              />
+                    height: "auto",
+                    "& .MuiChip-label": {
+                      padding: "0.25rem 0.5rem",
+                    },
+                  }}
+                />
+              )}
             </Box>
           </Box>
 
@@ -898,37 +1018,49 @@ const DetailModal = ({ open, onClose, inspection, themeColors, keyframes }) => {
               <Grid item xs={12} sm={6} md={3}>
                 <InfoCard
                   title="Hora da Averiguação"
-                  value={originalData.horaAveriguacao || inspection.time}
+                  value={editedData.horaAveriguacao || originalData.horaAveriguacao || inspection.time}
                   icon={AccessTime}
                   color={themeColors.info}
                   animation={`${keyframes.fadeIn} 0.5s ease-out 0.1s both, ${keyframes.slideInUp} 0.5s ease-out 0.1s both`}
+                  isEditMode={isEditMode}
+                  onChange={handleChange}
+                  name="horaAveriguacao"
                 />
               </Grid>
               <Grid item xs={12} sm={6} md={3}>
                 <InfoCard
                   title="Hora de Início"
-                  value={originalData.horaInicio}
+                  value={editedData.horaInicio || originalData.horaInicio}
                   icon={ElectricBolt}
                   color={themeColors.success}
                   animation={`${keyframes.fadeIn} 0.5s ease-out 0.2s both, ${keyframes.slideInUp} 0.5s ease-out 0.2s both`}
+                  isEditMode={isEditMode}
+                  onChange={handleChange}
+                  name="horaInicio"
                 />
               </Grid>
               <Grid item xs={12} sm={6} md={3}>
                 <InfoCard
                   title="Hora de Encerramento"
-                  value={originalData.horaEncerramento}
+                  value={editedData.horaEncerramento || originalData.horaEncerramento}
                   icon={AccessTime}
                   color={themeColors.error}
                   animation={`${keyframes.fadeIn} 0.5s ease-out 0.3s both, ${keyframes.slideInUp} 0.5s ease-out 0.3s both`}
+                  isEditMode={isEditMode}
+                  onChange={handleChange}
+                  name="horaEncerramento"
                 />
               </Grid>
               <Grid item xs={12} sm={6} md={3}>
                 <InfoCard
                   title="PA / Garagem"
-                  value={originalData.garagem || inspection.pa}
+                  value={editedData.garagem || originalData.garagem || inspection.pa}
                   icon={Warehouse}
                   color={themeColors.warning}
                   animation={`${keyframes.fadeIn} 0.5s ease-out 0.4s both, ${keyframes.slideInUp} 0.5s ease-out 0.4s both`}
+                  isEditMode={isEditMode}
+                  onChange={handleChange}
+                  name="garagem"
                 />
               </Grid>
             </Grid>
@@ -963,37 +1095,49 @@ const DetailModal = ({ open, onClose, inspection, themeColors, keyframes }) => {
               <Grid item xs={12} sm={6} md={3}>
                 <InfoCard
                   title="Rota"
-                  value={originalData.rota || inspection.route}
+                  value={editedData.rota || originalData.rota || inspection.route}
                   icon={Route}
                   color={themeColors.primary}
                   animation={`${keyframes.fadeIn} 0.5s ease-out 0.5s both, ${keyframes.slideInUp} 0.5s ease-out 0.5s both`}
+                  isEditMode={isEditMode}
+                  onChange={handleChange}
+                  name="rota"
                 />
               </Grid>
               <Grid item xs={12} sm={6} md={3}>
                 <InfoCard
                   title="Velocidade de Coleta"
-                  value={originalData.velocidadeColeta}
+                  value={editedData.velocidadeColeta || originalData.velocidadeColeta}
                   icon={Speed}
                   color={themeColors.secondary}
                   animation={`${keyframes.fadeIn} 0.5s ease-out 0.6s both, ${keyframes.slideInUp} 0.5s ease-out 0.6s both`}
+                  isEditMode={isEditMode}
+                  onChange={handleChange}
+                  name="velocidadeColeta"
                 />
               </Grid>
               <Grid item xs={12} sm={6} md={3}>
                 <InfoCard
                   title="Largura da Rua"
-                  value={originalData.larguraRua}
+                  value={editedData.larguraRua || originalData.larguraRua}
                   icon={DirectionsCar}
                   color={themeColors.info}
                   animation={`${keyframes.fadeIn} 0.5s ease-out 0.7s both, ${keyframes.slideInUp} 0.5s ease-out 0.7s both`}
+                  isEditMode={isEditMode}
+                  onChange={handleChange}
+                  name="larguraRua"
                 />
               </Grid>
               <Grid item xs={12} sm={6} md={3}>
                 <InfoCard
                   title="Altura dos Fios"
-                  value={originalData.alturaFios}
+                  value={editedData.alturaFios || originalData.alturaFios}
                   icon={ElectricBolt}
                   color={themeColors.warning}
                   animation={`${keyframes.fadeIn} 0.5s ease-out 0.8s both, ${keyframes.slideInUp} 0.5s ease-out 0.8s both`}
+                  isEditMode={isEditMode}
+                  onChange={handleChange}
+                  name="alturaFios"
                 />
               </Grid>
             </Grid>
@@ -1066,8 +1210,10 @@ const DetailModal = ({ open, onClose, inspection, themeColors, keyframes }) => {
                         <Typography variant="subtitle2">Equipamento de Proteção</Typography>
                       </Box>
                       <StatusChip
-                        label={originalData.equipamentoProtecao || "Não informado"}
-                        status={originalData.equipamentoProtecao}
+                        label={editedData.equipamentoProtecao || originalData.equipamentoProtecao || "Não informado"}
+                        status={editedData.equipamentoProtecao || originalData.equipamentoProtecao}
+                        isEditMode={isEditMode}
+                        onChange={(e) => handleStatusChange("equipamentoProtecao", e)}
                       />
                     </Box>
                   </Grid>
@@ -1099,8 +1245,10 @@ const DetailModal = ({ open, onClose, inspection, themeColors, keyframes }) => {
                         <Typography variant="subtitle2">Uniforme Completo</Typography>
                       </Box>
                       <StatusChip
-                        label={originalData.uniformeCompleto || "Não informado"}
-                        status={originalData.uniformeCompleto}
+                        label={editedData.uniformeCompleto || originalData.uniformeCompleto || "Não informado"}
+                        status={editedData.uniformeCompleto || originalData.uniformeCompleto}
+                        isEditMode={isEditMode}
+                        onChange={(e) => handleStatusChange("uniformeCompleto", e)}
                       />
                     </Box>
                   </Grid>
@@ -1132,8 +1280,10 @@ const DetailModal = ({ open, onClose, inspection, themeColors, keyframes }) => {
                         <Typography variant="subtitle2">Documentação do Veículo</Typography>
                       </Box>
                       <StatusChip
-                        label={originalData.documentacaoVeiculo || "Não informado"}
-                        status={originalData.documentacaoVeiculo}
+                        label={editedData.documentacaoVeiculo || originalData.documentacaoVeiculo || "Não informado"}
+                        status={editedData.documentacaoVeiculo || originalData.documentacaoVeiculo}
+                        isEditMode={isEditMode}
+                        onChange={(e) => handleStatusChange("documentacaoVeiculo", e)}
                       />
                     </Box>
                   </Grid>
@@ -1167,16 +1317,30 @@ const DetailModal = ({ open, onClose, inspection, themeColors, keyframes }) => {
                           </Avatar>
                           <Typography variant="subtitle2">Caminhão Usado</Typography>
                         </Box>
-                        <Typography
-                          sx={{
-                            fontWeight: 500,
-                            color: themeColors.text.primary,
-                            fontSize: "1rem",
-                            ml: 0.5,
-                          }}
-                        >
-                          {originalData.caminhaoUsado || "Não informado"}
-                        </Typography>
+                        {isEditMode ? (
+                          <TextField
+                            fullWidth
+                            size="small"
+                            value={editedData.caminhaoUsado || ""}
+                            onChange={(e) => handleChange("caminhaoUsado", e.target.value)}
+                            sx={{
+                              "& .MuiOutlinedInput-root": {
+                                borderRadius: "8px",
+                              },
+                            }}
+                          />
+                        ) : (
+                          <Typography
+                            sx={{
+                              fontWeight: 500,
+                              color: themeColors.text.primary,
+                              fontSize: "1rem",
+                              ml: 0.5,
+                            }}
+                          >
+                            {originalData.caminhaoUsado || "Não informado"}
+                          </Typography>
+                        )}
                       </Box>
                     </Grid>
 
@@ -1206,16 +1370,31 @@ const DetailModal = ({ open, onClose, inspection, themeColors, keyframes }) => {
                           </Avatar>
                           <Typography variant="subtitle2">Quantidade de Viagens</Typography>
                         </Box>
-                        <Typography
-                          sx={{
-                            fontWeight: 500,
-                            color: themeColors.text.primary,
-                            fontSize: "1rem",
-                            ml: 0.5,
-                          }}
-                        >
-                          {originalData.quantidadeViagens || "0"}
-                        </Typography>
+                        {isEditMode ? (
+                          <TextField
+                            fullWidth
+                            size="small"
+                            type="number"
+                            value={editedData.quantidadeViagens || ""}
+                            onChange={(e) => handleChange("quantidadeViagens", e.target.value)}
+                            sx={{
+                              "& .MuiOutlinedInput-root": {
+                                borderRadius: "8px",
+                              },
+                            }}
+                          />
+                        ) : (
+                          <Typography
+                            sx={{
+                              fontWeight: 500,
+                              color: themeColors.text.primary,
+                              fontSize: "1rem",
+                              ml: 0.5,
+                            }}
+                          >
+                            {originalData.quantidadeViagens || "0"}
+                          </Typography>
+                        )}
                       </Box>
                     </Grid>
                   </Grid>
@@ -1281,18 +1460,34 @@ const DetailModal = ({ open, onClose, inspection, themeColors, keyframes }) => {
                         Inconformidades
                       </Typography>
                     </Box>
-                    <Typography
-                      sx={{
-                        color: themeColors.text.primary,
-                        fontSize: "0.95rem",
-                        lineHeight: 1.6,
-                        whiteSpace: "pre-line",
-                      }}
-                    >
-                      {originalData.inconformidades
-                        ? originalData.inconformidades
-                        : "Nenhuma inconformidade registrada."}
-                    </Typography>
+                    {isEditMode ? (
+                      <TextField
+                        fullWidth
+                        multiline
+                        rows={4}
+                        value={editedData.inconformidades || ""}
+                        onChange={(e) => handleChange("inconformidades", e.target.value)}
+                        sx={{
+                          "& .MuiOutlinedInput-root": {
+                            borderRadius: "8px",
+                            backgroundColor: "rgba(255, 255, 255, 0.7)",
+                          },
+                        }}
+                      />
+                    ) : (
+                      <Typography
+                        sx={{
+                          color: themeColors.text.primary,
+                          fontSize: "0.95rem",
+                          lineHeight: 1.6,
+                          whiteSpace: "pre-line",
+                        }}
+                      >
+                        {originalData.inconformidades
+                          ? originalData.inconformidades
+                          : "Nenhuma inconformidade registrada."}
+                      </Typography>
+                    )}
                   </CardContent>
                 </Card>
               </Grid>
@@ -1323,18 +1518,34 @@ const DetailModal = ({ open, onClose, inspection, themeColors, keyframes }) => {
                         Ações Corretivas
                       </Typography>
                     </Box>
-                    <Typography
-                      sx={{
-                        color: themeColors.text.primary,
-                        fontSize: "0.95rem",
-                        lineHeight: 1.6,
-                        whiteSpace: "pre-line",
-                      }}
-                    >
-                      {originalData.acoesCorretivas
-                        ? originalData.acoesCorretivas
-                        : "Nenhuma ação corretiva registrada."}
-                    </Typography>
+                    {isEditMode ? (
+                      <TextField
+                        fullWidth
+                        multiline
+                        rows={4}
+                        value={editedData.acoesCorretivas || ""}
+                        onChange={(e) => handleChange("acoesCorretivas", e.target.value)}
+                        sx={{
+                          "& .MuiOutlinedInput-root": {
+                            borderRadius: "8px",
+                            backgroundColor: "rgba(255, 255, 255, 0.7)",
+                          },
+                        }}
+                      />
+                    ) : (
+                      <Typography
+                        sx={{
+                          color: themeColors.text.primary,
+                          fontSize: "0.95rem",
+                          lineHeight: 1.6,
+                          whiteSpace: "pre-line",
+                        }}
+                      >
+                        {originalData.acoesCorretivas
+                          ? originalData.acoesCorretivas
+                          : "Nenhuma ação corretiva registrada."}
+                      </Typography>
+                    )}
                   </CardContent>
                 </Card>
               </Grid>
@@ -1393,21 +1604,37 @@ const DetailModal = ({ open, onClose, inspection, themeColors, keyframes }) => {
                   </Avatar>
                   <Typography variant="subtitle1">Observações da Operação</Typography>
                 </Box>
-                <Typography
-                  sx={{
-                    color: themeColors.text.primary,
-                    fontSize: "0.95rem",
-                    lineHeight: 1.6,
-                    whiteSpace: "pre-line",
-                    p: 2,
-                    borderRadius: "8px",
-                    backgroundColor: alpha(themeColors.background.default, 0.5),
-                  }}
-                >
-                  {originalData.observacoesOperacao
-                    ? originalData.observacoesOperacao
-                    : "Nenhuma observação registrada."}
-                </Typography>
+                {isEditMode ? (
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={4}
+                    value={editedData.observacoesOperacao || ""}
+                    onChange={(e) => handleChange("observacoesOperacao", e.target.value)}
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: "8px",
+                        backgroundColor: "rgba(255, 255, 255, 0.7)",
+                      },
+                    }}
+                  />
+                ) : (
+                  <Typography
+                    sx={{
+                      color: themeColors.text.primary,
+                      fontSize: "0.95rem",
+                      lineHeight: 1.6,
+                      whiteSpace: "pre-line",
+                      p: 2,
+                      borderRadius: "8px",
+                      backgroundColor: alpha(themeColors.background.default, 0.5),
+                    }}
+                  >
+                    {originalData.observacoesOperacao
+                      ? originalData.observacoesOperacao
+                      : "Nenhuma observação registrada."}
+                  </Typography>
+                )}
               </CardContent>
             </Card>
           </Box>
@@ -1480,24 +1707,68 @@ const DetailModal = ({ open, onClose, inspection, themeColors, keyframes }) => {
         >
           Fechar
         </Button>
-        <Button
-          variant="contained"
-          size="medium"
-          startIcon={<Edit />}
-          sx={{
-            borderRadius: "12px",
-            textTransform: "none",
-            fontWeight: 500,
-            backgroundColor: themeColors.info.main,
-            boxShadow: `0 4px 12px ${alpha(themeColors.info.main, 0.2)}`,
-            "&:hover": {
-              backgroundColor: themeColors.info.dark,
-              boxShadow: `0 6px 16px ${alpha(themeColors.info.main, 0.3)}`,
-            },
-          }}
-        >
-          Editar
-        </Button>
+        {isEditMode ? (
+          <Box sx={{ display: "flex", gap: 2 }}>
+            <Button
+              variant="outlined"
+              size="medium"
+              startIcon={<Close />}
+              onClick={toggleEditMode}
+              sx={{
+                borderRadius: "12px",
+                textTransform: "none",
+                fontWeight: 500,
+                borderColor: themeColors.error.main,
+                color: themeColors.error.main,
+                "&:hover": {
+                  backgroundColor: alpha(themeColors.error.main, 0.05),
+                  borderColor: themeColors.error.dark,
+                },
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="contained"
+              size="medium"
+              startIcon={<Save />}
+              onClick={handleSave}
+              sx={{
+                borderRadius: "12px",
+                textTransform: "none",
+                fontWeight: 500,
+                backgroundColor: themeColors.success.main,
+                boxShadow: `0 4px 12px ${alpha(themeColors.success.main, 0.2)}`,
+                "&:hover": {
+                  backgroundColor: themeColors.success.dark,
+                  boxShadow: `0 6px 16px ${alpha(themeColors.success.main, 0.3)}`,
+                },
+              }}
+            >
+              Salvar
+            </Button>
+          </Box>
+        ) : (
+          <Button
+            variant="contained"
+            size="medium"
+            startIcon={<Edit />}
+            onClick={toggleEditMode}
+            sx={{
+              borderRadius: "12px",
+              textTransform: "none",
+              fontWeight: 500,
+              backgroundColor: themeColors.info.main,
+              boxShadow: `0 4px 12px ${alpha(themeColors.info.main, 0.2)}`,
+              "&:hover": {
+                backgroundColor: themeColors.info.dark,
+                boxShadow: `0 6px 16px ${alpha(themeColors.info.main, 0.3)}`,
+              },
+            }}
+          >
+            Editar
+          </Button>
+        )}
       </DialogActions>
     </Dialog>
   )
