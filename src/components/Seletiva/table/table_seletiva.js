@@ -44,10 +44,10 @@ import {
   Refresh,
   LocationOn,
 } from "@mui/icons-material"
-import RegisterModal from "./registro_remocao"
-import EditModal from "./editar_remocao"
-import DetailModal from "./visualizar_remocao"
-import { getSolturasDetalhadaTodas } from "../service/dashboard"
+import RegisterModal from "../../registro_remocao"
+import EditModal from "../../edit_soltura"
+import DetailModal from "../../visualizar_remocao"
+import { getSolturasDetalhadaTodas } from "../../../service/dashboard"
 
 // Modificar o componente SearchInput para aumentar a largura
 const SearchInput = ({ icon: Icon, placeholder, value, onChange, suggestions = [], themeColors, keyframes }) => {
@@ -70,19 +70,19 @@ const SearchInput = ({ icon: Icon, placeholder, value, onChange, suggestions = [
             alignItems: "center",
             flex: 1,
             borderRadius: "20px",
-            border: `2px solid ${themeColors.success.light}`,
+            border: `2px solid ${themeColors.primary.light}`,
             overflow: "hidden",
             transition: "all 0.3s ease",
             background: themeColors.background.paper,
             height: "52px",
             width: "100%", // Garantir que ocupe toda a largura
             "&:hover": {
-              boxShadow: `0 4px 12px ${alpha(themeColors.success.light, 0.15)}`,
-              borderColor: themeColors.success.main,
+              boxShadow: `0 4px 12px ${alpha(themeColors.primary.light, 0.15)}`,
+              borderColor: themeColors.primary.main,
             },
             "&:focus-within": {
-              boxShadow: `0 4px 12px ${alpha(themeColors.success.light, 0.2)}`,
-              borderColor: themeColors.success.main,
+              boxShadow: `0 4px 12px ${alpha(themeColors.primary.light, 0.2)}`,
+              borderColor: themeColors.primary.main,
               animation: `${keyframes.glow} 2s infinite ease-in-out`,
             },
           }}
@@ -158,7 +158,7 @@ const SearchInput = ({ icon: Icon, placeholder, value, onChange, suggestions = [
   )
 }
 
-const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }) => {
+const SeletivaTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }) => {
   // State variables
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(5)
@@ -248,8 +248,8 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
         setError(data?.error || "Erro ao carregar dados")
       }
     } catch (err) {
-      console.error("Erro ao buscar dados de remoções:", err)
-      setError("Falha ao carregar dados de remoções")
+      console.error("Erro ao buscar dados de coletas:", err)
+      setError("Falha ao carregar dados de coletas")
     } finally {
       setLoading(false)
     }
@@ -451,7 +451,7 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
       })
 
       // Show success message
-      setSnackbarMessage("Soltura cadastrada com sucesso!")
+      setSnackbarMessage("Coleta cadastrada com sucesso!")
       setSnackbarSeverity("success")
       setSnackbarOpen(true)
 
@@ -471,8 +471,8 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
         leaderPhones: ["", ""],
       })
     } catch (error) {
-      console.error("Erro ao cadastrar soltura:", error)
-      setSnackbarMessage("Erro ao cadastrar soltura. Tente novamente.")
+      console.error("Erro ao cadastrar coleta:", error)
+      setSnackbarMessage("Erro ao cadastrar coleta. Tente novamente.")
       setSnackbarSeverity("error")
       setSnackbarOpen(true)
     }
@@ -508,13 +508,13 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
         <Chip
           label="Finalizado"
           sx={{
-            backgroundColor: alpha(themeColors.success.light, 0.15),
-            color: themeColors.success.dark,
+            backgroundColor: alpha(themeColors.primary.light, 0.15),
+            color: themeColors.primary.dark,
             fontWeight: 600,
             borderRadius: "12px",
             transition: "all 0.3s ease",
             "&:hover": {
-              backgroundColor: alpha(themeColors.success.light, 0.25),
+              backgroundColor: alpha(themeColors.primary.light, 0.25),
             },
           }}
           size="small"
@@ -669,7 +669,7 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
                       width: { xs: "32px", sm: "36px" },
                       height: { xs: "32px", sm: "36px" },
                       borderRadius: "12px",
-                      background: themeColors.success.light,
+                      background: themeColors.primary.main,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -686,7 +686,7 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
                         color: themeColors.text.primary,
                       }}
                     >
-                      Registros de Demociliar 
+                      Registros de Coleta Seletiva
                     </Typography>
                     <Typography
                       sx={{
@@ -695,7 +695,7 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
                         fontWeight: 400,
                       }}
                     >
-                      Todos os registros de domiciliares
+                      Todos os registros de coletas seletivas
                     </Typography>
                   </Box>
                 </Box>
@@ -813,7 +813,7 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
                       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
                         {[
                           { id: "all", label: "Todos", color: themeColors.primary.light },
-                          { id: "completed", label: "Finalizado", color: themeColors.success.main },
+                          { id: "completed", label: "Finalizado", color: themeColors.primary.main },
                           { id: "in-progress", label: "Em andamento", color: themeColors.warning.main },
                         ].map((status) => (
                           <Chip
@@ -915,13 +915,13 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
                             borderRadius: "12px",
                             fontWeight: 500,
                             backgroundColor: recentlyRegisteredFilter
-                              ? alpha(themeColors.success.light, 0.15)
+                              ? alpha(themeColors.primary.light, 0.15)
                               : alpha(themeColors.background.default, 0.5),
-                            color: recentlyRegisteredFilter ? themeColors.success.dark : themeColors.text.secondary,
-                            border: `1px solid ${recentlyRegisteredFilter ? themeColors.success.light : themeColors.divider}`,
+                            color: recentlyRegisteredFilter ? themeColors.primary.dark : themeColors.text.secondary,
+                            border: `1px solid ${recentlyRegisteredFilter ? themeColors.primary.light : themeColors.divider}`,
                             "&:hover": {
-                              backgroundColor: alpha(themeColors.success.light, 0.15),
-                              color: themeColors.success.dark,
+                              backgroundColor: alpha(themeColors.primary.light, 0.15),
+                              color: themeColors.primary.dark,
                             },
                             transition: "all 0.2s ease",
                           }}
@@ -1065,8 +1065,8 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
                                 sx={{
                                   width: 32,
                                   height: 32,
-                                  backgroundColor: alpha(themeColors.success.light, 0.2),
-                                  color: themeColors.success.dark,
+                                  backgroundColor: alpha(themeColors.primary.light, 0.2),
+                                  color: themeColors.primary.dark,
                                   fontWeight: 600,
                                 }}
                               >
@@ -1250,4 +1250,4 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
   )
 }
 
-export default RSUTable
+export default SeletivaTable

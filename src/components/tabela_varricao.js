@@ -686,7 +686,7 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
                         color: themeColors.text.primary,
                       }}
                     >
-                      Registros de Demociliar 
+                      Registros de Varrições
                     </Typography>
                     <Typography
                       sx={{
@@ -695,7 +695,7 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
                         fontWeight: 400,
                       }}
                     >
-                      Todos os registros de domiciliares
+                      Todos os registros de varrições
                     </Typography>
                   </Box>
                 </Box>

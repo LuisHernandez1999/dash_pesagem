@@ -1,0 +1,334 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { Box, Typography, Card, CardContent, alpha, Skeleton, Divider } from "@mui/material"
+import { LocalShipping, TrendingUp, LocationOn, Speed } from "@mui/icons-material"
+
+const PADistribution = ({ themeColors, chartsLoaded }) => {
+  const [data, setData] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [totalVehicles, setTotalVehicles] = useState(0)
+
+  useEffect(() => {
+    // Simulate API call
+    const timer = setTimeout(() => {
+      const mockData = [
+        {
+          name: "PA1",
+          value: 18,
+          color: themeColors.primary.main,
+          icon: <LocalShipping />,
+          trend: "+12%",
+          trendUp: true,
+        },
+        {
+          name: "PA2",
+          value: 24,
+          color: themeColors.info.main,
+          icon: <LocalShipping />,
+          trend: "+8%",
+          trendUp: true,
+        },
+        {
+          name: "PA3",
+          value: 15,
+          color: themeColors.warning.main,
+          icon: <LocalShipping />,
+          trend: "-3%",
+          trendUp: false,
+        },
+        {
+          name: "PA4",
+          value: 21,
+          color: themeColors.secondary.main,
+          icon: <LocalShipping />,
+          trend: "+15%",
+          trendUp: true,
+        },
+      ]
+
+      // Calculate total
+      const total = mockData.reduce((sum, item) => sum + item.value, 0)
+      setTotalVehicles(total)
+      setData(mockData)
+      setLoading(false)
+    }, 1000)
+
+    return () => clearTimeout(timer)
+  }, [themeColors])
+
+  return (
+    <>
+      <Box
+        sx={{
+          width: "100%",
+          display: "flex",
+          flexDirection: "column",
+          gap: 3,
+        }}
+      >
+        {/* Total Card */}
+        <Card
+          sx={{
+            borderRadius: "16px",
+            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.08)",
+            background: "#FFFFFF",
+            position: "relative",
+            overflow: "hidden",
+            transition: "transform 0.3s ease",
+            "&:hover": {
+              transform: "translateY(-5px)",
+              boxShadow: "0 12px 48px rgba(0, 0, 0, 0.12)",
+            },
+          }}
+        >
+          {loading ? (
+            <CardContent sx={{ p: 3 }}>
+              <Skeleton
+                variant="rectangular"
+                width="60%"
+                height={30}
+                sx={{ bgcolor: alpha("#fff", 0.2), mb: 2, borderRadius: "8px" }}
+              />
+              <Skeleton
+                variant="rectangular"
+                width="40%"
+                height={50}
+                sx={{ bgcolor: alpha("#fff", 0.2), borderRadius: "8px" }}
+              />
+            </CardContent>
+          ) : (
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <Box>
+                  <Typography
+                    sx={{
+                      color: themeColors.text.primary,
+                      fontSize: "1.1rem",
+                      fontWeight: 500,
+                      mb: 1,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                    }}
+                  >
+                    <Speed /> Total de Veículos Saídos
+                  </Typography>
+                  <Typography
+                    sx={{
+                      color: themeColors.text.primary,
+                      fontSize: "2.5rem",
+                      fontWeight: 700,
+                      textShadow: "0 2px 10px rgba(0,0,0,0.1)",
+                      // animation removed
+                    }}
+                  >
+                    {totalVehicles}
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{
+                    width: 80,
+                    height: 80,
+                    borderRadius: "50%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    backgroundColor: alpha(themeColors.primary.main, 0.15),
+                    backdropFilter: "blur(10px)",
+                  }}
+                >
+                  <LocalShipping sx={{ fontSize: 40, color: themeColors.primary.main }} />
+                </Box>
+              </Box>
+
+              <Box
+                sx={{
+                  mt: 2,
+                  pt: 2,
+                  borderTop: `1px solid ${alpha("#fff", 0.2)}`,
+                  display: "flex",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Typography sx={{ color: themeColors.text.secondary, fontSize: "0.9rem" }}>
+                  Distribuídos em 4 pontos de apoio
+                </Typography>
+                <Typography
+                  sx={{
+                    color: themeColors.success.main,
+                    fontSize: "0.9rem",
+                    fontWeight: 600,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 0.5,
+                  }}
+                >
+                  <TrendingUp fontSize="small" /> +8% vs. ontem
+                </Typography>
+              </Box>
+            </CardContent>
+          )}
+
+          {/* Background decorative elements */}
+          <Box
+            sx={{
+              position: "absolute",
+              top: -20,
+              right: -20,
+              width: 120,
+              height: 120,
+              borderRadius: "50%",
+              backgroundColor: alpha(themeColors.primary.main, 0.05),
+              zIndex: 0,
+            }}
+          />
+          <Box
+            sx={{
+              position: "absolute",
+              bottom: -30,
+              left: -30,
+              width: 150,
+              height: 150,
+              borderRadius: "50%",
+              backgroundColor: alpha(themeColors.primary.main, 0.05),
+              zIndex: 0,
+            }}
+          />
+        </Card>
+
+        {/* PA Cards Grid */}
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", md: "1fr 1fr 1fr 1fr" },
+            gap: 3,
+          }}
+        >
+          {loading
+            ? // Skeleton loaders for PA cards
+              Array(4)
+                .fill(0)
+                .map((_, index) => (
+                  <Card
+                    key={index}
+                    sx={{
+                      borderRadius: "16px",
+                      boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05)",
+                      height: 180,
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "center",
+                      padding: 3,
+                    }}
+                  >
+                    <Skeleton variant="circular" width={50} height={50} sx={{ mb: 2 }} />
+                    <Skeleton variant="text" width="60%" height={30} sx={{ mb: 1 }} />
+                    <Skeleton variant="text" width="40%" height={40} />
+                  </Card>
+                ))
+            : // Actual PA cards
+              data.map((item, index) => (
+                <Card
+                  key={index}
+                  sx={{
+                    borderRadius: "16px",
+                    boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05)",
+                    transition: "all 0.3s ease",
+                    // animation removed
+                    overflow: "hidden",
+                    position: "relative",
+                    "&:hover": {
+                      transform: "translateY(-8px)",
+                      boxShadow: `0 12px 30px ${alpha(item.color, 0.2)}`,
+                      "& .icon-container": {
+                        transform: "scale(1.1)",
+                      },
+                    },
+                    "&::before": {
+                      content: '""',
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      height: "4px",
+                      backgroundColor: item.color,
+                    },
+                  }}
+                >
+                  <CardContent sx={{ p: 3 }}>
+                    <Box
+                      className="icon-container"
+                      sx={{
+                        width: 60,
+                        height: 60,
+                        borderRadius: "12px",
+                        backgroundColor: alpha(item.color, 0.1),
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: item.color,
+                        mb: 2,
+                        transition: "transform 0.3s ease",
+                      }}
+                    >
+                      <LocationOn sx={{ fontSize: 30 }} />
+                    </Box>
+
+                    <Typography
+                      sx={{
+                        fontSize: "1.1rem",
+                        fontWeight: 600,
+                        color: themeColors.text.primary,
+                        mb: 0.5,
+                      }}
+                    >
+                      {item.name}
+                    </Typography>
+
+                    <Box sx={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
+                      <Typography
+                        sx={{
+                          fontSize: "2rem",
+                          fontWeight: 700,
+                          color: item.color,
+                          lineHeight: 1,
+                        }}
+                      >
+                        {item.value}
+                      </Typography>
+
+                      <Typography
+                        sx={{
+                          fontSize: "0.85rem",
+                          fontWeight: 600,
+                          color: item.trendUp ? themeColors.success.main : themeColors.error.main,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 0.5,
+                        }}
+                      >
+                        <TrendingUp fontSize="small" /> {item.trend}
+                      </Typography>
+                    </Box>
+
+                    <Divider sx={{ my: 1.5 }} />
+
+                    <Typography
+                      sx={{
+                        fontSize: "0.85rem",
+                        color: themeColors.text.secondary,
+                      }}
+                    >
+                      Veículos saídos hoje
+                    </Typography>
+                  </CardContent>
+                </Card>
+              ))}
+        </Box>
+      </Box>
+    </>
+  )
+}
+
+export default PADistribution
