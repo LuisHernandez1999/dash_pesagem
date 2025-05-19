@@ -15,43 +15,74 @@ import {
   LabelList,
 } from "recharts"
 import { WbSunny, NightsStay, WbTwilight } from "@mui/icons-material"
+import { contarColetoresMotoristasPorTurno } from "../../../service/seletiva"
 
 const GraficoTurnos = ({ themeColors, chartsLoaded }) => {
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const theme = useTheme()
 
-  useEffect(() => {
-    // Simulate API call
-    const timer = setTimeout(() => {
-      const mockData = [
-        {
-          name: "Matutino",
-          motoristas: 18,
-          coletores: 42,
-          icon: <WbSunny />,
-          color: themeColors.warning.main,
-        },
-        {
-          name: "Vespertino",
-          motoristas: 15,
-          coletores: 36,
-          icon: <WbTwilight />,
-          color: themeColors.primary.main,
-        },
-        {
-          name: "Noturno",
-          motoristas: 12,
-          coletores: 28,
-          icon: <NightsStay />,
-          color: themeColors.info.main,
-        },
-      ]
-      setData(mockData)
-      setLoading(false)
-    }, 1000)
+  // Function to map shift names to icons and colors
+  const getShiftIcon = (shiftName) => {
+    const lowerCaseShift = shiftName.toLowerCase()
+    if (lowerCaseShift.includes("matutino") || lowerCaseShift.includes("manhã")) {
+      return { icon: <WbSunny />, color: themeColors.warning.main }
+    } else if (lowerCaseShift.includes("vespertino") || lowerCaseShift.includes("tarde")) {
+      return { icon: <WbTwilight />, color: themeColors.primary.main }
+    } else if (lowerCaseShift.includes("noturno") || lowerCaseShift.includes("noite")) {
+      return { icon: <NightsStay />, color: themeColors.info.main }
+    } else {
+      // Default for unknown shifts
+      return { icon: <WbSunny />, color: themeColors.secondary.main }
+    }
+  }
 
-    return () => clearTimeout(timer)
+  const loadData = async () => {
+    try {
+      setLoading(true)
+      const response = await contarColetoresMotoristasPorTurno()
+
+      if (response.success) {
+        // Map API data to the format needed by the chart
+        const chartData = response.data.map((item) => {
+          const { icon, color } = getShiftIcon(item.equipe)
+          return {
+            name: item.equipe,
+            motoristas: item.motoristas,
+            coletores: item.coletores,
+            total: item.motoristas + item.coletores, // Add total for the label
+            icon: icon,
+            color: color,
+          }
+        })
+
+        setData(chartData)
+        setError(null)
+      } else {
+        console.error("Erro ao carregar dados de turnos:", response.error)
+        setError(response.error || "Erro ao carregar dados")
+      }
+    } catch (err) {
+      console.error("Erro ao carregar dados de turnos:", err)
+      setError("Erro ao carregar dados")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadData()
+
+    // Set up refresh interval (8 minutes)
+    const refreshInterval = setInterval(
+      () => {
+        loadData()
+      },
+      8 * 60 * 1000,
+    )
+
+    return () => clearInterval(refreshInterval)
   }, [themeColors])
 
   const CustomTooltip = ({ active, payload, label }) => {
@@ -150,23 +181,6 @@ const GraficoTurnos = ({ themeColors, chartsLoaded }) => {
     return null
   }
 
-  const CustomizedLabel = (props) => {
-    const { x, y, width, height, value, fill } = props
-    return (
-      <text
-        x={x + width / 2}
-        y={y + height / 2 - 12}
-        fill={typeof fill === "string" ? alpha(fill, 0.9) : "#ffffff"}
-        textAnchor="middle"
-        dominantBaseline="middle"
-        fontWeight="bold"
-        fontSize="14"
-      >
-        {value}
-      </text>
-    )
-  }
-
   const CustomizedAxisTick = (props) => {
     const { x, y, payload, dataKey } = props
     const turnoData = data.find((item) => item.name === payload.value)
@@ -189,6 +203,82 @@ const GraficoTurnos = ({ themeColors, chartsLoaded }) => {
             </Box>
           </foreignObject>
         )}
+      </g>
+    )
+  }
+
+  // Custom label component for the motoristas values
+  const renderCustomMotoristaLabel = (props) => {
+    const { x, y, width, height, value } = props
+    return (
+      <g>
+        <text
+          x={x + width / 2}
+          y={y + height / 2}
+          fill="#FFFFFF"
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fontWeight="bold"
+          fontSize="12"
+        >
+          {value}
+        </text>
+      </g>
+    )
+  }
+
+  // Custom label component for the coletores values
+  const renderCustomColetorLabel = (props) => {
+    const { x, y, width, height, value } = props
+    return (
+      <g>
+        <text
+          x={x + width / 2}
+          y={y + height / 2}
+          fill="#000000"
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fontWeight="bold"
+          fontSize="12"
+        >
+          {value}
+        </text>
+      </g>
+    )
+  }
+
+  // Custom label component for the total values
+  const renderCustomTotalLabel = (props) => {
+    const { x, y, width, height, value, index } = props
+    const entry = data[index]
+
+    // Calculate the position for the total label
+    // We want it to be in the middle of the stacked bar
+    const barHeight = entry.motoristas + entry.coletores
+    const yPosition = y + height / 2
+
+    return (
+      <g>
+        <rect
+          x={x + width / 2 - 20}
+          y={yPosition - 10}
+          width={40}
+          height={20}
+          fill="rgba(255, 255, 255, 0.8)"
+          rx={4}
+          ry={4}
+        />
+        <text
+          x={x + width / 2}
+          y={yPosition}
+          fill={entry.color}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fontWeight="bold"
+          fontSize="14"
+        >
+          {value}
+        </text>
       </g>
     )
   }
@@ -221,6 +311,25 @@ const GraficoTurnos = ({ themeColors, chartsLoaded }) => {
             height={250}
             sx={{ bgcolor: alpha(themeColors.text.primary, 0.1), borderRadius: "8px" }}
           />
+        </Box>
+      ) : error ? (
+        <Box
+          sx={{
+            width: "100%",
+            height: "300px",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            flexDirection: "column",
+            gap: 2,
+          }}
+        >
+          <Typography sx={{ color: themeColors.error.main, fontWeight: 500 }}>
+            Erro ao carregar dados do gráfico
+          </Typography>
+          <Typography variant="body2" sx={{ color: themeColors.text.secondary }}>
+            {error}
+          </Typography>
         </Box>
       ) : (
         <>
@@ -261,6 +370,7 @@ const GraficoTurnos = ({ themeColors, chartsLoaded }) => {
               <Bar
                 dataKey="motoristas"
                 name="motoristas"
+                stackId="a"
                 radius={[4, 4, 0, 0]}
                 animationDuration={1500}
                 animationBegin={300}
@@ -268,11 +378,12 @@ const GraficoTurnos = ({ themeColors, chartsLoaded }) => {
                 {data.map((entry, index) => (
                   <Cell key={`cell-motoristas-${index}`} fill={entry.color} stroke={entry.color} strokeWidth={1} />
                 ))}
-                <LabelList dataKey="motoristas" content={<CustomizedLabel />} />
+                <LabelList dataKey="motoristas" content={renderCustomMotoristaLabel} />
               </Bar>
               <Bar
                 dataKey="coletores"
                 name="coletores"
+                stackId="a"
                 radius={[4, 4, 0, 0]}
                 animationDuration={1500}
                 animationBegin={600}
@@ -285,7 +396,10 @@ const GraficoTurnos = ({ themeColors, chartsLoaded }) => {
                     strokeWidth={1}
                   />
                 ))}
-                <LabelList dataKey="coletores" content={<CustomizedLabel />} />
+                <LabelList dataKey="coletores" content={renderCustomColetorLabel} />
+              </Bar>
+              <Bar dataKey="total" name="total" stackId="b" fill="transparent" stroke="transparent">
+                <LabelList dataKey="total" content={renderCustomTotalLabel} />
               </Bar>
             </BarChart>
           </ResponsiveContainer>

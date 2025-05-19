@@ -33,21 +33,11 @@ import {
 } from "@mui/material"
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers"
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns"
-import {
-  Delete,
-  MoreVert,
-  ArrowUpward,
-  ArrowDownward,
-  Close,
-  Edit,
-  Search,
-  Refresh,
-  LocationOn,
-} from "@mui/icons-material"
+import { Delete, MoreVert, ArrowUpward, ArrowDownward, Close, Edit, Search, Refresh } from "@mui/icons-material"
 import RegisterModal from "../../registro_remocao"
 import EditModal from "../../edit_soltura"
 import DetailModal from "../../visualizar_remocao"
-import { getSolturasDetalhadaTodas } from "../../../service/dashboard"
+import { retornarInfosSeletiva } from "../../../service/seletiva"
 
 // Modificar o componente SearchInput para aumentar a largura
 const SearchInput = ({ icon: Icon, placeholder, value, onChange, suggestions = [], themeColors, keyframes }) => {
@@ -205,47 +195,36 @@ const SeletivaTable = ({ loading: initialLoading, themeColors, keyframes, onRefr
       setLoading(true)
       setError(null)
 
-      const data = await getSolturasDetalhadaTodas()
+      const response = await retornarInfosSeletiva()
 
-      if (data && !data.error) {
+      if (response.success) {
         // Transform API data to match the expected format for the table
-        const formattedData = data.map((item, index) => ({
+        const formattedData = response.data.map((item, index) => ({
           id: index + 1,
-          driver: item.motorista,
-          driverId: item.matricula_motorista,
-          collectors: Array.isArray(item.coletores)
-            ? item.coletores.map((c) => (typeof c === "object" ? c.nome : c))
-            : [],
-          collectorsIds: Array.isArray(item.coletores)
-            ? item.coletores.map((c) => (typeof c === "object" ? c.matricula : ""))
-            : [],
-          prefixo: item.prefixo,
-          hora_saida_frota: item.hora_saida_frota,
-          tipo_equipe: item.tipo_equipe,
-          status_frota: item.status_frota,
-          data: item.data,
-          rota: item.rota,
-          // Use bairro as setor/location as requested
-          location: item.bairro || item.setores || "Não informado",
-          vehiclePrefix: item.prefixo,
-          departureTime: item.hora_saida_frota,
-          status: item.status_frota,
-          team: item.tipo_equipe,
-          vehicle: item.tipo_veiculo_selecionado,
-          // Additional fields
-          frequencia: item.frequencia,
-          celular: item.celular,
-          lider: item.lider,
-          hora_entrega_chave: item.hora_entrega_chave,
-          tipo_servico: item.tipo_servico,
-          turno: item.turno,
-          bairro: item.bairro,
-          setores: item.setores,
+          driver: item.motorista || "Não informado",
+          driverId: "",
+          collectors: Array.isArray(item.coletores) ? item.coletores : [],
+          collectorsIds: [],
+          prefixo: item.prefixo || "",
+          hora_saida_frota: item.hora_saida_frota || "",
+          hora_entrega_chave: item.hora_entrega_chave || "",
+          hora_chegada: item.hora_chegada || "",
+          tipo_equipe: item.tipo_equipe || "",
+          status_frota: item.status_frota || "Em andamento",
+          data: item.data || "",
+          rota: item.rota || "",
+          location: "", // Setor is not important as per requirements
+          vehiclePrefix: item.tipo_veiculo_selecionado || "",
+          departureTime: item.hora_saida_frota || "",
+          status: item.status_frota || "Em andamento",
+          team: item.tipo_equipe || "",
+          vehicle: item.tipo_veiculo_selecionado || "",
+          lider: item.lider || "",
         }))
 
         setRemovals(formattedData)
       } else {
-        setError(data?.error || "Erro ao carregar dados")
+        setError(response.error || "Erro ao carregar dados")
       }
     } catch (err) {
       console.error("Erro ao buscar dados de coletas:", err)
@@ -1004,21 +983,6 @@ const SeletivaTable = ({ loading: initialLoading, themeColors, keyframes, onRefr
                         Equipe
                         <SortIndicator field="team" />
                       </TableCell>
-                      {/* Setor column (using bairro field) */}
-                      <TableCell
-                        onClick={() => handleSort("location")}
-                        sx={{
-                          cursor: "pointer",
-                          fontWeight: 600,
-                          color: sortField === "location" ? themeColors.primary.main : themeColors.text.secondary,
-                          "&:hover": { color: themeColors.primary.main },
-                          borderBottom: `1px solid ${themeColors.divider}`,
-                          py: 1.5,
-                        }}
-                      >
-                        Setor
-                        <SortIndicator field="location" />
-                      </TableCell>
                       <TableCell
                         onClick={() => handleSort("status")}
                         sx={{
@@ -1094,22 +1058,6 @@ const SeletivaTable = ({ loading: initialLoading, themeColors, keyframes, onRefr
                           </TableCell>
                           <TableCell>{removal.hora_saida_frota || "-"}</TableCell>
                           <TableCell>{removal.tipo_equipe || "-"}</TableCell>
-                          {/* Setor cell (using bairro field) */}
-                          <TableCell>
-                            {removal.location ? (
-                              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                                <LocationOn
-                                  fontSize="small"
-                                  sx={{ color: themeColors.primary.main, fontSize: "0.9rem" }}
-                                />
-                                <Typography variant="body2">{removal.location}</Typography>
-                              </Box>
-                            ) : (
-                              <Typography variant="body2" sx={{ color: themeColors.text.disabled }}>
-                                Não informado
-                              </Typography>
-                            )}
-                          </TableCell>
                           <TableCell>{getStatusChip(removal.status_frota)}</TableCell>
                           <TableCell align="center">
                             <IconButton
@@ -1126,7 +1074,7 @@ const SeletivaTable = ({ loading: initialLoading, themeColors, keyframes, onRefr
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={7} align="center" sx={{ py: 3 }}>
+                        <TableCell colSpan={6} align="center" sx={{ py: 3 }}>
                           <Typography variant="body1" sx={{ color: themeColors.text.secondary }}>
                             {loading ? "Carregando dados..." : "Nenhum registro encontrado"}
                           </Typography>

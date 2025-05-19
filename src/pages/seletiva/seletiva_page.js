@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import {
   AppBar,
   Toolbar,
@@ -33,6 +33,13 @@ import SeletivaTable from "@/components/Seletiva/table/table_seletiva"
 import PADistribution from "@/components/Seletiva/charts/pa"
 import RegionDistributionChart from "@/components/Seletiva/charts/turnos_grafico"
 import GraficoSeletivaSemanal from "@/components/Seletiva/charts/grafico_semanal"
+import ResourceComparisonStats from "@/components/seletiva_previstas"
+import {
+  contarSeletivaRealizadasHoje,
+  contarTotalSeletiva,
+  contarSeletivaInativos,
+  contarSeletivaAtivos,
+} from "../../service/seletiva"
 
 const keyframes = {
   fadeIn: `
@@ -242,66 +249,173 @@ export default function SeletivaDashboard() {
   // Mock data for selective collections
   const [seletivaData, setSeletivaData] = useState([])
 
-  const loadAllData = async () => {
-    console.log("Iniciando carregamento de dados...")
-    setLoading(true)
-    setInitialLoading(true)
-    setStatsLoading(true)
+  // Use useRef to store the latest values to prevent them from being reset to 0
+  const latestValuesRef = useRef({
+    totalSeletiva: 0,
+    seletivaInativos: 0,
+    seletivaAtivos: 0,
+    seletivaHoje: 0,
+  })
+
+  const [statsCards, setStatsCards] = useState([
+    {
+      title: "Total de Veículos",
+      value: 0,
+      subtitle: "Frota total de veículos de seletiva",
+      icon: <LocalShipping />,
+      color: themeColors.primary,
+      delay: "0s",
+    },
+    {
+      title: "Total Inativos",
+      value: 0,
+      subtitle: "Veículos em manutenção ou parados",
+      icon: <Scale />,
+      color: themeColors.error,
+      delay: "0.1s",
+    },
+    {
+      title: "Total Ativos",
+      value: 0,
+      subtitle: "Veículos ativos",
+      icon: <Recycling />,
+      color: themeColors.success,
+      delay: "0.2s",
+    },
+    {
+      title: "Seletivas Hoje",
+      value: 0,
+      subtitle: "Total soltos hoje",
+      icon: <EmojiEvents />,
+      color: themeColors.warning,
+      delay: "0.3s",
+    },
+  ])
+
+  // Replace the loadAllData function with this updated version
+  const loadAllData = async (onlyHoje = false) => {
+    console.log(`Iniciando carregamento de dados... ${onlyHoje ? "(apenas seletivas hoje)" : "(completo)"}`)
+
+    if (!onlyHoje) {
+      setLoading(true)
+      setInitialLoading(true)
+      setStatsLoading(true)
+    }
 
     try {
-      // Simulate API calls with mock data
-      // In a real application, these would be actual API calls
+      // If we're doing a full refresh or just the "hoje" card
+      if (!onlyHoje) {
+        // Fetch all data
+        const totalSeletivaResponse = await contarTotalSeletiva()
+        const inativosResponse = await contarSeletivaInativos()
+        const ativosResponse = await contarSeletivaAtivos()
+        const hojeResponse = await contarSeletivaRealizadasHoje()
 
-      // Stats data
-      setTimeout(() => {
-        setStats({
-          totalCollected: 1820,
-          activeRoutes: 24,
-          averageWeight: 4.5,
-          recyclingRate: 68,
+        // Get the new values, defaulting to previous values if API call fails
+        const newTotalSeletiva = totalSeletivaResponse.success
+          ? totalSeletivaResponse.total
+          : latestValuesRef.current.totalSeletiva
+        const newSeletivaInativos = inativosResponse.success
+          ? inativosResponse.count
+          : latestValuesRef.current.seletivaInativos
+        const newSeletivaAtivos = ativosResponse.success ? ativosResponse.count : latestValuesRef.current.seletivaAtivos
+        const newSeletivaHoje = hojeResponse.success ? hojeResponse.total : latestValuesRef.current.seletivaHoje
+
+        console.log("Valores atuais:", latestValuesRef.current)
+        console.log("Novos valores:", {
+          totalSeletiva: newTotalSeletiva,
+          seletivaInativos: newSeletivaInativos,
+          seletivaAtivos: newSeletivaAtivos,
+          seletivaHoje: newSeletivaHoje,
         })
+
+        // Update the ref with the latest values
+        latestValuesRef.current = {
+          totalSeletiva: newTotalSeletiva || latestValuesRef.current.totalSeletiva,
+          seletivaInativos: newSeletivaInativos || latestValuesRef.current.seletivaInativos,
+          seletivaAtivos: newSeletivaAtivos || latestValuesRef.current.seletivaAtivos,
+          seletivaHoje: newSeletivaHoje || latestValuesRef.current.seletivaHoje,
+        }
+
+        // Always update the cards with the latest values from the ref
+        setStatsCards([
+          {
+            ...statsCards[0],
+            value: latestValuesRef.current.totalSeletiva,
+          },
+          {
+            ...statsCards[1],
+            value: latestValuesRef.current.seletivaInativos,
+          },
+          {
+            ...statsCards[2],
+            value: latestValuesRef.current.seletivaAtivos,
+          },
+          {
+            ...statsCards[3],
+            value: latestValuesRef.current.seletivaHoje,
+          },
+        ])
+
+        // Mock selective collection data (keep your existing mock data code)
+        const mockSeletivaData = Array.from({ length: 20 }, (_, index) => ({
+          id: index + 1,
+          route: `Rota ${Math.floor(Math.random() * 10) + 1}`,
+          driver: `Motorista ${Math.floor(Math.random() * 15) + 1}`,
+          driverId: `M${Math.floor(Math.random() * 1000) + 1000}`,
+          collectors: Array.from(
+            { length: Math.floor(Math.random() * 3) + 1 },
+            (_, i) => `Coletor ${Math.floor(Math.random() * 15) + 1}`,
+          ),
+          collectorsIds: Array.from(
+            { length: Math.floor(Math.random() * 3) + 1 },
+            (_, i) => `C${Math.floor(Math.random() * 1000) + 1000}`,
+          ),
+          vehicle: `Caminhão ${Math.floor(Math.random() * 20) + 1}`,
+          vehiclePrefix: `SEL-${Math.floor(Math.random() * 100) + 100}`,
+          departureTime: `${Math.floor(Math.random() * 12) + 7}:${Math.floor(Math.random() * 60)
+            .toString()
+            .padStart(2, "0")}`,
+          status: Math.random() > 0.3 ? "Finalizado" : "Em andamento",
+          arrivalTime:
+            Math.random() > 0.3
+              ? `${Math.floor(Math.random() * 12) + 13}:${Math.floor(Math.random() * 60)
+                  .toString()
+                  .padStart(2, "0")}`
+              : "",
+          date: new Date().toISOString().split("T")[0],
+          region: ["Norte", "Sul", "Leste", "Oeste", "Centro"][Math.floor(Math.random() * 5)],
+          shift: ["Matutino", "Vespertino", "Noturno"][Math.floor(Math.random() * 3)],
+          collectedWeight: `${(Math.random() * 5 + 1).toFixed(2)} ton`,
+          materialType: ["Papel", "Plástico", "Vidro", "Metal", "Misto"][Math.floor(Math.random() * 5)],
+        }))
+
+        setSeletivaData(mockSeletivaData)
+
+        // Mark loading as complete
+        setChartsLoaded(true)
+        setLoading(false)
+        setInitialLoading(false)
         setStatsLoading(false)
-      }, 1500)
+      } else {
+        // Only fetch "Seletivas Hoje" data
+        const hojeResponse = await contarSeletivaRealizadasHoje()
+        const newSeletivaHoje = hojeResponse.success ? hojeResponse.total : latestValuesRef.current.seletivaHoje
 
-      // Mock selective collection data
-      const mockSeletivaData = Array.from({ length: 20 }, (_, index) => ({
-        id: index + 1,
-        route: `Rota ${Math.floor(Math.random() * 10) + 1}`,
-        driver: `Motorista ${Math.floor(Math.random() * 15) + 1}`,
-        driverId: `M${Math.floor(Math.random() * 1000) + 1000}`,
-        collectors: Array.from(
-          { length: Math.floor(Math.random() * 3) + 1 },
-          (_, i) => `Coletor ${Math.floor(Math.random() * 15) + 1}`,
-        ),
-        collectorsIds: Array.from(
-          { length: Math.floor(Math.random() * 3) + 1 },
-          (_, i) => `C${Math.floor(Math.random() * 1000) + 1000}`,
-        ),
-        vehicle: `Caminhão ${Math.floor(Math.random() * 20) + 1}`,
-        vehiclePrefix: `SEL-${Math.floor(Math.random() * 100) + 100}`,
-        departureTime: `${Math.floor(Math.random() * 12) + 7}:${Math.floor(Math.random() * 60)
-          .toString()
-          .padStart(2, "0")}`,
-        status: Math.random() > 0.3 ? "Finalizado" : "Em andamento",
-        arrivalTime:
-          Math.random() > 0.3
-            ? `${Math.floor(Math.random() * 12) + 13}:${Math.floor(Math.random() * 60)
-                .toString()
-                .padStart(2, "0")}`
-            : "",
-        date: new Date().toISOString().split("T")[0],
-        region: ["Norte", "Sul", "Leste", "Oeste", "Centro"][Math.floor(Math.random() * 5)],
-        shift: ["Matutino", "Vespertino", "Noturno"][Math.floor(Math.random() * 3)],
-        collectedWeight: `${(Math.random() * 5 + 1).toFixed(2)} ton`,
-        materialType: ["Papel", "Plástico", "Vidro", "Metal", "Misto"][Math.floor(Math.random() * 5)],
-      }))
+        // Update the ref with the latest value
+        latestValuesRef.current = {
+          ...latestValuesRef.current,
+          seletivaHoje: newSeletivaHoje || latestValuesRef.current.seletivaHoje,
+        }
 
-      setSeletivaData(mockSeletivaData)
-
-      // Mark loading as complete
-      setChartsLoaded(true)
-      setLoading(false)
-      setInitialLoading(false)
+        // Update only the "Seletivas Hoje" card (index 3)
+        const newStatsCards = [...statsCards]
+        newStatsCards[3] = {
+          ...newStatsCards[3],
+          value: latestValuesRef.current.seletivaHoje,
+        }
+        setStatsCards(newStatsCards)
+      }
     } catch (error) {
       console.error("Erro ao carregar dados:", error)
       // Show error message
@@ -309,16 +423,44 @@ export default function SeletivaDashboard() {
       setSnackbarSeverity("error")
       setSnackbarOpen(true)
 
-      // Even with error, mark loading as complete
-      setLoading(false)
-      setInitialLoading(false)
-      setStatsLoading(false)
+      // Even with error, mark loading as complete if it was a full refresh
+      if (!onlyHoje) {
+        setLoading(false)
+        setInitialLoading(false)
+        setStatsLoading(false)
+      }
     }
   }
 
   // Load data on component mount
   useEffect(() => {
     loadAllData()
+  }, [])
+
+  // Add this useEffect for the refresh intervals after the existing useEffect
+  useEffect(() => {
+    // Set up intervals for refreshing data
+    const fullRefreshInterval = setInterval(
+      () => {
+        console.log("Executando refresh completo (8 minutos)")
+        loadAllData()
+      },
+      8 * 60 * 1000,
+    ) // 8 minutes
+
+    const hojeRefreshInterval = setInterval(
+      () => {
+        console.log("Executando refresh de seletivas hoje (2 minutos)")
+        loadAllData(true) // true means only refresh the "hoje" data
+      },
+      2 * 60 * 1000,
+    ) // 2 minutes
+
+    // Clean up intervals on component unmount
+    return () => {
+      clearInterval(fullRefreshInterval)
+      clearInterval(hojeRefreshInterval)
+    }
   }, [])
 
   // Handle sidebar collapse
@@ -337,41 +479,6 @@ export default function SeletivaDashboard() {
   }
 
   // Stats Cards Data
-  const statsCards = [
-    {
-      title: "Total de Veículos",
-      value: 48,
-      subtitle: "Frota total de veículos de seletiva",
-      icon: <LocalShipping />,
-      color: themeColors.primary,
-      delay: "0s",
-    },
-    {
-      title: "Total Inativos",
-      value: 12,
-      subtitle: "Veículos em manutenção ou parados",
-      icon: <Scale />,
-      color: themeColors.error,
-      delay: "0.1s",
-    },
-    {
-      title: "Total Ativos",
-      value: 36,
-      subtitle: "Veículos em operação",
-      icon: <Recycling />,
-      color: themeColors.success,
-      delay: "0.2s",
-    },
-    {
-      title: "Seletivas Hoje",
-      value: 24,
-      subtitle: "Total de coletas seletivas realizadas hoje",
-      icon: <EmojiEvents />,
-      color: themeColors.warning,
-      delay: "0.3s",
-    },
-  ]
-
   return (
     <>
       <style>
@@ -607,6 +714,9 @@ export default function SeletivaDashboard() {
                   ))}
                 </Box>
               </Box>
+
+              {/* Resource Comparison Stats - New component */}
+              <ResourceComparisonStats themeColors={themeColors} keyframes={keyframes} onRefresh={handleRefreshData} />
 
               {/* Seletiva Table Section */}
               <SeletivaTable

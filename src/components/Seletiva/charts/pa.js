@@ -2,59 +2,65 @@
 
 import { useState, useEffect } from "react"
 import { Box, Typography, Card, CardContent, alpha, Skeleton, Divider } from "@mui/material"
-import { LocalShipping, TrendingUp, LocationOn, Speed } from "@mui/icons-material"
+import { LocalShipping, LocationOn, Speed } from "@mui/icons-material"
+import { contarSolturasSeletivaPorGaragem } from "../../../service/seletiva"
 
-const PADistribution = ({ themeColors, chartsLoaded }) => {
+const PADistribution = ({ themeColors, chartsLoaded, keyframes }) => {
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
   const [totalVehicles, setTotalVehicles] = useState(0)
+  const [error, setError] = useState(null)
+
+  const loadPAData = async () => {
+    try {
+      setLoading(true)
+      const response = await contarSolturasSeletivaPorGaragem()
+
+      if (response.success) {
+        // Map the API response to our component's data format
+        const colors = [
+          themeColors.primary.main,
+          themeColors.info.main,
+          themeColors.warning.main,
+          themeColors.secondary.main,
+        ]
+
+        const mappedData = response.garages.map((garage, index) => ({
+          name: garage.garagem,
+          value: garage.count,
+          color: colors[index % colors.length],
+          icon: <LocalShipping />,
+          trend: "0%", // We don't have trend data from the API
+          trendUp: true,
+        }))
+
+        setData(mappedData)
+        setTotalVehicles(response.total)
+        setError(null)
+      } else {
+        console.error("Erro ao carregar dados de distribuição por garagem:", response.error)
+        setError(response.error || "Erro ao carregar dados")
+      }
+    } catch (err) {
+      console.error("Erro ao carregar dados de distribuição por garagem:", err)
+      setError("Erro ao carregar dados")
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    // Simulate API call
-    const timer = setTimeout(() => {
-      const mockData = [
-        {
-          name: "PA1",
-          value: 18,
-          color: themeColors.primary.main,
-          icon: <LocalShipping />,
-          trend: "+12%",
-          trendUp: true,
-        },
-        {
-          name: "PA2",
-          value: 24,
-          color: themeColors.info.main,
-          icon: <LocalShipping />,
-          trend: "+8%",
-          trendUp: true,
-        },
-        {
-          name: "PA3",
-          value: 15,
-          color: themeColors.warning.main,
-          icon: <LocalShipping />,
-          trend: "-3%",
-          trendUp: false,
-        },
-        {
-          name: "PA4",
-          value: 21,
-          color: themeColors.secondary.main,
-          icon: <LocalShipping />,
-          trend: "+15%",
-          trendUp: true,
-        },
-      ]
+    loadPAData()
 
-      // Calculate total
-      const total = mockData.reduce((sum, item) => sum + item.value, 0)
-      setTotalVehicles(total)
-      setData(mockData)
-      setLoading(false)
-    }, 1000)
+    // Set up refresh interval (8 minutes)
+    const refreshInterval = setInterval(
+      () => {
+        loadPAData()
+      },
+      8 * 60 * 1000,
+    )
 
-    return () => clearTimeout(timer)
+    return () => clearInterval(refreshInterval)
   }, [themeColors])
 
   return (
@@ -152,20 +158,19 @@ const PADistribution = ({ themeColors, chartsLoaded }) => {
                 }}
               >
                 <Typography sx={{ color: themeColors.text.secondary, fontSize: "0.9rem" }}>
-                  Distribuídos em 4 pontos de apoio
+                  Distribuídos em {data.length} pontos de apoio
                 </Typography>
-                <Typography
-                  sx={{
-                    color: themeColors.success.main,
-                    fontSize: "0.9rem",
-                    fontWeight: 600,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 0.5,
-                  }}
-                >
-                  <TrendingUp fontSize="small" /> +8% vs. ontem
-                </Typography>
+                {error ? (
+                  <Typography
+                    sx={{
+                      color: themeColors.error.main,
+                      fontSize: "0.9rem",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Erro ao carregar dados
+                  </Typography>
+                ) : null}
               </Box>
             </CardContent>
           )}
@@ -296,19 +301,6 @@ const PADistribution = ({ themeColors, chartsLoaded }) => {
                         }}
                       >
                         {item.value}
-                      </Typography>
-
-                      <Typography
-                        sx={{
-                          fontSize: "0.85rem",
-                          fontWeight: 600,
-                          color: item.trendUp ? themeColors.success.main : themeColors.error.main,
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 0.5,
-                        }}
-                      >
-                        <TrendingUp fontSize="small" /> {item.trend}
                       </Typography>
                     </Box>
 
