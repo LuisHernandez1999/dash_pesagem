@@ -177,3 +177,41 @@ export const retornarInfosSeletiva = async () => {
     };
   }
 };
+
+
+export const getContagemGeralPorPASeletiva = async () => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}api/soltura/contagem_geral_por_pa_seltiva/`);
+    const data = response.data;
+
+    return {
+      PA1: {
+        turnos: data.PA1.turnos,
+        motoristas: data.PA1.motoristas,
+        veiculos: data.PA1.veiculos,
+        coletores: data.PA1.coletores
+      },
+      PA2: {
+        turnos: data.PA2.turnos,
+        motoristas: data.PA2.motoristas,
+        veiculos: data.PA2.veiculos,
+        coletores: data.PA2.coletores
+      },
+      PA3: {
+        turnos: data.PA3.turnos,
+        motoristas: data.PA3.motoristas,
+        veiculos: data.PA3.veiculos,
+        coletores: data.PA3.coletores
+      },
+      PA4: {
+        turnos: data.PA4.turnos,
+        motoristas: data.PA4.motoristas,
+        veiculos: data.PA4.veiculos,
+        coletores: data.PA4.coletores
+      }
+    };
+  } catch (error) {
+    console.error('Erro ao buscar contagem geral por PA (Seletiva):', error);
+    throw error;
+  }
+};
