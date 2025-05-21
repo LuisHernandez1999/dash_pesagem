@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import {
   Box,
   Card,
@@ -25,6 +25,21 @@ import {
   TrendingDown,
   LocationOn,
 } from "@mui/icons-material"
+import { getContagemPorPaRsu } from "../service/rsu"
+
+// Helper function to check if data has changed
+const hasDataChanged = (oldData, newData) => {
+  if (!oldData || !newData) return true
+
+  // Compare the values of each key
+  for (const key in newData) {
+    if (JSON.stringify(newData[key]) !== JSON.stringify(oldData[key])) {
+      return true
+    }
+  }
+
+  return false
+}
 
 const RSUResourceComparisonStats = ({ themeColors, keyframes, onRefresh }) => {
   const [loading, setLoading] = useState(true)
@@ -58,6 +73,9 @@ const RSUResourceComparisonStats = ({ themeColors, keyframes, onRefresh }) => {
   })
   const [activeTab, setActiveTab] = useState(0)
 
+  // Use ref to store previous data for comparison
+  const prevDataRef = useRef(null)
+
   // Fixed expected values for RSU
   const expectedValues = {
     coletores: 60,
@@ -68,45 +86,36 @@ const RSUResourceComparisonStats = ({ themeColors, keyframes, onRefresh }) => {
   const loadData = async () => {
     try {
       setLoading(true)
+      console.log("Carregando dados de recursos RSU...")
 
-      // Simulação de dados para RSU
-      // Em uma aplicação real, isso seria uma chamada de API
-      setTimeout(() => {
-        const mockData = {
-          PA1: {
-            coletores: Math.floor(Math.random() * 20) + 50,
-            motoristas: Math.floor(Math.random() * 10) + 15,
-            veiculos: Math.floor(Math.random() * 10) + 15,
-            turnos: ["Matutino", "Vespertino", "Noturno"],
-          },
-          PA2: {
-            coletores: Math.floor(Math.random() * 20) + 45,
-            motoristas: Math.floor(Math.random() * 10) + 12,
-            veiculos: Math.floor(Math.random() * 10) + 12,
-            turnos: ["Matutino", "Vespertino"],
-          },
-          PA3: {
-            coletores: Math.floor(Math.random() * 20) + 40,
-            motoristas: Math.floor(Math.random() * 10) + 10,
-            veiculos: Math.floor(Math.random() * 10) + 10,
-            turnos: ["Matutino", "Vespertino", "Noturno"],
-          },
-          PA4: {
-            coletores: Math.floor(Math.random() * 20) + 35,
-            motoristas: Math.floor(Math.random() * 10) + 8,
-            veiculos: Math.floor(Math.random() * 10) + 8,
-            turnos: ["Matutino", "Noturno"],
-          },
+      // Fetch data from API
+      const apiData = await getContagemPorPaRsu()
+      console.log("Dados recebidos da API:", apiData)
+
+      // Check if data has changed
+      const dataChanged = hasDataChanged(prevDataRef.current, apiData)
+
+      if (dataChanged) {
+        console.log("Dados mudaram, atualizando componente...")
+
+        // Add lastUpdated timestamp
+        const transformedData = {
+          ...apiData,
           lastUpdated: new Date().toISOString(),
         }
 
-        setData(mockData)
-        setLoading(false)
+        setData(transformedData)
         setError(null)
-      }, 1000)
+
+        // Update ref with current data
+        prevDataRef.current = { ...apiData }
+      } else {
+        console.log("Dados não mudaram, pulando atualização")
+      }
     } catch (err) {
       console.error("Erro ao carregar dados de comparação de recursos RSU:", err)
       setError("Falha ao carregar dados")
+    } finally {
       setLoading(false)
     }
   }
@@ -287,7 +296,7 @@ const RSUResourceComparisonStats = ({ themeColors, keyframes, onRefresh }) => {
               onClick={handleRefresh}
               disabled={loading}
             >
-              <Refresh />
+              <Refresh fontSize="small" />
             </IconButton>
           </Tooltip>
         }
@@ -306,7 +315,8 @@ const RSUResourceComparisonStats = ({ themeColors, keyframes, onRefresh }) => {
       />
 
       <CardContent sx={{ padding: "1.5rem", pt: "1rem" }}>
-        {loading ? (
+        {loading &&
+        Object.values(data).every((pa) => pa.coletores === 0 && pa.motoristas === 0 && pa.veiculos === 0) ? (
           <Box sx={{ py: 2 }}>
             <Skeleton variant="rectangular" height={180} sx={{ borderRadius: "8px", mb: 2 }} />
           </Box>

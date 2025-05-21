@@ -304,7 +304,7 @@ export default function RSUDashboard() {
             : "",
         date: new Date().toISOString().split("T")[0],
         garage: `PA${Math.floor(Math.random() * 4) + 1}`,
-        shift: ["Matutino", "Vespertino", "Noturno"][Math.floor(Math.random() * 3)],
+        shift: ["Diurno", "Noturno"][Math.floor(Math.random() * 3)],
         collectedWeight: `${(Math.random() * 10 + 5).toFixed(2)} ton`,
       }))
 

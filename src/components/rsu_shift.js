@@ -1,58 +1,108 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Box, Typography, Card, alpha } from "@mui/material"
-import { WbSunny, Brightness3, Brightness4, People } from "@mui/icons-material"
+import { useState, useEffect, useRef } from "react"
+import { Box, Typography, Card, alpha, Skeleton } from "@mui/material"
+import { WbSunny, Brightness3, People } from "@mui/icons-material"
+import { getQuantidadeMotoristasColetoresPorEquipe } from "../service/rsu"
 
-const ShiftDistributionChart = ({ themeColors, chartsLoaded }) => {
-  // Mock data for shift distribution
-  const [data, setData] = useState({
-    morning: {
-      drivers: 5,
-      collectors: 6,
-    },
-    afternoon: {
-      drivers: 4,
-      collectors: 4,
-    },
-    night: {
-      drivers: 3,
-      collectors: 3,
-    },
-  })
+// Helper function to check if data has changed
+const hasDataChanged = (oldData, newData) => {
+  if (!oldData || !newData) return true
 
-  // Simulate data loading
+  if (oldData.length !== newData.length) return true
+
+  for (let i = 0; i < newData.length; i++) {
+    if (
+      oldData[i].equipe !== newData[i].equipe ||
+      oldData[i].motoristas !== newData[i].motoristas ||
+      oldData[i].coletores !== newData[i].coletores
+    ) {
+      return true
+    }
+  }
+
+  return false
+}
+
+const ShiftDistributionChart = ({ themeColors, chartsLoaded = true }) => {
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [apiData, setApiData] = useState([
+    { equipe: "Equipe(Diurno)", motoristas: 0, coletores: 0 },
+    { equipe: "Equipe(Noturno)", motoristas: 0, coletores: 0 },
+  ])
+
+  // Use ref to store previous API data for comparison
+  const prevApiDataRef = useRef(null)
+
+  // Fetch data from API
+  const fetchData = async () => {
+    try {
+      setLoading(true)
+      console.log("Buscando dados de distribuição por turno...")
+
+      const data = await getQuantidadeMotoristasColetoresPorEquipe()
+      console.log("Dados recebidos da API:", data)
+
+      // Check if data has changed
+      const dataChanged = hasDataChanged(prevApiDataRef.current, data)
+
+      if (dataChanged) {
+        console.log("Dados mudaram, atualizando componente...")
+        setApiData(data)
+        setError(null)
+
+        // Update previous data ref
+        prevApiDataRef.current = [...data]
+      } else {
+        console.log("Dados não mudaram, pulando atualização")
+      }
+    } catch (err) {
+      console.error("Erro ao buscar dados de distribuição por turno:", err)
+      setError("Falha ao carregar dados de turnos")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Initial data fetch
   useEffect(() => {
-    const interval = setInterval(() => {
-      // Randomly update the data to simulate real-time changes
-      setData({
-        morning: {
-          drivers: Math.floor(Math.random() * 2) + 4, // 4-5 drivers
-          collectors: Math.floor(Math.random() * 2) + 5, // 5-6 collectors
-        },
-        afternoon: {
-          drivers: Math.floor(Math.random() * 2) + 3, // 3-4 drivers
-          collectors: Math.floor(Math.random() * 2) + 3, // 3-4 collectors
-        },
-        night: {
-          drivers: Math.floor(Math.random() * 2) + 2, // 2-3 drivers
-          collectors: Math.floor(Math.random() * 2) + 2, // 2-3 collectors
-        },
-      })
-    }, 60000) // Update every minute
+    fetchData()
 
-    return () => clearInterval(interval)
+    // Set up refresh interval (5 minutes)
+    const refreshInterval = setInterval(
+      () => {
+        fetchData()
+      },
+      5 * 60 * 1000,
+    )
+
+    return () => clearInterval(refreshInterval)
   }, [])
 
+  // Find data for each shift
+  const diurnoData = apiData.find((item) => item.equipe.toLowerCase().includes("diurno")) || {
+    equipe: "Equipe(Diurno)",
+    motoristas: 0,
+    coletores: 0,
+  }
+
+  const noturnoData = apiData.find((item) => item.equipe.toLowerCase().includes("noturno")) || {
+    equipe: "Equipe(Noturno)",
+    motoristas: 0,
+    coletores: 0,
+  }
+
   // Calculate totals
-  const totalDrivers = data.morning.drivers + data.afternoon.drivers + data.night.drivers
-  const totalCollectors = data.morning.collectors + data.afternoon.collectors + data.night.collectors
+  const totalDrivers = diurnoData.motoristas + noturnoData.motoristas
+  const totalCollectors = diurnoData.coletores + noturnoData.coletores
   const totalEmployees = totalDrivers + totalCollectors
 
   // Calculate percentages for each shift
-  const morningPercentage = ((data.morning.drivers + data.morning.collectors) / totalEmployees) * 100
-  const afternoonPercentage = ((data.afternoon.drivers + data.afternoon.collectors) / totalEmployees) * 100
-  const nightPercentage = ((data.night.drivers + data.night.collectors) / totalEmployees) * 100
+  const diurnoPercentage =
+    totalEmployees > 0 ? ((diurnoData.motoristas + diurnoData.coletores) / totalEmployees) * 100 : 0
+  const noturnoPercentage =
+    totalEmployees > 0 ? ((noturnoData.motoristas + noturnoData.coletores) / totalEmployees) * 100 : 0
 
   // Shift card component
   const ShiftCard = ({ title, icon: Icon, color, driverCount, collectorCount, percentage, total }) => (
@@ -155,33 +205,40 @@ const ShiftDistributionChart = ({ themeColors, chartsLoaded }) => {
     </Card>
   )
 
+  if (loading && totalEmployees === 0) {
+    return (
+      <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+        <Box sx={{ display: "flex", gap: 3, mb: 3, flex: 1 }}>
+          <Skeleton variant="rectangular" height={200} sx={{ flex: 1, borderRadius: "12px" }} />
+          <Skeleton variant="rectangular" height={200} sx={{ flex: 1, borderRadius: "12px" }} />
+        </Box>
+        <Skeleton variant="rectangular" height={60} sx={{ borderRadius: "12px" }} />
+      </Box>
+    )
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ height: "100%", display: "flex", justifyContent: "center", alignItems: "center" }}>
+        <Typography color="error">{error}</Typography>
+      </Box>
+    )
+  }
+
   return (
     <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
       {/* Shift Cards */}
       <Box sx={{ display: "flex", gap: 3, mb: 3, flex: 1 }}>
-        {/* Morning Shift */}
+        {/* Day Shift */}
         <Box sx={{ flex: 1 }}>
           <ShiftCard
-            title="Matutino"
+            title="Diurno"
             icon={WbSunny}
             color={themeColors.warning.main}
-            driverCount={data.morning.drivers}
-            collectorCount={data.morning.collectors}
-            percentage={morningPercentage}
-            total={data.morning.drivers + data.morning.collectors}
-          />
-        </Box>
-
-        {/* Afternoon Shift */}
-        <Box sx={{ flex: 1 }}>
-          <ShiftCard
-            title="Vespertino"
-            icon={Brightness4}
-            color={themeColors.primary.main}
-            driverCount={data.afternoon.drivers}
-            collectorCount={data.afternoon.collectors}
-            percentage={afternoonPercentage}
-            total={data.afternoon.drivers + data.afternoon.collectors}
+            driverCount={diurnoData.motoristas}
+            collectorCount={diurnoData.coletores}
+            percentage={diurnoPercentage}
+            total={diurnoData.motoristas + diurnoData.coletores}
           />
         </Box>
 
@@ -191,10 +248,10 @@ const ShiftDistributionChart = ({ themeColors, chartsLoaded }) => {
             title="Noturno"
             icon={Brightness3}
             color={themeColors.info.main}
-            driverCount={data.night.drivers}
-            collectorCount={data.night.collectors}
-            percentage={nightPercentage}
-            total={data.night.drivers + data.night.collectors}
+            driverCount={noturnoData.motoristas}
+            collectorCount={noturnoData.coletores}
+            percentage={noturnoPercentage}
+            total={noturnoData.motoristas + noturnoData.coletores}
           />
         </Box>
       </Box>
@@ -202,30 +259,32 @@ const ShiftDistributionChart = ({ themeColors, chartsLoaded }) => {
       {/* Summary Row */}
       <Box
         sx={{
-          borderRadius: "12px",
-          backgroundColor: alpha(themeColors.success.main, 0.05),
-          p: 2.5,
+          borderRadius: "10px",
+          backgroundColor: alpha(themeColors.success.main, 0.03),
+          py: 1,
+          px: 1.5,
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          border: `1px solid ${alpha(themeColors.success.main, 0.1)}`,
+          border: `1px solid ${alpha(themeColors.success.main, 0.08)}`,
+          mt: 0.5,
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
           <Box
             sx={{
-              width: "48px",
-              height: "48px",
+              width: "32px",
+              height: "32px",
               borderRadius: "50%",
-              backgroundColor: alpha(themeColors.success.main, 0.2),
+              backgroundColor: alpha(themeColors.success.main, 0.15),
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
             }}
           >
-            <People sx={{ color: themeColors.success.main, fontSize: 28 }} />
+            <People sx={{ color: themeColors.success.main, fontSize: 18 }} />
           </Box>
-          <Typography variant="h6" sx={{ fontWeight: 600, color: themeColors.success.main }}>
+          <Typography sx={{ fontWeight: 600, color: themeColors.success.main, fontSize: "0.9rem" }}>
             Total de funcionários em operação:
           </Typography>
         </Box>
@@ -234,14 +293,14 @@ const ShiftDistributionChart = ({ themeColors, chartsLoaded }) => {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            width: "56px",
-            height: "56px",
+            width: "38px",
+            height: "38px",
             borderRadius: "50%",
-            backgroundColor: alpha(themeColors.success.main, 0.2),
+            backgroundColor: alpha(themeColors.success.main, 0.15),
           }}
         >
           <Typography
-            variant="h4"
+            variant="h6"
             sx={{
               fontWeight: 700,
               color: themeColors.success.main,

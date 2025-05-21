@@ -89,7 +89,7 @@ export const getSolturasPorDiaDaSemanaRSU = async () => {
 
 export const getSolturasPorGaragemRSU = async () => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/api/soltura/contar_solturas_rsu_por_garagem/`);
+    const response = await axios.get(`${API_BASE_URL}/api/soltura/ contar_solturas_rsu_por_garagem/`);
 
     const dados = response.data.solturas_por_garagem;
     const resultadoDetalhado = [
