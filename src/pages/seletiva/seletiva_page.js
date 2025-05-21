@@ -17,6 +17,9 @@ import {
   alpha,
   Snackbar,
   Alert,
+  Tabs,
+  Tab,
+  Paper,
 } from "@mui/material"
 import {
   Refresh,
@@ -27,6 +30,9 @@ import {
   LocalShipping,
   Scale,
   EmojiEvents,
+  Home,
+  CleaningServices,
+  Dashboard,
 } from "@mui/icons-material"
 import Sidebar from "@/components/sidebar"
 import SeletivaTable from "@/components/Seletiva/table/table_seletiva"
@@ -40,6 +46,7 @@ import {
   contarSeletivaInativos,
   contarSeletivaAtivos,
 } from "../../service/seletiva"
+import { useRouter } from "next/navigation"
 
 const keyframes = {
   fadeIn: `
@@ -168,6 +175,19 @@ const keyframes = {
     }
   }
 `,
+  tabGlow: `
+  @keyframes tabGlow {
+    0% { box-shadow: 0 0 0 rgba(46, 125, 50, 0); }
+    50% { box-shadow: 0 0 15px rgba(46, 125, 50, 0.3); }
+    100% { box-shadow: 0 0 0 rgba(46, 125, 50, 0); }
+  }
+`,
+  subtleRise: `
+  @keyframes subtleRise {
+    from { transform: translateY(2px); opacity: 0.8; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+`,
 }
 
 // Theme colors
@@ -236,6 +256,7 @@ export default function SeletivaDashboard() {
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarMessage, setSnackbarMessage] = useState("")
   const [snackbarSeverity, setSnackbarSeverity] = useState("success")
+  const [activeTab, setActiveTab] = useState("seletiva")
 
   // Stats Cards State
   const [statsLoading, setStatsLoading] = useState(true)
@@ -249,18 +270,22 @@ export default function SeletivaDashboard() {
   // Mock data for selective collections
   const [seletivaData, setSeletivaData] = useState([])
 
+  // Adicione uma inicialização mais robusta para os valores iniciais no useRef
+  // Substitua a declaração do latestValuesRef por:
+
   // Use useRef to store the latest values to prevent them from being reset to 0
   const latestValuesRef = useRef({
-    totalSeletiva: 0,
-    seletivaInativos: 0,
-    seletivaAtivos: 0,
-    seletivaHoje: 0,
+    totalSeletiva: 0, // Removido valor mockado
+    seletivaInativos: 0, // Removido valor mockado
+    seletivaAtivos: 0, // Removido valor mockado
+    seletivaHoje: 0, // Removido valor mockado
   })
 
+  // E também inicialize os statsCards com esses valores:
   const [statsCards, setStatsCards] = useState([
     {
       title: "Total de Veículos",
-      value: 0,
+      value: 0, // Removido valor mockado
       subtitle: "Frota total de veículos de seletiva",
       icon: <LocalShipping />,
       color: themeColors.primary,
@@ -268,7 +293,7 @@ export default function SeletivaDashboard() {
     },
     {
       title: "Total Inativos",
-      value: 0,
+      value: 0, // Removido valor mockado
       subtitle: "Veículos em manutenção ou parados",
       icon: <Scale />,
       color: themeColors.error,
@@ -276,7 +301,7 @@ export default function SeletivaDashboard() {
     },
     {
       title: "Total Ativos",
-      value: 0,
+      value: 0, // Removido valor mockado
       subtitle: "Veículos ativos",
       icon: <Recycling />,
       color: themeColors.success,
@@ -284,13 +309,28 @@ export default function SeletivaDashboard() {
     },
     {
       title: "Seletivas Hoje",
-      value: 0,
+      value: 0, // Já estava sem valor mockado
       subtitle: "Total soltos hoje",
       icon: <EmojiEvents />,
       color: themeColors.warning,
       delay: "0.3s",
     },
   ])
+
+  // Adicione uma função de tratamento de erro mais robusta para as chamadas de API
+  // Adicione esta função antes do loadAllData:
+
+  // Função auxiliar para garantir valores seguros
+  const getSafeValue = (response, fieldName, defaultValue) => {
+    if (response && response.success && response[fieldName] !== undefined && response[fieldName] !== null) {
+      // Verifica se o valor é um número válido
+      const value = Number(response[fieldName])
+      if (!isNaN(value)) {
+        return value
+      }
+    }
+    return defaultValue
+  }
 
   // Replace the loadAllData function with this updated version
   const loadAllData = async (onlyHoje = false) => {
@@ -311,49 +351,44 @@ export default function SeletivaDashboard() {
         const ativosResponse = await contarSeletivaAtivos()
         const hojeResponse = await contarSeletivaRealizadasHoje()
 
-        // Get the new values, defaulting to previous values if API call fails
-        const newTotalSeletiva = totalSeletivaResponse.success
-          ? totalSeletivaResponse.total
-          : latestValuesRef.current.totalSeletiva
-        const newSeletivaInativos = inativosResponse.success
-          ? inativosResponse.count
-          : latestValuesRef.current.seletivaInativos
-        const newSeletivaAtivos = ativosResponse.success ? ativosResponse.count : latestValuesRef.current.seletivaAtivos
-        const newSeletivaHoje = hojeResponse.success ? hojeResponse.total : latestValuesRef.current.seletivaHoje
+        // Usar apenas os valores da API, sem fallbacks mockados
+        const newTotalSeletiva = totalSeletivaResponse?.total !== undefined ? Number(totalSeletivaResponse.total) : 0
+        const newSeletivaInativos = inativosResponse?.count !== undefined ? Number(inativosResponse.count) : 0
+        const newSeletivaAtivos = ativosResponse?.count !== undefined ? Number(ativosResponse.count) : 0
+        const newSeletivaHoje = hojeResponse?.total !== undefined ? Number(hojeResponse.total) : 0
 
-        console.log("Valores atuais:", latestValuesRef.current)
-        console.log("Novos valores:", {
+        console.log("Valores da API:", {
           totalSeletiva: newTotalSeletiva,
           seletivaInativos: newSeletivaInativos,
           seletivaAtivos: newSeletivaAtivos,
           seletivaHoje: newSeletivaHoje,
         })
 
-        // Update the ref with the latest values
+        // Atualizar o ref com os valores mais recentes da API
         latestValuesRef.current = {
-          totalSeletiva: newTotalSeletiva || latestValuesRef.current.totalSeletiva,
-          seletivaInativos: newSeletivaInativos || latestValuesRef.current.seletivaInativos,
-          seletivaAtivos: newSeletivaAtivos || latestValuesRef.current.seletivaAtivos,
-          seletivaHoje: newSeletivaHoje || latestValuesRef.current.seletivaHoje,
+          totalSeletiva: newTotalSeletiva,
+          seletivaInativos: newSeletivaInativos,
+          seletivaAtivos: newSeletivaAtivos,
+          seletivaHoje: newSeletivaHoje,
         }
 
-        // Always update the cards with the latest values from the ref
+        // Atualizar os cards com os valores da API
         setStatsCards([
           {
             ...statsCards[0],
-            value: latestValuesRef.current.totalSeletiva,
+            value: newTotalSeletiva,
           },
           {
             ...statsCards[1],
-            value: latestValuesRef.current.seletivaInativos,
+            value: newSeletivaInativos,
           },
           {
             ...statsCards[2],
-            value: latestValuesRef.current.seletivaAtivos,
+            value: newSeletivaAtivos,
           },
           {
             ...statsCards[3],
-            value: latestValuesRef.current.seletivaHoje,
+            value: newSeletivaHoje,
           },
         ])
 
@@ -400,19 +435,19 @@ export default function SeletivaDashboard() {
       } else {
         // Only fetch "Seletivas Hoje" data
         const hojeResponse = await contarSeletivaRealizadasHoje()
-        const newSeletivaHoje = hojeResponse.success ? hojeResponse.total : latestValuesRef.current.seletivaHoje
+        const newSeletivaHoje = hojeResponse?.total !== undefined ? Number(hojeResponse.total) : 0
 
         // Update the ref with the latest value
         latestValuesRef.current = {
           ...latestValuesRef.current,
-          seletivaHoje: newSeletivaHoje || latestValuesRef.current.seletivaHoje,
+          seletivaHoje: newSeletivaHoje,
         }
 
         // Update only the "Seletivas Hoje" card (index 3)
         const newStatsCards = [...statsCards]
         newStatsCards[3] = {
           ...newStatsCards[3],
-          value: latestValuesRef.current.seletivaHoje,
+          value: newSeletivaHoje,
         }
         setStatsCards(newStatsCards)
       }
@@ -478,6 +513,51 @@ export default function SeletivaDashboard() {
     setSnackbarOpen(false)
   }
 
+  // Handle tab change
+  const router = useRouter()
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue)
+
+    // Navigate to the corresponding page
+    if (newValue === "domiciliar") {
+      router.push("../../rcu/rsu")
+    } else if (newValue === "seletiva") {
+      router.push("../../seletiva/seletiva_page")
+    } else if (newValue === "varricao") {
+      router.push("../../varricao/varricao_page")
+    } else if (newValue === "index") {
+      router.push("/")
+    }
+  }
+
+  // Tab data with icons and labels
+  const tabsData = [
+    {
+      value: "index",
+      label: "Início",
+      icon: <Dashboard sx={{ fontSize: "1.3rem" }} />,
+      color: themeColors.info.main,
+    },
+    {
+      value: "domiciliar",
+      label: "Domiciliar",
+      icon: <Home sx={{ fontSize: "1.3rem" }} />,
+      color: themeColors.warning.main,
+    },
+    {
+      value: "seletiva",
+      label: "Seletiva",
+      icon: <Recycling sx={{ fontSize: "1.3rem" }} />,
+      color: themeColors.primary.main,
+    },
+    {
+      value: "varricao",
+      label: "Varrição",
+      icon: <CleaningServices sx={{ fontSize: "1.3rem" }} />,
+      color: themeColors.secondary.main,
+    },
+  ]
+
   // Stats Cards Data
   return (
     <>
@@ -497,6 +577,8 @@ export default function SeletivaDashboard() {
           ${keyframes.zoomIn}
           ${keyframes.heartbeat}
           ${keyframes.flashHighlight}
+          ${keyframes.tabGlow}
+          ${keyframes.subtleRise}
         `}
       </style>
       {/* Main Content */}
@@ -557,32 +639,38 @@ export default function SeletivaDashboard() {
                 >
                   <Box
                     sx={{
-                      width: "5px",
-                      height: { xs: "36px", sm: "48px" },
+                      width: "6px",
+                      height: { xs: "40px", sm: "60px" },
                       borderRadius: "8px",
                       background: `linear-gradient(180deg, ${themeColors.primary.main} 0%, ${themeColors.info.main} 100%)`,
                       mr: 3,
                       boxShadow: `0 4px 12px ${alpha(themeColors.primary.main, 0.4)}`,
+                      animation: `${keyframes.pulse} 3s ease-in-out infinite`,
                     }}
                   />
                   <Box sx={{ position: "relative" }}>
                     <Typography
                       variant="h4"
                       sx={{
-                        fontWeight: 600,
-                        fontSize: { xs: "1.6rem", sm: "2.2rem" },
+                        fontWeight: 700,
+                        fontSize: { xs: "1.7rem", sm: "2.3rem" },
                         color: themeColors.text.primary,
-                        letterSpacing: "0.01em",
+                        letterSpacing: "-0.01em",
                         fontFamily: "'Poppins', sans-serif",
                         position: "relative",
                         display: "inline-block",
+                        background: `linear-gradient(90deg, ${themeColors.primary.dark} 0%, ${themeColors.primary.main} 100%)`,
+                        backgroundClip: "text",
+                        WebkitBackgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                        textShadow: "0px 2px 5px rgba(0,0,0,0.05)",
                         "&::after": {
                           content: '""',
                           position: "absolute",
-                          bottom: "-4px",
+                          bottom: "-6px",
                           left: "0",
-                          width: "40%",
-                          height: "3px",
+                          width: "60%",
+                          height: "4px",
                           background: `linear-gradient(90deg, ${themeColors.primary.main}, ${alpha(themeColors.primary.light, 0)})`,
                           borderRadius: "2px",
                         },
@@ -594,9 +682,9 @@ export default function SeletivaDashboard() {
                       variant="subtitle1"
                       sx={{
                         color: themeColors.text.secondary,
-                        fontSize: { xs: "0.9rem", sm: "1rem" },
-                        mt: "0.5rem",
-                        fontWeight: 400,
+                        fontSize: { xs: "0.95rem", sm: "1.05rem" },
+                        mt: "1rem",
+                        fontWeight: 500,
                         letterSpacing: "0.03em",
                         opacity: 0.9,
                         pl: 0.5,
@@ -607,8 +695,8 @@ export default function SeletivaDashboard() {
                           position: "absolute",
                           left: "-10px",
                           top: "50%",
-                          width: "3px",
-                          height: "3px",
+                          width: "4px",
+                          height: "4px",
                           borderRadius: "50%",
                           backgroundColor: themeColors.primary.main,
                         },
@@ -623,7 +711,11 @@ export default function SeletivaDashboard() {
                 <IconButton
                   sx={{
                     color: themeColors.text.secondary,
-                    "&:hover": { color: themeColors.primary.main },
+                    "&:hover": {
+                      color: themeColors.primary.main,
+                      transform: "rotate(180deg)",
+                      transition: "transform 0.5s ease-in-out",
+                    },
                   }}
                   onClick={handleRefreshData}
                 >
@@ -638,6 +730,124 @@ export default function SeletivaDashboard() {
               }}
             />
           </AppBar>
+
+          {/* Tabs Navigation - Redesigned for a more professional look */}
+          <Paper
+            elevation={2}
+            sx={{
+              position: "sticky",
+              top: 0,
+              zIndex: 9,
+              background: "#ffffff",
+              borderRadius: 0,
+              borderBottom: `1px solid ${alpha(themeColors.primary.main, 0.1)}`,
+              padding: "0.5rem 1.5rem",
+              backdropFilter: "blur(10px)",
+              boxShadow: `0 4px 20px ${alpha(themeColors.primary.main, 0.08)}`,
+            }}
+          >
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                width: "100%",
+                maxWidth: "1200px",
+                margin: "0 auto",
+              }}
+            >
+              <Tabs
+                value={activeTab}
+                onChange={handleTabChange}
+                aria-label="navigation tabs"
+                variant="scrollable"
+                scrollButtons="auto"
+                allowScrollButtonsMobile
+                TabIndicatorProps={{
+                  style: {
+                    display: "none",
+                  },
+                }}
+                sx={{
+                  minHeight: "64px",
+                  width: "100%",
+                  "& .MuiTabs-flexContainer": {
+                    justifyContent: "space-between",
+                    width: "100%",
+                  },
+                  "& .MuiTabs-scroller": {
+                    width: "100%",
+                  },
+                  "& .MuiTab-root": {
+                    textTransform: "none",
+                    fontWeight: 500,
+                    fontSize: "0.95rem",
+                    minHeight: "54px",
+                    borderRadius: "8px",
+                    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                    padding: "6px 16px",
+                    letterSpacing: "0.02em",
+                    color: themeColors.text.secondary,
+                    opacity: 0.85,
+                    flex: 1,
+                    maxWidth: "none",
+                    "&:hover": {
+                      backgroundColor: alpha(themeColors.background.default, 0.8),
+                      color: themeColors.text.primary,
+                      opacity: 1,
+                    },
+                  },
+                }}
+              >
+                {tabsData.map((tab) => (
+                  <Tab
+                    key={tab.value}
+                    icon={tab.icon}
+                    label={tab.label}
+                    value={tab.value}
+                    iconPosition="start"
+                    sx={{
+                      position: "relative",
+                      overflow: "hidden",
+                      marginX: 0.5,
+                      "&.Mui-selected": {
+                        color: tab.color,
+                        fontWeight: 600,
+                        backgroundColor: alpha(tab.color, 0.08),
+                        boxShadow: activeTab === tab.value ? `0 3px 10px ${alpha(tab.color, 0.2)}` : "none",
+                        animation: activeTab === tab.value ? `${keyframes.subtleRise} 0.3s ease-out` : "none",
+                        "& .MuiSvgIcon-root": {
+                          color: tab.color,
+                          transform: "scale(1.1)",
+                        },
+                      },
+                      "&::after": {
+                        content: '""',
+                        position: "absolute",
+                        bottom: 0,
+                        left: 0,
+                        width: "100%",
+                        height: "3px",
+                        background: tab.color,
+                        transform: activeTab === tab.value ? "scaleX(1)" : "scaleX(0)",
+                        transformOrigin: "left",
+                        transition: "transform 0.3s ease",
+                        borderTopLeftRadius: "2px",
+                        borderTopRightRadius: "2px",
+                      },
+                      "& .MuiSvgIcon-root": {
+                        transition: "all 0.3s ease",
+                        marginRight: "8px",
+                        fontSize: "1.3rem",
+                      },
+                      "& .MuiTouchRipple-root": {
+                        color: alpha(tab.color, 0.3),
+                      },
+                    }}
+                  />
+                ))}
+              </Tabs>
+            </Box>
+          </Paper>
 
           {/* Main Content */}
           <Box
@@ -995,12 +1205,17 @@ export default function SeletivaDashboard() {
                       },
                     }}
                   />
-                  <CardContent sx={{ padding: "1.5rem" }}>
+                  <CardContent sx={{  padding: "1.5rem",
+              height: "calc(100% - 90px)", 
+              display: "flex",
+              flexDirection: "column",
+                   }}>
                     <Box
                       sx={{
-                        width: "100%",
-                        position: "relative",
-                        height: "350px",
+                       width: "100%",
+                position: "relative",
+                height: "100%", // Usa todo o espaço disponível
+                flex: 1,
                       }}
                     >
                       <GraficoSeletivaSemanal themeColors={themeColors} chartsLoaded={chartsLoaded} />

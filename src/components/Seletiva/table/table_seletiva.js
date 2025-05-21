@@ -568,9 +568,8 @@ const SeletivaTable = ({ loading: initialLoading, themeColors, keyframes, onRefr
         // Team filter
         const teamMatch =
           teamFilter === "all" ||
-          (teamFilter === "team-1" && removal.tipo_equipe === "Equipe1(Matutino)") ||
-          (teamFilter === "team-2" && removal.tipo_equipe === "Equipe2(Vespertino)") ||
-          (teamFilter === "team-3" && removal.tipo_equipe === "Equipe3(Noturno)")
+          (teamFilter === "team-1" && removal.tipo_equipe === "Equipe(Diurno)") ||
+          (teamFilter === "team-2" && removal.tipo_equipe === "Equipe(Noturno)") 
 
         // Recently registered filter (last 24 hours)
         const recentlyMatch = !recentlyRegisteredFilter || (removal.data && new Date(removal.data) >= oneDayAgo)
@@ -832,7 +831,7 @@ const SeletivaTable = ({ loading: initialLoading, themeColors, keyframes, onRefr
                         Por Equipe:
                       </Typography>
                       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                        {["Todas", "Equipe1(Matutino)", "Equipe2(Vespertino)", "Equipe3(Noturno)"].map(
+                        {["Todas", "Equipe(Diurno)", "Equipe(Noturno)"].map(
                           (team, index) => (
                             <Chip
                               key={team}

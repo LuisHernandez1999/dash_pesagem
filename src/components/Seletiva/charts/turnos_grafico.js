@@ -1,26 +1,16 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Box, Typography, alpha, Skeleton, useTheme } from "@mui/material"
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-  Cell,
-  LabelList,
-} from "recharts"
+import { Box, Typography, alpha, useTheme, CircularProgress } from "@mui/material"
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from "recharts"
 import { WbSunny, NightsStay, WbTwilight } from "@mui/icons-material"
 import { contarColetoresMotoristasPorTurno } from "../../../service/seletiva"
 
-const GraficoTurnos = ({ themeColors, chartsLoaded }) => {
+const RegionDistributionChart = ({ themeColors, chartsLoaded }) => {
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [activeIndex, setActiveIndex] = useState(null)
   const theme = useTheme()
 
   // Function to map shift names to icons and colors
@@ -43,15 +33,15 @@ const GraficoTurnos = ({ themeColors, chartsLoaded }) => {
       setLoading(true)
       const response = await contarColetoresMotoristasPorTurno()
 
-      if (response.success) {
+      if (response?.success) {
         // Map API data to the format needed by the chart
         const chartData = response.data.map((item) => {
           const { icon, color } = getShiftIcon(item.equipe)
           return {
             name: item.equipe,
-            motoristas: item.motoristas,
-            coletores: item.coletores,
-            total: item.motoristas + item.coletores, // Add total for the label
+            motoristas: item.motoristas || 0,
+            coletores: item.coletores || 0,
+            total: (item.motoristas || 0) + (item.coletores || 0),
             icon: icon,
             color: color,
           }
@@ -60,12 +50,70 @@ const GraficoTurnos = ({ themeColors, chartsLoaded }) => {
         setData(chartData)
         setError(null)
       } else {
-        console.error("Erro ao carregar dados de turnos:", response.error)
-        setError(response.error || "Erro ao carregar dados")
+        console.error("Erro ao carregar dados de turnos:", response?.error)
+        setError(response?.error || "Erro ao carregar dados")
+
+        // Fallback data for development/testing
+        const fallbackData = [
+          {
+            name: "Matutino",
+            motoristas: 12,
+            coletores: 24,
+            total: 36,
+            icon: <WbSunny />,
+            color: themeColors.warning.main,
+          },
+          {
+            name: "Vespertino",
+            motoristas: 10,
+            coletores: 20,
+            total: 30,
+            icon: <WbTwilight />,
+            color: themeColors.primary.main,
+          },
+          {
+            name: "Noturno",
+            motoristas: 8,
+            coletores: 16,
+            total: 24,
+            icon: <NightsStay />,
+            color: themeColors.info.main,
+          },
+        ]
+        setData(fallbackData)
       }
     } catch (err) {
       console.error("Erro ao carregar dados de turnos:", err)
       setError("Erro ao carregar dados")
+
+      // Fallback data for development/testing
+      const fallbackData = [
+        {
+          name: "Matutino",
+          motoristas: 12,
+          coletores: 24,
+          total: 36,
+          icon: <WbSunny />,
+          color: themeColors.warning.main,
+        },
+        {
+          name: "Vespertino",
+          motoristas: 10,
+          coletores: 20,
+          total: 30,
+          icon: <WbTwilight />,
+          color: themeColors.primary.main,
+        },
+        {
+          name: "Noturno",
+          motoristas: 8,
+          coletores: 16,
+          total: 24,
+          icon: <NightsStay />,
+          color: themeColors.info.main,
+        },
+      ]
+      setData(fallbackData)
     } finally {
       setLoading(false)
     }
@@ -85,10 +133,17 @@ const GraficoTurnos = ({ themeColors, chartsLoaded }) => {
     return () => clearInterval(refreshInterval)
   }, [themeColors])
 
-  const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-      const turnoData = data.find((item) => item.name === label)
+  const handleMouseEnter = (_, index) => {
+    setActiveIndex(index)
+  }
 
+  const handleMouseLeave = () => {
+    setActiveIndex(null)
+  }
+
+  const CustomTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      const shiftData = payload[0].payload
       return (
         <Box
           sx={{
@@ -96,8 +151,8 @@ const GraficoTurnos = ({ themeColors, chartsLoaded }) => {
             padding: "16px",
             borderRadius: "12px",
             boxShadow: "0 8px 32px rgba(0, 0, 0, 0.12)",
-            border: `1px solid ${alpha(turnoData?.color || themeColors.primary.main, 0.2)}`,
-            minWidth: "200px",
+            border: `1px solid ${alpha(shiftData.color, 0.2)}`,
+            minWidth: "220px",
           }}
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
@@ -106,73 +161,57 @@ const GraficoTurnos = ({ themeColors, chartsLoaded }) => {
                 width: 32,
                 height: 32,
                 borderRadius: "8px",
-                backgroundColor: alpha(turnoData?.color || themeColors.primary.main, 0.15),
+                backgroundColor: alpha(shiftData.color, 0.15),
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: turnoData?.color || themeColors.primary.main,
+                color: shiftData.color,
               }}
             >
-              {turnoData?.icon || <WbSunny />}
+              {shiftData.icon}
             </Box>
             <Typography
               sx={{
                 fontSize: "1rem",
                 fontWeight: 700,
                 color: themeColors.text.primary,
-                borderBottom: `2px solid ${turnoData?.color || themeColors.primary.main}`,
+                borderBottom: `2px solid ${shiftData.color}`,
                 paddingBottom: "4px",
               }}
             >
-              Turno {label}
+              Turno {shiftData.name}
             </Typography>
           </Box>
 
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-            {payload.map((entry, index) => (
-              <Box key={index} sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <Box
-                    sx={{
-                      width: 10,
-                      height: 10,
-                      borderRadius: "50%",
-                      backgroundColor: entry.color,
-                    }}
-                  />
-                  <Typography
-                    sx={{
-                      fontSize: "0.875rem",
-                      fontWeight: 500,
-                      color: themeColors.text.primary,
-                    }}
-                  >
-                    {entry.name === "motoristas" ? "Motoristas" : "Coletores"}:
-                  </Typography>
-                </Box>
-                <Typography
-                  sx={{
-                    fontSize: "0.875rem",
-                    fontWeight: 700,
-                    color: entry.color,
-                  }}
-                >
-                  {entry.value} profissionais
-                </Typography>
-              </Box>
-            ))}
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <Typography sx={{ fontSize: "0.875rem", fontWeight: 500, color: themeColors.text.primary }}>
+                Motoristas:
+              </Typography>
+              <Typography sx={{ fontSize: "0.875rem", fontWeight: 700, color: shiftData.color }}>
+                {shiftData.motoristas} profissionais
+              </Typography>
+            </Box>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <Typography sx={{ fontSize: "0.875rem", fontWeight: 500, color: themeColors.text.primary }}>
+                Coletores:
+              </Typography>
+              <Typography sx={{ fontSize: "0.875rem", fontWeight: 700, color: shiftData.color }}>
+                {shiftData.coletores} profissionais
+              </Typography>
+            </Box>
           </Box>
 
           <Box sx={{ mt: 1.5, pt: 1.5, borderTop: `1px dashed ${alpha(themeColors.text.secondary, 0.2)}` }}>
             <Typography
               sx={{
-                fontSize: "0.75rem",
+                fontSize: "0.875rem",
                 fontWeight: 600,
-                color: themeColors.text.secondary,
+                color: shiftData.color,
                 textAlign: "center",
               }}
             >
-              Total: {payload.reduce((sum, entry) => sum + entry.value, 0)} profissionais
+              Total: {shiftData.total} profissionais
             </Typography>
           </Box>
         </Box>
@@ -181,105 +220,44 @@ const GraficoTurnos = ({ themeColors, chartsLoaded }) => {
     return null
   }
 
-  const CustomizedAxisTick = (props) => {
-    const { x, y, payload, dataKey } = props
-    const turnoData = data.find((item) => item.name === payload.value)
+  // Calculate total professionals
+  const totalProfessionals = data.reduce((sum, item) => sum + item.total, 0)
 
+  // Custom legend
+  const renderLegend = () => {
     return (
-      <g transform={`translate(${x},${y})`}>
-        <text x={0} y={0} dy={16} textAnchor="middle" fill={themeColors.text.primary} fontWeight={600} fontSize="12">
-          {payload.value}
-        </text>
-        {turnoData && (
-          <foreignObject x={-12} y={20} width={24} height={24} style={{ overflow: "visible", textAlign: "center" }}>
-            <Box
-              sx={{
-                color: turnoData.color,
-                display: "flex",
-                justifyContent: "center",
-              }}
-            >
-              {turnoData.icon}
-            </Box>
-          </foreignObject>
-        )}
-      </g>
-    )
-  }
-
-  // Custom label component for the motoristas values
-  const renderCustomMotoristaLabel = (props) => {
-    const { x, y, width, height, value } = props
-    return (
-      <g>
-        <text
-          x={x + width / 2}
-          y={y + height / 2}
-          fill="#FFFFFF"
-          textAnchor="middle"
-          dominantBaseline="middle"
-          fontWeight="bold"
-          fontSize="12"
-        >
-          {value}
-        </text>
-      </g>
-    )
-  }
-
-  // Custom label component for the coletores values
-  const renderCustomColetorLabel = (props) => {
-    const { x, y, width, height, value } = props
-    return (
-      <g>
-        <text
-          x={x + width / 2}
-          y={y + height / 2}
-          fill="#000000"
-          textAnchor="middle"
-          dominantBaseline="middle"
-          fontWeight="bold"
-          fontSize="12"
-        >
-          {value}
-        </text>
-      </g>
-    )
-  }
-
-  // Custom label component for the total values
-  const renderCustomTotalLabel = (props) => {
-    const { x, y, width, height, value, index } = props
-    const entry = data[index]
-
-    // Calculate the position for the total label
-    // We want it to be in the middle of the stacked bar
-    const barHeight = entry.motoristas + entry.coletores
-    const yPosition = y + height / 2
-
-    return (
-      <g>
-        <rect
-          x={x + width / 2 - 20}
-          y={yPosition - 10}
-          width={40}
-          height={20}
-          fill="rgba(255, 255, 255, 0.8)"
-          rx={4}
-          ry={4}
-        />
-        <text
-          x={x + width / 2}
-          y={yPosition}
-          fill={entry.color}
-          textAnchor="middle"
-          dominantBaseline="middle"
-          fontWeight="bold"
-          fontSize="14"
-        >
-          {value}
-        </text>
-      </g>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          gap: 4,
+          mt: 2,
+          flexWrap: "wrap",
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Box
+            sx={{
+              width: 16,
+              height: 16,
+              background: "linear-gradient(90deg, rgba(0,0,0,0.7), rgba(0,0,0,0.7))",
+              borderRadius: 1,
+            }}
+          />
+          <Typography sx={{ fontSize: "0.875rem", color: themeColors.text.secondary }}>Motoristas</Typography>
+        </Box>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Box
+            sx={{
+              width: 16,
+              height: 16,
+              background: "linear-gradient(90deg, rgba(0,0,0,0.3), rgba(0,0,0,0.3))",
+              borderRadius: 1,
+            }}
+          />
+          <Typography sx={{ fontSize: "0.875rem", color: themeColors.text.secondary }}>Coletores</Typography>
+        </Box>
+      </Box>
     )
   }
 
@@ -291,8 +269,6 @@ const GraficoTurnos = ({ themeColors, chartsLoaded }) => {
         minHeight: "300px",
         display: "flex",
         flexDirection: "column",
-        justifyContent: "center",
-        alignItems: "center",
       }}
     >
       {loading ? (
@@ -305,12 +281,7 @@ const GraficoTurnos = ({ themeColors, chartsLoaded }) => {
             alignItems: "center",
           }}
         >
-          <Skeleton
-            variant="rectangular"
-            width="100%"
-            height={250}
-            sx={{ bgcolor: alpha(themeColors.text.primary, 0.1), borderRadius: "8px" }}
-          />
+          <CircularProgress size={40} sx={{ color: themeColors.primary.main }} />
         </Box>
       ) : error ? (
         <Box
@@ -333,105 +304,212 @@ const GraficoTurnos = ({ themeColors, chartsLoaded }) => {
         </Box>
       ) : (
         <>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart
-              data={data}
-              margin={{
-                top: 20,
-                right: 30,
-                left: 20,
-                bottom: 40,
+          <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
+            <Typography
+              sx={{
+                fontSize: "1.1rem",
+                fontWeight: 600,
+                color: themeColors.text.primary,
+                textAlign: "center",
               }}
-              barGap={8}
-              barSize={32}
             >
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={alpha(themeColors.text.primary, 0.1)} />
-              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={<CustomizedAxisTick />} height={60} />
-              <YAxis
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: themeColors.text.secondary, fontSize: 12 }}
-                label={{
-                  value: "Quantidade de Profissionais",
-                  angle: -90,
-                  position: "insideLeft",
-                  style: { textAnchor: "middle", fill: themeColors.text.secondary, fontSize: 12 },
-                }}
-              />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: alpha(themeColors.primary.main, 0.05) }} />
-              <Legend
-                wrapperStyle={{ paddingTop: 15 }}
-                formatter={(value, entry, index) => (
-                  <span style={{ color: themeColors.text.primary, fontWeight: 500, fontSize: "0.875rem" }}>
-                    {value === "motoristas" ? "Motoristas" : "Coletores"}
-                  </span>
-                )}
-              />
-              <Bar
-                dataKey="motoristas"
-                name="motoristas"
-                stackId="a"
-                radius={[4, 4, 0, 0]}
-                animationDuration={1500}
-                animationBegin={300}
-              >
-                {data.map((entry, index) => (
-                  <Cell key={`cell-motoristas-${index}`} fill={entry.color} stroke={entry.color} strokeWidth={1} />
-                ))}
-                <LabelList dataKey="motoristas" content={renderCustomMotoristaLabel} />
-              </Bar>
-              <Bar
-                dataKey="coletores"
-                name="coletores"
-                stackId="a"
-                radius={[4, 4, 0, 0]}
-                animationDuration={1500}
-                animationBegin={600}
-              >
-                {data.map((entry, index) => (
-                  <Cell
-                    key={`cell-coletores-${index}`}
-                    fill={alpha(entry.color, 0.3)}
-                    stroke={entry.color}
-                    strokeWidth={1}
-                  />
-                ))}
-                <LabelList dataKey="coletores" content={renderCustomColetorLabel} />
-              </Bar>
-              <Bar dataKey="total" name="total" stackId="b" fill="transparent" stroke="transparent">
-                <LabelList dataKey="total" content={renderCustomTotalLabel} />
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+              Total de Profissionais: {totalProfessionals}
+            </Typography>
+          </Box>
 
-          {/* Legenda de turnos */}
+          <Box sx={{ width: "100%", height: 300 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                layout="vertical"
+                data={data}
+                margin={{
+                  top: 20,
+                  right: 30,
+                  left: 20,
+                  bottom: 5,
+                }}
+                barGap={0}
+                barCategoryGap={20}
+              >
+                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                <XAxis type="number" domain={[0, "dataMax"]} />
+                <YAxis
+                  dataKey="name"
+                  type="category"
+                  width={100}
+                  tick={(props) => {
+                    const { x, y, payload } = props
+                    const shiftInfo = data.find((item) => item.name === payload.value)
+
+                    return (
+                      <g transform={`translate(${x},${y})`}>
+                        <foreignObject x="-80" y="-20" width="80" height="40">
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 1,
+                              height: "100%",
+                              width: "100%",
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                width: 24,
+                                height: 24,
+                                borderRadius: "6px",
+                                backgroundColor: alpha(shiftInfo.color, 0.15),
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                color: shiftInfo.color,
+                              }}
+                            >
+                              {shiftInfo.icon}
+                            </Box>
+                            <Typography
+                              sx={{
+                                fontSize: "0.85rem",
+                                fontWeight: 600,
+                                color: themeColors.text.primary,
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {payload.value}
+                            </Typography>
+                          </Box>
+                        </foreignObject>
+                      </g>
+                    )
+                  }}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend content={renderLegend} />
+                <Bar
+                  dataKey="motoristas"
+                  name="Motoristas"
+                  stackId="a"
+                  radius={[0, 0, 0, 0]}
+                  onMouseEnter={handleMouseEnter}
+                  onMouseLeave={handleMouseLeave}
+                  animationDuration={1500}
+                  animationBegin={200}
+                >
+                  {data.map((entry, index) => (
+                    <Cell
+                      key={`motoristas-${index}`}
+                      fill={entry.color}
+                      fillOpacity={activeIndex === index ? 0.9 : 0.7}
+                      stroke={entry.color}
+                      strokeWidth={activeIndex === index ? 1 : 0}
+                    />
+                  ))}
+                </Bar>
+                <Bar
+                  dataKey="coletores"
+                  name="Coletores"
+                  stackId="a"
+                  radius={[0, 4, 4, 0]}
+                  onMouseEnter={handleMouseEnter}
+                  onMouseLeave={handleMouseLeave}
+                  animationDuration={1500}
+                  animationBegin={400}
+                >
+                  {data.map((entry, index) => (
+                    <Cell
+                      key={`coletores-${index}`}
+                      fill={entry.color}
+                      fillOpacity={activeIndex === index ? 0.5 : 0.3}
+                      stroke={entry.color}
+                      strokeWidth={activeIndex === index ? 1 : 0}
+                    />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </Box>
+
+          {/* Shift details cards */}
           <Box
             sx={{
               display: "flex",
-              justifyContent: "center",
-              gap: 4,
-              mt: 2,
+              justifyContent: "space-around",
+              mt: 3,
               flexWrap: "wrap",
+              gap: 2,
             }}
           >
-            {data.map((turno, index) => (
-              <Box key={index} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            {data.map((item, index) => (
+              <Box
+                key={index}
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 1,
+                  padding: "16px",
+                  borderRadius: "12px",
+                  backgroundColor: alpha(item.color, 0.05),
+                  border: `1px solid ${alpha(item.color, 0.1)}`,
+                  minWidth: "150px",
+                  transition: "all 0.3s ease",
+                  cursor: "pointer",
+                  "&:hover": {
+                    transform: "translateY(-5px)",
+                    boxShadow: `0 5px 15px ${alpha(item.color, 0.2)}`,
+                    backgroundColor: alpha(item.color, 0.08),
+                  },
+                }}
+                onMouseEnter={() => setActiveIndex(index)}
+                onMouseLeave={() => setActiveIndex(null)}
+              >
                 <Box
                   sx={{
-                    width: 24,
-                    height: 24,
-                    borderRadius: "6px",
-                    backgroundColor: alpha(turno.color, 0.15),
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    color: turno.color,
+                    width: 40,
+                    height: 40,
+                    borderRadius: "50%",
+                    backgroundColor: alpha(item.color, 0.2),
+                    color: item.color,
                   }}
                 >
-                  {turno.icon}
+                  {item.icon}
                 </Box>
-                <Typography sx={{ fontSize: "0.8rem", color: themeColors.text.secondary, fontWeight: 500 }}>
-                  {turno.name}: {turno.motoristas + turno.coletores} profissionais
+                <Typography sx={{ fontSize: "1rem", fontWeight: 700, color: item.color }}>{item.name}</Typography>
+                <Box sx={{ display: "flex", gap: 3, alignItems: "center" }}>
+                  <Box sx={{ textAlign: "center" }}>
+                    <Typography
+                      sx={{ fontSize: "0.7rem", color: themeColors.text.secondary, textTransform: "uppercase" }}
+                    >
+                      Motoristas
+                    </Typography>
+                    <Typography sx={{ fontSize: "1.2rem", fontWeight: 700, color: item.color }}>
+                      {item.motoristas}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ textAlign: "center" }}>
+                    <Typography
+                      sx={{ fontSize: "0.7rem", color: themeColors.text.secondary, textTransform: "uppercase" }}
+                    >
+                      Coletores
+                    </Typography>
+                    <Typography sx={{ fontSize: "1.2rem", fontWeight: 700, color: item.color }}>
+                      {item.coletores}
+                    </Typography>
+                  </Box>
+                </Box>
+                <Typography
+                  sx={{
+                    fontSize: "0.8rem",
+                    fontWeight: 600,
+                    color: themeColors.text.secondary,
+                    mt: 1,
+                    textAlign: "center",
+                  }}
+                >
+                  Total: <span style={{ color: item.color }}>{item.total}</span> profissionais
                 </Typography>
               </Box>
             ))}
@@ -442,4 +520,4 @@ const GraficoTurnos = ({ themeColors, chartsLoaded }) => {
   )
 }
 
-export default GraficoTurnos
+export default RegionDistributionChart

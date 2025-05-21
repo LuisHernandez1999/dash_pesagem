@@ -14,14 +14,29 @@ import {
   alpha,
   Snackbar,
   Alert,
+  Paper,
+  Tabs,
+  Tab,
 } from "@mui/material"
-import { Refresh, Menu as MenuIcon, FilterAlt, BarChart, CleaningServices, Route, People } from "@mui/icons-material"
+import {
+  Refresh,
+  Menu as MenuIcon,
+  FilterAlt,
+  BarChart,
+  CleaningServices,
+  Route,
+  People,
+  Home,
+  Recycling,
+  Dashboard,
+} from "@mui/icons-material"
 import Sidebar from "@/components/sidebar"
 import VarricaoTable from "@/components/tabela_varricao"
 import RegionCoverageChart from "@/components/cobertura_varricao"
 import GraficoVarricaoSemanal from "@/components/varricao_grafico"
 import StatsCard from "@/components/varricao_stats"
 import DashboardCard from "@/components/dashboard_varricao_cards"
+import { useRouter } from "next/navigation"
 
 // Keyframes for animations
 const keyframes = {
@@ -151,6 +166,19 @@ const keyframes = {
     }
   }
 `,
+  tabGlow: `
+  @keyframes tabGlow {
+    0% { box-shadow: 0 0 0 rgba(255, 179, 0, 0); }
+    50% { box-shadow: 0 0 15px rgba(255, 179, 0, 0.3); }
+    100% { box-shadow: 0 0 0 rgba(255, 179, 0, 0); }
+  }
+`,
+  subtleRise: `
+  @keyframes subtleRise {
+    from { transform: translateY(2px); opacity: 0.8; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+`,
 }
 
 // Theme colors
@@ -209,6 +237,8 @@ export default function VarricaoDashboard() {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
   const isTablet = useMediaQuery(theme.breakpoints.down("md"))
+  const router = useRouter()
+  const [activeTab, setActiveTab] = useState("varricao")
 
   // State variables
   const [loading, setLoading] = useState(true)
@@ -326,6 +356,50 @@ export default function VarricaoDashboard() {
     setSnackbarOpen(false)
   }
 
+  // Handle tab change
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue)
+
+    // Navigate to the corresponding page
+    if (newValue === "domiciliar") {
+      router.push("../../rcu/rsu")
+    } else if (newValue === "seletiva") {
+      router.push("../../seletiva/seletiva_page")
+    } else if (newValue === "varricao") {
+      router.push("../../varricao/varricao_page")
+    } else if (newValue === "index") {
+      router.push("/")
+    }
+  }
+
+  // Tab data with icons and labels
+  const tabsData = [
+    {
+      value: "index",
+      label: "Início",
+      icon: <Dashboard sx={{ fontSize: "1.3rem" }} />,
+      color: themeColors.info.main,
+    },
+    {
+      value: "domiciliar",
+      label: "Domiciliar",
+      icon: <Home sx={{ fontSize: "1.3rem" }} />,
+      color: themeColors.primary.main,
+    },
+    {
+      value: "seletiva",
+      label: "Seletiva",
+      icon: <Recycling sx={{ fontSize: "1.3rem" }} />,
+      color: themeColors.success.main,
+    },
+    {
+      value: "varricao",
+      label: "Varrição",
+      icon: <CleaningServices sx={{ fontSize: "1.3rem" }} />,
+      color: themeColors.warning.main,
+    },
+  ]
+
   // Stats Cards Data
   const statsCards = [
     {
@@ -380,6 +454,8 @@ export default function VarricaoDashboard() {
           ${keyframes.zoomIn}
           ${keyframes.heartbeat}
           ${keyframes.flashHighlight}
+          ${keyframes.tabGlow}
+          ${keyframes.subtleRise}
         `}
       </style>
       {/* Main Content */}
@@ -440,33 +516,39 @@ export default function VarricaoDashboard() {
                 >
                   <Box
                     sx={{
-                      width: "5px",
-                      height: { xs: "36px", sm: "48px" },
+                      width: "6px",
+                      height: { xs: "40px", sm: "60px" },
                       borderRadius: "8px",
-                      background: `linear-gradient(180deg, ${themeColors.primary.main} 0%, ${themeColors.info.main} 100%)`,
+                      background: `linear-gradient(180deg, ${themeColors.warning.main} 0%, ${themeColors.warning.dark} 100%)`,
                       mr: 3,
-                      boxShadow: `0 4px 12px ${alpha(themeColors.primary.main, 0.4)}`,
+                      boxShadow: `0 4px 12px ${alpha(themeColors.warning.main, 0.4)}`,
+                      animation: `${keyframes.pulse} 3s ease-in-out infinite`,
                     }}
                   />
                   <Box sx={{ position: "relative" }}>
                     <Typography
                       variant="h4"
                       sx={{
-                        fontWeight: 600,
-                        fontSize: { xs: "1.6rem", sm: "2.2rem" },
+                        fontWeight: 700,
+                        fontSize: { xs: "1.7rem", sm: "2.3rem" },
                         color: themeColors.text.primary,
-                        letterSpacing: "0.01em",
+                        letterSpacing: "-0.01em",
                         fontFamily: "'Poppins', sans-serif",
                         position: "relative",
                         display: "inline-block",
+                        background: `linear-gradient(90deg, ${themeColors.warning.dark} 0%, ${themeColors.warning.main} 100%)`,
+                        backgroundClip: "text",
+                        WebkitBackgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                        textShadow: "0px 2px 5px rgba(0,0,0,0.05)",
                         "&::after": {
                           content: '""',
                           position: "absolute",
-                          bottom: "-4px",
+                          bottom: "-6px",
                           left: "0",
-                          width: "40%",
-                          height: "3px",
-                          background: `linear-gradient(90deg, ${themeColors.primary.main}, ${alpha(themeColors.primary.light, 0)})`,
+                          width: "60%",
+                          height: "4px",
+                          background: `linear-gradient(90deg, ${themeColors.warning.main}, ${alpha(themeColors.warning.light, 0)})`,
                           borderRadius: "2px",
                         },
                       }}
@@ -477,9 +559,9 @@ export default function VarricaoDashboard() {
                       variant="subtitle1"
                       sx={{
                         color: themeColors.text.secondary,
-                        fontSize: { xs: "0.9rem", sm: "1rem" },
-                        mt: "0.5rem",
-                        fontWeight: 400,
+                        fontSize: { xs: "0.95rem", sm: "1.05rem" },
+                        mt: "1rem",
+                        fontWeight: 500,
                         letterSpacing: "0.03em",
                         opacity: 0.9,
                         pl: 0.5,
@@ -490,10 +572,11 @@ export default function VarricaoDashboard() {
                           position: "absolute",
                           left: "-10px",
                           top: "50%",
-                          width: "3px",
-                          height: "3px",
+                          width: "4px",
+                          height: "4px",
                           borderRadius: "50%",
-                          backgroundColor: themeColors.primary.main,
+                          backgroundColor: themeColors.warning.main,
+                          boxShadow: `0 0 8px ${themeColors.warning.main}`,
                         },
                       }}
                     >
@@ -506,7 +589,11 @@ export default function VarricaoDashboard() {
                 <IconButton
                   sx={{
                     color: themeColors.text.secondary,
-                    "&:hover": { color: themeColors.primary.main },
+                    "&:hover": {
+                      color: themeColors.warning.main,
+                      transform: "rotate(180deg)",
+                      transition: "transform 0.5s ease-in-out",
+                    },
                   }}
                   onClick={handleRefreshData}
                 >
@@ -517,10 +604,128 @@ export default function VarricaoDashboard() {
             <Divider
               sx={{
                 height: "1px",
-                background: `${alpha(themeColors.primary.main, 0.2)}`,
+                background: `linear-gradient(to right, ${alpha(themeColors.warning.main, 0.4)}, ${alpha(themeColors.warning.light, 0.1)})`,
               }}
             />
           </AppBar>
+
+          {/* Tabs Navigation - Redesigned for a more professional look */}
+          <Paper
+            elevation={2}
+            sx={{
+              position: "sticky",
+              top: 0,
+              zIndex: 9,
+              background: "#ffffff",
+              borderRadius: 0,
+              borderBottom: `1px solid ${alpha(themeColors.warning.main, 0.1)}`,
+              padding: "0.5rem 1.5rem",
+              backdropFilter: "blur(10px)",
+              boxShadow: `0 4px 20px ${alpha(themeColors.warning.main, 0.08)}`,
+            }}
+          >
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                width: "100%",
+                maxWidth: "1200px",
+                margin: "0 auto",
+              }}
+            >
+              <Tabs
+                value={activeTab}
+                onChange={handleTabChange}
+                aria-label="navigation tabs"
+                variant="scrollable"
+                scrollButtons="auto"
+                allowScrollButtonsMobile
+                TabIndicatorProps={{
+                  style: {
+                    display: "none",
+                  },
+                }}
+                sx={{
+                  minHeight: "64px",
+                  width: "100%",
+                  "& .MuiTabs-flexContainer": {
+                    justifyContent: "space-between",
+                    width: "100%",
+                  },
+                  "& .MuiTabs-scroller": {
+                    width: "100%",
+                  },
+                  "& .MuiTab-root": {
+                    textTransform: "none",
+                    fontWeight: 500,
+                    fontSize: "0.95rem",
+                    minHeight: "54px",
+                    borderRadius: "8px",
+                    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                    padding: "6px 16px",
+                    letterSpacing: "0.02em",
+                    color: themeColors.text.secondary,
+                    opacity: 0.85,
+                    flex: 1,
+                    maxWidth: "none",
+                    "&:hover": {
+                      backgroundColor: alpha(themeColors.background.default, 0.8),
+                      color: themeColors.text.primary,
+                      opacity: 1,
+                    },
+                  },
+                }}
+              >
+                {tabsData.map((tab) => (
+                  <Tab
+                    key={tab.value}
+                    icon={tab.icon}
+                    label={tab.label}
+                    value={tab.value}
+                    iconPosition="start"
+                    sx={{
+                      position: "relative",
+                      overflow: "hidden",
+                      marginX: 0.5,
+                      "&.Mui-selected": {
+                        color: tab.color,
+                        fontWeight: 600,
+                        backgroundColor: alpha(tab.color, 0.08),
+                        boxShadow: activeTab === tab.value ? `0 3px 10px ${alpha(tab.color, 0.2)}` : "none",
+                        animation: activeTab === tab.value ? `${keyframes.subtleRise} 0.3s ease-out` : "none",
+                        "& .MuiSvgIcon-root": {
+                          color: tab.color,
+                          transform: "scale(1.1)",
+                        },
+                      },
+                      "&::after": {
+                        content: '""',
+                        position: "absolute",
+                        bottom: 0,
+                        left: 0,
+                        width: "100%",
+                        height: "3px",
+                        background: tab.color,
+                        transform: activeTab === tab.value ? "scaleX(1)" : "scaleX(0)",
+                        transformOrigin: "left",
+                        transition: "transform 0.3s ease",
+                        borderTopLeftRadius: "2px",
+                        borderTopRightRadius: "2px",
+                      },
+                      "& .MuiSvgIcon-root": {
+                        transition: "all 0.3s ease",
+                        marginRight: "8px",
+                        fontSize: "1.3rem",
+                      },
+                      "& .MuiTouchRipple-root": {
+                        color: alpha(tab.color, 0.3),
+                      },
+                    }}
+                  />
+                ))}
+              </Tabs>
+            </Box>
+          </Paper>
 
           {/* Main Content */}
           <Box
