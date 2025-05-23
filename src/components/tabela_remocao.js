@@ -215,9 +215,12 @@ const RemovalTable = ({ loading: initialLoading, themeColors, keyframes, onRefre
       const data = await getSolturasDetalhadaTodas()
 
       if (data && !data.error) {
+        // Filtrar apenas registros com tipo_servico = 'Remoção'
+        const filteredData = data.filter((item) => item.tipo_servico === "Remoção")
+
         // Transform API data to match the expected format for the table
         // CORREÇÃO: Preservar o ID original da API em vez de usar o índice
-        const formattedData = data.map((item) => ({
+        const formattedData = filteredData.map((item) => ({
           id: item.id, // Usar o ID original da API
           originalId: item.id, // Guardar o ID original em um campo separado para garantir
           driver: item.motorista,
@@ -716,7 +719,7 @@ const RemovalTable = ({ loading: initialLoading, themeColors, keyframes, onRefre
                         fontWeight: 400,
                       }}
                     >
-                      Todos os registros de remoções
+                      Apenas registros do tipo "Remoção"
                     </Typography>
                   </Box>
                 </Box>
@@ -724,33 +727,6 @@ const RemovalTable = ({ loading: initialLoading, themeColors, keyframes, onRefre
             }
             action={
               <Box sx={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                <Button
-                  variant="contained"
-                  startIcon={<DirectionsCar />}
-                  onClick={() => setRegisterModalOpen(true)}
-                  sx={{
-                    borderRadius: "12px",
-                    textTransform: "none",
-                    fontWeight: 600,
-                    backgroundColor: themeColors.primary.main,
-                    boxShadow: `0 4px 12px ${alpha(themeColors.primary.main, 0.2)}`,
-                    "&:hover": {
-                      backgroundColor: themeColors.primary.dark,
-                      boxShadow: `0 6px 16px ${alpha(themeColors.primary.main, 0.3)}`,
-                    },
-                  }}
-                >
-                  Cadastrar Soltura
-                </Button>
-                <IconButton
-                  sx={{
-                    color: themeColors.text.secondary,
-                    "&:hover": { color: themeColors.primary.main },
-                  }}
-                  onClick={handleRefresh}
-                >
-                  <Refresh />
-                </IconButton>
               </Box>
             }
             sx={{

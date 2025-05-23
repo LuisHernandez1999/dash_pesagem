@@ -274,15 +274,6 @@ const RegisterModal = ({ open, onClose, formData, onChange, onSubmit, themeColor
             <DirectionsCar sx={{ fontSize: 28 }} />
           </Avatar>
           <Box>
-            <Typography
-              variant="h5"
-              sx={{ fontWeight: 700, fontSize: "1.4rem", textShadow: "0 2px 4px rgba(0,0,0,0.1)" }}
-            >
-              Cadastrar Soltura
-            </Typography>
-            <Typography variant="body2" sx={{ opacity: 0.9, mt: 0.5, fontWeight: 500 }}>
-              Preencha os dados para registrar uma nova soltura
-            </Typography>
           </Box>
         </Box>
         <IconButton

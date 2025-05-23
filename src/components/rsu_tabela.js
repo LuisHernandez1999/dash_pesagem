@@ -208,9 +208,12 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
       const data = await getSolturasDetalhadaTodas()
 
       if (data && !data.error) {
+        // Filtrar apenas registros com tipo_servico = 'Rsu'
+        const filteredData = data.filter((item) => item.tipo_servico === "Rsu")
+
         // Transform API data to match the expected format for the table
-        const formattedData = data.map((item, index) => ({
-          id: index + 1,
+        const formattedData = filteredData.map((item) => ({
+          id: item.id || item._id || item.codigo, // Use o ID real do banco de dados
           driver: item.motorista,
           driverId: item.matricula_motorista,
           collectors: Array.isArray(item.coletores)
@@ -241,6 +244,8 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
           turno: item.turno,
           bairro: item.bairro,
           setores: item.setores,
+          // Manter todos os dados originais para o modal
+          originalData: item,
         }))
 
         setRemovals(formattedData)
@@ -422,7 +427,7 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
 
       // Create the new removal object for local state
       const newRemoval = {
-        id: removals.length + 1,
+        id: Date.now(), // Use timestamp como ID temporário para novos registros
         driver: registerFormData.driver,
         driverId: registerFormData.driverId,
         collectors: registerFormData.collectors.filter(Boolean),
@@ -439,6 +444,7 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
         vehicle: registerFormData.vehicleType,
         distance: "0 km",
         notes: "",
+        originalData: newRemovalData, // Incluir os dados originais
       }
 
       // Add to local state first for immediate UI update
@@ -557,6 +563,10 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
     const oneDayAgo = new Date(currentDate)
     oneDayAgo.setDate(currentDate.getDate() - 1)
 
+    // Debug dos filtros
+    console.log("Filtros ativos:", { statusFilter, teamFilter, recentlyRegisteredFilter })
+    console.log("Exemplo de dados:", removals[0]?.tipo_equipe, removals[0]?.status_frota)
+
     return removals
       .filter((removal) => {
         // Unified search across multiple fields
@@ -586,11 +596,16 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
           (statusFilter === "completed" && removal.status_frota === "Finalizado") ||
           (statusFilter === "in-progress" && removal.status_frota === "Em andamento")
 
-        // Team filter
+        // Team filter - corrigir os nomes das equipes
         const teamMatch =
           teamFilter === "all" ||
-          (teamFilter === "team-1" && removal.tipo_equipe === "Equipe(Diruno)") ||
-          (teamFilter === "team-2" && removal.tipo_equipe === "Equipe(Notunro)") 
+          (teamFilter === "team-1" &&
+            (removal.tipo_equipe === "Equipe(Diurno)" || removal.tipo_equipe === "Equipe1(Matutino)")) ||
+          (teamFilter === "team-2" &&
+            (removal.tipo_equipe === "Equipe(Noturno)" ||
+              removal.tipo_equipe === "Equipe2(Vespertino)" ||
+              removal.tipo_equipe === "Equipe(Notunro)"))
+
         // Recently registered filter (last 24 hours)
         const recentlyMatch = !recentlyRegisteredFilter || (removal.data && new Date(removal.data) >= oneDayAgo)
 
@@ -684,7 +699,7 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
                         color: themeColors.text.primary,
                       }}
                     >
-                      Registros de Demociliar 
+                      Registros de RSU
                     </Typography>
                     <Typography
                       sx={{
@@ -693,7 +708,7 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
                         fontWeight: 400,
                       }}
                     >
-                      Todos os registros de domiciliares
+                      Todos os registros de RSU (Resíduos Sólidos Urbanos)
                     </Typography>
                   </Box>
                 </Box>
@@ -851,45 +866,43 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
                         Por Equipe:
                       </Typography>
                       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                        {["Todas", "Equipe(Diurno)", "Equipe(Notunro)"].map(
-                          (team, index) => (
-                            <Chip
-                              key={team}
-                              label={team}
-                              clickable
-                              onClick={() => {
-                                // Update only the team filter
-                                if (index === 0) {
-                                  setTeamFilter("all")
-                                } else {
-                                  setTeamFilter(`team-${index}`)
-                                }
-                              }}
-                              sx={{
-                                borderRadius: "12px",
-                                fontWeight: 500,
-                                backgroundColor:
-                                  teamFilter === (index === 0 ? "all" : `team-${index}`)
-                                    ? alpha(themeColors.primary.light, 0.15)
-                                    : alpha(themeColors.background.default, 0.5),
-                                color:
-                                  teamFilter === (index === 0 ? "all" : `team-${index}`)
-                                    ? themeColors.primary.dark
-                                    : themeColors.text.secondary,
-                                border: `1px solid ${
-                                  teamFilter === (index === 0 ? "all" : `team-${index}`)
-                                    ? themeColors.primary.light
-                                    : themeColors.divider
-                                }`,
-                                "&:hover": {
-                                  backgroundColor: alpha(themeColors.primary.light, 0.15),
-                                  color: themeColors.primary.dark,
-                                },
-                                transition: "all 0.2s ease",
-                              }}
-                            />
-                          ),
-                        )}
+                        {["Todas", "Equipe Diurno", "Equipe Noturno"].map((team, index) => (
+                          <Chip
+                            key={team}
+                            label={team}
+                            clickable
+                            onClick={() => {
+                              // Update only the team filter
+                              if (index === 0) {
+                                setTeamFilter("all")
+                              } else {
+                                setTeamFilter(`team-${index}`)
+                              }
+                            }}
+                            sx={{
+                              borderRadius: "12px",
+                              fontWeight: 500,
+                              backgroundColor:
+                                teamFilter === (index === 0 ? "all" : `team-${index}`)
+                                  ? alpha(themeColors.primary.light, 0.15)
+                                  : alpha(themeColors.background.default, 0.5),
+                              color:
+                                teamFilter === (index === 0 ? "all" : `team-${index}`)
+                                  ? themeColors.primary.dark
+                                  : themeColors.text.secondary,
+                              border: `1px solid ${
+                                teamFilter === (index === 0 ? "all" : `team-${index}`)
+                                  ? themeColors.primary.light
+                                  : themeColors.divider
+                              }`,
+                              "&:hover": {
+                                backgroundColor: alpha(themeColors.primary.light, 0.15),
+                                color: themeColors.primary.dark,
+                              },
+                              transition: "all 0.2s ease",
+                            }}
+                          />
+                        ))}
                       </Box>
                     </Box>
                     <Box sx={{ flex: "1 1 300px" }}>
@@ -1220,7 +1233,7 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
       <DetailModal
         open={detailModalOpen}
         onClose={() => setDetailModalOpen(false)}
-        removal={selectedRemoval}
+        solturaId={selectedRemoval?.id}
         onEdit={handleEditClick}
         themeColors={themeColors}
         keyframes={keyframes}
