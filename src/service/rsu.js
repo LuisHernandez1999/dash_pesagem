@@ -295,3 +295,25 @@ export async function getContagemTotalRsu() {
     throw error;
   }
 }
+
+export async function getContagemRsuHoje() {
+  try {
+    const response = await fetch(`${API_BASE_URL}api/soltura/conatagem_rsu_hoje/`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Erro ao buscar contagem de RSU de hoje');
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Erro ao buscar total RSU de hoje:', error.message);
+    throw error;
+  }
+}
