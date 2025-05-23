@@ -48,6 +48,7 @@ import {
 import RegisterModal from "./registro_remocao"
 import EditModal from "./editar_remocao"
 import DetailModal from "./visualizar_remocao"
+import SolturaDetailModal from "./visualizar_remocao" // Importar o componente correto
 import { getSolturasDetalhadaTodas } from "../service/dashboard"
 
 // Modificar o componente SearchInput para aumentar a largura
@@ -181,6 +182,11 @@ const RemovalTable = ({ loading: initialLoading, themeColors, keyframes, onRefre
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarMessage, setSnackbarMessage] = useState("")
   const [snackbarSeverity, setSnackbarSeverity] = useState("success")
+
+  // Novos estados para o SolturaDetailModal
+  const [solturaModalOpen, setSolturaModalOpen] = useState(false)
+  const [selectedSolturaId, setSelectedSolturaId] = useState(null)
+
   const [registerFormData, setRegisterFormData] = useState({
     driver: "",
     driverId: "",
@@ -210,8 +216,10 @@ const RemovalTable = ({ loading: initialLoading, themeColors, keyframes, onRefre
 
       if (data && !data.error) {
         // Transform API data to match the expected format for the table
-        const formattedData = data.map((item, index) => ({
-          id: index + 1,
+        // CORREÇÃO: Preservar o ID original da API em vez de usar o índice
+        const formattedData = data.map((item) => ({
+          id: item.id, // Usar o ID original da API
+          originalId: item.id, // Guardar o ID original em um campo separado para garantir
           driver: item.motorista,
           driverId: item.matricula_motorista,
           collectors: Array.isArray(item.coletores)
@@ -244,6 +252,7 @@ const RemovalTable = ({ loading: initialLoading, themeColors, keyframes, onRefre
           setores: item.setores,
         }))
 
+        console.log("Dados formatados com IDs originais:", formattedData)
         setRemovals(formattedData)
       } else {
         setError(data?.error || "Erro ao carregar dados")
@@ -332,6 +341,7 @@ const RemovalTable = ({ loading: initialLoading, themeColors, keyframes, onRefre
         // Close modals
         setEditModalOpen(false)
         setDetailModalOpen(false)
+        setSolturaModalOpen(false) // Fechar também o modal de soltura
       }
     } catch (error) {
       console.error("Erro ao atualizar:", error)
@@ -341,12 +351,21 @@ const RemovalTable = ({ loading: initialLoading, themeColors, keyframes, onRefre
     }
   }
 
-  // Handle modal open
+  // Handle modal open - MODIFICADO PARA USAR O ID ORIGINAL
   const handleOpenModal = (removal) => {
     // Find the most up-to-date version of this removal in the state
     const currentRemoval = removals.find((r) => r.id === removal.id) || removal
+
+    // Armazenar o objeto completo para compatibilidade com o modal antigo
     setSelectedRemoval(currentRemoval)
-    setDetailModalOpen(true)
+
+    // CORREÇÃO: Usar o ID original da API para o modal
+    const apiId = currentRemoval.originalId || currentRemoval.id
+    console.log("Abrindo modal para soltura ID:", apiId)
+    setSelectedSolturaId(apiId)
+
+    // Abrir o modal
+    setSolturaModalOpen(true)
   }
 
   // Handle delete confirmation dialog
@@ -423,7 +442,8 @@ const RemovalTable = ({ loading: initialLoading, themeColors, keyframes, onRefre
 
       // Create the new removal object for local state
       const newRemoval = {
-        id: removals.length + 1,
+        id: Date.now(), // Usar timestamp como ID temporário
+        originalId: Date.now(), // Guardar o mesmo ID para consistência
         driver: registerFormData.driver,
         driverId: registerFormData.driverId,
         collectors: registerFormData.collectors.filter(Boolean),
@@ -1238,6 +1258,7 @@ const RemovalTable = ({ loading: initialLoading, themeColors, keyframes, onRefre
         </DialogActions>
       </Dialog>
 
+      {/* Modal antigo (mantido para compatibilidade) */}
       <DetailModal
         open={detailModalOpen}
         onClose={() => setDetailModalOpen(false)}
@@ -1245,6 +1266,13 @@ const RemovalTable = ({ loading: initialLoading, themeColors, keyframes, onRefre
         onEdit={handleEditClick}
         themeColors={themeColors}
         keyframes={keyframes}
+      />
+
+      {/* Novo modal que recebe o ID */}
+      <SolturaDetailModal
+        open={solturaModalOpen}
+        onClose={() => setSolturaModalOpen(false)}
+        solturaId={selectedSolturaId}
       />
 
       <EditModal

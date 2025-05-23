@@ -227,3 +227,71 @@ export const fetchSolturasRSU = async () => {
     return [];
   }
 };
+
+export async function getCountRsuInativos() {
+  try {
+    const response = await fetch(`${API_BASE_URL}api/veiculos/rsu_inativos/`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Erro ao buscar contagem de RSU inativos');
+    }
+
+    const data = await response.json();
+    return data; // { count_seletiva_inativos: 42 }
+  } catch (error) {
+    console.error('Erro na requisição:', error.message);
+    throw error;
+  }
+}
+
+export async function getCountRsuAtivos() {
+  try {
+    const response = await fetch(`${API_BASE_URL}api/veiculos/rsu_ativos/`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+   
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Erro ao buscar contagem de RSU ativos');
+    }
+
+    const data = await response.json();
+
+   
+    return data;
+  } catch (error) {
+    console.error('Erro ao buscar contagem de RSU ativos:', error.message);
+    throw error;
+  }
+}
+
+
+export async function getContagemTotalRsu() {
+  try {
+    const response = await fetch(`${API_BASE_URL}api/veiculos/rsu_total/`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Erro ao buscar contagem total de RSU');
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Erro ao buscar total RSU:', error.message);
+    throw error;
+  }
+}

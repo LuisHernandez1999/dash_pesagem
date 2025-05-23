@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import {
   AppBar,
   Toolbar,
@@ -242,10 +242,95 @@ const themeColors = {
   divider: "rgba(226, 232, 240, 0.8)",
 }
 
+// Custom stat card component - redesigned to be mais simples e branco
+const CustomStatCard = ({ title, value, icon: Icon, color, highlight, subtitle }) => (
+  <Card
+    sx={{
+      position: "relative",
+      overflow: "hidden",
+      borderRadius: "16px",
+      boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)",
+      background: "white",
+      height: "100%",
+      transition: "all 0.3s ease",
+      "&:hover": {
+        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
+      },
+      "&::before": {
+        content: '""',
+        position: "absolute",
+        top: 0,
+        left: 0,
+        width: "100%",
+        height: "3px",
+        background: color.main,
+        zIndex: 1,
+      },
+      animation: highlight ? `${keyframes.flashHighlight} 1s ease-out` : `${keyframes.fadeIn} 0.6s ease-out`,
+    }}
+  >
+    <Box
+      sx={{
+        position: "absolute",
+        top: "20px",
+        right: "20px",
+        width: "40px",
+        height: "40px",
+        borderRadius: "50%",
+        background: alpha(color.main, 0.1),
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <Icon sx={{ fontSize: 24, color: color.main }} />
+    </Box>
+    <CardContent sx={{ p: 3, pt: 4, pb: 5 }}>
+      <Typography
+        variant="h3"
+        sx={{
+          fontWeight: 700,
+          fontSize: { xs: "2rem", sm: "2.5rem" },
+          color: themeColors.text.primary,
+          mb: 1,
+        }}
+      >
+        {value === null ? "..." : value}
+      </Typography>
+      <Typography
+        variant="body1"
+        sx={{
+          color: themeColors.text.secondary,
+          fontWeight: 500,
+          fontSize: "0.95rem",
+        }}
+      >
+        {title}
+      </Typography>
+      {subtitle && (
+        <Typography
+          variant="body2"
+          sx={{
+            color: themeColors.text.secondary,
+            fontWeight: 400,
+            fontSize: "0.85rem",
+            mt: 1,
+            opacity: 0.8,
+          }}
+        >
+          {subtitle}
+        </Typography>
+      )}
+    </CardContent>
+  </Card>
+)
+
 export default function SeletivaDashboard() {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
   const isTablet = useMediaQuery(theme.breakpoints.down("md"))
+  const router = useRouter()
+  const [activeTab, setActiveTab] = useState("seletiva")
 
   // State variables
   const [loading, setLoading] = useState(true)
@@ -256,265 +341,26 @@ export default function SeletivaDashboard() {
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarMessage, setSnackbarMessage] = useState("")
   const [snackbarSeverity, setSnackbarSeverity] = useState("success")
-  const [activeTab, setActiveTab] = useState("seletiva")
-
-  // Stats Cards State
-  const [statsLoading, setStatsLoading] = useState(true)
-  const [stats, setStats] = useState({
-    totalCollected: 0,
-    activeRoutes: 0,
-    averageWeight: 0,
-    recyclingRate: 0,
-  })
 
   // Mock data for selective collections
   const [seletivaData, setSeletivaData] = useState([])
 
-  // Adicione uma inicialização mais robusta para os valores iniciais no useRef
-  // Substitua a declaração do latestValuesRef por:
-
-  // Use useRef to store the latest values to prevent them from being reset to 0
-  const latestValuesRef = useRef({
-    totalSeletiva: 0, // Removido valor mockado
-    seletivaInativos: 0, // Removido valor mockado
-    seletivaAtivos: 0, // Removido valor mockado
-    seletivaHoje: 0, // Removido valor mockado
+  // Stats state
+  const [statsData, setStatsData] = useState({
+    totalVehicles: 0,
+    activeVehicles: 0,
+    inactiveVehicles: 0,
+    releasedToday: 0,
   })
 
-  // E também inicialize os statsCards com esses valores:
-  const [statsCards, setStatsCards] = useState([
-    {
-      title: "Total de Veículos",
-      value: 0, // Removido valor mockado
-      subtitle: "Frota total de veículos de seletiva",
-      icon: <LocalShipping />,
-      color: themeColors.primary,
-      delay: "0s",
-    },
-    {
-      title: "Total Inativos",
-      value: 0, // Removido valor mockado
-      subtitle: "Veículos em manutenção ou parados",
-      icon: <Scale />,
-      color: themeColors.error,
-      delay: "0.1s",
-    },
-    {
-      title: "Total Ativos",
-      value: 0, // Removido valor mockado
-      subtitle: "Veículos ativos",
-      icon: <Recycling />,
-      color: themeColors.success,
-      delay: "0.2s",
-    },
-    {
-      title: "Seletivas Hoje",
-      value: 0, // Já estava sem valor mockado
-      subtitle: "Total soltos hoje",
-      icon: <EmojiEvents />,
-      color: themeColors.warning,
-      delay: "0.3s",
-    },
-  ])
-
-  // Adicione uma função de tratamento de erro mais robusta para as chamadas de API
-  // Adicione esta função antes do loadAllData:
-
-  // Função auxiliar para garantir valores seguros
-  const getSafeValue = (response, fieldName, defaultValue) => {
-    if (response && response.success && response[fieldName] !== undefined && response[fieldName] !== null) {
-      // Verifica se o valor é um número válido
-      const value = Number(response[fieldName])
-      if (!isNaN(value)) {
-        return value
-      }
-    }
-    return defaultValue
-  }
-
-  // Replace the loadAllData function with this updated version
-  const loadAllData = async (onlyHoje = false) => {
-    console.log(`Iniciando carregamento de dados... ${onlyHoje ? "(apenas seletivas hoje)" : "(completo)"}`)
-
-    if (!onlyHoje) {
-      setLoading(true)
-      setInitialLoading(true)
-      setStatsLoading(true)
-    }
-
-    try {
-      // If we're doing a full refresh or just the "hoje" card
-      if (!onlyHoje) {
-        // Fetch all data
-        const totalSeletivaResponse = await contarTotalSeletiva()
-        const inativosResponse = await contarSeletivaInativos()
-        const ativosResponse = await contarSeletivaAtivos()
-        const hojeResponse = await contarSeletivaRealizadasHoje()
-
-        // Usar apenas os valores da API, sem fallbacks mockados
-        const newTotalSeletiva = totalSeletivaResponse?.total !== undefined ? Number(totalSeletivaResponse.total) : 0
-        const newSeletivaInativos = inativosResponse?.count !== undefined ? Number(inativosResponse.count) : 0
-        const newSeletivaAtivos = ativosResponse?.count !== undefined ? Number(ativosResponse.count) : 0
-        const newSeletivaHoje = hojeResponse?.total !== undefined ? Number(hojeResponse.total) : 0
-
-        console.log("Valores da API:", {
-          totalSeletiva: newTotalSeletiva,
-          seletivaInativos: newSeletivaInativos,
-          seletivaAtivos: newSeletivaAtivos,
-          seletivaHoje: newSeletivaHoje,
-        })
-
-        // Atualizar o ref com os valores mais recentes da API
-        latestValuesRef.current = {
-          totalSeletiva: newTotalSeletiva,
-          seletivaInativos: newSeletivaInativos,
-          seletivaAtivos: newSeletivaAtivos,
-          seletivaHoje: newSeletivaHoje,
-        }
-
-        // Atualizar os cards com os valores da API
-        setStatsCards([
-          {
-            ...statsCards[0],
-            value: newTotalSeletiva,
-          },
-          {
-            ...statsCards[1],
-            value: newSeletivaInativos,
-          },
-          {
-            ...statsCards[2],
-            value: newSeletivaAtivos,
-          },
-          {
-            ...statsCards[3],
-            value: newSeletivaHoje,
-          },
-        ])
-
-        // Mock selective collection data (keep your existing mock data code)
-        const mockSeletivaData = Array.from({ length: 20 }, (_, index) => ({
-          id: index + 1,
-          route: `Rota ${Math.floor(Math.random() * 10) + 1}`,
-          driver: `Motorista ${Math.floor(Math.random() * 15) + 1}`,
-          driverId: `M${Math.floor(Math.random() * 1000) + 1000}`,
-          collectors: Array.from(
-            { length: Math.floor(Math.random() * 3) + 1 },
-            (_, i) => `Coletor ${Math.floor(Math.random() * 15) + 1}`,
-          ),
-          collectorsIds: Array.from(
-            { length: Math.floor(Math.random() * 3) + 1 },
-            (_, i) => `C${Math.floor(Math.random() * 1000) + 1000}`,
-          ),
-          vehicle: `Caminhão ${Math.floor(Math.random() * 20) + 1}`,
-          vehiclePrefix: `SEL-${Math.floor(Math.random() * 100) + 100}`,
-          departureTime: `${Math.floor(Math.random() * 12) + 7}:${Math.floor(Math.random() * 60)
-            .toString()
-            .padStart(2, "0")}`,
-          status: Math.random() > 0.3 ? "Finalizado" : "Em andamento",
-          arrivalTime:
-            Math.random() > 0.3
-              ? `${Math.floor(Math.random() * 12) + 13}:${Math.floor(Math.random() * 60)
-                  .toString()
-                  .padStart(2, "0")}`
-              : "",
-          date: new Date().toISOString().split("T")[0],
-          region: ["Norte", "Sul", "Leste", "Oeste", "Centro"][Math.floor(Math.random() * 5)],
-          shift: ["Matutino", "Vespertino", "Noturno"][Math.floor(Math.random() * 3)],
-          collectedWeight: `${(Math.random() * 5 + 1).toFixed(2)} ton`,
-          materialType: ["Papel", "Plástico", "Vidro", "Metal", "Misto"][Math.floor(Math.random() * 5)],
-        }))
-
-        setSeletivaData(mockSeletivaData)
-
-        // Mark loading as complete
-        setChartsLoaded(true)
-        setLoading(false)
-        setInitialLoading(false)
-        setStatsLoading(false)
-      } else {
-        // Only fetch "Seletivas Hoje" data
-        const hojeResponse = await contarSeletivaRealizadasHoje()
-        const newSeletivaHoje = hojeResponse?.total !== undefined ? Number(hojeResponse.total) : 0
-
-        // Update the ref with the latest value
-        latestValuesRef.current = {
-          ...latestValuesRef.current,
-          seletivaHoje: newSeletivaHoje,
-        }
-
-        // Update only the "Seletivas Hoje" card (index 3)
-        const newStatsCards = [...statsCards]
-        newStatsCards[3] = {
-          ...newStatsCards[3],
-          value: newSeletivaHoje,
-        }
-        setStatsCards(newStatsCards)
-      }
-    } catch (error) {
-      console.error("Erro ao carregar dados:", error)
-      // Show error message
-      setSnackbarMessage("Erro ao carregar dados. Tente novamente.")
-      setSnackbarSeverity("error")
-      setSnackbarOpen(true)
-
-      // Even with error, mark loading as complete if it was a full refresh
-      if (!onlyHoje) {
-        setLoading(false)
-        setInitialLoading(false)
-        setStatsLoading(false)
-      }
-    }
-  }
-
-  // Load data on component mount
-  useEffect(() => {
-    loadAllData()
-  }, [])
-
-  // Add this useEffect for the refresh intervals after the existing useEffect
-  useEffect(() => {
-    // Set up intervals for refreshing data
-    const fullRefreshInterval = setInterval(
-      () => {
-        console.log("Executando refresh completo (8 minutos)")
-        loadAllData()
-      },
-      8 * 60 * 1000,
-    ) // 8 minutes
-
-    const hojeRefreshInterval = setInterval(
-      () => {
-        console.log("Executando refresh de seletivas hoje (2 minutos)")
-        loadAllData(true) // true means only refresh the "hoje" data
-      },
-      2 * 60 * 1000,
-    ) // 2 minutes
-
-    // Clean up intervals on component unmount
-    return () => {
-      clearInterval(fullRefreshInterval)
-      clearInterval(hojeRefreshInterval)
-    }
-  }, [])
-
-  // Handle sidebar collapse
-  const handleSidebarCollapse = (collapsed) => {
-    setSidebarCollapsed(collapsed)
-  }
-
-  // Handle refresh data
-  const handleRefreshData = () => {
-    loadAllData()
-  }
-
-  // Handle snackbar close
-  const handleSnackbarClose = () => {
-    setSnackbarOpen(false)
-  }
+  // Auto-refresh states
+  const [autoRefreshTotal, setAutoRefreshTotal] = useState(true)
+  const [autoRefreshActive, setAutoRefreshActive] = useState(true)
+  const [autoRefreshInactive, setAutoRefreshInactive] = useState(true)
+  const [autoRefreshReleased, setAutoRefreshReleased] = useState(true)
+  const [highlightedStat, setHighlightedStat] = useState(null)
 
   // Handle tab change
-  const router = useRouter()
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue)
 
@@ -558,7 +404,220 @@ export default function SeletivaDashboard() {
     },
   ]
 
-  // Stats Cards Data
+  const loadAllData = async () => {
+    console.log("Iniciando carregamento de dados...")
+    setLoading(true)
+    setInitialLoading(true)
+
+    try {
+      // Load data in parallel
+      const [totalSeletivaResponse, inativosResponse, ativosResponse, hojeResponse] = await Promise.all([
+        contarTotalSeletiva(),
+        contarSeletivaInativos(),
+        contarSeletivaAtivos(),
+        contarSeletivaRealizadasHoje(),
+      ])
+
+      console.log("Dados carregados:", {
+        totalSeletiva: totalSeletivaResponse,
+        seletivaInativos: inativosResponse,
+        seletivaAtivos: ativosResponse,
+        seletivaHoje: hojeResponse,
+      })
+
+      // Update statistics
+      setStatsData({
+        totalVehicles: totalSeletivaResponse?.total || 0,
+        inactiveVehicles: inativosResponse?.count || 0,
+        activeVehicles: ativosResponse?.count || 0,
+        releasedToday: hojeResponse?.total || 0,
+      })
+
+      // Mock selective collection data
+      const mockSeletivaData = Array.from({ length: 20 }, (_, index) => ({
+        id: index + 1,
+        route: `Rota ${Math.floor(Math.random() * 10) + 1}`,
+        driver: `Motorista ${Math.floor(Math.random() * 15) + 1}`,
+        driverId: `M${Math.floor(Math.random() * 1000) + 1000}`,
+        collectors: Array.from(
+          { length: Math.floor(Math.random() * 3) + 1 },
+          (_, i) => `Coletor ${Math.floor(Math.random() * 15) + 1}`,
+        ),
+        collectorsIds: Array.from(
+          { length: Math.floor(Math.random() * 3) + 1 },
+          (_, i) => `C${Math.floor(Math.random() * 1000) + 1000}`,
+        ),
+        vehicle: `Caminhão ${Math.floor(Math.random() * 20) + 1}`,
+        vehiclePrefix: `SEL-${Math.floor(Math.random() * 100) + 100}`,
+        departureTime: `${Math.floor(Math.random() * 12) + 7}:${Math.floor(Math.random() * 60)
+          .toString()
+          .padStart(2, "0")}`,
+        status: Math.random() > 0.3 ? "Finalizado" : "Em andamento",
+        arrivalTime:
+          Math.random() > 0.3
+            ? `${Math.floor(Math.random() * 12) + 13}:${Math.floor(Math.random() * 60)
+                .toString()
+                .padStart(2, "0")}`
+            : "",
+        date: new Date().toISOString().split("T")[0],
+        region: ["Norte", "Sul", "Leste", "Oeste", "Centro"][Math.floor(Math.random() * 5)],
+        shift: ["Matutino", "Vespertino", "Noturno"][Math.floor(Math.random() * 3)],
+        collectedWeight: `${(Math.random() * 5 + 1).toFixed(2)} ton`,
+        materialType: ["Papel", "Plástico", "Vidro", "Metal", "Misto"][Math.floor(Math.random() * 5)],
+      }))
+
+      setSeletivaData(mockSeletivaData)
+
+      // Mark loading as complete
+      setChartsLoaded(true)
+      setLoading(false)
+      setInitialLoading(false)
+    } catch (error) {
+      console.error("Erro ao carregar dados:", error)
+      // Show error message
+      setSnackbarMessage("Erro ao carregar dados. Tente novamente.")
+      setSnackbarSeverity("error")
+      setSnackbarOpen(true)
+
+      // Even with error, mark loading as complete
+      setLoading(false)
+      setInitialLoading(false)
+    }
+  }
+
+  // Funções para atualizar cards individuais
+  const refreshTotalVehicles = async () => {
+    try {
+      setStatsData((prev) => ({ ...prev, totalVehicles: null })) // Definir como null para mostrar carregamento
+      const result = await contarTotalSeletiva()
+      setStatsData((prev) => ({
+        ...prev,
+        totalVehicles: result?.total || prev.totalVehicles,
+      }))
+      setHighlightedStat("totalVehicles")
+    } catch (error) {
+      console.error("Erro ao atualizar total de veículos:", error)
+    }
+  }
+
+  const refreshActiveVehicles = async () => {
+    try {
+      setStatsData((prev) => ({ ...prev, activeVehicles: null })) // Definir como null para mostrar carregamento
+      const result = await contarSeletivaAtivos()
+      setStatsData((prev) => ({
+        ...prev,
+        activeVehicles: result?.count || prev.activeVehicles,
+      }))
+      setHighlightedStat("activeVehicles")
+    } catch (error) {
+      console.error("Erro ao atualizar veículos ativos:", error)
+    }
+  }
+
+  const refreshInactiveVehicles = async () => {
+    try {
+      setStatsData((prev) => ({ ...prev, inactiveVehicles: null })) // Definir como null para mostrar carregamento
+      const result = await contarSeletivaInativos()
+      setStatsData((prev) => ({
+        ...prev,
+        inactiveVehicles: result?.count || prev.inactiveVehicles,
+      }))
+      setHighlightedStat("inactiveVehicles")
+    } catch (error) {
+      console.error("Erro ao atualizar veículos inativos:", error)
+    }
+  }
+
+  const refreshReleasedToday = async () => {
+    try {
+      const result = await contarSeletivaRealizadasHoje()
+      const novoTotal = result?.total
+
+      setStatsData((prev) => {
+        if (prev.releasedToday === novoTotal || novoTotal == null) {
+          return prev // NÃO atualiza se o valor for igual ou se vier nulo
+        }
+
+        return {
+          ...prev,
+          releasedToday: novoTotal,
+        }
+      })
+
+      setHighlightedStat("releasedToday")
+    } catch (error) {
+      console.error("Erro ao atualizar veículos soltos hoje:", error)
+    }
+  }
+
+  // Load data on component mount
+  useEffect(() => {
+    loadAllData()
+  }, [])
+
+  // Auto-refresh effects
+  useEffect(() => {
+    refreshReleasedToday()
+
+    if (autoRefreshReleased) {
+      const interval = setInterval(() => {
+        refreshReleasedToday()
+      }, 240000) // Atualiza a cada 4 minutos
+      return () => clearInterval(interval)
+    }
+  }, [autoRefreshReleased])
+
+  useEffect(() => {
+    if (autoRefreshTotal) {
+      const interval = setInterval(() => {
+        refreshTotalVehicles()
+      }, 240000) // Refresh every 4 minutes
+      return () => clearInterval(interval)
+    }
+  }, [autoRefreshTotal])
+
+  useEffect(() => {
+    if (autoRefreshActive) {
+      const interval = setInterval(() => {
+        refreshActiveVehicles()
+      }, 240000) // Refresh every 4 minutes
+      return () => clearInterval(interval)
+    }
+  }, [autoRefreshActive])
+
+  useEffect(() => {
+    if (autoRefreshInactive) {
+      const interval = setInterval(() => {
+        refreshInactiveVehicles()
+      }, 240000) // Refresh every 4 minutes
+      return () => clearInterval(interval)
+    }
+  }, [autoRefreshInactive])
+
+  // Add a timeout to clear the highlight after 3 seconds
+  useEffect(() => {
+    if (highlightedStat) {
+      setTimeout(() => {
+        setHighlightedStat(null)
+      }, 1000) // Reduzido para 1 segundo
+    }
+  }, [highlightedStat])
+
+  // Handle sidebar collapse
+  const handleSidebarCollapse = (collapsed) => {
+    setSidebarCollapsed(collapsed)
+  }
+
+  // Handle refresh data
+  const handleRefreshData = () => {
+    loadAllData()
+  }
+
+  // Handle snackbar close
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false)
+  }
+
   return (
     <>
       <style>
@@ -859,69 +918,60 @@ export default function SeletivaDashboard() {
             }}
           >
             <Container maxWidth="xl" disableGutters>
-              {/* Stats Cards - Implementado diretamente na página */}
-              {/* Stats Cards - Implementação simplificada e direta */}
-
-              {/* Stats Cards - Implementação atualizada com as informações solicitadas */}
-              <Box sx={{ mb: 4, mt: 2 }}>
+              {/* Stats Cards */}
+              <Box component="section">
                 <Box
                   sx={{
                     display: "grid",
-                    gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", md: "1fr 1fr 1fr 1fr" },
-                    gap: 3,
+                    gap: "1rem",
+                    gridTemplateColumns: {
+                      xs: "repeat(1, 1fr)",
+                      sm: "repeat(2, 1fr)",
+                      lg: "repeat(4, 1fr)",
+                    },
+                    mb: 3,
                   }}
                 >
-                  {statsCards.map((card, index) => (
-                    <Card
-                      key={index}
-                      sx={{
-                        borderRadius: "16px",
-                        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
-                        transition: "transform 0.3s ease",
-                        "&:hover": {
-                          transform: "translateY(-10px)",
-                          boxShadow: "0 12px 20px rgba(0, 0, 0, 0.15)",
-                        },
-                      }}
-                    >
-                      <CardContent sx={{ p: 3 }}>
-                        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
-                          <Box>
-                            <Typography sx={{ fontSize: "1rem", fontWeight: 600, color: themeColors.text.primary }}>
-                              {card.title}
-                            </Typography>
-                            <Typography
-                              sx={{
-                                fontSize: "1.75rem",
-                                fontWeight: 700,
-                                color: card.color.main,
-                                mt: 1,
-                              }}
-                            >
-                              {card.value}
-                            </Typography>
-                          </Box>
-                          <Box
-                            sx={{
-                              width: "48px",
-                              height: "48px",
-                              borderRadius: "12px",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              bgcolor: alpha(card.color.main, 0.12),
-                              color: card.color.main,
-                            }}
-                          >
-                            {card.icon}
-                          </Box>
-                        </Box>
-                        <Typography sx={{ color: themeColors.text.secondary, fontSize: "0.875rem" }}>
-                          {card.subtitle}
-                        </Typography>
-                      </CardContent>
-                    </Card>
-                  ))}
+                  <Box>
+                    <CustomStatCard
+                      title="Veículos de seletiva total"
+                      value={statsData.totalVehicles}
+                      icon={LocalShipping}
+                      color={themeColors.primary}
+                      highlight={highlightedStat === "totalVehicles"}
+                     
+                    />
+                  </Box>
+                  <Box>
+                    <CustomStatCard
+                      title="Veículos seletiva ativos"
+                      value={statsData.activeVehicles}
+                      icon={Recycling}
+                      color={themeColors.success}
+                      highlight={highlightedStat === "activeVehicles"}
+                      
+                    />
+                  </Box>
+                  <Box>
+                    <CustomStatCard
+                      title="Veículos seletiva inativos"
+                      value={statsData.inactiveVehicles}
+                      icon={Scale}
+                      color={themeColors.error}
+                      highlight={highlightedStat === "inactiveVehicles"}
+                    
+                    />
+                  </Box>
+                  <Box>
+                    <CustomStatCard
+                      title="Seletivas soltas hoje"
+                      value={statsData.releasedToday}
+                      icon={EmojiEvents}
+                      color={themeColors.warning}
+                      highlight={highlightedStat === "releasedToday"}
+                      
+                    />
+                  </Box>
                 </Box>
               </Box>
 
@@ -1205,17 +1255,15 @@ export default function SeletivaDashboard() {
                       },
                     }}
                   />
-                  <CardContent sx={{  padding: "1.5rem",
-              height: "calc(100% - 90px)", 
-              display: "flex",
-              flexDirection: "column",
-                   }}>
+                  <CardContent
+                    sx={{ padding: "1.5rem", height: "calc(100% - 90px)", display: "flex", flexDirection: "column" }}
+                  >
                     <Box
                       sx={{
-                       width: "100%",
-                position: "relative",
-                height: "100%", // Usa todo o espaço disponível
-                flex: 1,
+                        width: "100%",
+                        position: "relative",
+                        height: "100%", // Usa todo o espaço disponível
+                        flex: 1,
                       }}
                     >
                       <GraficoSeletivaSemanal themeColors={themeColors} chartsLoaded={chartsLoaded} />

@@ -156,6 +156,7 @@ export const retornarInfosSeletiva = async () => {
     return {
       success: true,
       data: data.map(item => ({
+        id: item.id,
         motorista: item.motorista || null,
         hora_saida_frota: item.hora_saida_frota || null,
         hora_entrega_chave: item.hora_entrega_chave || null,

@@ -37,9 +37,10 @@ import { Delete, MoreVert, ArrowUpward, ArrowDownward, Close, Edit, Search, Refr
 import RegisterModal from "../../registro_remocao"
 import EditModal from "../../edit_soltura"
 import DetailModal from "../../visualizar_remocao"
+import SolturaDetailModal from "../../visualizar_remocao" // Importando o novo modal
 import { retornarInfosSeletiva } from "../../../service/seletiva"
 
-// Modificar o componente SearchInput para aumentar a largura
+// Componente SearchInput
 const SearchInput = ({ icon: Icon, placeholder, value, onChange, suggestions = [], themeColors, keyframes }) => {
   return (
     <Autocomplete
@@ -50,7 +51,7 @@ const SearchInput = ({ icon: Icon, placeholder, value, onChange, suggestions = [
       onInputChange={(_, newInputValue) => onChange({ target: { value: newInputValue } })}
       sx={{
         flex: 1,
-        width: "100%", // Aumentar a largura para ocupar todo o espaço disponível
+        width: "100%",
       }}
       renderInput={(params) => (
         <Paper
@@ -65,7 +66,7 @@ const SearchInput = ({ icon: Icon, placeholder, value, onChange, suggestions = [
             transition: "all 0.3s ease",
             background: themeColors.background.paper,
             height: "52px",
-            width: "100%", // Garantir que ocupe toda a largura
+            width: "100%",
             "&:hover": {
               boxShadow: `0 4px 12px ${alpha(themeColors.primary.light, 0.15)}`,
               borderColor: themeColors.primary.main,
@@ -170,6 +171,11 @@ const SeletivaTable = ({ loading: initialLoading, themeColors, keyframes, onRefr
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarMessage, setSnackbarMessage] = useState("")
   const [snackbarSeverity, setSnackbarSeverity] = useState("success")
+
+  // Novo estado para o modal de detalhes da soltura
+  const [solturaModalOpen, setSolturaModalOpen] = useState(false)
+  const [selectedSolturaId, setSelectedSolturaId] = useState(null)
+
   const [registerFormData, setRegisterFormData] = useState({
     driver: "",
     driverId: "",
@@ -195,33 +201,47 @@ const SeletivaTable = ({ loading: initialLoading, themeColors, keyframes, onRefr
       setLoading(true)
       setError(null)
 
+      console.log("🔄 Iniciando fetchData...")
       const response = await retornarInfosSeletiva()
+      console.log("📥 Resposta da API:", response)
 
       if (response.success) {
         // Transform API data to match the expected format for the table
-        const formattedData = response.data.map((item, index) => ({
-          id: index + 1,
-          driver: item.motorista || "Não informado",
-          driverId: "",
-          collectors: Array.isArray(item.coletores) ? item.coletores : [],
-          collectorsIds: [],
-          prefixo: item.prefixo || "",
-          hora_saida_frota: item.hora_saida_frota || "",
-          hora_entrega_chave: item.hora_entrega_chave || "",
-          hora_chegada: item.hora_chegada || "",
-          tipo_equipe: item.tipo_equipe || "",
-          status_frota: item.status_frota || "Em andamento",
-          data: item.data || "",
-          rota: item.rota || "",
-          location: "", // Setor is not important as per requirements
-          vehiclePrefix: item.tipo_veiculo_selecionado || "",
-          departureTime: item.hora_saida_frota || "",
-          status: item.status_frota || "Em andamento",
-          team: item.tipo_equipe || "",
-          vehicle: item.tipo_veiculo_selecionado || "",
-          lider: item.lider || "",
-        }))
+        const formattedData = response.data.map((item, index) => {
+          console.log(`🔧 Formatando item ${index}:`, item)
+          console.log(`🆔 ID do item ${index}:`, item.id)
 
+          const formattedItem = {
+            id: item.id || index + 1, // Usar o ID da API se disponível, senão usar o índice
+            driver: item.motorista || "Não informado",
+            driverId: "",
+            collectors: Array.isArray(item.coletores) ? item.coletores : [],
+            collectorsIds: [],
+            prefixo: item.prefixo || "",
+            hora_saida_frota: item.hora_saida_frota || "",
+            hora_entrega_chave: item.hora_entrega_chave || "",
+            hora_chegada: item.hora_chegada || "",
+            tipo_equipe: item.tipo_equipe || "",
+            status_frota: item.status_frota || "Em andamento",
+            data: item.data || "",
+            rota: item.rota || "",
+            location: "",
+            vehiclePrefix: item.tipo_veiculo_selecionado || "",
+            departureTime: item.hora_saida_frota || "",
+            status: item.status_frota || "Em andamento",
+            team: item.tipo_equipe || "",
+            vehicle: item.tipo_veiculo_selecionado || "",
+            lider: item.lider || "",
+            solturaId: item.id, // Garantir que o ID da soltura seja passado corretamente
+          }
+
+          console.log(`✅ Item formatado ${index}:`, formattedItem)
+          console.log(`🆔 solturaId para item ${index}:`, formattedItem.solturaId)
+
+          return formattedItem
+        })
+
+        console.log("📋 Dados finais formatados:", formattedData)
         setRemovals(formattedData)
       } else {
         setError(response.error || "Erro ao carregar dados")
@@ -319,12 +339,25 @@ const SeletivaTable = ({ loading: initialLoading, themeColors, keyframes, onRefr
     }
   }
 
-  // Handle modal open
+  // Handle modal open - CORRIGIDO para usar o ID correto do item da tabela
   const handleOpenModal = (removal) => {
-    // Find the most up-to-date version of this removal in the state
-    const currentRemoval = removals.find((r) => r.id === removal.id) || removal
-    setSelectedRemoval(currentRemoval)
-    setDetailModalOpen(true)
+    console.log("🔍 handleOpenModal chamado com:", removal)
+
+    // Verificar se temos um ID válido diretamente do item
+    if (removal && removal.id) {
+      const itemId = removal.id
+      console.log("✅ Usando ID do item da tabela:", itemId)
+
+      // Definir o ID selecionado e abrir o modal
+      setSelectedSolturaId(itemId)
+      setSolturaModalOpen(true)
+    } else {
+      // Fallback para o modal antigo se não tiver ID
+      console.log("⚠️ ID não encontrado, usando modal antigo")
+      const currentRemoval = removals.find((r) => r.id === removal.id) || removal
+      setSelectedRemoval(currentRemoval)
+      setDetailModalOpen(true)
+    }
   }
 
   // Handle delete confirmation dialog
@@ -480,43 +513,62 @@ const SeletivaTable = ({ loading: initialLoading, themeColors, keyframes, onRefr
     }
   }
 
-  // Get status chip
+  // FUNÇÃO CORRIGIDA - Exibe o status EXATO da API sem sobrescrever
   const getStatusChip = (status) => {
-    if (status === "Finalizado") {
+    // Se não há status, exibe "Não informado"
+    if (!status) {
       return (
         <Chip
-          label="Finalizado"
+          label="Não informado"
           sx={{
-            backgroundColor: alpha(themeColors.primary.light, 0.15),
-            color: themeColors.primary.dark,
+            backgroundColor: alpha(themeColors.grey?.[500] || "#9e9e9e", 0.15),
+            color: themeColors.grey?.[700] || "#616161",
             fontWeight: 600,
             borderRadius: "12px",
-            transition: "all 0.3s ease",
-            "&:hover": {
-              backgroundColor: alpha(themeColors.primary.light, 0.25),
-            },
-          }}
-          size="small"
-        />
-      )
-    } else {
-      return (
-        <Chip
-          label="Em andamento"
-          sx={{
-            backgroundColor: alpha(themeColors.warning.light, 0.15),
-            color: themeColors.warning.dark,
-            fontWeight: 600,
-            borderRadius: "12px",
-            transition: "all 0.3s ease",
-            "&:hover": {
-              backgroundColor: alpha(themeColors.warning.light, 0.25),
-            },
           }}
           size="small"
         />
       )
     }
+
+    // Determina a cor baseada no conteúdo do status, MAS MANTÉM O TEXTO ORIGINAL
+    let chipColor = themeColors.info?.main || "#2196f3"
+    let chipBgColor = alpha(themeColors.info?.light || "#64b5f6", 0.15)
+
+    // Verifica palavras-chave no status para definir cores apropriadas
+    const statusLower = status.toLowerCase()
+
+    if (statusLower.includes("finaliz")) {
+      chipColor = themeColors.primary?.dark || "#1565c0"
+      chipBgColor = alpha(themeColors.primary?.light || "#42a5f5", 0.15)
+    } else if (statusLower.includes("andamento")) {
+      chipColor = themeColors.warning?.dark || "#f57c00"
+      chipBgColor = alpha(themeColors.warning?.light || "#ffb74d", 0.15)
+    } else if (statusLower.includes("cancel")) {
+      chipColor = themeColors.error?.dark || "#d32f2f"
+      chipBgColor = alpha(themeColors.error?.light || "#e57373", 0.15)
+    } else if (statusLower.includes("pendent")) {
+      chipColor = themeColors.info?.dark || "#1976d2"
+      chipBgColor = alpha(themeColors.info?.light || "#64b5f6", 0.15)
+    }
+
+    // RETORNA O CHIP COM O TEXTO EXATO DA API
+    return (
+      <Chip
+        label={status}
+        sx={{
+          backgroundColor: chipBgColor,
+          color: chipColor,
+          fontWeight: 600,
+          borderRadius: "12px",
+          transition: "all 0.3s ease",
+          "&:hover": {
+            backgroundColor: alpha(chipColor, 0.25),
+          },
+        }}
+        size="small"
+      />
+    )
   }
 
   // Sort indicator component
@@ -562,14 +614,14 @@ const SeletivaTable = ({ loading: initialLoading, themeColors, keyframes, onRefr
         // Status filter
         const statusMatch =
           statusFilter === "all" ||
-          (statusFilter === "completed" && removal.status_frota === "Finalizado") ||
+          (statusFilter === "completed" && removal.status_frota === "Finalizada") ||
           (statusFilter === "in-progress" && removal.status_frota === "Em andamento")
 
         // Team filter
         const teamMatch =
           teamFilter === "all" ||
           (teamFilter === "team-1" && removal.tipo_equipe === "Equipe(Diurno)") ||
-          (teamFilter === "team-2" && removal.tipo_equipe === "Equipe(Noturno)") 
+          (teamFilter === "team-2" && removal.tipo_equipe === "Equipe(Noturno)")
 
         // Recently registered filter (last 24 hours)
         const recentlyMatch = !recentlyRegisteredFilter || (removal.data && new Date(removal.data) >= oneDayAgo)
@@ -791,7 +843,7 @@ const SeletivaTable = ({ loading: initialLoading, themeColors, keyframes, onRefr
                       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
                         {[
                           { id: "all", label: "Todos", color: themeColors.primary.light },
-                          { id: "completed", label: "Finalizado", color: themeColors.primary.main },
+                          { id: "completed", label: "Finalizada", color: themeColors.primary.main },
                           { id: "in-progress", label: "Em andamento", color: themeColors.warning.main },
                         ].map((status) => (
                           <Chip
@@ -831,45 +883,43 @@ const SeletivaTable = ({ loading: initialLoading, themeColors, keyframes, onRefr
                         Por Equipe:
                       </Typography>
                       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                        {["Todas", "Equipe(Diurno)", "Equipe(Noturno)"].map(
-                          (team, index) => (
-                            <Chip
-                              key={team}
-                              label={team}
-                              clickable
-                              onClick={() => {
-                                // Update only the team filter
-                                if (index === 0) {
-                                  setTeamFilter("all")
-                                } else {
-                                  setTeamFilter(`team-${index}`)
-                                }
-                              }}
-                              sx={{
-                                borderRadius: "12px",
-                                fontWeight: 500,
-                                backgroundColor:
-                                  teamFilter === (index === 0 ? "all" : `team-${index}`)
-                                    ? alpha(themeColors.primary.light, 0.15)
-                                    : alpha(themeColors.background.default, 0.5),
-                                color:
-                                  teamFilter === (index === 0 ? "all" : `team-${index}`)
-                                    ? themeColors.primary.dark
-                                    : themeColors.text.secondary,
-                                border: `1px solid ${
-                                  teamFilter === (index === 0 ? "all" : `team-${index}`)
-                                    ? themeColors.primary.light
-                                    : themeColors.divider
-                                }`,
-                                "&:hover": {
-                                  backgroundColor: alpha(themeColors.primary.light, 0.15),
-                                  color: themeColors.primary.dark,
-                                },
-                                transition: "all 0.2s ease",
-                              }}
-                            />
-                          ),
-                        )}
+                        {["Todas", "Equipe(Diurno)", "Equipe(Noturno)"].map((team, index) => (
+                          <Chip
+                            key={team}
+                            label={team}
+                            clickable
+                            onClick={() => {
+                              // Update only the team filter
+                              if (index === 0) {
+                                setTeamFilter("all")
+                              } else {
+                                setTeamFilter(`team-${index}`)
+                              }
+                            }}
+                            sx={{
+                              borderRadius: "12px",
+                              fontWeight: 500,
+                              backgroundColor:
+                                teamFilter === (index === 0 ? "all" : `team-${index}`)
+                                  ? alpha(themeColors.primary.light, 0.15)
+                                  : alpha(themeColors.background.default, 0.5),
+                              color:
+                                teamFilter === (index === 0 ? "all" : `team-${index}`)
+                                  ? themeColors.primary.dark
+                                  : themeColors.text.secondary,
+                              border: `1px solid ${
+                                teamFilter === (index === 0 ? "all" : `team-${index}`)
+                                  ? themeColors.primary.light
+                                  : themeColors.divider
+                              }`,
+                              "&:hover": {
+                                backgroundColor: alpha(themeColors.primary.light, 0.15),
+                                color: themeColors.primary.dark,
+                              },
+                              transition: "all 0.2s ease",
+                            }}
+                          />
+                        ))}
                       </Box>
                     </Box>
                     <Box sx={{ flex: "1 1 300px" }}>
@@ -1166,6 +1216,7 @@ const SeletivaTable = ({ loading: initialLoading, themeColors, keyframes, onRefr
         </DialogActions>
       </Dialog>
 
+      {/* Modal antigo (fallback) */}
       <DetailModal
         open={detailModalOpen}
         onClose={() => setDetailModalOpen(false)}
@@ -1173,6 +1224,13 @@ const SeletivaTable = ({ loading: initialLoading, themeColors, keyframes, onRefr
         onEdit={handleEditClick}
         themeColors={themeColors}
         keyframes={keyframes}
+      />
+
+      {/* Novo modal que recebe o ID */}
+      <SolturaDetailModal
+        open={solturaModalOpen}
+        onClose={() => setSolturaModalOpen(false)}
+        solturaId={selectedSolturaId}
       />
 
       <EditModal

@@ -155,7 +155,7 @@ export const getSolturasDetalhadaTodas = async () => {
       console.log("Estrutura de soltura:", soltura);
       
       return {
-        // Verificar se motorista é um objeto e extrair o nome corretamente
+        id: soltura.id,
         motorista: soltura.motorista && typeof soltura.motorista === 'object' 
           ? soltura.motorista.nome || "Não informado" 
           : soltura.motorista || "Não informado",
@@ -747,3 +747,60 @@ export const getAveriguacoes = async () => {
         throw error;
     }
 };
+
+
+
+export const buscarSolturaPorId = async (solturaId) => {
+  try {
+    console.log("🔍 Iniciando busca da soltura:", solturaId)
+    console.log("🌐 API_URL:", API_URL)
+
+    const url = `${API_URL}api/soltura/${solturaId}/buscar/`
+    console.log("📡 URL da requisição:", url)
+
+    const response = await fetch(url)
+    console.log("📥 Response status:", response.status)
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        throw new Error("Soltura não encontrada")
+      }
+
+      const errorData = await response.json()
+      throw new Error(errorData.error || "Erro ao buscar soltura")
+    }
+
+    const data = await response.json()
+    console.log("📊 Dados recebidos da API:", data)
+
+    const mappedData = {
+      id: data.id,
+      motorista: data.motorista,
+      matriculaMotorista: data.matricula_motorista,
+      tipoEquipe: data.tipo_equipe,
+      coletores: data.coletores,
+      garagem:data.garagem,
+      data: data.data,
+      prefixo: data.prefixo,
+      frequencia: data.frequencia,
+      setores: data.setores,
+      celular: data.celular,
+      lider: data.lider,
+      horaEntregaChave: data.hora_entrega_chave,
+      horaSaidaFrota: data.hora_saida_frota,
+      horaChegada: data.hora_chegada,
+      tipoServico: data.tipo_servico,
+      turno: data.turno,
+      rota: data.rota,
+      statusFrota: data.status_frota,
+      tipoVeiculoSelecionado: data.tipo_veiculo_selecionado,
+       bairro:data.bairro
+    }
+
+    console.log("✅ Dados mapeados:", mappedData)
+    return mappedData
+  } catch (error) {
+    console.error("❌ Erro ao buscar soltura por ID:", error.message)
+    throw error
+  }
+}

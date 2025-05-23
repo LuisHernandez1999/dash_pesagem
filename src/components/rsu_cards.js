@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { Box, Typography, alpha, Card, CardContent } from "@mui/material"
 import { DirectionsCar, CheckCircle, Cancel, LocalShipping } from "@mui/icons-material"
+import { getCountRsuInativos, getCountRsuAtivos, getContagemTotalRsu } from "../service/rsu"
 
 // Custom stat card component
 const CustomStatCard = ({ title, value, icon: Icon, color, highlight, keyframes }) => (
@@ -97,17 +98,36 @@ const StatsCards = ({ themeColors, keyframes }) => {
   const loadStatsData = async () => {
     setLoading(true)
     try {
-      // Simulação de chamada à API
-      // Em uma aplicação real, isso seria uma chamada à API
-      setTimeout(() => {
-        setStatsData({
-          totalVehicles: 120,
-          activeVehicles: 85,
-          inactiveVehicles: 35,
-          vehiclesReleasedToday: 42,
-        })
-        setLoading(false)
-      }, 800)
+      // Fetch data from APIs in parallel
+      const [ativosData, inativosData, totalData] = await Promise.all([
+        getCountRsuAtivos(),
+        getCountRsuInativos(),
+        getContagemTotalRsu(),
+      ])
+
+      // Log the API responses to debug
+      console.log("API Responses:", { ativosData, inativosData, totalData })
+
+      // Extract counts from API responses with multiple fallback options
+      const ativos = ativosData?.count_rsu_ativos || ativosData?.count || ativosData?.total || 0
+      const inativos =
+        inativosData?.count_seletiva_inativos ||
+        inativosData?.count_rsu_inativos ||
+        inativosData?.count ||
+        inativosData?.total ||
+        0
+      const total = totalData?.count_total_rsu || totalData?.total_rsu || totalData?.count || totalData?.total || 0
+
+      console.log("Extracted values:", { ativos, inativos, total })
+
+      // Update state with API data
+      setStatsData({
+        totalVehicles: total,
+        activeVehicles: ativos,
+        inactiveVehicles: inativos,
+        vehiclesReleasedToday: statsData.vehiclesReleasedToday || 0,
+      })
+      setLoading(false)
     } catch (error) {
       console.error("Erro ao carregar dados de estatísticas:", error)
       setLoading(false)
@@ -118,14 +138,15 @@ const StatsCards = ({ themeColors, keyframes }) => {
   const refreshTotalVehicles = async () => {
     try {
       setStatsData((prev) => ({ ...prev, totalVehicles: null }))
-      // Simulate API call
-      setTimeout(() => {
-        setStatsData((prev) => ({
-          ...prev,
-          totalVehicles: 120 + Math.floor(Math.random() * 5),
-        }))
-        setHighlightedStat("totalVehicles")
-      }, 500)
+      const totalData = await getContagemTotalRsu()
+      console.log("Total data response:", totalData)
+      const total = totalData?.count_total_rsu || totalData?.total_rsu || totalData?.count || totalData?.total || 0
+      console.log("Extracted total:", total)
+      setStatsData((prev) => ({
+        ...prev,
+        totalVehicles: total,
+      }))
+      setHighlightedStat("totalVehicles")
     } catch (error) {
       console.error("Erro ao atualizar total de veículos:", error)
     }
@@ -134,14 +155,13 @@ const StatsCards = ({ themeColors, keyframes }) => {
   const refreshActiveVehicles = async () => {
     try {
       setStatsData((prev) => ({ ...prev, activeVehicles: null }))
-      // Simulate API call
-      setTimeout(() => {
-        setStatsData((prev) => ({
-          ...prev,
-          activeVehicles: 85 + Math.floor(Math.random() * 3),
-        }))
-        setHighlightedStat("activeVehicles")
-      }, 500)
+      const ativosData = await getCountRsuAtivos()
+      const ativos = ativosData.count_rsu_ativos || ativosData.count || 0
+      setStatsData((prev) => ({
+        ...prev,
+        activeVehicles: ativos,
+      }))
+      setHighlightedStat("activeVehicles")
     } catch (error) {
       console.error("Erro ao atualizar veículos ativos:", error)
     }
@@ -150,14 +170,13 @@ const StatsCards = ({ themeColors, keyframes }) => {
   const refreshInactiveVehicles = async () => {
     try {
       setStatsData((prev) => ({ ...prev, inactiveVehicles: null }))
-      // Simulate API call
-      setTimeout(() => {
-        setStatsData((prev) => ({
-          ...prev,
-          inactiveVehicles: 35 - Math.floor(Math.random() * 2),
-        }))
-        setHighlightedStat("inactiveVehicles")
-      }, 500)
+      const inativosData = await getCountRsuInativos()
+      const inativos = inativosData.count_seletiva_inativos || inativosData.count || 0
+      setStatsData((prev) => ({
+        ...prev,
+        inactiveVehicles: inativos,
+      }))
+      setHighlightedStat("inactiveVehicles")
     } catch (error) {
       console.error("Erro ao atualizar veículos inativos:", error)
     }
@@ -166,7 +185,8 @@ const StatsCards = ({ themeColors, keyframes }) => {
   const refreshVehiclesReleasedToday = async () => {
     try {
       setStatsData((prev) => ({ ...prev, vehiclesReleasedToday: null }))
-      // Simulate API call
+      // Simulate API call for released vehicles today
+      // In a real application, you would call an API endpoint here
       setTimeout(() => {
         setStatsData((prev) => ({
           ...prev,
