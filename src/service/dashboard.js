@@ -804,3 +804,31 @@ export const buscarSolturaPorId = async (solturaId) => {
     throw error
   }
 }
+
+
+export const deletarSoltura = async (solturaId) => {
+  try {
+    const response = await fetch(`${API_URL}/api/soltura/${solturaId}/deletar/`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        // Se você usar CSRF token, pode adicioná-lo aqui:
+        // 'X-CSRFToken': csrfToken,
+      },
+      credentials: 'include', // importante para enviar cookies (como CSRF cookie)
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      // Retorna erro detalhado para o frontend lidar
+      return { sucesso: false, status: response.status, dados: data };
+    }
+
+    return { sucesso: true, status: response.status, dados: data };
+
+  } catch (error) {
+    // Erro inesperado (ex: falha de rede)
+    return { sucesso: false, status: 0, dados: { error: error.message } };
+  }
+};

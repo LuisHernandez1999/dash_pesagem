@@ -41,6 +41,7 @@ import {
   Info,
   VerifiedUser,
   Update,
+  Delete, // Adicionar este import
 } from "@mui/icons-material"
 import { buscarSolturaPorId } from "../service/dashboard"
 
@@ -70,16 +71,117 @@ const slideIn = keyframes`
   to { opacity: 1; transform: translateY(0); }
 `
 
+// Função deletarSoltura corrigida para problemas de CORS
+const deletarSoltura = async (solturaId) => {
+  try {
+    // Usar a URL base correta - se não tiver variável de ambiente, usar o padrão
+    const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+    const url = `${API_BASE}/api/soltura/${solturaId}/deletar/`;
+    
+    console.log('Tentando deletar com URL:', url);
+    
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      // Remover credentials para evitar problemas de CORS em desenvolvimento
+      mode: 'cors',
+    });
+
+    console.log('Response status:', response.status);
+    console.log('Response ok:', response.ok);
+
+    if (!response.ok) {
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch {
+        errorData = { 
+          error: `HTTP ${response.status}: ${response.statusText}`,
+          details: 'Não foi possível obter detalhes do erro'
+        };
+      }
+      
+      return { 
+        sucesso: false, 
+        status: response.status, 
+        dados: errorData 
+      };
+    }
+
+    // Tentar fazer parse da resposta
+    let data;
+    try {
+      const responseText = await response.text();
+      console.log('Response text:', responseText);
+      
+      if (responseText) {
+        data = JSON.parse(responseText);
+      } else {
+        data = { message: 'Deletado com sucesso' };
+      }
+    } catch (parseError) {
+      console.log('Erro ao fazer parse da resposta:', parseError);
+      // Se não conseguir fazer parse, assumir sucesso se status for 2xx
+      data = { message: 'Deletado com sucesso' };
+    }
+
+    return { 
+      sucesso: true, 
+      status: response.status, 
+      dados: data 
+    };
+
+  } catch (error) {
+    console.error('Erro na requisição de delete:', error);
+    
+    // Verificar tipos específicos de erro
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      return { 
+        sucesso: false, 
+        status: 0, 
+        dados: { 
+          error: 'Erro de conexão com o servidor',
+          details: 'Verifique se o servidor Django está rodando em http://127.0.0.1:8000 e se as configurações de CORS estão corretas.',
+          suggestion: 'Tente acessar http://127.0.0.1:8000/api/soltura/ diretamente no navegador para verificar se o servidor está respondendo.'
+        } 
+      };
+    }
+    
+    return { 
+      sucesso: false, 
+      status: 0, 
+      dados: { 
+        error: error.message || 'Erro desconhecido',
+        details: 'Erro inesperado durante a requisição'
+      } 
+    };
+  }
+};
+
 const SolturaDetailModal = ({ open, onClose, solturaId }) => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [data, setData] = useState(null)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteSuccess, setDeleteSuccess] = useState(false)
 
   useEffect(() => {
     if (open && solturaId) {
       fetchData()
     }
   }, [open, solturaId])
+
+  // Resetar estados do delete quando o modal abrir
+  useEffect(() => {
+    if (open) {
+      setDeleteSuccess(false);
+      setDeleting(false);
+      setError(null);
+    }
+  }, [open]);
 
   const fetchData = async () => {
     setLoading(true)
@@ -98,6 +200,63 @@ const SolturaDetailModal = ({ open, onClose, solturaId }) => {
   const handleRefresh = () => {
     fetchData()
   }
+
+  const handleDelete = async () => {
+  if (!solturaId) {
+    setError('ID da soltura não encontrado');
+    return;
+  }
+  
+  console.log('Iniciando delete para ID:', solturaId);
+  setDeleting(true);
+  setError(null); // Limpar erros anteriores
+  
+  try {
+    const result = await deletarSoltura(solturaId);
+    console.log('Resultado do delete:', result);
+    
+    if (result.sucesso) {
+      setDeleteSuccess(true);
+      console.log('Delete realizado com sucesso');
+      
+      // Fechar o modal imediatamente após sucesso
+      setTimeout(() => {
+        // Resetar todos os estados antes de fechar
+        setDeleteSuccess(false);
+        setDeleting(false);
+        setError(null);
+        setData(null);
+        
+        // Fechar o modal
+        onClose();
+        
+        // Se houver uma função de callback para atualizar a lista, chame aqui
+        // onDelete && onDelete(solturaId)
+      }, 800); // Reduzido para 800ms para ser mais rápido
+    } else {
+      const errorMessage = result.dados?.error || 
+                          result.dados?.message || 
+                          `Erro HTTP ${result.status}` ||
+                          'Erro desconhecido';
+      
+      const errorDetails = result.dados?.details || '';
+      const suggestion = result.dados?.suggestion || '';
+      
+      console.error('Erro no delete:', errorMessage);
+      
+      let fullErrorMessage = `Erro ao deletar: ${errorMessage}`;
+      if (errorDetails) fullErrorMessage += `\n\nDetalhes: ${errorDetails}`;
+      if (suggestion) fullErrorMessage += `\n\nSugestão: ${suggestion}`;
+      
+      setError(fullErrorMessage);
+      setDeleting(false); // Resetar estado de loading em caso de erro
+    }
+  } catch (err) {
+    console.error('Erro na função handleDelete:', err);
+    setError(`Erro ao deletar: ${err.message}`);
+    setDeleting(false); // Resetar estado de loading em caso de erro
+  }
+}
 
   const formatarData = (dataString) => {
     if (!dataString) return "Não informado"
@@ -151,7 +310,7 @@ const SolturaDetailModal = ({ open, onClose, solturaId }) => {
     }
   }
 
-  if (!open) return null
+  if (!open) return null;
 
   const statusInfo = getStatusColor(data?.statusFrota)
 
@@ -1255,33 +1414,42 @@ const SolturaDetailModal = ({ open, onClose, solturaId }) => {
           Fechar
         </Button>
         <Button
-          variant="outlined"
-          onClick={handleRefresh}
-          disabled={loading}
-          startIcon={<Refresh />}
+          variant="contained"
+          onClick={handleDelete}
+          disabled={loading || deleting || deleteSuccess}
+          startIcon={deleting ? <CircularProgress size={16} color="inherit" /> : <Delete />}
           sx={{
             borderRadius: "16px",
             textTransform: "none",
             fontWeight: 700,
             px: 4,
             py: 1.5,
-            background: "transparent",
-            color: "#4caf50",
-            borderColor: "#4caf50",
+            background: deleteSuccess 
+              ? "linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)"
+              : "linear-gradient(135deg, #f44336 0%, #d32f2f 100%)",
+            color: "white",
+            boxShadow: deleteSuccess
+              ? "0 4px 16px rgba(76, 175, 80, 0.3)"
+              : "0 4px 16px rgba(244, 67, 54, 0.3)",
             "&:hover": {
-              borderColor: "#2e7d32",
-              background: "rgba(76, 175, 80, 0.05)",
-              transform: "translateY(-2px)",
-              boxShadow: "0 6px 20px rgba(76, 175, 80, 0.15)",
+              background: deleteSuccess
+                ? "linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)"
+                : "linear-gradient(135deg, #d32f2f 0%, #c62828 100%)",
+              transform: deleteSuccess ? "none" : "translateY(-2px)",
+              boxShadow: deleteSuccess
+                ? "0 4px 16px rgba(76, 175, 80, 0.3)"
+                : "0 6px 20px rgba(244, 67, 54, 0.4)",
             },
             "&:disabled": {
-              borderColor: "#c8e6c9",
-              color: "#a5d6a7",
+              background: deleteSuccess
+                ? "linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)"
+                : "linear-gradient(135deg, #ffcdd2 0%, #ef9a9a 100%)",
+              color: deleteSuccess ? "white" : "#666",
             },
             transition: "all 0.3s ease",
           }}
         >
-          Atualizar
+          {deleteSuccess ? "Deletado com Sucesso!" : deleting ? "Deletando..." : "Deletar Registro"}
         </Button>
       </DialogActions>
     </Dialog>
