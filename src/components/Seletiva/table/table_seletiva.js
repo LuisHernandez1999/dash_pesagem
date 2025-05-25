@@ -673,6 +673,30 @@ const SeletivaTable = ({ loading: initialLoading, themeColors, keyframes, onRefr
     if (onRefresh) onRefresh()
   }
 
+  // Handle soltura deletion callback
+  const handleSolturaDeleted = (deletedSolturaId) => {
+    console.log("🗑️ Soltura deletada, atualizando tabela...", deletedSolturaId)
+
+    // Atualizar estado local removendo o item deletado
+    setRemovals(prevRemovals => {
+      const updatedRemovals = prevRemovals.filter(removal => removal.id !== deletedSolturaId)
+      console.log("📋 Tabela atualizada, removals restantes:", updatedRemovals.length)
+      return updatedRemovals
+    })
+
+    // Fechar o modal
+    setSolturaModalOpen(false)
+    setSelectedSolturaId(null)
+
+    // Mostrar mensagem de sucesso
+    setSnackbarMessage("Registro removido com sucesso!")
+    setSnackbarSeverity("success")
+    setSnackbarOpen(true)
+
+    // Opcionalmente, fazer fetch dos dados atualizados da API
+    // fetchData()
+  }
+
   return (
     <Box component="section">
       <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "600ms" : "0ms" }}>
@@ -1231,6 +1255,7 @@ const SeletivaTable = ({ loading: initialLoading, themeColors, keyframes, onRefr
         open={solturaModalOpen}
         onClose={() => setSolturaModalOpen(false)}
         solturaId={selectedSolturaId}
+        onDelete={handleSolturaDeleted}
       />
 
       <EditModal

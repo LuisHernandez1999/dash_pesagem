@@ -48,6 +48,7 @@ import RegisterModal from "./registro_remocao"
 import EditModal from "./editar_remocao"
 import DetailModal from "./visualizar_remocao"
 import { getSolturasDetalhadaTodas } from "../service/dashboard"
+import SolturaDetailModal from "./visualizar_remocao" // Importando o novo modal
 
 // Modificar o componente SearchInput para aumentar a largura
 const SearchInput = ({ icon: Icon, placeholder, value, onChange, suggestions = [], themeColors, keyframes }) => {
@@ -193,6 +194,10 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
     leaders: ["", ""],
     leaderPhones: ["", ""],
   })
+
+  // Novo estado para o modal de detalhes da soltura
+  const [solturaModalOpen, setSolturaModalOpen] = useState(false)
+  const [selectedSolturaId, setSelectedSolturaId] = useState(null)
 
   // State for API data
   const [removals, setRemovals] = useState([])
@@ -345,12 +350,25 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
     }
   }
 
-  // Handle modal open
+  // Handle modal open - CORRIGIDO para usar o ID correto do item da tabela
   const handleOpenModal = (removal) => {
-    // Find the most up-to-date version of this removal in the state
-    const currentRemoval = removals.find((r) => r.id === removal.id) || removal
-    setSelectedRemoval(currentRemoval)
-    setDetailModalOpen(true)
+    console.log("🔍 handleOpenModal chamado com:", removal)
+
+    // Verificar se temos um ID válido diretamente do item
+    if (removal && removal.id) {
+      const itemId = removal.id
+      console.log("✅ Usando ID do item da tabela:", itemId)
+
+      // Definir o ID selecionado e abrir o modal
+      setSelectedSolturaId(itemId)
+      setSolturaModalOpen(true)
+    } else {
+      // Fallback para o modal antigo se não tiver ID
+      console.log("⚠️ ID não encontrado, usando modal antigo")
+      const currentRemoval = removals.find((r) => r.id === removal.id) || removal
+      setSelectedRemoval(currentRemoval)
+      setDetailModalOpen(true)
+    }
   }
 
   // Handle delete confirmation dialog
@@ -388,6 +406,30 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
       setSnackbarSeverity("error")
       setSnackbarOpen(true)
     }
+  }
+
+  // Handle soltura deletion callback
+  const handleSolturaDeleted = (deletedSolturaId) => {
+    console.log("🗑️ Soltura deletada, atualizando tabela...", deletedSolturaId)
+
+    // Atualizar estado local removendo o item deletado
+    setRemovals((prevRemovals) => {
+      const updatedRemovals = prevRemovals.filter((removal) => removal.id !== deletedSolturaId)
+      console.log("📋 Tabela atualizada, removals restantes:", updatedRemovals.length)
+      return updatedRemovals
+    })
+
+    // Fechar o modal
+    setSolturaModalOpen(false)
+    setSelectedSolturaId(null)
+
+    // Mostrar mensagem de sucesso
+    setSnackbarMessage("Registro removido com sucesso!")
+    setSnackbarSeverity("success")
+    setSnackbarOpen(true)
+
+    // Opcionalmente, fazer fetch dos dados atualizados da API
+    // fetchData()
   }
 
   // Handle register form change
@@ -507,12 +549,31 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
     }
   }
 
-  // Get status chip
+  // Get status chip - CORRIGIDO para usar valores reais da API
   const getStatusChip = (status) => {
-    if (status === "Finalizado") {
+    if (!status) {
       return (
         <Chip
-          label="Finalizado"
+          label="Não informado"
+          sx={{
+            backgroundColor: alpha(themeColors.text.disabled, 0.15),
+            color: themeColors.text.disabled,
+            fontWeight: 600,
+            borderRadius: "12px",
+            transition: "all 0.3s ease",
+          }}
+          size="small"
+        />
+      )
+    }
+
+    // Usar o valor exato que vem da API
+    const statusLower = status.toLowerCase()
+
+    if (statusLower.includes("finaliz") || statusLower === "finalizado") {
+      return (
+        <Chip
+          label={status}
           sx={{
             backgroundColor: alpha(themeColors.success.light, 0.15),
             color: themeColors.success.dark,
@@ -526,10 +587,10 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
           size="small"
         />
       )
-    } else {
+    } else if (statusLower.includes("andamento") || statusLower === "em andamento") {
       return (
         <Chip
-          label="Em andamento"
+          label={status}
           sx={{
             backgroundColor: alpha(themeColors.warning.light, 0.15),
             color: themeColors.warning.dark,
@@ -538,6 +599,58 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
             transition: "all 0.3s ease",
             "&:hover": {
               backgroundColor: alpha(themeColors.warning.light, 0.25),
+            },
+          }}
+          size="small"
+        />
+      )
+    } else if (statusLower.includes("cancel") || statusLower === "cancelado") {
+      return (
+        <Chip
+          label={status}
+          sx={{
+            backgroundColor: alpha(themeColors.error.light, 0.15),
+            color: themeColors.error.dark,
+            fontWeight: 600,
+            borderRadius: "12px",
+            transition: "all 0.3s ease",
+            "&:hover": {
+              backgroundColor: alpha(themeColors.error.light, 0.25),
+            },
+          }}
+          size="small"
+        />
+      )
+    } else if (statusLower.includes("pendent") || statusLower === "pendente") {
+      return (
+        <Chip
+          label={status}
+          sx={{
+            backgroundColor: alpha(themeColors.info.light, 0.15),
+            color: themeColors.info.dark,
+            fontWeight: 600,
+            borderRadius: "12px",
+            transition: "all 0.3s ease",
+            "&:hover": {
+              backgroundColor: alpha(themeColors.info.light, 0.25),
+            },
+          }}
+          size="small"
+        />
+      )
+    } else {
+      // Para qualquer outro status, usar cor neutra
+      return (
+        <Chip
+          label={status}
+          sx={{
+            backgroundColor: alpha(themeColors.primary.light, 0.15),
+            color: themeColors.primary.dark,
+            fontWeight: 600,
+            borderRadius: "12px",
+            transition: "all 0.3s ease",
+            "&:hover": {
+              backgroundColor: alpha(themeColors.primary.light, 0.25),
             },
           }}
           size="small"
@@ -565,6 +678,9 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
 
     // Debug dos filtros
     console.log("Filtros ativos:", { statusFilter, teamFilter, recentlyRegisteredFilter })
+    // Debug dos filtros - ADICIONAR após a linha console.log("Filtros ativos:", { statusFilter, teamFilter, recentlyRegisteredFilter })
+    console.log("Status únicos encontrados:", [...new Set(removals.map((r) => r.status_frota).filter(Boolean))])
+
     console.log("Exemplo de dados:", removals[0]?.tipo_equipe, removals[0]?.status_frota)
 
     return removals
@@ -590,11 +706,15 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
           dateMatch = removalDate.getTime() === filterDate.getTime()
         }
 
-        // Status filter
+        // Status filter - CORRIGIDO para ser mais flexível
         const statusMatch =
           statusFilter === "all" ||
-          (statusFilter === "completed" && removal.status_frota === "Finalizado") ||
-          (statusFilter === "in-progress" && removal.status_frota === "Em andamento")
+          (statusFilter === "completed" &&
+            (removal.status_frota?.toLowerCase().includes("finaliz") ||
+              removal.status_frota?.toLowerCase() === "finalizado")) ||
+          (statusFilter === "in-progress" &&
+            (removal.status_frota?.toLowerCase().includes("andamento") ||
+              removal.status_frota?.toLowerCase() === "em andamento"))
 
         // Team filter - corrigir os nomes das equipes
         const teamMatch =
@@ -1230,6 +1350,7 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
         </DialogActions>
       </Dialog>
 
+      {/* Modal antigo (fallback) */}
       <DetailModal
         open={detailModalOpen}
         onClose={() => setDetailModalOpen(false)}
@@ -1237,6 +1358,14 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
         onEdit={handleEditClick}
         themeColors={themeColors}
         keyframes={keyframes}
+      />
+
+      {/* Novo modal que recebe o ID */}
+      <SolturaDetailModal
+        open={solturaModalOpen}
+        onClose={() => setSolturaModalOpen(false)}
+        solturaId={selectedSolturaId}
+        onDelete={handleSolturaDeleted}
       />
 
       <EditModal

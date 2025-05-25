@@ -75,98 +75,100 @@ const slideIn = keyframes`
 const deletarSoltura = async (solturaId) => {
   try {
     // Usar a URL base correta - se não tiver variável de ambiente, usar o padrão
-    const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
-    const url = `${API_BASE}/api/soltura/${solturaId}/deletar/`;
-    
-    console.log('Tentando deletar com URL:', url);
-    
+    const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"
+    const url = `${API_BASE}/api/soltura/${solturaId}/deletar/`
+
+    console.log("Tentando deletar com URL:", url)
+
     const response = await fetch(url, {
-      method: 'DELETE',
+      method: "DELETE",
       headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
+        "Content-Type": "application/json",
+        Accept: "application/json",
       },
       // Remover credentials para evitar problemas de CORS em desenvolvimento
-      mode: 'cors',
-    });
+      mode: "cors",
+    })
 
-    console.log('Response status:', response.status);
-    console.log('Response ok:', response.ok);
+    console.log("Response status:", response.status)
+    console.log("Response ok:", response.ok)
 
     if (!response.ok) {
-      let errorData;
+      let errorData
       try {
-        errorData = await response.json();
+        errorData = await response.json()
       } catch {
-        errorData = { 
+        errorData = {
           error: `HTTP ${response.status}: ${response.statusText}`,
-          details: 'Não foi possível obter detalhes do erro'
-        };
+          details: "Não foi possível obter detalhes do erro",
+        }
       }
-      
-      return { 
-        sucesso: false, 
-        status: response.status, 
-        dados: errorData 
-      };
+
+      return {
+        sucesso: false,
+        status: response.status,
+        dados: errorData,
+      }
     }
 
     // Tentar fazer parse da resposta
-    let data;
+    let data
     try {
-      const responseText = await response.text();
-      console.log('Response text:', responseText);
-      
+      const responseText = await response.text()
+      console.log("Response text:", responseText)
+
       if (responseText) {
-        data = JSON.parse(responseText);
+        data = JSON.parse(responseText)
       } else {
-        data = { message: 'Deletado com sucesso' };
+        data = { message: "Deletado com sucesso" }
       }
     } catch (parseError) {
-      console.log('Erro ao fazer parse da resposta:', parseError);
+      console.log("Erro ao fazer parse da resposta:", parseError)
       // Se não conseguir fazer parse, assumir sucesso se status for 2xx
-      data = { message: 'Deletado com sucesso' };
+      data = { message: "Deletado com sucesso" }
     }
 
-    return { 
-      sucesso: true, 
-      status: response.status, 
-      dados: data 
-    };
-
+    return {
+      sucesso: true,
+      status: response.status,
+      dados: data,
+    }
   } catch (error) {
-    console.error('Erro na requisição de delete:', error);
-    
-    // Verificar tipos específicos de erro
-    if (error.name === 'TypeError' && error.message.includes('fetch')) {
-      return { 
-        sucesso: false, 
-        status: 0, 
-        dados: { 
-          error: 'Erro de conexão com o servidor',
-          details: 'Verifique se o servidor Django está rodando em http://127.0.0.1:8000 e se as configurações de CORS estão corretas.',
-          suggestion: 'Tente acessar http://127.0.0.1:8000/api/soltura/ diretamente no navegador para verificar se o servidor está respondendo.'
-        } 
-      };
-    }
-    
-    return { 
-      sucesso: false, 
-      status: 0, 
-      dados: { 
-        error: error.message || 'Erro desconhecido',
-        details: 'Erro inesperado durante a requisição'
-      } 
-    };
-  }
-};
+    console.error("Erro na requisição de delete:", error)
 
-const SolturaDetailModal = ({ open, onClose, solturaId }) => {
+    // Verificar tipos específicos de erro
+    if (error.name === "TypeError" && error.message.includes("fetch")) {
+      return {
+        sucesso: false,
+        status: 0,
+        dados: {
+          error: "Erro de conexão com o servidor",
+          details:
+            "Verifique se o servidor Django está rodando em http://127.0.0.1:8000 e se as configurações de CORS estão corretas.",
+          suggestion:
+            "Tente acessar http://127.0.0.1:8000/api/soltura/ diretamente no navegador para verificar se o servidor está respondendo.",
+        },
+      }
+    }
+
+    return {
+      sucesso: false,
+      status: 0,
+      dados: {
+        error: error.message || "Erro desconhecido",
+        details: "Erro inesperado durante a requisição",
+      },
+    }
+  }
+}
+
+const SolturaDetailModal = ({ open, onClose, solturaId, onDelete }) => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [data, setData] = useState(null)
   const [deleting, setDeleting] = useState(false)
   const [deleteSuccess, setDeleteSuccess] = useState(false)
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
 
   useEffect(() => {
     if (open && solturaId) {
@@ -177,11 +179,11 @@ const SolturaDetailModal = ({ open, onClose, solturaId }) => {
   // Resetar estados do delete quando o modal abrir
   useEffect(() => {
     if (open) {
-      setDeleteSuccess(false);
-      setDeleting(false);
-      setError(null);
+      setDeleteSuccess(false)
+      setDeleting(false)
+      setError(null)
     }
-  }, [open]);
+  }, [open])
 
   const fetchData = async () => {
     setLoading(true)
@@ -201,62 +203,65 @@ const SolturaDetailModal = ({ open, onClose, solturaId }) => {
     fetchData()
   }
 
-  const handleDelete = async () => {
-  if (!solturaId) {
-    setError('ID da soltura não encontrado');
-    return;
+  const handleDeleteClick = () => {
+    setConfirmDeleteOpen(true)
   }
-  
-  console.log('Iniciando delete para ID:', solturaId);
-  setDeleting(true);
-  setError(null); // Limpar erros anteriores
-  
-  try {
-    const result = await deletarSoltura(solturaId);
-    console.log('Resultado do delete:', result);
-    
-    if (result.sucesso) {
-      setDeleteSuccess(true);
-      console.log('Delete realizado com sucesso');
-      
-      // Fechar o modal imediatamente após sucesso
-      setTimeout(() => {
-        // Resetar todos os estados antes de fechar
-        setDeleteSuccess(false);
-        setDeleting(false);
-        setError(null);
-        setData(null);
-        
-        // Fechar o modal
-        onClose();
-        
-        // Se houver uma função de callback para atualizar a lista, chame aqui
-        // onDelete && onDelete(solturaId)
-      }, 800); // Reduzido para 800ms para ser mais rápido
-    } else {
-      const errorMessage = result.dados?.error || 
-                          result.dados?.message || 
-                          `Erro HTTP ${result.status}` ||
-                          'Erro desconhecido';
-      
-      const errorDetails = result.dados?.details || '';
-      const suggestion = result.dados?.suggestion || '';
-      
-      console.error('Erro no delete:', errorMessage);
-      
-      let fullErrorMessage = `Erro ao deletar: ${errorMessage}`;
-      if (errorDetails) fullErrorMessage += `\n\nDetalhes: ${errorDetails}`;
-      if (suggestion) fullErrorMessage += `\n\nSugestão: ${suggestion}`;
-      
-      setError(fullErrorMessage);
-      setDeleting(false); // Resetar estado de loading em caso de erro
+
+  const handleConfirmDelete = async () => {
+    setConfirmDeleteOpen(false)
+
+    if (!solturaId) {
+      setError("ID da soltura não encontrado")
+      return
     }
-  } catch (err) {
-    console.error('Erro na função handleDelete:', err);
-    setError(`Erro ao deletar: ${err.message}`);
-    setDeleting(false); // Resetar estado de loading em caso de erro
+
+    console.log("Iniciando delete para ID:", solturaId)
+    setDeleting(true)
+    setError(null)
+
+    try {
+      const result = await deletarSoltura(solturaId)
+      console.log("Resultado do delete:", result)
+
+      if (result.sucesso) {
+        setDeleteSuccess(true)
+        console.log("Delete realizado com sucesso")
+
+        // Chamar o callback para notificar o componente pai
+        if (onDelete) {
+          onDelete(solturaId)
+        }
+
+        // Fechar o modal após um breve delay para mostrar o sucesso
+        setTimeout(() => {
+          setDeleteSuccess(false)
+          setDeleting(false)
+          setError(null)
+          setData(null)
+          onClose()
+        }, 800)
+      } else {
+        const errorMessage =
+          result.dados?.error || result.dados?.message || `Erro HTTP ${result.status}` || "Erro desconhecido"
+
+        const errorDetails = result.dados?.details || ""
+        const suggestion = result.dados?.suggestion || ""
+
+        console.error("Erro no delete:", errorMessage)
+
+        let fullErrorMessage = `Erro ao deletar: ${errorMessage}`
+        if (errorDetails) fullErrorMessage += `\n\nDetalhes: ${errorDetails}`
+        if (suggestion) fullErrorMessage += `\n\nSugestão: ${suggestion}`
+
+        setError(fullErrorMessage)
+        setDeleting(false)
+      }
+    } catch (err) {
+      console.error("Erro na função handleDelete:", err)
+      setError(`Erro ao deletar: ${err.message}`)
+      setDeleting(false)
+    }
   }
-}
 
   const formatarData = (dataString) => {
     if (!dataString) return "Não informado"
@@ -310,7 +315,7 @@ const SolturaDetailModal = ({ open, onClose, solturaId }) => {
     }
   }
 
-  if (!open) return null;
+  if (!open) return null
 
   const statusInfo = getStatusColor(data?.statusFrota)
 
@@ -1415,7 +1420,7 @@ const SolturaDetailModal = ({ open, onClose, solturaId }) => {
         </Button>
         <Button
           variant="contained"
-          onClick={handleDelete}
+          onClick={handleDeleteClick}
           disabled={loading || deleting || deleteSuccess}
           startIcon={deleting ? <CircularProgress size={16} color="inherit" /> : <Delete />}
           sx={{
@@ -1424,21 +1429,17 @@ const SolturaDetailModal = ({ open, onClose, solturaId }) => {
             fontWeight: 700,
             px: 4,
             py: 1.5,
-            background: deleteSuccess 
+            background: deleteSuccess
               ? "linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)"
               : "linear-gradient(135deg, #f44336 0%, #d32f2f 100%)",
             color: "white",
-            boxShadow: deleteSuccess
-              ? "0 4px 16px rgba(76, 175, 80, 0.3)"
-              : "0 4px 16px rgba(244, 67, 54, 0.3)",
+            boxShadow: deleteSuccess ? "0 4px 16px rgba(76, 175, 80, 0.3)" : "0 4px 16px rgba(244, 67, 54, 0.3)",
             "&:hover": {
               background: deleteSuccess
                 ? "linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)"
                 : "linear-gradient(135deg, #d32f2f 0%, #c62828 100%)",
               transform: deleteSuccess ? "none" : "translateY(-2px)",
-              boxShadow: deleteSuccess
-                ? "0 4px 16px rgba(76, 175, 80, 0.3)"
-                : "0 6px 20px rgba(244, 67, 54, 0.4)",
+              boxShadow: deleteSuccess ? "0 4px 16px rgba(76, 175, 80, 0.3)" : "0 6px 20px rgba(244, 67, 54, 0.4)",
             },
             "&:disabled": {
               background: deleteSuccess
@@ -1452,6 +1453,149 @@ const SolturaDetailModal = ({ open, onClose, solturaId }) => {
           {deleteSuccess ? "Deletado com Sucesso!" : deleting ? "Deletando..." : "Deletar Registro"}
         </Button>
       </DialogActions>
+
+      {/* Dialog de Confirmação de Exclusão */}
+      <Dialog
+        open={confirmDeleteOpen}
+        onClose={() => setConfirmDeleteOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: "24px",
+            overflow: "hidden",
+            boxShadow: "0 20px 60px rgba(244, 67, 54, 0.15)",
+            background: "linear-gradient(145deg, #ffffff 0%, #fef7f7 100%)",
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            background: "linear-gradient(135deg, #f44336 0%, #d32f2f 100%)",
+            color: "white",
+            display: "flex",
+            alignItems: "center",
+            gap: 2,
+            padding: "24px 32px",
+            position: "relative",
+            "&::after": {
+              content: '""',
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundImage: "radial-gradient(circle at top right, rgba(255,255,255,0.2) 0%, transparent 70%)",
+              pointerEvents: "none",
+            },
+          }}
+        >
+          <Avatar
+            sx={{
+              background: "linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.1) 100%)",
+              backdropFilter: "blur(10px)",
+              color: "white",
+              width: 48,
+              height: 48,
+              border: "2px solid rgba(255, 255, 255, 0.3)",
+            }}
+          >
+            <Delete sx={{ fontSize: 24 }} />
+          </Avatar>
+          <Box>
+            <Typography variant="h5" sx={{ fontWeight: 800, mb: 0.5 }}>
+              Confirmar Exclusão
+            </Typography>
+            <Typography variant="body2" sx={{ opacity: 0.9 }}>
+              Esta ação não pode ser desfeita
+            </Typography>
+          </Box>
+        </DialogTitle>
+
+        <DialogContent sx={{ p: 4 }}>
+          <Box sx={{ textAlign: "center", py: 2 }}>
+            <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: "#d32f2f" }}>
+              Tem certeza que deseja deletar esta soltura?
+            </Typography>
+            <Typography variant="body1" sx={{ mb: 3, color: "#666" }}>
+              Todos os dados relacionados a esta soltura serão permanentemente removidos do sistema.
+            </Typography>
+            <Paper
+              elevation={0}
+              sx={{
+                p: 3,
+                borderRadius: "16px",
+                background: "rgba(244, 67, 54, 0.05)",
+                border: "2px solid rgba(244, 67, 54, 0.2)",
+                mb: 2,
+              }}
+            >
+              <Typography variant="body2" sx={{ fontWeight: 600, color: "#d32f2f", mb: 1 }}>
+                Soltura #{solturaId}
+              </Typography>
+              <Typography variant="body2" sx={{ color: "#666" }}>
+                {data?.motorista && `Motorista: ${data.motorista}`}
+                {data?.prefixo && ` • Prefixo: ${data.prefixo}`}
+              </Typography>
+            </Paper>
+          </Box>
+        </DialogContent>
+
+        <DialogActions
+          sx={{
+            p: 4,
+            gap: 2,
+            background: "linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%)",
+          }}
+        >
+          <Button
+            onClick={() => setConfirmDeleteOpen(false)}
+            variant="outlined"
+            sx={{
+              borderRadius: "12px",
+              textTransform: "none",
+              fontWeight: 600,
+              px: 3,
+              py: 1.5,
+              borderColor: "#ddd",
+              color: "#666",
+              "&:hover": {
+                borderColor: "#bbb",
+                background: "#f9f9f9",
+              },
+            }}
+          >
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleConfirmDelete}
+            variant="contained"
+            disabled={deleting}
+            startIcon={deleting ? <CircularProgress size={16} color="inherit" /> : <Delete />}
+            sx={{
+              borderRadius: "12px",
+              textTransform: "none",
+              fontWeight: 700,
+              px: 3,
+              py: 1.5,
+              background: "linear-gradient(135deg, #f44336 0%, #d32f2f 100%)",
+              boxShadow: "0 4px 16px rgba(244, 67, 54, 0.3)",
+              "&:hover": {
+                background: "linear-gradient(135deg, #d32f2f 0%, #c62828 100%)",
+                boxShadow: "0 6px 20px rgba(244, 67, 54, 0.4)",
+                transform: "translateY(-2px)",
+              },
+              "&:disabled": {
+                background: "linear-gradient(135deg, #ffcdd2 0%, #ef9a9a 100%)",
+                color: "#999",
+              },
+              transition: "all 0.3s ease",
+            }}
+          >
+            {deleting ? "Deletando..." : "Sim, Deletar"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Dialog>
   )
 }
