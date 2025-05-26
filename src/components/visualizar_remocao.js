@@ -486,14 +486,6 @@ const SolturaDetailModal = ({ open, onClose, solturaId, onDelete }) => {
                             {data.matriculaMotorista || "Matrícula não informada"}
                           </Typography>
                         </Box>
-                        {data.celular && (
-                          <Box sx={{ display: "flex", alignItems: "center" }}>
-                            <Phone sx={{ color: "#64748b", fontSize: 16, mr: 1 }} />
-                            <Typography variant="body2" sx={{ color: "#64748b" }}>
-                              {data.celular}
-                            </Typography>
-                          </Box>
-                        )}
                       </Box>
                     </Box>
                   </Box>
@@ -548,7 +540,7 @@ const SolturaDetailModal = ({ open, onClose, solturaId, onDelete }) => {
 
                 {/* Collectors Section */}
                 {data.coletores && data.coletores.length > 0 && (
-                  <Box sx={{ p: 4 }}>
+                  <Box sx={{ p: 4, borderBottom: "1px solid #e2e8f0" }}>
                     <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
                       <Groups sx={{ color: "#475569", mr: 2 }} />
                       <Typography variant="h6" sx={{ fontWeight: 600, color: "#1e293b" }}>
@@ -595,6 +587,53 @@ const SolturaDetailModal = ({ open, onClose, solturaId, onDelete }) => {
                           </Box>
                         </Paper>
                       ))}
+                    </Box>
+                  </Box>
+                )}
+
+                {/* Leader Section */}
+                {data.lider && (
+                  <Box sx={{ p: 4 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
+                      <Person sx={{ color: "#475569", mr: 2 }} />
+                      <Typography variant="h6" sx={{ fontWeight: 600, color: "#1e293b" }}>
+                        Líder da Equipe
+                      </Typography>
+                    </Box>
+
+                    <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
+                      <Avatar
+                        sx={{
+                          bgcolor: "#475569",
+                          width: 56,
+                          height: 56,
+                          mr: 3,
+                          fontSize: "1.5rem",
+                          fontWeight: 600,
+                        }}
+                      >
+                        {data.lider ? data.lider.charAt(0).toUpperCase() : "L"}
+                      </Avatar>
+                      <Box>
+                        <Typography
+                          variant="h6"
+                          sx={{
+                            fontWeight: 600,
+                            mb: 1,
+                            color: "#1e293b",
+                          }}
+                        >
+                          {data.lider}
+                        </Typography>
+                        {data.celular && (
+                          <Box sx={{ display: "flex", alignItems: "center" }}>
+                            <Phone sx={{ color: "#64748b", fontSize: 16, mr: 1 }} />
+                            <Typography variant="body2" sx={{ color: "#64748b" }}>
+                              {data.celular}
+                            </Typography>
+                          </Box>
+                        )}
+                      </Box>
                     </Box>
                   </Box>
                 )}
@@ -875,7 +914,7 @@ const SolturaDetailModal = ({ open, onClose, solturaId, onDelete }) => {
                   </Grid>
 
                   {/* Additional Info */}
-                  {(data.garagem || (data.setores && data.setores.length > 0)) && (
+                  {(data.garagem || data.bairro || (data.setores && data.setores.length > 0)) && (
                     <>
                       <Divider sx={{ my: 3 }} />
                       <Grid container spacing={2}>
