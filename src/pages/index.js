@@ -46,12 +46,12 @@ import {
   getMediaMensalDeSolturas,
   getRemocoesPorDiaSemana,
 } from "../service/dashboard"
-import PADistributionChart from "../components/pa"
-import RemovalTable from "../components/tabela_remocao"
-import TeamChart from "../components/team_chart"
-import WeekdayChart from "@/components/grafico_remocao"
-import DriverCollectorExitChart from "../components/motorista_coletores"
-import { useRouter } from "next/navigation"
+import PADistributionChart from "../components/pa"//oi
+import RemovalTable from "../components/tabela_remocao"//oi
+import TeamChart from "../components/team_chart"//oi
+import WeekdayChart from "@/components/grafico_remocao"//oi
+import DriverCollectorExitChart from "../components/motorista_coletores"//oi
+import { useRouter } from "next/navigation"//oi
 
 // Animation keyframes
 const keyframes = {
@@ -384,7 +384,7 @@ export default function RemovalDashboard() {
       icon: <Home sx={{ fontSize: "1.3rem" }} />,
       color: themeColors.primary.main,
     },
-    {
+    { ///oi
       value: "seletiva",
       label: "Seletiva",
       icon: <Recycling sx={{ fontSize: "1.3rem" }} />,
