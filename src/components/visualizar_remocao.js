@@ -6,8 +6,8 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
-  Box,
+  Button,///oi
+  Box,// Importar o componente correto
   Typography,
   Avatar,
   CircularProgress,
@@ -1192,7 +1192,7 @@ const SolturaDetailModal = ({ open, onClose, solturaId, onDelete }) => {
             {deleting ? "Deletando..." : "Sim, Deletar"}
           </Button>
         </DialogActions>
-      </Dialog>
+      </Dialog> 
     </Dialog>
   )
 }

@@ -699,7 +699,7 @@ export const contarMotoristasEColetorsHoje = async () => {
 
   } catch (error) {
     console.error(`Erro ao buscar dados da API: ${error.message}`);
-    return {
+    return {//oi
       'total_motoristas': 0,
       'total_coletores': 0,
       'total_geral': 0,

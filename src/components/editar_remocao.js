@@ -14,7 +14,7 @@ import {
   CircularProgress,
 } from "@mui/material"
 import { Close, Save } from "@mui/icons-material"
-import { Slide } from "@mui/material"
+import { Slide } from "@mui/material"///oi
 import { useState, useEffect } from "react"
 
 const EditModal = ({ open, onClose, data, onSave, themeColors }) => {

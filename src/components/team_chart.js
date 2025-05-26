@@ -15,7 +15,7 @@ function TeamChart() {
 
   // Mapeamento de equipes para turnos
   const TEAM_TURNOS = {
-    "Equipe1(Matutino)": "Matutino",
+    "Equipe1(Matutino)": "Matutino",///oi
     "Equipe2(Vespertino)": "Vespertino",
     "Equipe3(Noturno)": "Noturno",
   }

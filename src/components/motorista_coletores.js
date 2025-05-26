@@ -19,7 +19,7 @@ const DriverCollectorExitChart = ({ themeColors, chartsLoaded }) => {
   const prevDataRef = useRef(null)
 
   // Helper function to check if data has changed
-  const hasDataChanged = (oldData, newData) => {
+  const hasDataChanged = (oldData, newData) => {///oi
     if (!oldData || !newData) return true
 
     return (

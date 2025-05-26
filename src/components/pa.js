@@ -12,7 +12,7 @@ const hasDataChanged = (oldData, newData) => {
   // Compare the values of each PA
   for (const key in newData) {
     if (newData[key] !== oldData[key]) {
-      return true
+      return true//oi
     }
   }
 
