@@ -42,7 +42,6 @@ import {
   Delete,
   Edit,
   Search,
-  Refresh,
   LocationOn,
 } from "@mui/icons-material"
 import RegisterModal from "./registro_remocao"
@@ -408,6 +407,35 @@ const RemovalTable = ({ loading: initialLoading, themeColors, keyframes, onRefre
     }
   }
 
+  // Adicione esta função após a função handleDelete existente (por volta da linha 350)
+  const handleSolturaDelete = (deletedSolturaId) => {
+    console.log("Soltura deletada, removendo da tabela:", deletedSolturaId)
+
+    // Remover a soltura da lista local
+    setRemovals((prevRemovals) => {
+      const updatedRemovals = prevRemovals.filter(
+        (removal) => removal.originalId !== deletedSolturaId && removal.id !== deletedSolturaId,
+      )
+      console.log("Remoções atualizadas:", updatedRemovals)
+      return updatedRemovals
+    })
+
+    // Fechar o modal
+    setSolturaModalOpen(false)
+    setSelectedSolturaId(null)
+    setSelectedRemoval(null)
+
+    // Mostrar mensagem de sucesso
+    setSnackbarMessage("Soltura removida com sucesso!")
+    setSnackbarSeverity("success")
+    setSnackbarOpen(true)
+
+    // Opcionalmente, recarregar os dados da API para garantir sincronização
+    setTimeout(() => {
+      fetchData()
+    }, 500)
+  }
+
   // Handle register form change
   const handleRegisterFormChange = (field, value, index = null) => {
     if (index !== null) {
@@ -586,9 +614,15 @@ const RemovalTable = ({ loading: initialLoading, themeColors, keyframes, onRefre
         // Unified search across multiple fields
         const searchMatch =
           driverSearch === "" ||
-          (removal.driver && removal.driver.toLowerCase().includes(driverSearch.toLowerCase())) ||
-          (removal.vehiclePrefix && removal.vehiclePrefix.toLowerCase().includes(driverSearch.toLowerCase())) ||
-          (removal.driverId && removal.driverId.toLowerCase().includes(driverSearch.toLowerCase()))
+          (removal.driver &&
+            typeof removal.driver === "string" &&
+            removal.driver.toLowerCase().includes(driverSearch.toLowerCase())) ||
+          (removal.vehiclePrefix &&
+            typeof removal.vehiclePrefix === "string" &&
+            removal.vehiclePrefix.toLowerCase().includes(driverSearch.toLowerCase())) ||
+          (removal.driverId &&
+            typeof removal.driverId === "string" &&
+            removal.driverId.toLowerCase().includes(driverSearch.toLowerCase()))
 
         // Date check with proper format
         let dateMatch = true
@@ -697,7 +731,6 @@ const RemovalTable = ({ loading: initialLoading, themeColors, keyframes, onRefre
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      animation: `${keyframes.pulse} 2s ease-in-out infinite`,
                     }}
                   >
                     <DirectionsCar sx={{ color: "white", fontSize: "2rem" }} />
@@ -725,10 +758,7 @@ const RemovalTable = ({ loading: initialLoading, themeColors, keyframes, onRefre
                 </Box>
               </Box>
             }
-            action={
-              <Box sx={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-              </Box>
-            }
+            action={<Box sx={{ display: "flex", gap: "0.5rem", alignItems: "center" }}></Box>}
             sx={{
               paddingBottom: "0.75rem",
               borderBottom: `1px solid ${themeColors.divider}`,
@@ -1249,6 +1279,7 @@ const RemovalTable = ({ loading: initialLoading, themeColors, keyframes, onRefre
         open={solturaModalOpen}
         onClose={() => setSolturaModalOpen(false)}
         solturaId={selectedSolturaId}
+        onDelete={handleSolturaDelete}
       />
 
       <EditModal

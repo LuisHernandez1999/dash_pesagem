@@ -794,7 +794,7 @@ export const buscarSolturaPorId = async (solturaId) => {
       rota: data.rota,
       statusFrota: data.status_frota,
       tipoVeiculoSelecionado: data.tipo_veiculo_selecionado,
-       bairro:data.bairro
+      bairro:data.bairro
     }
 
     console.log("✅ Dados mapeados:", mappedData)
