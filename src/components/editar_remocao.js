@@ -514,6 +514,7 @@ const EditModal = ({ open, onClose, data, onSave, themeColors }) => {
         </Button>
       </DialogActions>
     </Dialog>
+    
   )
 }
 
