@@ -1,13 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import {
   AppBar,
   Toolbar,
   Typography,
   Card,
   CardContent,
-  CardHeader,
   Box,
   Container,
   IconButton,
@@ -17,27 +16,11 @@ import {
   alpha,
   Snackbar,
   Alert,
-  Paper,
-  Tabs,
-  Tab,
 } from "@mui/material"
-import {
-  Construction,
-  CheckCircle,
-  Cancel,
-  Today,
-  Refresh,
-  Menu as MenuIcon,
-  Timeline,
-  PieChart as PieChartIcon,
-  Warehouse,
-  Home,
-  Engineering,
-  Agriculture,
-  Dashboard,
-} from "@mui/icons-material"
+import { Construction, CheckCircle, Cancel, Today, Refresh, Menu as MenuIcon } from "@mui/icons-material"
 import EquipmentTable from "../../components/equipamentes_table"
 import WeeklyDistributionChart from "../../components/grafic_equipmanents"
+import EquipmentListModal from "../../components/equipaments_list"
 
 // Animation keyframes
 const keyframes = {
@@ -112,7 +95,7 @@ const themeColors = {
     disabled: "#94a3b8",
   },
   background: {
-    default: "#ffffff", // Mudado para branco
+    default: "#ffffff",
     paper: "#ffffff",
     card: "#ffffff",
     dark: "#0f172a",
@@ -120,20 +103,25 @@ const themeColors = {
   divider: "rgba(226, 232, 240, 0.8)",
 }
 
-// Custom stat card component
-const CustomStatCard = ({ title, value, icon: Icon, color, highlight }) => (
+// Custom stat card component with click functionality
+const CustomStatCard = ({ title, value, icon: Icon, color, highlight, onClick }) => (
   <Card
+    onClick={onClick}
     sx={{
       position: "relative",
       overflow: "hidden",
       borderRadius: "16px",
       boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)",
-      background: "white",
+      background: "#ffffff",
       height: "100%",
       transition: "all 0.3s ease",
+      cursor: "pointer",
       "&:hover": {
-        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
-        transform: "translateY(-2px)",
+        boxShadow: "0 8px 24px rgba(0, 0, 0, 0.12)",
+        transform: "translateY(-4px)",
+        "& .card-icon": {
+          transform: "scale(1.1)",
+        },
       },
       "&::before": {
         content: '""',
@@ -149,6 +137,7 @@ const CustomStatCard = ({ title, value, icon: Icon, color, highlight }) => (
     }}
   >
     <Box
+      className="card-icon"
       sx={{
         position: "absolute",
         top: "20px",
@@ -160,6 +149,7 @@ const CustomStatCard = ({ title, value, icon: Icon, color, highlight }) => (
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
+        transition: "transform 0.3s ease",
       }}
     >
       <Icon sx={{ fontSize: 24, color: color }} />
@@ -206,6 +196,11 @@ export default function EquipmentDashboard() {
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarMessage, setSnackbarMessage] = useState("")
   const [snackbarSeverity, setSnackbarSeverity] = useState("success")
+
+  // Equipment list modal state
+  const [listModalOpen, setListModalOpen] = useState(false)
+  const [listModalTitle, setListModalTitle] = useState("")
+  const [listModalFilter, setListModalFilter] = useState("")
 
   // Mock equipment data
   const [equipments, setEquipments] = useState([
@@ -293,6 +288,29 @@ export default function EquipmentDashboard() {
     { day: "Sábado", carroceria: 6, paCarregadeira: 3, retroescavadeira: 2 },
     { day: "Domingo", carroceria: 4, paCarregadeira: 2, retroescavadeira: 1 },
   ])
+
+  // Handle card clicks
+  const handleCardClick = (cardType) => {
+    switch (cardType) {
+      case "total":
+        setListModalTitle("Todos os Equipamentos")
+        setListModalFilter("")
+        break
+      case "active":
+        setListModalTitle("Equipamentos Ativos")
+        setListModalFilter("Ativo")
+        break
+      case "inactive":
+        setListModalTitle("Equipamentos Inativos")
+        setListModalFilter("Inativo")
+        break
+      case "maintenance":
+        setListModalTitle("Equipamentos em Manutenção")
+        setListModalFilter("Manutenção")
+        break
+    }
+    setListModalOpen(true)
+  }
 
   // Handle refresh data
   const handleRefreshData = () => {
@@ -481,24 +499,28 @@ export default function EquipmentDashboard() {
                   value={statsData.totalEquipments}
                   icon={Construction}
                   color={themeColors.primary.main}
+                  onClick={() => handleCardClick("total")}
                 />
                 <CustomStatCard
                   title="Equipamentos Ativos"
                   value={statsData.activeEquipments}
                   icon={CheckCircle}
                   color={themeColors.success.main}
+                  onClick={() => handleCardClick("active")}
                 />
                 <CustomStatCard
                   title="Equipamentos Inativos"
                   value={statsData.inactiveEquipments}
                   icon={Cancel}
                   color={themeColors.error.main}
+                  onClick={() => handleCardClick("inactive")}
                 />
                 <CustomStatCard
                   title="Em Manutenção"
                   value={statsData.maintenanceToday}
                   icon={Today}
                   color={themeColors.warning.main}
+                  onClick={() => handleCardClick("maintenance")}
                 />
               </Box>
             </Box>
@@ -517,6 +539,16 @@ export default function EquipmentDashboard() {
         </Box>
       </Box>
 
+      {/* Equipment List Modal */}
+      <EquipmentListModal
+        open={listModalOpen}
+        onClose={() => setListModalOpen(false)}
+        title={listModalTitle}
+        equipments={equipments}
+        themeColors={themeColors}
+        statusFilter={listModalFilter}
+      />
+
       {/* Snackbar for notifications */}
       <Snackbar
         open={snackbarOpen}
@@ -531,4 +563,3 @@ export default function EquipmentDashboard() {
     </>
   )
 }
-

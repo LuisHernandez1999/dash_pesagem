@@ -28,6 +28,8 @@ import {
 } from "@mui/material"
 import { Search, Refresh, Engineering, Visibility, Edit, Add } from "@mui/icons-material"
 import EquipmentModal from "./equipamente_modal"
+import EquipmentViewModal from "./equipaments_view_modal"
+import EquipmentEditModal from "./equipmants_edit"
 
 const EquipmentTable = ({ equipments, loading, themeColors, onRefresh }) => {
   const [page, setPage] = useState(0)
@@ -36,6 +38,9 @@ const EquipmentTable = ({ equipments, loading, themeColors, onRefresh }) => {
   const [statusFilter, setStatusFilter] = useState("Todos")
   const [typeFilter, setTypeFilter] = useState("Todos")
   const [modalOpen, setModalOpen] = useState(false)
+  const [viewModalOpen, setViewModalOpen] = useState(false)
+  const [selectedEquipment, setSelectedEquipment] = useState(null)
+  const [editModalOpen, setEditModalOpen] = useState(false)
 
   // Filter equipments based on search term, status and type
   const filteredEquipments = equipments.filter((equipment) => {
@@ -79,6 +84,35 @@ const EquipmentTable = ({ equipments, loading, themeColors, onRefresh }) => {
 
   const handleCloseModal = () => {
     setModalOpen(false)
+  }
+
+  // Handle view modal
+  const handleOpenViewModal = (equipment) => {
+    setSelectedEquipment(equipment)
+    setViewModalOpen(true)
+  }
+
+  const handleCloseViewModal = () => {
+    setViewModalOpen(false)
+    setSelectedEquipment(null)
+  }
+
+  // Handle edit modal
+  const handleOpenEditModal = (equipment) => {
+    setSelectedEquipment(equipment)
+    setEditModalOpen(true)
+  }
+
+  const handleCloseEditModal = () => {
+    setEditModalOpen(false)
+    setSelectedEquipment(null)
+  }
+
+  // Handle equipment update
+  const handleUpdateEquipment = (updatedEquipment) => {
+    console.log("Equipamento atualizado:", updatedEquipment)
+    // Aqui você adicionaria a lógica para atualizar o equipamento
+    handleCloseEditModal()
   }
 
   // Handle equipment save
@@ -150,7 +184,7 @@ const EquipmentTable = ({ equipments, loading, themeColors, onRefresh }) => {
               >
                 <Engineering
                   sx={{
-                    color: "white",
+                    color: "#ffffff",
                     fontSize: { xs: "1.3rem", sm: "1.5rem" },
                     filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.2))",
                   }}
@@ -233,7 +267,7 @@ const EquipmentTable = ({ equipments, loading, themeColors, onRefresh }) => {
                 startIcon={<Add />}
                 onClick={handleOpenModal}
                 sx={{
-                  backgroundColor: "white",
+                  backgroundColor: "#ffffff",
                   color: themeColors.success.main,
                   border: `2px solid ${themeColors.success.main}`,
                   borderRadius: "12px",
@@ -289,7 +323,7 @@ const EquipmentTable = ({ equipments, loading, themeColors, onRefresh }) => {
                 maxWidth: "700px",
                 "& .MuiOutlinedInput-root": {
                   borderRadius: "16px",
-                  backgroundColor: "white",
+                  backgroundColor: "#ffffff",
                   border: `2px solid ${alpha(themeColors.primary.main, 0.1)}`,
                   transition: "all 0.3s ease",
                   fontSize: "1rem",
@@ -329,7 +363,7 @@ const EquipmentTable = ({ equipments, loading, themeColors, onRefresh }) => {
                   displayEmpty
                   sx={{
                     borderRadius: "12px",
-                    backgroundColor: "white",
+                    backgroundColor: "#ffffff",
                     border: `2px solid ${alpha(themeColors.success.main, 0.15)}`,
                     fontSize: "0.95rem",
                     fontWeight: 500,
@@ -403,7 +437,7 @@ const EquipmentTable = ({ equipments, loading, themeColors, onRefresh }) => {
                   displayEmpty
                   sx={{
                     borderRadius: "12px",
-                    backgroundColor: "white",
+                    backgroundColor: "#ffffff",
                     border: `2px solid ${alpha(themeColors.warning.main, 0.15)}`,
                     fontSize: "0.95rem",
                     fontWeight: 500,
@@ -582,6 +616,7 @@ const EquipmentTable = ({ equipments, loading, themeColors, onRefresh }) => {
                       <Box sx={{ display: "flex", gap: 1 }}>
                         <IconButton
                           size="small"
+                          onClick={() => handleOpenViewModal(equipment)}
                           sx={{
                             color: themeColors.text.secondary,
                             backgroundColor: alpha(themeColors.primary.main, 0.08),
@@ -597,6 +632,7 @@ const EquipmentTable = ({ equipments, loading, themeColors, onRefresh }) => {
                         </IconButton>
                         <IconButton
                           size="small"
+                          onClick={() => handleOpenEditModal(equipment)}
                           sx={{
                             color: themeColors.text.secondary,
                             backgroundColor: alpha(themeColors.warning.main, 0.08),
@@ -649,6 +685,23 @@ const EquipmentTable = ({ equipments, loading, themeColors, onRefresh }) => {
         open={modalOpen}
         onClose={handleCloseModal}
         onSave={handleSaveEquipment}
+        themeColors={themeColors}
+      />
+
+      {/* Modal de Visualização */}
+      <EquipmentViewModal
+        open={viewModalOpen}
+        onClose={handleCloseViewModal}
+        equipment={selectedEquipment}
+        themeColors={themeColors}
+      />
+
+      {/* Modal de Edição */}
+      <EquipmentEditModal
+        open={editModalOpen}
+        onClose={handleCloseEditModal}
+        equipment={selectedEquipment}
+        onSave={handleUpdateEquipment}
         themeColors={themeColors}
       />
     </>

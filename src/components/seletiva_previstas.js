@@ -23,87 +23,28 @@ import {
   CheckCircle,
   Schedule,
   TrendingUp,
-  TrendingDown,
   LocationOn,
 } from "@mui/icons-material"
-import { getContagemGeralPorPASeletiva } from "../service/seletiva"
 
-const ResourceComparisonStats = ({ themeColors, keyframes, onRefresh }) => {
+const ResourceComparisonStats = ({ themeColors, keyframes, onRefresh, dashboardData }) => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [data, setData] = useState({
-    PA1: {
-      coletores: 0,
-      motoristas: 0,
-      veiculos: 0,
-      turnos: [],
-    },
-    PA2: {
-      coletores: 0,
-      motoristas: 0,
-      veiculos: 0,
-      turnos: [],
-    },
-    PA3: {
-      coletores: 0,
-      motoristas: 0,
-      veiculos: 0,
-      turnos: [],
-    },
-    PA4: {
-      coletores: 0,
-      motoristas: 0,
-      veiculos: 0,
-      turnos: [],
-    },
-    lastUpdated: "",
-  })
   const [activeTab, setActiveTab] = useState(0)
 
-  // Fixed expected values as per requirements
-  const expectedValues = {
-    coletores: 45,
-    motoristas: 15,
-    veiculos: 15, // Assuming same as motoristas since not specified
-  }
-
-  const loadData = async () => {
-    try {
-      setLoading(true)
-      const apiData = await getContagemGeralPorPASeletiva()
-
-      // Add lastUpdated timestamp
-      const formattedData = {
-        ...apiData,
-        lastUpdated: new Date().toISOString(),
-      }
-
-      setData(formattedData)
+  // Process dashboard data when it changes
+  useEffect(() => {
+    if (dashboardData && dashboardData.seletiva_por_pa) {
+      setLoading(false)
       setError(null)
-    } catch (err) {
-      console.error("Erro ao carregar dados de comparação de recursos:", err)
-      setError("Falha ao carregar dados")
-    } finally {
+    } else if (dashboardData === null) {
+      setLoading(true)
+    } else {
+      setError("Dados não disponíveis")
       setLoading(false)
     }
-  }
-
-  useEffect(() => {
-    loadData()
-
-    // Set up refresh interval (5 minutes)
-    const refreshInterval = setInterval(
-      () => {
-        loadData()
-      },
-      5 * 60 * 1000,
-    )
-
-    return () => clearInterval(refreshInterval)
-  }, [])
+  }, [dashboardData])
 
   const handleRefresh = () => {
-    loadData()
     if (onRefresh) onRefresh()
   }
 
@@ -125,15 +66,26 @@ const ResourceComparisonStats = ({ themeColors, keyframes, onRefresh }) => {
   }
 
   // Calculate percentages and differences
-  const calculateStats = (expected, actual) => {
-    const percentage = expected > 0 ? Math.round((actual / expected) * 100) : 0
-    const difference = actual - expected
-    const isPositive = difference >= 0
+  const calculateStats = (actual) => {
+    let totalResources = 0
+    let completedResources = 0
 
+    for (const resourceType of resourceTypes) {
+      if (dashboardData?.seletiva_por_pa) {
+        const paData = dashboardData.seletiva_por_pa
+        for (const pa in paData) {
+          totalResources += 1
+          if (paData[pa] && paData[pa][resourceType.key] > 0) {
+            completedResources += 1
+          }
+        }
+      }
+    }
+
+    const percentage = totalResources > 0 ? Math.round((completedResources / totalResources) * 100) : 0
     return {
-      percentage,
-      difference,
-      isPositive,
+      percentage: percentage,
+      actual: actual,
     }
   }
 
@@ -169,8 +121,8 @@ const ResourceComparisonStats = ({ themeColors, keyframes, onRefresh }) => {
     setActiveTab(newValue)
   }
 
-  // Get PA names as an array
-  const paNames = Object.keys(data).filter((key) => key !== "lastUpdated")
+  // Get PA names as an array from dashboard data
+  const paNames = dashboardData?.seletiva_por_pa ? Object.keys(dashboardData.seletiva_por_pa) : []
 
   // Get active PA data
   const getActivePAData = () => {
@@ -236,10 +188,10 @@ const ResourceComparisonStats = ({ themeColors, keyframes, onRefresh }) => {
                 }}
               >
                 Previstos vs. Realizados
-                {data.lastUpdated && !loading && (
+                {!loading && (
                   <Box component="span" sx={{ ml: 1, display: "inline-flex", alignItems: "center" }}>
                     <Schedule sx={{ fontSize: "0.75rem", mr: 0.5, color: themeColors.text.secondary }} />
-                    {formatDate(data.lastUpdated)}
+                    {formatDate(new Date().toISOString())}
                   </Box>
                 )}
               </Typography>
@@ -428,9 +380,9 @@ const ResourceComparisonStats = ({ themeColors, keyframes, onRefresh }) => {
 
                   {/* Resource Rows */}
                   {resourceTypes.map((resource, index) => {
-                    const actualValue = data[pa][resource.key]
-                    const expectedValue = expectedValues[resource.key]
-                    const stats = calculateStats(expectedValue, actualValue)
+                    // Get actual value from dashboard data
+                    const actualValue = dashboardData?.seletiva_por_pa?.[pa]?.[resource.key] || 0
+                    const stats = calculateStats(actualValue)
                     const progressColor =
                       stats.percentage >= 90
                         ? themeColors.success.main
@@ -486,7 +438,7 @@ const ResourceComparisonStats = ({ themeColors, keyframes, onRefresh }) => {
                               color: themeColors.text.primary,
                             }}
                           >
-                            {expectedValue}
+                            {dashboardData?.seletiva_por_pa?.[pa]?.[resource.key + "_esperado"] || 0}
                           </Typography>
                         </Box>
 
@@ -519,18 +471,13 @@ const ResourceComparisonStats = ({ themeColors, keyframes, onRefresh }) => {
                               sx={{
                                 fontWeight: 500,
                                 fontSize: "0.75rem",
-                                color: stats.isPositive ? themeColors.success.main : themeColors.error.main,
+                                color: themeColors.success.main,
                                 display: "flex",
                                 alignItems: "center",
                               }}
                             >
-                              {stats.isPositive ? (
-                                <TrendingUp sx={{ fontSize: "0.875rem", mr: 0.25 }} />
-                              ) : (
-                                <TrendingDown sx={{ fontSize: "0.875rem", mr: 0.25 }} />
-                              )}
-                              {stats.isPositive ? "+" : ""}
-                              {stats.difference}
+                              <TrendingUp sx={{ fontSize: "0.875rem", mr: 0.25 }} />
+                              {actualValue}
                             </Typography>
                           </Box>
                           <Box

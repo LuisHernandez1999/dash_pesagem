@@ -39,13 +39,9 @@ import SeletivaTable from "@/components/Seletiva/table/table_seletiva"
 import PADistribution from "@/components/Seletiva/charts/pa"
 import RegionDistributionChart from "@/components/Seletiva/charts/turnos_grafico"
 import GraficoSeletivaSemanal from "@/components/Seletiva/charts/grafico_semanal"
-import ResourceComparisonStats from "@/components/seletiva_previstas"
-import {
-  contarSeletivaRealizadasHoje,
-  contarTotalSeletiva,
-  contarSeletivaInativos,
-  contarSeletivaAtivos,
-} from "../../service/seletiva"
+import ResourceComparisonStats from "../../components/seletiva_previstas"
+import { contarTotalSeletiva, contarSeletivaInativos, contarSeletivaAtivos } from "../../service/seletiva"
+import { getDashboardSeletivaDadosHoje, getDashboardSeletivaTabelaGrafico } from "../../service/seletiva_new"
 import { useRouter } from "next/navigation"
 
 const keyframes = {
@@ -342,9 +338,6 @@ export default function SeletivaDashboard() {
   const [snackbarMessage, setSnackbarMessage] = useState("")
   const [snackbarSeverity, setSnackbarSeverity] = useState("success")
 
-  // Mock data for selective collections
-  const [seletivaData, setSeletivaData] = useState([])
-
   // Stats state
   const [statsData, setStatsData] = useState({
     totalVehicles: 0,
@@ -353,11 +346,14 @@ export default function SeletivaDashboard() {
     releasedToday: 0,
   })
 
+  // New state for dashboard data
+  const [dashboardData, setDashboardData] = useState(null)
+  const [tabelaGraficoData, setTabelaGraficoData] = useState(null)
+
   // Auto-refresh states
   const [autoRefreshTotal, setAutoRefreshTotal] = useState(true)
   const [autoRefreshActive, setAutoRefreshActive] = useState(true)
   const [autoRefreshInactive, setAutoRefreshInactive] = useState(true)
-  const [autoRefreshReleased, setAutoRefreshReleased] = useState(true)
   const [highlightedStat, setHighlightedStat] = useState(null)
 
   // Handle tab change
@@ -410,63 +406,37 @@ export default function SeletivaDashboard() {
     setInitialLoading(true)
 
     try {
-      // Load data in parallel
-      const [totalSeletivaResponse, inativosResponse, ativosResponse, hojeResponse] = await Promise.all([
-        contarTotalSeletiva(),
-        contarSeletivaInativos(),
-        contarSeletivaAtivos(),
-        contarSeletivaRealizadasHoje(),
-      ])
+      // Load data in parallel - agora incluindo a nova API para tabela e gráfico
+      const [totalSeletivaResponse, inativosResponse, ativosResponse, dashboardResponse, tabelaGraficoResponse] =
+        await Promise.all([
+          contarTotalSeletiva(),
+          contarSeletivaInativos(),
+          contarSeletivaAtivos(),
+          getDashboardSeletivaDadosHoje(),
+          getDashboardSeletivaTabelaGrafico(), // Nova API para tabela e gráfico
+        ])
 
       console.log("Dados carregados:", {
         totalSeletiva: totalSeletivaResponse,
         seletivaInativos: inativosResponse,
         seletivaAtivos: ativosResponse,
-        seletivaHoje: hojeResponse,
+        dashboardData: dashboardResponse,
+        tabelaGraficoData: tabelaGraficoResponse,
       })
 
-      // Update statistics
+      // Update statistics - usando total_seletivas_hoje da API principal
       setStatsData({
         totalVehicles: totalSeletivaResponse?.total || 0,
         inactiveVehicles: inativosResponse?.count || 0,
         activeVehicles: ativosResponse?.count || 0,
-        releasedToday: hojeResponse?.total || 0,
+        releasedToday: dashboardResponse?.total_seletivas_hoje || 0,
       })
 
-      // Mock selective collection data
-      const mockSeletivaData = Array.from({ length: 20 }, (_, index) => ({
-        id: index + 1,
-        route: `Rota ${Math.floor(Math.random() * 10) + 1}`,
-        driver: `Motorista ${Math.floor(Math.random() * 15) + 1}`,
-        driverId: `M${Math.floor(Math.random() * 1000) + 1000}`,
-        collectors: Array.from(
-          { length: Math.floor(Math.random() * 3) + 1 },
-          (_, i) => `Coletor ${Math.floor(Math.random() * 15) + 1}`,
-        ),
-        collectorsIds: Array.from(
-          { length: Math.floor(Math.random() * 3) + 1 },
-          (_, i) => `C${Math.floor(Math.random() * 1000) + 1000}`,
-        ),
-        vehicle: `Caminhão ${Math.floor(Math.random() * 20) + 1}`,
-        vehiclePrefix: `SEL-${Math.floor(Math.random() * 100) + 100}`,
-        departureTime: `${Math.floor(Math.random() * 12) + 7}:${Math.floor(Math.random() * 60)
-          .toString()
-          .padStart(2, "0")}`,
-        status: Math.random() > 0.3 ? "Finalizado" : "Em andamento",
-        arrivalTime:
-          Math.random() > 0.3
-            ? `${Math.floor(Math.random() * 12) + 13}:${Math.floor(Math.random() * 60)
-                .toString()
-                .padStart(2, "0")}`
-            : "",
-        date: new Date().toISOString().split("T")[0],
-        region: ["Norte", "Sul", "Leste", "Oeste", "Centro"][Math.floor(Math.random() * 5)],
-        shift: ["Matutino", "Vespertino", "Noturno"][Math.floor(Math.random() * 3)],
-        collectedWeight: `${(Math.random() * 5 + 1).toFixed(2)} ton`,
-        materialType: ["Papel", "Plástico", "Vidro", "Metal", "Misto"][Math.floor(Math.random() * 5)],
-      }))
-
-      setSeletivaData(mockSeletivaData)
+      // Set dashboard data for charts and other components
+      setDashboardData(dashboardResponse)
+      setTabelaGraficoData(tabelaGraficoResponse) // Dados para tabela e gráfico semanal
+      console.log("Dashboard data sendo passado para componentes:", dashboardResponse)
+      console.log("Tabela e gráfico data:", tabelaGraficoResponse)
 
       // Mark loading as complete
       setChartsLoaded(true)
@@ -485,7 +455,7 @@ export default function SeletivaDashboard() {
     }
   }
 
-  // Funções para atualizar cards individuais
+  // Funções para atualizar cards individuais - keeping original logic
   const refreshTotalVehicles = async () => {
     try {
       setStatsData((prev) => ({ ...prev, totalVehicles: null })) // Definir como null para mostrar carregamento
@@ -528,45 +498,12 @@ export default function SeletivaDashboard() {
     }
   }
 
-  const refreshReleasedToday = async () => {
-    try {
-      const result = await contarSeletivaRealizadasHoje()
-      const novoTotal = result?.total
-
-      setStatsData((prev) => {
-        if (prev.releasedToday === novoTotal || novoTotal == null) {
-          return prev // NÃO atualiza se o valor for igual ou se vier nulo
-        }
-
-        return {
-          ...prev,
-          releasedToday: novoTotal,
-        }
-      })
-
-      setHighlightedStat("releasedToday")
-    } catch (error) {
-      console.error("Erro ao atualizar veículos soltos hoje:", error)
-    }
-  }
-
   // Load data on component mount
   useEffect(() => {
     loadAllData()
   }, [])
 
-  // Auto-refresh effects
-  useEffect(() => {
-    refreshReleasedToday()
-
-    if (autoRefreshReleased) {
-      const interval = setInterval(() => {
-        refreshReleasedToday()
-      }, 240000) // Atualiza a cada 4 minutos
-      return () => clearInterval(interval)
-    }
-  }, [autoRefreshReleased])
-
+  // Auto-refresh effects - keeping original logic for first 3 cards
   useEffect(() => {
     if (autoRefreshTotal) {
       const interval = setInterval(() => {
@@ -918,7 +855,7 @@ export default function SeletivaDashboard() {
             }}
           >
             <Container maxWidth="xl" disableGutters>
-              {/* Stats Cards */}
+              {/* Stats Cards - keeping original API calls */}
               <Box component="section">
                 <Box
                   sx={{
@@ -939,7 +876,6 @@ export default function SeletivaDashboard() {
                       icon={LocalShipping}
                       color={themeColors.primary}
                       highlight={highlightedStat === "totalVehicles"}
-                     
                     />
                   </Box>
                   <Box>
@@ -949,7 +885,6 @@ export default function SeletivaDashboard() {
                       icon={Recycling}
                       color={themeColors.success}
                       highlight={highlightedStat === "activeVehicles"}
-                      
                     />
                   </Box>
                   <Box>
@@ -959,7 +894,6 @@ export default function SeletivaDashboard() {
                       icon={Scale}
                       color={themeColors.error}
                       highlight={highlightedStat === "inactiveVehicles"}
-                    
                     />
                   </Box>
                   <Box>
@@ -969,25 +903,29 @@ export default function SeletivaDashboard() {
                       icon={EmojiEvents}
                       color={themeColors.warning}
                       highlight={highlightedStat === "releasedToday"}
-                      
                     />
                   </Box>
                 </Box>
               </Box>
 
-              {/* Resource Comparison Stats - New component */}
-              <ResourceComparisonStats themeColors={themeColors} keyframes={keyframes} onRefresh={handleRefreshData} />
+              {/* Resource Comparison Stats - Now using new API data */}
+              <ResourceComparisonStats
+                themeColors={themeColors}
+                keyframes={keyframes}
+                onRefresh={handleRefreshData}
+                dashboardData={dashboardData}
+              />
 
-              {/* Seletiva Table Section */}
+              {/* Seletiva Table Section - Now using new API data */}
               <SeletivaTable
-                seletivaData={seletivaData}
                 loading={loading}
                 themeColors={themeColors}
                 keyframes={keyframes}
                 onRefresh={handleRefreshData}
+                tabelaGraficoData={tabelaGraficoData}
               />
 
-              {/* PA Distribution Section - Movido para depois da tabela */}
+              {/* PA Distribution Section - Now using new API data */}
               <Box sx={{ mb: 4 }}>
                 <Card
                   sx={{
@@ -1071,12 +1009,17 @@ export default function SeletivaDashboard() {
                     }}
                   />
                   <CardContent sx={{ padding: "1.5rem" }}>
-                    <PADistribution themeColors={themeColors} chartsLoaded={chartsLoaded} keyframes={keyframes} />
+                    <PADistribution
+                      themeColors={themeColors}
+                      chartsLoaded={chartsLoaded}
+                      keyframes={keyframes}
+                      dashboardData={dashboardData}
+                    />
                   </CardContent>
                 </Card>
               </Box>
 
-              {/* Region Distribution Chart */}
+              {/* Region Distribution Chart - Now using new API data */}
               <Box component="section" sx={{ mb: 4 }}>
                 <Card
                   sx={{
@@ -1166,13 +1109,17 @@ export default function SeletivaDashboard() {
                         position: "relative",
                       }}
                     >
-                      <RegionDistributionChart chartsLoaded={chartsLoaded} themeColors={themeColors} />
+                      <RegionDistributionChart
+                        chartsLoaded={chartsLoaded}
+                        themeColors={themeColors}
+                        dashboardData={dashboardData}
+                      />
                     </Box>
                   </CardContent>
                 </Card>
               </Box>
 
-              {/* Coletas por Dia da Semana Chart */}
+              {/* Coletas por Dia da Semana Chart - Now using new API data */}
               <Box component="section" sx={{ mb: 4 }}>
                 <Card
                   sx={{
@@ -1266,7 +1213,11 @@ export default function SeletivaDashboard() {
                         flex: 1,
                       }}
                     >
-                      <GraficoSeletivaSemanal themeColors={themeColors} chartsLoaded={chartsLoaded} />
+                      <GraficoSeletivaSemanal
+                        themeColors={themeColors}
+                        chartsLoaded={chartsLoaded}
+                        tabelaGraficoData={tabelaGraficoData}
+                      />
                     </Box>
                   </CardContent>
                 </Card>

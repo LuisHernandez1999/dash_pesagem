@@ -4,9 +4,8 @@ import { useState, useEffect } from "react"
 import { Box, Typography, alpha, useTheme, CircularProgress } from "@mui/material"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from "recharts"
 import { WbSunny, NightsStay, WbTwilight } from "@mui/icons-material"
-import { contarColetoresMotoristasPorTurno } from "../../../service/seletiva"
 
-const RegionDistributionChart = ({ themeColors, chartsLoaded }) => {
+const RegionDistributionChart = ({ themeColors, chartsLoaded, dashboardData }) => {
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -16,7 +15,7 @@ const RegionDistributionChart = ({ themeColors, chartsLoaded }) => {
   // Function to map shift names to icons and colors
   const getShiftIcon = (shiftName) => {
     const lowerCaseShift = shiftName.toLowerCase()
-    if (lowerCaseShift.includes("matutino") || lowerCaseShift.includes("manhã")) {
+    if (lowerCaseShift.includes("diurno") || lowerCaseShift.includes("manhã") || lowerCaseShift.includes("matutino")) {
       return { icon: <WbSunny />, color: themeColors.warning.main }
     } else if (lowerCaseShift.includes("vespertino") || lowerCaseShift.includes("tarde")) {
       return { icon: <WbTwilight />, color: themeColors.primary.main }
@@ -28,110 +27,45 @@ const RegionDistributionChart = ({ themeColors, chartsLoaded }) => {
     }
   }
 
-  const loadData = async () => {
-    try {
-      setLoading(true)
-      const response = await contarColetoresMotoristasPorTurno()
+  // Process dashboard data when it changes
+  useEffect(() => {
+    console.log("RegionDistributionChart recebeu dashboardData:", dashboardData)
 
-      if (response?.success) {
-        // Map API data to the format needed by the chart
-        const chartData = response.data.map((item) => {
-          const { icon, color } = getShiftIcon(item.equipe)
-          return {
-            name: item.equipe,
-            motoristas: item.motoristas || 0,
-            coletores: item.coletores || 0,
-            total: (item.motoristas || 0) + (item.coletores || 0),
-            icon: icon,
-            color: color,
-          }
+    if (dashboardData && dashboardData.por_turno) {
+      console.log("Dados por_turno:", dashboardData.por_turno)
+
+      const turnoData = dashboardData.por_turno
+
+      // Map the API response to our component's data format
+      const chartData = []
+
+      Object.keys(turnoData).forEach((turnoKey) => {
+        const turno = turnoData[turnoKey]
+        const { icon, color } = getShiftIcon(turnoKey)
+
+        // Clean up the shift name for display
+        const displayName = turnoKey.replace("Equipe(", "").replace(")", "")
+
+        chartData.push({
+          name: displayName,
+          motoristas: turno.motoristas || 0,
+          coletores: turno.coletores || 0,
+          total: (turno.motoristas || 0) + (turno.coletores || 0),
+          icon: icon,
+          color: color,
         })
+      })
 
-        setData(chartData)
-        setError(null)
-      } else {
-        console.error("Erro ao carregar dados de turnos:", response?.error)
-        setError(response?.error || "Erro ao carregar dados")
-
-        // Fallback data for development/testing
-        const fallbackData = [
-          {
-            name: "Matutino",
-            motoristas: 12,
-            coletores: 24,
-            total: 36,
-            icon: <WbSunny />,
-            color: themeColors.warning.main,
-          },
-          {
-            name: "Vespertino",
-            motoristas: 10,
-            coletores: 20,
-            total: 30,
-            icon: <WbTwilight />,
-            color: themeColors.primary.main,
-          },
-          {
-            name: "Noturno",
-            motoristas: 8,
-            coletores: 16,
-            total: 24,
-            icon: <NightsStay />,
-            color: themeColors.info.main,
-          },
-        ]
-        setData(fallbackData)
-      }
-    } catch (err) {
-      console.error("Erro ao carregar dados de turnos:", err)
-      setError("Erro ao carregar dados")
-
-      // Fallback data for development/testing
-      const fallbackData = [
-        {
-          name: "Matutino",
-          motoristas: 12,
-          coletores: 24,
-          total: 36,
-          icon: <WbSunny />,
-          color: themeColors.warning.main,
-        },
-        {
-          name: "Vespertino",
-          motoristas: 10,
-          coletores: 20,
-          total: 30,
-          icon: <WbTwilight />,
-          color: themeColors.primary.main,
-        },
-        {
-          name: "Noturno",
-          motoristas: 8,
-          coletores: 16,
-          total: 24,
-          icon: <NightsStay />,
-          color: themeColors.info.main,
-        },
-      ]
-      setData(fallbackData)
-    } finally {
+      setData(chartData)
+      setLoading(false)
+      setError(null)
+    } else if (dashboardData === null) {
+      setLoading(true)
+    } else {
+      setError("Dados não disponíveis")
       setLoading(false)
     }
-  }
-
-  useEffect(() => {
-    loadData()
-
-    // Set up refresh interval (8 minutes)
-    const refreshInterval = setInterval(
-      () => {
-        loadData()
-      },
-      8 * 60 * 1000,
-    )
-
-    return () => clearInterval(refreshInterval)
-  }, [themeColors])
+  }, [dashboardData, themeColors])
 
   const handleMouseEnter = (_, index) => {
     setActiveIndex(index)

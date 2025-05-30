@@ -38,7 +38,6 @@ import RegisterModal from "../../registro_remocao"
 import EditModal from "../../edit_soltura"
 import DetailModal from "../../visualizar_remocao"
 import SolturaDetailModal from "../../visualizar_remocao" // Importando o novo modal
-import { retornarInfosSeletiva } from "../../../service/seletiva"
 
 // Componente SearchInput
 const SearchInput = ({ icon: Icon, placeholder, value, onChange, suggestions = [], themeColors, keyframes }) => {
@@ -149,11 +148,11 @@ const SearchInput = ({ icon: Icon, placeholder, value, onChange, suggestions = [
   )
 }
 
-const SeletivaTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }) => {
+const SeletivaTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh, tabelaGraficoData }) => {
   // State variables
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(5)
-  const [sortField, setSortField] = useState("hora_saida_frota")
+  const [sortField, setSortField] = useState("horaSaidaFrota")
   const [sortDirection, setSortDirection] = useState("asc")
   const [driverSearch, setDriverSearch] = useState("")
   const [prefixSearch, setPrefixSearch] = useState("")
@@ -195,69 +194,56 @@ const SeletivaTable = ({ loading: initialLoading, themeColors, keyframes, onRefr
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  // Fetch data from API
-  const fetchData = async () => {
-    try {
-      setLoading(true)
+  // Process table data when tabelaGraficoData changes
+  useEffect(() => {
+    console.log("SeletivaTable recebeu tabelaGraficoData:", tabelaGraficoData)
+
+    if (tabelaGraficoData && tabelaGraficoData.detalhesSolturas) {
+      console.log("Dados detalhesSolturas:", tabelaGraficoData.detalhesSolturas)
+
+      // Transform API data to match the expected format for the table
+      const formattedData = tabelaGraficoData.detalhesSolturas.map((item, index) => {
+        console.log(`🔧 Formatando item ${index}:`, item)
+
+        const formattedItem = {
+          id: item.id || index + 1,
+          driver: item.motorista || "Não informado",
+          driverId: "",
+          collectors: Array.isArray(item.coletores) ? item.coletores : [],
+          collectorsIds: [],
+          prefixo: item.prefixo || "",
+          hora_saida_frota: item.horaSaidaFrota || "",
+          hora_entrega_chave: item.horaEntregaChave || "",
+          hora_chegada: item.horaChegada || "",
+          tipo_equipe: item.tipoEquipe || "",
+          status_frota: item.statusFrota || "Em andamento",
+          data: item.data || "",
+          rota: item.rota || "",
+          location: "",
+          vehiclePrefix: item.tipoVeiculoSelecionado || "",
+          departureTime: item.horaSaidaFrota || "",
+          status: item.statusFrota || "Em andamento",
+          team: item.tipoEquipe || "",
+          vehicle: item.tipoVeiculoSelecionado || "",
+          lider: item.lider || "",
+          solturaId: item.id,
+        }
+
+        console.log(`✅ Item formatado ${index}:`, formattedItem)
+        return formattedItem
+      })
+
+      console.log("📋 Dados finais formatados:", formattedData)
+      setRemovals(formattedData)
+      setLoading(false)
       setError(null)
-
-      console.log("🔄 Iniciando fetchData...")
-      const response = await retornarInfosSeletiva()
-      console.log("📥 Resposta da API:", response)
-
-      if (response.success) {
-        // Transform API data to match the expected format for the table
-        const formattedData = response.data.map((item, index) => {
-          console.log(`🔧 Formatando item ${index}:`, item)
-          console.log(`🆔 ID do item ${index}:`, item.id)
-
-          const formattedItem = {
-            id: item.id || index + 1, // Usar o ID da API se disponível, senão usar o índice
-            driver: item.motorista || "Não informado",
-            driverId: "",
-            collectors: Array.isArray(item.coletores) ? item.coletores : [],
-            collectorsIds: [],
-            prefixo: item.prefixo || "",
-            hora_saida_frota: item.hora_saida_frota || "",
-            hora_entrega_chave: item.hora_entrega_chave || "",
-            hora_chegada: item.hora_chegada || "",
-            tipo_equipe: item.tipo_equipe || "",
-            status_frota: item.status_frota || "Em andamento",
-            data: item.data || "",
-            rota: item.rota || "",
-            location: "",
-            vehiclePrefix: item.tipo_veiculo_selecionado || "",
-            departureTime: item.hora_saida_frota || "",
-            status: item.status_frota || "Em andamento",
-            team: item.tipo_equipe || "",
-            vehicle: item.tipo_veiculo_selecionado || "",
-            lider: item.lider || "",
-            solturaId: item.id, // Garantir que o ID da soltura seja passado corretamente
-          }
-
-          console.log(`✅ Item formatado ${index}:`, formattedItem)
-          console.log(`🆔 solturaId para item ${index}:`, formattedItem.solturaId)
-
-          return formattedItem
-        })
-
-        console.log("📋 Dados finais formatados:", formattedData)
-        setRemovals(formattedData)
-      } else {
-        setError(response.error || "Erro ao carregar dados")
-      }
-    } catch (err) {
-      console.error("Erro ao buscar dados de coletas:", err)
-      setError("Falha ao carregar dados de coletas")
-    } finally {
+    } else if (tabelaGraficoData === null) {
+      setLoading(true)
+    } else {
+      setError("Dados não disponíveis")
       setLoading(false)
     }
-  }
-
-  // Load data on component mount and when refresh is triggered
-  useEffect(() => {
-    fetchData()
-  }, [])
+  }, [tabelaGraficoData])
 
   // Handle pagination
   const handlePageChange = (event, newPage) => {
@@ -635,7 +621,7 @@ const SeletivaTable = ({ loading: initialLoading, themeColors, keyframes, onRefr
           return factor * (a.driver || "").localeCompare(b.driver || "")
         } else if (sortField === "vehiclePrefix") {
           return factor * (a.prefixo || "").localeCompare(b.prefixo || "")
-        } else if (sortField === "hora_saida_frota") {
+        } else if (sortField === "horaSaidaFrota") {
           return factor * (a.hora_saida_frota || "").localeCompare(b.hora_saida_frota || "")
         } else if (sortField === "team") {
           return factor * (a.tipo_equipe || "").localeCompare(b.tipo_equipe || "")
@@ -669,7 +655,6 @@ const SeletivaTable = ({ loading: initialLoading, themeColors, keyframes, onRefr
 
   // Handle refresh
   const handleRefresh = () => {
-    fetchData()
     if (onRefresh) onRefresh()
   }
 
@@ -678,8 +663,8 @@ const SeletivaTable = ({ loading: initialLoading, themeColors, keyframes, onRefr
     console.log("🗑️ Soltura deletada, atualizando tabela...", deletedSolturaId)
 
     // Atualizar estado local removendo o item deletado
-    setRemovals(prevRemovals => {
-      const updatedRemovals = prevRemovals.filter(removal => removal.id !== deletedSolturaId)
+    setRemovals((prevRemovals) => {
+      const updatedRemovals = prevRemovals.filter((removal) => removal.id !== deletedSolturaId)
       console.log("📋 Tabela atualizada, removals restantes:", updatedRemovals.length)
       return updatedRemovals
     })
@@ -692,9 +677,6 @@ const SeletivaTable = ({ loading: initialLoading, themeColors, keyframes, onRefr
     setSnackbarMessage("Registro removido com sucesso!")
     setSnackbarSeverity("success")
     setSnackbarOpen(true)
-
-    // Opcionalmente, fazer fetch dos dados atualizados da API
-    // fetchData()
   }
 
   return (
@@ -1028,19 +1010,18 @@ const SeletivaTable = ({ loading: initialLoading, themeColors, keyframes, onRefr
                         <SortIndicator field="vehiclePrefix" />
                       </TableCell>
                       <TableCell
-                        onClick={() => handleSort("hora_saida_frota")}
+                        onClick={() => handleSort("horaSaidaFrota")}
                         sx={{
                           cursor: "pointer",
                           fontWeight: 600,
-                          color:
-                            sortField === "hora_saida_frota" ? themeColors.primary.main : themeColors.text.secondary,
+                          color: sortField === "horaSaidaFrota" ? themeColors.primary.main : themeColors.text.secondary,
                           "&:hover": { color: themeColors.primary.main },
                           borderBottom: `1px solid ${themeColors.divider}`,
                           py: 1.5,
                         }}
                       >
                         Horário
-                        <SortIndicator field="hora_saida_frota" />
+                        <SortIndicator field="horaSaidaFrota" />
                       </TableCell>
                       <TableCell
                         onClick={() => handleSort("team")}

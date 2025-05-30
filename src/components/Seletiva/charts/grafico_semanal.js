@@ -17,9 +17,8 @@ import {
   Label,
 } from "recharts"
 import { InfoIcon as InfoCircle, TrendingDown, TrendingUp, Minus } from "lucide-react"
-import { obterSolturasSeletivaPorDiaDaSemana } from "../../../service/seletiva"
 
-const GraficoSeletivaSemanal = ({ themeColors, chartsLoaded }) => {
+const GraficoSeletivaSemanal = ({ themeColors, chartsLoaded, tabelaGraficoData }) => {
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -32,59 +31,6 @@ const GraficoSeletivaSemanal = ({ themeColors, chartsLoaded }) => {
     low: "#ff9f1c", // Laranja para baixa quantidade
     areaFill: "url(#colorGradient)", // Gradiente para área
     referenceLine: "#8338ec", // Roxo para linha de referência
-  }
-
-  const loadData = async () => {
-    try {
-      setLoading(true)
-      const response = await obterSolturasSeletivaPorDiaDaSemana()
-
-      if (response?.success) {
-        // Map API data to the format needed by the chart
-        const chartData = response.data.map((item, index) => ({
-          dia: formatDayName(item.dia),
-          diaCompleto: item.dia,
-          coletas: item.total,
-          eficiencia: calculateEfficiency(item.total),
-          index: index, // Adiciona índice para posicionamento no eixo X
-        }))
-
-        setData(chartData)
-        setError(null)
-      } else {
-        console.error("Erro ao carregar dados de coletas por dia da semana:", response?.error)
-        setError(response?.error || "Erro ao carregar dados")
-
-        // Dados de fallback para desenvolvimento
-        const fallbackData = [
-          { dia: "Dom", diaCompleto: "Domingo", coletas: 15, eficiencia: 75, index: 0 },
-          { dia: "Seg", diaCompleto: "Segunda-feira", coletas: 35, eficiencia: 85, index: 1 },
-          { dia: "Ter", diaCompleto: "Terça-feira", coletas: 28, eficiencia: 80, index: 2 },
-          { dia: "Qua", diaCompleto: "Quarta-feira", coletas: 42, eficiencia: 90, index: 3 },
-          { dia: "Qui", diaCompleto: "Quinta-feira", coletas: 32, eficiencia: 85, index: 4 },
-          { dia: "Sex", diaCompleto: "Sexta-feira", coletas: 38, eficiencia: 85, index: 5 },
-          { dia: "Sáb", diaCompleto: "Sábado", coletas: 22, eficiencia: 80, index: 6 },
-        ]
-        setData(fallbackData)
-      }
-    } catch (err) {
-      console.error("Erro ao carregar dados de coletas por dia da semana:", err)
-      setError("Erro ao carregar dados")
-
-      // Dados de fallback para desenvolvimento
-      const fallbackData = [
-        { dia: "Dom", diaCompleto: "Domingo", coletas: 15, eficiencia: 75, index: 0 },
-        { dia: "Seg", diaCompleto: "Segunda-feira", coletas: 35, eficiencia: 85, index: 1 },
-        { dia: "Ter", diaCompleto: "Terça-feira", coletas: 28, eficiencia: 80, index: 2 },
-        { dia: "Qua", diaCompleto: "Quarta-feira", coletas: 42, eficiencia: 90, index: 3 },
-        { dia: "Qui", diaCompleto: "Quinta-feira", coletas: 32, eficiencia: 85, index: 4 },
-        { dia: "Sex", diaCompleto: "Sexta-feira", coletas: 38, eficiencia: 85, index: 5 },
-        { dia: "Sáb", diaCompleto: "Sábado", coletas: 22, eficiencia: 80, index: 6 },
-      ]
-      setData(fallbackData)
-    } finally {
-      setLoading(false)
-    }
   }
 
   // Function to format day names to shorter versions
@@ -111,19 +57,100 @@ const GraficoSeletivaSemanal = ({ themeColors, chartsLoaded }) => {
     return 70
   }
 
+  // Process chart data when tabelaGraficoData changes
   useEffect(() => {
-    loadData()
+    console.log("GraficoSeletivaSemanal recebeu tabelaGraficoData:", tabelaGraficoData)
 
-    // Set up refresh interval (8 minutes)
-    const refreshInterval = setInterval(
-      () => {
-        loadData()
-      },
-      8 * 60 * 1000,
-    )
+    if (tabelaGraficoData && tabelaGraficoData.resumoPorDiaDaSemana) {
+      console.log("Dados resumoPorDiaDaSemana:", tabelaGraficoData.resumoPorDiaDaSemana)
 
-    return () => clearInterval(refreshInterval)
-  }, [themeColors])
+      try {
+        // Definir a ordem correta dos dias da semana
+        const diasOrdenados = [
+          "Domingo",
+          "Segunda-feira",
+          "Terça-feira",
+          "Quarta-feira",
+          "Quinta-feira",
+          "Sexta-feira",
+          "Sábado",
+        ]
+
+        // Verificar se resumoPorDiaDaSemana é um objeto
+        if (
+          typeof tabelaGraficoData.resumoPorDiaDaSemana === "object" &&
+          !Array.isArray(tabelaGraficoData.resumoPorDiaDaSemana)
+        ) {
+          console.log("Convertendo objeto para array...")
+
+          // Converter o objeto em array
+          const chartData = diasOrdenados.map((dia, index) => ({
+            dia: formatDayName(dia),
+            diaCompleto: dia,
+            coletas: tabelaGraficoData.resumoPorDiaDaSemana[dia] || 0,
+            eficiencia: calculateEfficiency(tabelaGraficoData.resumoPorDiaDaSemana[dia] || 0),
+            index: index, // Índice para ordenação
+          }))
+
+          console.log("Dados formatados para o gráfico:", chartData)
+          setData(chartData)
+          setLoading(false)
+          setError(null)
+        } else if (Array.isArray(tabelaGraficoData.resumoPorDiaDaSemana)) {
+          // Caso seja um array (improvável, mas mantido por segurança)
+          const chartData = tabelaGraficoData.resumoPorDiaDaSemana.map((item, index) => ({
+            dia: formatDayName(item.dia),
+            diaCompleto: item.dia,
+            coletas: item.total,
+            eficiencia: calculateEfficiency(item.total),
+            index: index,
+          }))
+
+          setData(chartData)
+          setLoading(false)
+          setError(null)
+        } else {
+          throw new Error("Formato de dados inválido")
+        }
+      } catch (err) {
+        console.error("Erro ao processar dados:", err)
+        setError("Erro ao processar dados: " + err.message)
+
+        // Dados de fallback para desenvolvimento
+        const fallbackData = [
+          { dia: "Dom", diaCompleto: "Domingo", coletas: 15, eficiencia: 75, index: 0 },
+          { dia: "Seg", diaCompleto: "Segunda-feira", coletas: 35, eficiencia: 85, index: 1 },
+          { dia: "Ter", diaCompleto: "Terça-feira", coletas: 28, eficiencia: 80, index: 2 },
+          { dia: "Qua", diaCompleto: "Quarta-feira", coletas: 42, eficiencia: 90, index: 3 },
+          { dia: "Qui", diaCompleto: "Quinta-feira", coletas: 32, eficiencia: 85, index: 4 },
+          { dia: "Sex", diaCompleto: "Sexta-feira", coletas: 38, eficiencia: 85, index: 5 },
+          { dia: "Sáb", diaCompleto: "Sábado", coletas: 22, eficiencia: 80, index: 6 },
+        ]
+        setData(fallbackData)
+        setLoading(false)
+      }
+    } else if (tabelaGraficoData === null) {
+      setLoading(true)
+    } else {
+      console.log("Dados não disponíveis, usando fallback")
+      setError("Dados não disponíveis")
+
+      // Dados de fallback para desenvolvimento
+      const fallbackData = [
+        { dia: "Dom", diaCompleto: "Domingo", coletas: 15, eficiencia: 75, index: 0 },
+        { dia: "Seg", diaCompleto: "Segunda-feira", coletas: 35, eficiencia: 85, index: 1 },
+        { dia: "Ter", diaCompleto: "Terça-feira", coletas: 28, eficiencia: 80, index: 2 },
+        { dia: "Qua", diaCompleto: "Quarta-feira", coletas: 42, eficiencia: 90, index: 3 },
+        { dia: "Qui", diaCompleto: "Quinta-feira", coletas: 32, eficiencia: 85, index: 4 },
+        { dia: "Sex", diaCompleto: "Sexta-feira", coletas: 38, eficiencia: 85, index: 5 },
+        { dia: "Sáb", diaCompleto: "Sábado", coletas: 22, eficiencia: 80, index: 6 },
+      ]
+      setData(fallbackData)
+      setLoading(false)
+    }
+  }, [tabelaGraficoData])
+
+  // Não precisa mais de useEffect para carregar dados, pois eles vêm via props
 
   // Calculate average
   const average = data.length > 0 ? data.reduce((acc, curr) => acc + curr.coletas, 0) / data.length : 0
