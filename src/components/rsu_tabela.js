@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useMemo } from "react"
 import {
   Card,
   CardContent,
@@ -27,7 +27,6 @@ import {
   Paper,
   alpha,
   Autocomplete,
-  Zoom,
   InputBase,
   CircularProgress,
 } from "@mui/material"
@@ -47,10 +46,9 @@ import {
 import RegisterModal from "./registro_remocao"
 import EditModal from "./editar_remocao"
 import DetailModal from "./visualizar_remocao"
-import { getSolturasDetalhadaTodas } from "../service/dashboard"
-import SolturaDetailModal from "./visualizar_remocao" // Importando o novo modal
+import SolturaDetailModal from "./visualizar_remocao"
 
-// Modificar o componente SearchInput para aumentar a largura
+// Componente SearchInput
 const SearchInput = ({ icon: Icon, placeholder, value, onChange, suggestions = [], themeColors, keyframes }) => {
   return (
     <Autocomplete
@@ -61,7 +59,7 @@ const SearchInput = ({ icon: Icon, placeholder, value, onChange, suggestions = [
       onInputChange={(_, newInputValue) => onChange({ target: { value: newInputValue } })}
       sx={{
         flex: 1,
-        width: "100%", // Aumentar a largura para ocupar todo o espaço disponível
+        width: "100%",
       }}
       renderInput={(params) => (
         <Paper
@@ -76,7 +74,7 @@ const SearchInput = ({ icon: Icon, placeholder, value, onChange, suggestions = [
             transition: "all 0.3s ease",
             background: themeColors.background.paper,
             height: "52px",
-            width: "100%", // Garantir que ocupe toda a largura
+            width: "100%",
             "&:hover": {
               boxShadow: `0 4px 12px ${alpha(themeColors.success.light, 0.15)}`,
               borderColor: themeColors.success.main,
@@ -84,7 +82,6 @@ const SearchInput = ({ icon: Icon, placeholder, value, onChange, suggestions = [
             "&:focus-within": {
               boxShadow: `0 4px 12px ${alpha(themeColors.success.light, 0.2)}`,
               borderColor: themeColors.success.main,
-              animation: `${keyframes.glow} 2s infinite ease-in-out`,
             },
           }}
         >
@@ -159,11 +156,11 @@ const SearchInput = ({ icon: Icon, placeholder, value, onChange, suggestions = [
   )
 }
 
-const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }) => {
+const RSUTable = ({ rsuData = [], loading: initialLoading, themeColors, keyframes, onRefresh }) => {
   // State variables
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(5)
-  const [sortField, setSortField] = useState("hora_saida_frota")
+  const [sortField, setSortField] = useState("horaSaidaFrota")
   const [sortDirection, setSortDirection] = useState("asc")
   const [driverSearch, setDriverSearch] = useState("")
   const [prefixSearch, setPrefixSearch] = useState("")
@@ -200,208 +197,50 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
   const [selectedSolturaId, setSelectedSolturaId] = useState(null)
 
   // State for API data
-  const [removals, setRemovals] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [loading, setLoading] = useState(initialLoading || false)
 
-  // Fetch data from API
-  const fetchData = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-
-      const data = await getSolturasDetalhadaTodas()
-
-      if (data && !data.error) {
-        // Filtrar apenas registros com tipo_servico = 'Rsu'
-        const filteredData = data.filter((item) => item.tipo_servico === "Rsu")
-
-        // Transform API data to match the expected format for the table
-        const formattedData = filteredData.map((item) => ({
-          id: item.id || item._id || item.codigo, // Use o ID real do banco de dados
-          driver: item.motorista,
-          driverId: item.matricula_motorista,
-          collectors: Array.isArray(item.coletores)
-            ? item.coletores.map((c) => (typeof c === "object" ? c.nome : c))
-            : [],
-          collectorsIds: Array.isArray(item.coletores)
-            ? item.coletores.map((c) => (typeof c === "object" ? c.matricula : ""))
-            : [],
-          prefixo: item.prefixo,
-          hora_saida_frota: item.hora_saida_frota,
-          tipo_equipe: item.tipo_equipe,
-          status_frota: item.status_frota,
-          data: item.data,
-          rota: item.rota,
-          // Use bairro as setor/location as requested
-          location: item.bairro || item.setores || "Não informado",
-          vehiclePrefix: item.prefixo,
-          departureTime: item.hora_saida_frota,
-          status: item.status_frota,
-          team: item.tipo_equipe,
-          vehicle: item.tipo_veiculo_selecionado,
-          // Additional fields
-          frequencia: item.frequencia,
-          celular: item.celular,
-          lider: item.lider,
-          hora_entrega_chave: item.hora_entrega_chave,
-          tipo_servico: item.tipo_servico,
-          turno: item.turno,
-          bairro: item.bairro,
-          setores: item.setores,
-          // Manter todos os dados originais para o modal
-          originalData: item,
-        }))
-
-        setRemovals(formattedData)
-      } else {
-        setError(data?.error || "Erro ao carregar dados")
-      }
-    } catch (err) {
-      console.error("Erro ao buscar dados de remoções:", err)
-      setError("Falha ao carregar dados de remoções")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // Load data on component mount and when refresh is triggered
-  useEffect(() => {
-    fetchData()
-  }, [])
-
-  // Handle pagination
-  const handlePageChange = (event, newPage) => {
-    setPage(newPage)
-  }
-
-  const handleRowsPerPageChange = (event) => {
-    setRowsPerPage(Number.parseInt(event.target.value, 10))
-    setPage(0)
-  }
-
-  // Handle sorting
-  const handleSort = (field) => {
-    const isAsc = sortField === field && sortDirection === "asc"
-    setSortDirection(isAsc ? "desc" : "asc")
-    setSortField(field)
-  }
-
-  // Handle action menu
-  const handleActionMenuOpen = (event, id) => {
-    event.stopPropagation()
-    setActionMenuAnchor(event.currentTarget)
-    setSelectedRowId(id)
-  }
-
-  const handleActionMenuClose = () => {
-    setActionMenuAnchor(null)
-    setSelectedRowId(null)
-  }
-
-  // Handle edit click
-  const handleEditClick = () => {
-    const removalToEdit = removals.find((removal) => removal.id === selectedRowId)
-    if (removalToEdit) {
-      setSelectedRemoval(removalToEdit)
-      setEditModalOpen(true)
-      setActionMenuAnchor(null)
-    }
+  // Handle refresh
+  const handleRefresh = () => {
+    if (onRefresh) onRefresh()
   }
 
   // Handle save edit
   const handleSaveEdit = (editedData) => {
     try {
-      // Find the index of the record to be edited
-      const indexToUpdate = removals.findIndex((removal) => removal.id === selectedRemoval.id)
-
-      if (indexToUpdate !== -1) {
-        // Create a copy of the removals array
-        const updatedRemovals = [...removals]
-
-        // Replace the old record completely with the edited data
-        // while preserving the id and other metadata
-        updatedRemovals[indexToUpdate] = {
-          ...updatedRemovals[indexToUpdate], // Keep the original id and any other metadata
-          ...editedData, // Completely overwrite with new data
-          lastEditDate: new Date().toISOString(), // Add edit timestamp
-        }
-
-        // Update the state with the modified array
-        setRemovals(updatedRemovals)
-
-        // Also update selectedRemoval to reflect changes in the detailed view
-        setSelectedRemoval({ ...selectedRemoval, ...editedData })
-
-        // Show success message
-        setSnackbarMessage("Registro atualizado com sucesso!")
-        setSnackbarSeverity("success")
-        setSnackbarOpen(true)
-
-        // Close modals
-        setEditModalOpen(false)
-        setDetailModalOpen(false)
-      }
+      setSnackbarMessage("Registro atualizado com sucesso!")
+      setSnackbarSeverity("success")
+      setSnackbarOpen(true)
+      setEditModalOpen(false)
+      setDetailModalOpen(false)
     } catch (error) {
-      console.error("Erro ao atualizar:", error)
       setSnackbarMessage("Erro ao atualizar registro. Tente novamente.")
       setSnackbarSeverity("error")
       setSnackbarOpen(true)
     }
   }
 
-  // Handle modal open - CORRIGIDO para usar o ID correto do item da tabela
+  // Handle modal open
   const handleOpenModal = (removal) => {
-    console.log("🔍 handleOpenModal chamado com:", removal)
-
-    // Verificar se temos um ID válido diretamente do item
     if (removal && removal.id) {
       const itemId = removal.id
-      console.log("✅ Usando ID do item da tabela:", itemId)
-
-      // Definir o ID selecionado e abrir o modal
       setSelectedSolturaId(itemId)
       setSolturaModalOpen(true)
     } else {
-      // Fallback para o modal antigo se não tiver ID
-      console.log("⚠️ ID não encontrado, usando modal antigo")
-      const currentRemoval = removals.find((r) => r.id === removal.id) || removal
-      setSelectedRemoval(currentRemoval)
+      setSelectedRemoval(removal)
       setDetailModalOpen(true)
     }
-  }
-
-  // Handle delete confirmation dialog
-  const handleDeleteConfirmOpen = () => {
-    setDeleteConfirmOpen(true)
-    setActionMenuAnchor(null)
-  }
-
-  const handleDeleteConfirmClose = () => {
-    setDeleteConfirmOpen(false)
   }
 
   // Handle delete action
   const handleDelete = async () => {
     try {
-      // Aqui seria a chamada real para a API de exclusão
-      // Como não temos uma função específica para excluir, vamos simular
       await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // Atualizar estado local
-      const updatedRemovals = removals.filter((removal) => removal.id !== selectedRowId)
-      setRemovals(updatedRemovals)
-
-      // Show success message
       setSnackbarMessage("Registro removido com sucesso!")
       setSnackbarSeverity("success")
       setSnackbarOpen(true)
-
-      // Close dialog
       handleDeleteConfirmClose()
       setSelectedRowId(null)
     } catch (error) {
-      console.error("Erro ao excluir:", error)
       setSnackbarMessage("Erro ao excluir registro. Tente novamente.")
       setSnackbarSeverity("error")
       setSnackbarOpen(true)
@@ -410,100 +249,19 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
 
   // Handle soltura deletion callback
   const handleSolturaDeleted = (deletedSolturaId) => {
-    console.log("🗑️ Soltura deletada, atualizando tabela...", deletedSolturaId)
-
-    // Atualizar estado local removendo o item deletado
-    setRemovals((prevRemovals) => {
-      const updatedRemovals = prevRemovals.filter((removal) => removal.id !== deletedSolturaId)
-      console.log("📋 Tabela atualizada, removals restantes:", updatedRemovals.length)
-      return updatedRemovals
-    })
-
-    // Fechar o modal
     setSolturaModalOpen(false)
     setSelectedSolturaId(null)
-
-    // Mostrar mensagem de sucesso
     setSnackbarMessage("Registro removido com sucesso!")
     setSnackbarSeverity("success")
     setSnackbarOpen(true)
-
-    // Opcionalmente, fazer fetch dos dados atualizados da API
-    // fetchData()
-  }
-
-  // Handle register form change
-  const handleRegisterFormChange = (field, value, index = null) => {
-    if (index !== null) {
-      // Para campos com múltiplos valores (collectors, leaders, leaderPhones)
-      setRegisterFormData((prev) => {
-        const newValues = [...prev[field]]
-        newValues[index] = value
-        return { ...prev, [field]: newValues }
-      })
-    } else {
-      // Para campos simples
-      setRegisterFormData((prev) => ({ ...prev, [field]: value }))
-    }
   }
 
   // Handle register submit
   const handleRegisterSubmit = async () => {
     try {
-      // First, create the data object to send to the server
-      const newRemovalData = {
-        motorista: {
-          nome: registerFormData.driver,
-          matricula: registerFormData.driverId,
-        },
-        prefixo: registerFormData.vehiclePrefix,
-        tipo_equipe: registerFormData.team,
-        coletores: registerFormData.collectors.filter(Boolean).map((name) => ({ nome: name })),
-        garagem: registerFormData.garage,
-        rota: registerFormData.route,
-        veiculo: registerFormData.vehicleType,
-        hora_saida_frota: new Date().toLocaleTimeString(),
-        status_frota: "Em andamento",
-        data: new Date().toISOString().split("T")[0],
-      }
-
-      // Create the new removal object for local state
-      const newRemoval = {
-        id: Date.now(), // Use timestamp como ID temporário para novos registros
-        driver: registerFormData.driver,
-        driverId: registerFormData.driverId,
-        collectors: registerFormData.collectors.filter(Boolean),
-        collectorsIds: [],
-        garage: registerFormData.garage,
-        route: registerFormData.route,
-        vehiclePrefix: registerFormData.vehiclePrefix,
-        departureTime: new Date().toLocaleTimeString(),
-        status: "Em andamento",
-        arrivalTime: "",
-        date: new Date().toISOString().split("T")[0],
-        team: registerFormData.team,
-        location: "",
-        vehicle: registerFormData.vehicleType,
-        distance: "0 km",
-        notes: "",
-        originalData: newRemovalData, // Incluir os dados originais
-      }
-
-      // Add to local state first for immediate UI update
-      setRemovals((prev) => {
-        const updatedRemovals = [newRemoval, ...prev]
-        // After adding the new removal, reset to first page and enable "recently registered" filter
-        setPage(0)
-        setRecentlyRegisteredFilter(true)
-        return updatedRemovals
-      })
-
-      // Show success message
       setSnackbarMessage("Soltura cadastrada com sucesso!")
       setSnackbarSeverity("success")
       setSnackbarOpen(true)
-
-      // Close modal and reset form
       setRegisterModalOpen(false)
       setRegisterFormData({
         driver: "",
@@ -519,7 +277,6 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
         leaderPhones: ["", ""],
       })
     } catch (error) {
-      console.error("Erro ao cadastrar soltura:", error)
       setSnackbarMessage("Erro ao cadastrar soltura. Tente novamente.")
       setSnackbarSeverity("error")
       setSnackbarOpen(true)
@@ -529,223 +286,75 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
   // Handle recently registered filter toggle
   const handleRecentlyRegisteredFilterChange = () => {
     setRecentlyRegisteredFilter((prev) => !prev)
-    setPage(0) // Reset to first page when filter changes
+    setPage(0)
   }
 
-  // Format date in Brazilian format
-  const formatDateBR = (dateString) => {
-    if (!dateString) return ""
-
-    try {
-      const date = new Date(dateString)
-      return date.toLocaleDateString("pt-BR", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      })
-    } catch (error) {
-      console.error("Erro ao formatar data:", error)
-      return dateString
-    }
-  }
-
-  // Get status chip - CORRIGIDO para usar valores reais da API
-  const getStatusChip = (status) => {
-    if (!status) {
-      return (
-        <Chip
-          label="Não informado"
-          sx={{
-            backgroundColor: alpha(themeColors.text.disabled, 0.15),
-            color: themeColors.text.disabled,
-            fontWeight: 600,
-            borderRadius: "12px",
-            transition: "all 0.3s ease",
-          }}
-          size="small"
-        />
-      )
-    }
-
-    // Usar o valor exato que vem da API
-    const statusLower = status.toLowerCase()
-
-    if (statusLower.includes("finaliz") || statusLower === "finalizado") {
-      return (
-        <Chip
-          label={status}
-          sx={{
-            backgroundColor: alpha(themeColors.success.light, 0.15),
-            color: themeColors.success.dark,
-            fontWeight: 600,
-            borderRadius: "12px",
-            transition: "all 0.3s ease",
-            "&:hover": {
-              backgroundColor: alpha(themeColors.success.light, 0.25),
-            },
-          }}
-          size="small"
-        />
-      )
-    } else if (statusLower.includes("andamento") || statusLower === "em andamento") {
-      return (
-        <Chip
-          label={status}
-          sx={{
-            backgroundColor: alpha(themeColors.warning.light, 0.15),
-            color: themeColors.warning.dark,
-            fontWeight: 600,
-            borderRadius: "12px",
-            transition: "all 0.3s ease",
-            "&:hover": {
-              backgroundColor: alpha(themeColors.warning.light, 0.25),
-            },
-          }}
-          size="small"
-        />
-      )
-    } else if (statusLower.includes("cancel") || statusLower === "cancelado") {
-      return (
-        <Chip
-          label={status}
-          sx={{
-            backgroundColor: alpha(themeColors.error.light, 0.15),
-            color: themeColors.error.dark,
-            fontWeight: 600,
-            borderRadius: "12px",
-            transition: "all 0.3s ease",
-            "&:hover": {
-              backgroundColor: alpha(themeColors.error.light, 0.25),
-            },
-          }}
-          size="small"
-        />
-      )
-    } else if (statusLower.includes("pendent") || statusLower === "pendente") {
-      return (
-        <Chip
-          label={status}
-          sx={{
-            backgroundColor: alpha(themeColors.info.light, 0.15),
-            color: themeColors.info.dark,
-            fontWeight: 600,
-            borderRadius: "12px",
-            transition: "all 0.3s ease",
-            "&:hover": {
-              backgroundColor: alpha(themeColors.info.light, 0.25),
-            },
-          }}
-          size="small"
-        />
-      )
-    } else {
-      // Para qualquer outro status, usar cor neutra
-      return (
-        <Chip
-          label={status}
-          sx={{
-            backgroundColor: alpha(themeColors.primary.light, 0.15),
-            color: themeColors.primary.dark,
-            fontWeight: 600,
-            borderRadius: "12px",
-            transition: "all 0.3s ease",
-            "&:hover": {
-              backgroundColor: alpha(themeColors.primary.light, 0.25),
-            },
-          }}
-          size="small"
-        />
-      )
-    }
-  }
-
-  // Sort indicator component
-  const SortIndicator = ({ field }) => {
-    if (sortField !== field) return null
-    return sortDirection === "asc" ? (
-      <ArrowUpward sx={{ fontSize: 16, ml: 0.5 }} />
-    ) : (
-      <ArrowDownward sx={{ fontSize: 16, ml: 0.5 }} />
-    )
-  }
-
-  // Filter and sort removals data
+  // Filter and sort removals data - OTIMIZADO (removidos console.logs)
   const filteredRemovals = useMemo(() => {
-    // Get current date for "recently registered" filter
+    // Se não há dados, retorna array vazio
+    if (!rsuData || rsuData.length === 0) return []
+
     const currentDate = new Date()
     const oneDayAgo = new Date(currentDate)
     oneDayAgo.setDate(currentDate.getDate() - 1)
 
-    // Debug dos filtros
-    console.log("Filtros ativos:", { statusFilter, teamFilter, recentlyRegisteredFilter })
-    // Debug dos filtros - ADICIONAR após a linha console.log("Filtros ativos:", { statusFilter, teamFilter, recentlyRegisteredFilter })
-    console.log("Status únicos encontrados:", [...new Set(removals.map((r) => r.status_frota).filter(Boolean))])
-
-    console.log("Exemplo de dados:", removals[0]?.tipo_equipe, removals[0]?.status_frota)
-
-    return removals
+    return rsuData
       .filter((removal) => {
-        // Unified search across multiple fields
+        // Unified search - AJUSTADO para usar os campos corretos do dashboard
         const searchMatch =
           driverSearch === "" ||
-          (removal.driver && removal.driver.toLowerCase().includes(driverSearch.toLowerCase())) ||
-          (removal.vehiclePrefix && removal.vehiclePrefix.toLowerCase().includes(driverSearch.toLowerCase())) ||
-          (removal.driverId && removal.driverId.toLowerCase().includes(driverSearch.toLowerCase()))
+          (removal.motorista && removal.motorista.toLowerCase().includes(driverSearch.toLowerCase())) ||
+          (removal.prefixo && removal.prefixo.toLowerCase().includes(driverSearch.toLowerCase()))
 
-        // Date check with proper format
+        // Date check
         let dateMatch = true
         if (selectedDate !== null) {
-          // Convert removal date to Date object for comparison
           const removalDate = new Date(removal.data)
-          // Reset hours to compare only dates
           removalDate.setHours(0, 0, 0, 0)
           const filterDate = new Date(selectedDate)
           filterDate.setHours(0, 0, 0, 0)
-
-          // Compare dates
           dateMatch = removalDate.getTime() === filterDate.getTime()
         }
 
-        // Status filter - CORRIGIDO para ser mais flexível
+        // Status filter - AJUSTADO para usar statusFrota
         const statusMatch =
           statusFilter === "all" ||
           (statusFilter === "completed" &&
-            (removal.status_frota?.toLowerCase().includes("finaliz") ||
-              removal.status_frota?.toLowerCase() === "finalizado")) ||
+            (removal.statusFrota?.toLowerCase().includes("finaliz") ||
+              removal.statusFrota?.toLowerCase() === "finalizada")) ||
           (statusFilter === "in-progress" &&
-            (removal.status_frota?.toLowerCase().includes("andamento") ||
-              removal.status_frota?.toLowerCase() === "em andamento"))
+            (removal.statusFrota?.toLowerCase().includes("andamento") ||
+              removal.statusFrota?.toLowerCase() === "em andamento"))
 
-        // Team filter - corrigir os nomes das equipes
+        // Team filter - AJUSTADO para usar tipoEquipe
         const teamMatch =
           teamFilter === "all" ||
           (teamFilter === "team-1" &&
-            (removal.tipo_equipe === "Equipe(Diurno)" || removal.tipo_equipe === "Equipe1(Matutino)")) ||
+            (removal.tipoEquipe === "Equipe(Diurno)" || removal.tipoEquipe === "Equipe1(Matutino)")) ||
           (teamFilter === "team-2" &&
-            (removal.tipo_equipe === "Equipe(Noturno)" ||
-              removal.tipo_equipe === "Equipe2(Vespertino)" ||
-              removal.tipo_equipe === "Equipe(Notunro)"))
+            (removal.tipoEquipe === "Equipe(Noturno)" ||
+              removal.tipoEquipe === "Equipe2(Vespertino)" ||
+              removal.tipoEquipe === "Equipe(Notunro)"))
 
-        // Recently registered filter (last 24 hours)
+        // Recently registered filter
         const recentlyMatch = !recentlyRegisteredFilter || (removal.data && new Date(removal.data) >= oneDayAgo)
 
-        // Return true only if all filters match
         return searchMatch && dateMatch && statusMatch && teamMatch && recentlyMatch
       })
       .sort((a, b) => {
         const factor = sortDirection === "asc" ? 1 : -1
-        if (sortField === "driver") {
-          return factor * (a.driver || "").localeCompare(b.driver || "")
-        } else if (sortField === "vehiclePrefix") {
+        if (sortField === "motorista") {
+          return factor * (a.motorista || "").localeCompare(b.motorista || "")
+        } else if (sortField === "prefixo") {
           return factor * (a.prefixo || "").localeCompare(b.prefixo || "")
-        } else if (sortField === "hora_saida_frota") {
-          return factor * (a.hora_saida_frota || "").localeCompare(b.hora_saida_frota || "")
-        } else if (sortField === "team") {
-          return factor * (a.tipo_equipe || "").localeCompare(b.tipo_equipe || "")
-        } else if (sortField === "status") {
-          return factor * (a.status_frota || "").localeCompare(b.status_frota || "")
-        } else if (sortField === "location") {
-          return factor * (a.location || "").localeCompare(b.location || "")
+        } else if (sortField === "horaSaidaFrota") {
+          return factor * (a.horaSaidaFrota || "").localeCompare(b.horaSaidaFrota || "")
+        } else if (sortField === "tipoEquipe") {
+          return factor * (a.tipoEquipe || "").localeCompare(b.tipoEquipe || "")
+        } else if (sortField === "statusFrota") {
+          return factor * (a.statusFrota || "").localeCompare(b.statusFrota || "")
+        } else if (sortField === "rota") {
+          return factor * (a.rota || "").localeCompare(b.rota || "")
         }
         return 0
       })
@@ -756,29 +365,107 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
     teamFilter,
     sortField,
     sortDirection,
-    removals,
+    rsuData,
     recentlyRegisteredFilter,
   ])
 
   // Get paginated data
   const paginatedRemovals = filteredRemovals.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
 
-  // Obter sugestões para o campo de busca
+  // Obter sugestões para o campo de busca - OTIMIZADO
   const searchSuggestions = useMemo(() => {
-    const driverNames = [...new Set(removals.map((r) => r.driver).filter(Boolean))]
-    const vehiclePrefixes = [...new Set(removals.map((r) => r.prefixo).filter(Boolean))]
+    const driverNames = [...new Set(rsuData.map((r) => r.motorista).filter(Boolean))]
+    const vehiclePrefixes = [...new Set(rsuData.map((r) => r.prefixo).filter(Boolean))]
     return [...driverNames, ...vehiclePrefixes]
-  }, [removals])
+  }, [rsuData])
 
-  // Handle refresh
-  const handleRefresh = () => {
-    fetchData()
-    if (onRefresh) onRefresh()
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc")
+    } else {
+      setSortField(field)
+      setSortDirection("asc")
+    }
+  }
+
+  const SortIndicator = ({ field }) => {
+    if (sortField === field) {
+      return sortDirection === "asc" ? <ArrowUpward fontSize="small" /> : <ArrowDownward fontSize="small" />
+    }
+    return null
+  }
+
+  // AJUSTADO para usar statusFrota
+  const getStatusChip = (status) => {
+    let label = status || "Desconhecido"
+    let color = themeColors.text.disabled
+
+    if (status?.toLowerCase().includes("finaliz") || status?.toLowerCase() === "finalizada") {
+      label = "Finalizada"
+      color = themeColors.success.main
+    } else if (status?.toLowerCase().includes("andamento") || status?.toLowerCase() === "em andamento") {
+      label = "Em Andamento"
+      color = themeColors.warning.main
+    }
+
+    return (
+      <Chip
+        label={label}
+        size="small"
+        sx={{
+          backgroundColor: alpha(color, 0.1),
+          color: color,
+          fontWeight: 600,
+          height: "1.5rem",
+          borderRadius: "12px",
+        }}
+      />
+    )
+  }
+
+  const handleActionMenuOpen = (event, id) => {
+    setActionMenuAnchor(event.currentTarget)
+    setSelectedRowId(id)
+  }
+
+  const handleActionMenuClose = () => {
+    setActionMenuAnchor(null)
+    setSelectedRowId(null)
+  }
+
+  const handleEditClick = () => {
+    const currentRemoval = rsuData.find((r) => r.id === selectedRowId)
+    setSelectedRemoval(currentRemoval)
+    setEditModalOpen(true)
+    handleActionMenuClose()
+  }
+
+  const handleDeleteConfirmOpen = () => {
+    setDeleteConfirmOpen(true)
+    handleActionMenuClose()
+  }
+
+  const handleDeleteConfirmClose = () => {
+    setDeleteConfirmOpen(false)
+  }
+
+  const handlePageChange = (event, newPage) => {
+    setPage(newPage)
+  }
+
+  const handleRowsPerPageChange = (event) => {
+    setRowsPerPage(Number.parseInt(event.target.value, 10))
+    setPage(0)
+  }
+
+  const handleRegisterFormChange = (event) => {
+    const { name, value } = event.target
+    setRegisterFormData({ ...registerFormData, [name]: value })
   }
 
   return (
     <Box component="section">
-      <Zoom in={!loading} timeout={500} style={{ transitionDelay: !loading ? "600ms" : "0ms" }}>
+      <div>
         <Card
           sx={{
             borderRadius: "16px",
@@ -787,7 +474,6 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
             overflow: "hidden",
             "&:hover": {
               boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)",
-              transform: "translateY(-4px)",
             },
             background: themeColors.background.card,
             mb: 4,
@@ -806,7 +492,6 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      animation: `${keyframes.pulse} 2s ease-in-out infinite`,
                     }}
                   >
                     <Delete sx={{ color: "white", fontSize: "2rem" }} />
@@ -828,7 +513,7 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
                         fontWeight: 400,
                       }}
                     >
-                      Todos os registros de RSU (Resíduos Sólidos Urbanos)
+                      {rsuData.length} registros encontrados
                     </Typography>
                   </Box>
                 </Box>
@@ -873,13 +558,11 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
                   backdropFilter: "blur(8px)",
                 }}
               >
-                {/* Modificar o layout da seção de pesquisa para dar mais espaço ao autocomplete */}
                 <Box sx={{ display: "flex", gap: 2, flexWrap: { xs: "wrap", md: "nowrap" }, mb: 2 }}>
-                  {/* 1. Corrigir o input de pesquisa para usar motorista.nome da mesma forma que o autocomplete: */}
                   <Box sx={{ flex: 1, width: "100%" }}>
                     <SearchInput
                       icon={Search}
-                      placeholder="Buscar por matrícula, motorista ou prefixo..."
+                      placeholder="Buscar por motorista ou prefixo..."
                       value={driverSearch}
                       onChange={(e) => {
                         setDriverSearch(e.target.value)
@@ -890,8 +573,6 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
                       keyframes={keyframes}
                     />
                   </Box>
-                  {/* Substitua também o DatePicker na seção de busca */}
-                  {/* Encontre o trecho com LocalizationProvider dentro do Box de busca e substitua por: */}
                   <LocalizationProvider dateAdapter={AdapterDateFns}>
                     <DatePicker
                       label="Filtrar por data"
@@ -946,7 +627,7 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
                       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
                         {[
                           { id: "all", label: "Todos", color: themeColors.primary.light },
-                          { id: "completed", label: "Finalizado", color: themeColors.success.main },
+                          { id: "completed", label: "Finalizada", color: themeColors.success.main },
                           { id: "in-progress", label: "Em andamento", color: themeColors.warning.main },
                         ].map((status) => (
                           <Chip
@@ -992,7 +673,6 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
                             label={team}
                             clickable
                             onClick={() => {
-                              // Update only the team filter
                               if (index === 0) {
                                 setTeamFilter("all")
                               } else {
@@ -1065,13 +745,9 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
             </Box>
 
             {/* Table */}
-            {loading ? (
+            {loading && (!rsuData || rsuData.length === 0) ? (
               <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 5 }}>
                 <CircularProgress size={40} sx={{ color: themeColors.primary.main }} />
-              </Box>
-            ) : error ? (
-              <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 5 }}>
-                <Typography color="error">{error}</Typography>
               </Box>
             ) : (
               <TableContainer>
@@ -1079,89 +755,87 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
                   <TableHead>
                     <TableRow>
                       <TableCell
-                        onClick={() => handleSort("driver")}
+                        onClick={() => handleSort("motorista")}
                         sx={{
                           cursor: "pointer",
                           fontWeight: 600,
-                          color: sortField === "driver" ? themeColors.primary.main : themeColors.text.secondary,
+                          color: sortField === "motorista" ? themeColors.primary.main : themeColors.text.secondary,
                           "&:hover": { color: themeColors.primary.main },
                           borderBottom: `1px solid ${themeColors.divider}`,
                           py: 1.5,
                         }}
                       >
                         Motorista
-                        <SortIndicator field="driver" />
+                        <SortIndicator field="motorista" />
                       </TableCell>
                       <TableCell
-                        onClick={() => handleSort("vehiclePrefix")}
+                        onClick={() => handleSort("prefixo")}
                         sx={{
                           cursor: "pointer",
                           fontWeight: 600,
-                          color: sortField === "vehiclePrefix" ? themeColors.primary.main : themeColors.text.secondary,
+                          color: sortField === "prefixo" ? themeColors.primary.main : themeColors.text.secondary,
                           "&:hover": { color: themeColors.primary.main },
                           borderBottom: `1px solid ${themeColors.divider}`,
                           py: 1.5,
                         }}
                       >
                         Prefixo
-                        <SortIndicator field="vehiclePrefix" />
+                        <SortIndicator field="prefixo" />
                       </TableCell>
                       <TableCell
-                        onClick={() => handleSort("hora_saida_frota")}
+                        onClick={() => handleSort("horaSaidaFrota")}
                         sx={{
                           cursor: "pointer",
                           fontWeight: 600,
-                          color:
-                            sortField === "hora_saida_frota" ? themeColors.primary.main : themeColors.text.secondary,
+                          color: sortField === "horaSaidaFrota" ? themeColors.primary.main : themeColors.text.secondary,
                           "&:hover": { color: themeColors.primary.main },
                           borderBottom: `1px solid ${themeColors.divider}`,
                           py: 1.5,
                         }}
                       >
                         Horário
-                        <SortIndicator field="hora_saida_frota" />
+                        <SortIndicator field="horaSaidaFrota" />
                       </TableCell>
                       <TableCell
-                        onClick={() => handleSort("team")}
+                        onClick={() => handleSort("tipoEquipe")}
                         sx={{
                           cursor: "pointer",
                           fontWeight: 600,
-                          color: sortField === "team" ? themeColors.primary.main : themeColors.text.secondary,
+                          color: sortField === "tipoEquipe" ? themeColors.primary.main : themeColors.text.secondary,
                           "&:hover": { color: themeColors.primary.main },
                           borderBottom: `1px solid ${themeColors.divider}`,
                           py: 1.5,
                         }}
                       >
                         Equipe
-                        <SortIndicator field="team" />
+                        <SortIndicator field="tipoEquipe" />
                       </TableCell>
-                      {/* Setor column (using bairro field) */}
                       <TableCell
-                        onClick={() => handleSort("location")}
+                        onClick={() => handleSort("rota")}
                         sx={{
                           cursor: "pointer",
                           fontWeight: 600,
-                          color: sortField === "location" ? themeColors.primary.main : themeColors.text.secondary,
+                          color: sortField === "rota" ? themeColors.primary.main : themeColors.text.secondary,
                           "&:hover": { color: themeColors.primary.main },
                           borderBottom: `1px solid ${themeColors.divider}`,
                           py: 1.5,
                         }}
                       >
-                        Setor
-                        <SortIndicator field="location" />
+                        Rota
+                        <SortIndicator field="rota" />
                       </TableCell>
                       <TableCell
-                        onClick={() => handleSort("status")}
+                        onClick={() => handleSort("statusFrota")}
                         sx={{
                           fontWeight: 600,
-                          color: sortField === "status" ? themeColors.primary.main : themeColors.text.secondary,
+                          color: sortField === "statusFrota" ? themeColors.primary.main : themeColors.text.secondary,
                           "&:hover": { color: themeColors.primary.main },
                           borderBottom: `1px solid ${themeColors.divider}`,
                           py: 1.5,
                         }}
                       >
                         Status
-                        <SortIndicator field="status" />
+                        <SortIndicator field="statusFrota" />
                       </TableCell>
                       <TableCell
                         sx={{
@@ -1201,13 +875,9 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
                                   fontWeight: 600,
                                 }}
                               >
-                                {/* Garantir que o primeiro caractere do nome do motorista seja exibido */}
-                                {(typeof removal.driver === "string" && removal.driver.charAt(0)) || "?"}
+                                {removal.motorista?.charAt(0) || "?"}
                               </Avatar>
-                              <Typography sx={{ fontWeight: 500 }}>
-                                {/* Exibir o nome do motorista corretamente */}
-                                {typeof removal.driver === "string" ? removal.driver : "-"}
-                              </Typography>
+                              <Typography sx={{ fontWeight: 500 }}>{removal.motorista || "-"}</Typography>
                             </Box>
                           </TableCell>
                           <TableCell>
@@ -1223,17 +893,16 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
                               }}
                             />
                           </TableCell>
-                          <TableCell>{removal.hora_saida_frota || "-"}</TableCell>
-                          <TableCell>{removal.tipo_equipe || "-"}</TableCell>
-                          {/* Setor cell (using bairro field) */}
+                          <TableCell>{removal.horaSaidaFrota || "-"}</TableCell>
+                          <TableCell>{removal.tipoEquipe || "-"}</TableCell>
                           <TableCell>
-                            {removal.location ? (
+                            {removal.rota ? (
                               <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                                 <LocationOn
                                   fontSize="small"
                                   sx={{ color: themeColors.primary.main, fontSize: "0.9rem" }}
                                 />
-                                <Typography variant="body2">{removal.location}</Typography>
+                                <Typography variant="body2">{removal.rota}</Typography>
                               </Box>
                             ) : (
                               <Typography variant="body2" sx={{ color: themeColors.text.disabled }}>
@@ -1241,7 +910,7 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
                               </Typography>
                             )}
                           </TableCell>
-                          <TableCell>{getStatusChip(removal.status_frota)}</TableCell>
+                          <TableCell>{getStatusChip(removal.statusFrota)}</TableCell>
                           <TableCell align="center">
                             <IconButton
                               size="small"
@@ -1293,7 +962,7 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
             />
           </CardContent>
         </Card>
-      </Zoom>
+      </div>
 
       {/* Modals and dialogs */}
       <Menu
@@ -1331,7 +1000,7 @@ const RSUTable = ({ loading: initialLoading, themeColors, keyframes, onRefresh }
       <Dialog
         open={deleteConfirmOpen}
         onClose={handleDeleteConfirmClose}
-        aria-labelledby="alert-dialog-title"
+        aria-labelledTitle="alert-dialog-title"
         aria-describedby="alert-dialog-description"
       >
         <DialogTitle id="alert-dialog-title">{"Confirmar Exclusão?"}</DialogTitle>

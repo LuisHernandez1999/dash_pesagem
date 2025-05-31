@@ -25,7 +25,8 @@ import {
   TrendingDown,
   LocationOn,
 } from "@mui/icons-material"
-import { getContagemPorPaRsu } from "../service/rsu"
+// Remover esta importação:
+// import { getContagemPorPaRsu } from "../service/rsu"
 
 // Helper function to check if data has changed
 const hasDataChanged = (oldData, newData) => {
@@ -41,7 +42,8 @@ const hasDataChanged = (oldData, newData) => {
   return false
 }
 
-const RSUResourceComparisonStats = ({ themeColors, keyframes, onRefresh }) => {
+// Modificar o componente para receber apiData como prop
+const RSUResourceComparisonStats = ({ themeColors, keyframes, onRefresh, apiData }) => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [data, setData] = useState({
@@ -83,59 +85,79 @@ const RSUResourceComparisonStats = ({ themeColors, keyframes, onRefresh }) => {
     veiculos: 20,
   }
 
-  const loadData = async () => {
+  // Substituir a função loadData para usar os dados do apiData
+  const processApiData = () => {
     try {
       setLoading(true)
-      console.log("Carregando dados de recursos RSU...")
+      console.log("Processando dados de recursos RSU do componente pai...")
 
-      // Fetch data from API
-      const apiData = await getContagemPorPaRsu()
-      console.log("Dados recebidos da API:", apiData)
+      if (!apiData || !apiData.porGaragem) {
+        console.log("Dados da API ainda não disponíveis")
+        return
+      }
+
+      // Extrair dados da prop apiData
+      const { porGaragem } = apiData
+
+      // Transformar os dados para o formato esperado pelo componente
+      const transformedData = {
+        PA1: {
+          coletores: porGaragem.PA1?.coletores || 0,
+          motoristas: porGaragem.PA1?.motoristas || 0,
+          veiculos: porGaragem.PA1?.veiculos || 0,
+          turnos: porGaragem.PA1?.turnos || [],
+        },
+        PA2: {
+          coletores: porGaragem.PA2?.coletores || 0,
+          motoristas: porGaragem.PA2?.motoristas || 0,
+          veiculos: porGaragem.PA2?.veiculos || 0,
+          turnos: porGaragem.PA2?.turnos || [],
+        },
+        PA3: {
+          coletores: porGaragem.PA3?.coletores || 0,
+          motoristas: porGaragem.PA3?.motoristas || 0,
+          veiculos: porGaragem.PA3?.veiculos || 0,
+          turnos: porGaragem.PA3?.turnos || [],
+        },
+        PA4: {
+          coletores: porGaragem.PA4?.coletores || 0,
+          motoristas: porGaragem.PA4?.motoristas || 0,
+          veiculos: porGaragem.PA4?.veiculos || 0,
+          turnos: porGaragem.PA4?.turnos || [],
+        },
+        lastUpdated: new Date().toISOString(),
+      }
 
       // Check if data has changed
-      const dataChanged = hasDataChanged(prevDataRef.current, apiData)
+      const dataChanged = hasDataChanged(prevDataRef.current, transformedData)
 
       if (dataChanged) {
         console.log("Dados mudaram, atualizando componente...")
-
-        // Add lastUpdated timestamp
-        const transformedData = {
-          ...apiData,
-          lastUpdated: new Date().toISOString(),
-        }
-
         setData(transformedData)
         setError(null)
 
         // Update ref with current data
-        prevDataRef.current = { ...apiData }
+        prevDataRef.current = { ...transformedData }
       } else {
         console.log("Dados não mudaram, pulando atualização")
       }
     } catch (err) {
-      console.error("Erro ao carregar dados de comparação de recursos RSU:", err)
-      setError("Falha ao carregar dados")
+      console.error("Erro ao processar dados de comparação de recursos RSU:", err)
+      setError("Falha ao processar dados")
     } finally {
       setLoading(false)
     }
   }
 
+  // Atualizar o useEffect para observar mudanças em apiData
   useEffect(() => {
-    loadData()
+    if (apiData) {
+      processApiData()
+    }
+  }, [apiData])
 
-    // Set up refresh interval (5 minutes)
-    const refreshInterval = setInterval(
-      () => {
-        loadData()
-      },
-      5 * 60 * 1000,
-    )
-
-    return () => clearInterval(refreshInterval)
-  }, [])
-
+  // Modificar o handleRefresh para chamar apenas o onRefresh do componente pai
   const handleRefresh = () => {
-    loadData()
     if (onRefresh) onRefresh()
   }
 

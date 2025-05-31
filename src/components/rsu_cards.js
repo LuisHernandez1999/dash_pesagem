@@ -77,7 +77,7 @@ const CustomStatCard = ({ title, value, icon: Icon, color, highlight, keyframes 
 )
 
 // Stats Cards Grid Component
-const StatsCards = ({ themeColors, keyframes }) => {
+const StatsCards = ({ themeColors, keyframes, apiData }) => {
   // State variables
   const [statsData, setStatsData] = useState({
     totalVehicles: 0,
@@ -183,20 +183,8 @@ const StatsCards = ({ themeColors, keyframes }) => {
   }
 
   const refreshVehiclesReleasedToday = async () => {
-    try {
-      setStatsData((prev) => ({ ...prev, vehiclesReleasedToday: null }))
-      // Simulate API call for released vehicles today
-      // In a real application, you would call an API endpoint here
-      setTimeout(() => {
-        setStatsData((prev) => ({
-          ...prev,
-          vehiclesReleasedToday: 42 + Math.floor(Math.random() * 3),
-        }))
-        setHighlightedStat("vehiclesReleasedToday")
-      }, 500)
-    } catch (error) {
-      console.error("Erro ao atualizar veículos soltos hoje:", error)
-    }
+    // This will be updated when parent component refreshes apiData
+    setHighlightedStat("vehiclesReleasedToday")
   }
 
   // Load data on component mount
@@ -204,15 +192,15 @@ const StatsCards = ({ themeColors, keyframes }) => {
     loadStatsData()
   }, [])
 
-  // Auto-refresh effects
+  // Update vehiclesReleasedToday when apiData changes
   useEffect(() => {
-    if (autoRefreshReleased) {
-      const interval = setInterval(() => {
-        refreshVehiclesReleasedToday()
-      }, 240000) // Atualiza a cada 4 minutos
-      return () => clearInterval(interval)
+    if (apiData?.totalRSUHoje !== undefined) {
+      setStatsData((prev) => ({
+        ...prev,
+        vehiclesReleasedToday: apiData.totalRSUHoje,
+      }))
     }
-  }, [autoRefreshReleased])
+  }, [apiData])
 
   useEffect(() => {
     if (autoRefreshTotal) {

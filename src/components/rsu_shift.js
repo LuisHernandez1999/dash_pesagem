@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef } from "react"
 import { Box, Typography, Card, alpha, Skeleton } from "@mui/material"
 import { WbSunny, Brightness3, People } from "@mui/icons-material"
-import { getQuantidadeMotoristasColetoresPorEquipe } from "../service/rsu"
+// Remover esta importação:
+// import { getQuantidadeMotoristasColetoresPorEquipe } from "../service/rsu"
 
 // Helper function to check if data has changed
 const hasDataChanged = (oldData, newData) => {
@@ -24,70 +25,72 @@ const hasDataChanged = (oldData, newData) => {
   return false
 }
 
-const ShiftDistributionChart = ({ themeColors, chartsLoaded = true }) => {
+// Modificar o componente para receber data como prop
+const ShiftDistributionChart = ({ themeColors, chartsLoaded = true, data }) => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [apiData, setApiData] = useState([
+  const [processedData, setProcessedData] = useState([
     { equipe: "Equipe(Diurno)", motoristas: 0, coletores: 0 },
     { equipe: "Equipe(Noturno)", motoristas: 0, coletores: 0 },
   ])
 
-  // Use ref to store previous API data for comparison
-  const prevApiDataRef = useRef(null)
+  // Use ref to store previous data for comparison
+  const prevDataRef = useRef(null)
 
-  // Fetch data from API
-  const fetchData = async () => {
+  // Substituir fetchData por processData para usar os dados da prop
+  const processData = () => {
     try {
       setLoading(true)
-      console.log("Buscando dados de distribuição por turno...")
+      console.log("Processando dados de distribuição por turno do componente pai...")
 
-      const data = await getQuantidadeMotoristasColetoresPorEquipe()
-      console.log("Dados recebidos da API:", data)
+      if (!data || data.length === 0) {
+        console.log("Dados ainda não disponíveis")
+        return
+      }
+
+      // Transformar os dados da prop para o formato esperado pelo componente
+      const transformedData = data.map((item) => ({
+        equipe: item.name === "Diurno" ? "Equipe(Diurno)" : "Equipe(Noturno)",
+        motoristas: item.motoristas || 0,
+        coletores: item.coletores || 0,
+      }))
 
       // Check if data has changed
-      const dataChanged = hasDataChanged(prevApiDataRef.current, data)
+      const dataChanged = hasDataChanged(prevDataRef.current, transformedData)
 
       if (dataChanged) {
         console.log("Dados mudaram, atualizando componente...")
-        setApiData(data)
+        setProcessedData(transformedData)
         setError(null)
 
         // Update previous data ref
-        prevApiDataRef.current = [...data]
+        prevDataRef.current = [...transformedData]
       } else {
         console.log("Dados não mudaram, pulando atualização")
       }
     } catch (err) {
-      console.error("Erro ao buscar dados de distribuição por turno:", err)
-      setError("Falha ao carregar dados de turnos")
+      console.error("Erro ao processar dados de distribuição por turno:", err)
+      setError("Falha ao processar dados de turnos")
     } finally {
       setLoading(false)
     }
   }
 
-  // Initial data fetch
+  // Atualizar o useEffect para observar mudanças na prop data
   useEffect(() => {
-    fetchData()
+    if (data && data.length > 0) {
+      processData()
+    }
+  }, [data])
 
-    // Set up refresh interval (5 minutes)
-    const refreshInterval = setInterval(
-      () => {
-        fetchData()
-      },
-      5 * 60 * 1000,
-    )
-
-    return () => clearInterval(refreshInterval)
-  }, [])
-
-  // Find data for each shift
-  const diurnoData = apiData.find((item) => item.equipe.toLowerCase().includes("diurno")) || {
+  // Find data for each shift usando processedData
+  const diurnoData = processedData.find((item) => item.equipe.toLowerCase().includes("diurno")) || {
     equipe: "Equipe(Diurno)",
     motoristas: 0,
     coletores: 0,
   }
 
-  const noturnoData = apiData.find((item) => item.equipe.toLowerCase().includes("noturno")) || {
+  const noturnoData = processedData.find((item) => item.equipe.toLowerCase().includes("noturno")) || {
     equipe: "Equipe(Noturno)",
     motoristas: 0,
     coletores: 0,

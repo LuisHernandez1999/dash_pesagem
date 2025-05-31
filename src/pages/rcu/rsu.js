@@ -35,11 +35,12 @@ import {
 import Sidebar from "@/components/sidebar"
 import RSUTable from "../../components/rsu_tabela"
 import ShiftDistributionChart from "../../components/rsu_shift"
-import PADistributionChart from "../../components/rsu_pa"
-import WeeklyDistributionChart from "../../components/grafico_rsu_semana"
+import WeeklyTowerChart from "../../components/grafico_rsu_semana"
 import StatsCards from "../../components/rsu_cards"
 import RSUResourceComparisonStats from "../../components/rsu_resource"
 import { useRouter } from "next/navigation"
+import { getResumoRsuHoje, fetchDadosRsuTabelaGrafico } from "../../service/rsu_new"
+
 
 // Animation keyframes
 const keyframes = {
@@ -248,67 +249,197 @@ export default function RSUDashboard() {
   const [initialLoading, setInitialLoading] = useState(true)
   const [chartsLoaded, setChartsLoaded] = useState(false)
 
-  // Weekly distribution data
-  const [weeklyData, setWeeklyData] = useState([
-    { day: "Segunda", value: 42, label: "42 saídas" },
-    { day: "Terça", value: 38, label: "38 saídas" },
-    { day: "Quarta", value: 45, label: "45 saídas" },
-    { day: "Quinta", value: 40, label: "40 saídas" },
-    { day: "Sexta", value: 50, label: "50 saídas" },
-    { day: "Sábado", value: 25, label: "25 saídas" },
-    { day: "Domingo", value: 15, label: "15 saídas" },
-  ])
+  // API data states
+  const [apiData, setApiData] = useState(null)
+  const [paData, setPaData] = useState([])
+  const [shiftData, setShiftData] = useState([])
+  const [weeklyData, setWeeklyData] = useState([])
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarMessage, setSnackbarMessage] = useState("")
   const [snackbarSeverity, setSnackbarSeverity] = useState("success")
 
-  // Mock data for RSU collections
+  // Mock data for RSU collections (mantido para a tabela)
   const [rsuData, setRsuData] = useState([])
 
+  // Novos estados para dados específicos da tabela e gráfico semanal
+  const [tabelaGraficoData, setTabelaGraficoData] = useState(null)
+  const [weeklyChartData, setWeeklyChartData] = useState([])
+  const [tableData, setTableData] = useState([])
+
+  // Função para transformar dados da API para os gráficos
+  const transformApiDataToCharts = (data) => {
+    if (!data) return
+
+    // Transformar dados para o gráfico de PA (pizza) - MELHORADO
+    const paChartData = []
+    if (data.porGaragem) {
+      Object.keys(data.porGaragem).forEach((pa) => {
+        const paInfo = data.porGaragem[pa]
+        const vehicleCount = paInfo.veiculos || 0 // Focar nos veículos como solicitado
+
+        if (vehicleCount > 0 || true) {
+          // Sempre incluir, mesmo com 0 veículos
+          paChartData.push({
+            name: pa,
+            value: vehicleCount, // Usar contagem de veículos
+            fullName: `Ponto de Apoio ${pa.slice(-1)}`,
+            color: getColorForPA(pa),
+            vehicles: vehicleCount,
+            motoristas: paInfo.motoristas || 0,
+            coletores: paInfo.coletores || 0,
+            turnos: paInfo.turnos || [],
+          })
+        }
+      })
+    }
+
+    // Se não houver dados, criar estrutura padrão
+    if (paChartData.length === 0) {
+      ;["PA1", "PA2", "PA3", "PA4"].forEach((pa) => {
+        paChartData.push({
+          name: pa,
+          value: 0,
+          fullName: `Ponto de Apoio ${pa.slice(-1)}`,
+          color: getColorForPA(pa),
+          vehicles: 0,
+          motoristas: 0,
+          coletores: 0,
+          turnos: [],
+        })
+      })
+    }
+
+    console.log("Dados transformados para PA Chart:", paChartData)
+    setPaData(paChartData)
+
+    // Transformar dados para o gráfico de turnos
+    const shiftChartData = []
+    if (data.porEquipe) {
+      if (data.porEquipe.diurno) {
+        shiftChartData.push({
+          name: "Diurno",
+          motoristas: data.porEquipe.diurno.motoristas || 0,
+          coletores: data.porEquipe.diurno.coletores || 0,
+          total: (data.porEquipe.diurno.motoristas || 0) + (data.porEquipe.diurno.coletores || 0),
+        })
+      }
+      if (data.porEquipe.noturno) {
+        shiftChartData.push({
+          name: "Noturno",
+          motoristas: data.porEquipe.noturno.motoristas || 0,
+          coletores: data.porEquipe.noturno.coletores || 0,
+          total: (data.porEquipe.noturno.motoristas || 0) + (data.porEquipe.noturno.coletores || 0),
+        })
+      }
+    }
+    setShiftData(shiftChartData)
+
+    // Dados semanais (mock por enquanto, pois a API atual é só de hoje)
+    const mockWeeklyData = [
+      { day: "Seg", fullDay: "Segunda-feira", value: 42, color: "#4361EE" },
+      { day: "Ter", fullDay: "Terça-feira", value: 38, color: "#4CC9F0" },
+      { day: "Qua", fullDay: "Quarta-feira", value: 45, color: "#F72585" },
+      { day: "Qui", fullDay: "Quinta-feira", value: 40, color: "#7209B7" },
+      { day: "Sex", fullDay: "Sexta-feira", value: data.totalRSUHoje || 50, color: "#F9C74F" }, // Usar dado real para hoje
+      { day: "Sáb", fullDay: "Sábado", value: 25, color: "#90BE6D" },
+      { day: "Dom", fullDay: "Domingo", value: 15, color: "#F94144" },
+    ]
+    setWeeklyData(mockWeeklyData)
+  }
+
+  // Função para obter cor baseada no PA
+  const getColorForPA = (pa) => {
+    const colors = {
+      PA1: "#9c27b0", // Purple
+      PA2: "#2196f3", // Blue
+      PA3: "#ff9800", // Orange
+      PA4: "#4caf50", // Green
+    }
+    return colors[pa] || "#757575"
+  }
+
+  // Função para obter cor baseada no dia da semana
+  const getColorForDay = (diaSemana) => {
+    const colors = {
+      "Segunda-feira": "#4361EE",
+      "Terça-feira": "#4CC9F0",
+      "Quarta-feira": "#F72585",
+      "Quinta-feira": "#7209B7",
+      "Sexta-feira": "#F9C74F",
+      Sábado: "#90BE6D",
+      Domingo: "#F94144",
+    }
+    return colors[diaSemana] || "#757575"
+  }
+
   const loadAllData = async () => {
-    console.log("Iniciando carregamento de dados...")
+    console.log("Iniciando carregamento de dados da nova API...")
     setLoading(true)
     setInitialLoading(true)
 
     try {
-      // Simulate API calls with mock data
-      // In a real application, these would be actual API calls
+      // Buscar dados do resumo (mantém como está para os outros componentes)
+      const { data, error } = await getResumoRsuHoje()
 
-      // Mock RSU collection data
-      const mockRsuData = Array.from({ length: 20 }, (_, index) => ({
-        id: index + 1,
-        route: `Rota ${Math.floor(Math.random() * 10) + 1}`,
-        driver: `Motorista ${Math.floor(Math.random() * 15) + 1}`,
-        driverId: `M${Math.floor(Math.random() * 1000) + 1000}`,
-        collectors: Array.from(
-          { length: Math.floor(Math.random() * 3) + 1 },
-          (_, i) => `Coletor ${Math.floor(Math.random() * 15) + 1}`,
-        ),
-        collectorsIds: Array.from(
-          { length: Math.floor(Math.random() * 3) + 1 },
-          (_, i) => `C${Math.floor(Math.random() * 1000) + 1000}`,
-        ),
-        vehicle: `Caminhão ${Math.floor(Math.random() * 20) + 1}`,
-        vehiclePrefix: `RSU-${Math.floor(Math.random() * 100) + 100}`,
-        departureTime: `${Math.floor(Math.random() * 12) + 7}:${Math.floor(Math.random() * 60)
-          .toString()
-          .padStart(2, "0")}`,
-        status: Math.random() > 0.3 ? "Finalizado" : "Em andamento",
-        arrivalTime:
-          Math.random() > 0.3
-            ? `${Math.floor(Math.random() * 12) + 13}:${Math.floor(Math.random() * 60)
-                .toString()
-                .padStart(2, "0")}`
-            : "",
-        date: new Date().toISOString().split("T")[0],
-        garage: `PA${Math.floor(Math.random() * 4) + 1}`,
-        shift: ["Diurno", "Noturno"][Math.floor(Math.random() * 3)],
-        collectedWeight: `${(Math.random() * 10 + 5).toFixed(2)} ton`,
-      }))
+      if (error) {
+        console.error("Erro da API:", error)
+        setSnackbarMessage(`Erro ao carregar dados: ${error}`)
+        setSnackbarSeverity("error")
+        setSnackbarOpen(true)
+      } else if (data) {
+        console.log("Dados recebidos da API:", data)
+        setApiData(data)
+        transformApiDataToCharts(data)
+      }
 
-      setRsuData(mockRsuData)
+      // NOVO: Buscar dados específicos para tabela e gráfico semanal
+      try {
+        const tabelaGraficoResult = await fetchDadosRsuTabelaGrafico()
+        console.log("Dados tabela/gráfico recebidos:", tabelaGraficoResult)
+
+        setTabelaGraficoData(tabelaGraficoResult)
+
+        // Transformar dados para o gráfico semanal - CORRIGIDO para usar resumoPorDiaDaSemana
+        if (tabelaGraficoResult.resumoPorDiaDaSemana) {
+          console.log("Transformando dados semanais:", tabelaGraficoResult.resumoPorDiaDaSemana)
+
+          // Converter objeto para array no formato esperado pelo gráfico
+          const weeklyData = Object.entries(tabelaGraficoResult.resumoPorDiaDaSemana).map(
+            ([diaSemana, quantidade]) => ({
+              diaSemana: diaSemana,
+              quantidade: quantidade || 0,
+            }),
+          )
+
+          console.log("Dados semanais transformados:", weeklyData)
+          setWeeklyChartData(weeklyData)
+        } else {
+          console.warn("resumoPorDiaDaSemana não encontrado no objeto:", tabelaGraficoResult)
+          setWeeklyChartData([])
+        }
+
+        // Transformar dados para a tabela
+        if (tabelaGraficoResult.detalhesSolturas && Array.isArray(tabelaGraficoResult.detalhesSolturas)) {
+          setTableData(tabelaGraficoResult.detalhesSolturas)
+        } else {
+          console.warn("detalhesSolturas não é um array válido:", tabelaGraficoResult.detalhesSolturas)
+          setTableData([])
+        }
+      } catch (tabelaError) {
+        console.error("Erro ao buscar dados da tabela/gráfico:", tabelaError)
+        setSnackbarMessage("Erro ao carregar dados da tabela. Usando dados padrão.")
+        setSnackbarSeverity("warning")
+        setSnackbarOpen(true)
+        // Definir dados vazios em caso de erro
+        setWeeklyChartData([])
+        setTableData([])
+      }
+
+      setSnackbarMessage("Dados carregados com sucesso!")
+      setSnackbarSeverity("success")
+      setSnackbarOpen(true)
 
       // Mark loading as complete
       setChartsLoaded(true)
@@ -316,7 +447,6 @@ export default function RSUDashboard() {
       setInitialLoading(false)
     } catch (error) {
       console.error("Erro ao carregar dados:", error)
-      // Show error message
       setSnackbarMessage("Erro ao carregar dados. Tente novamente.")
       setSnackbarSeverity("error")
       setSnackbarOpen(true)
@@ -535,7 +665,8 @@ export default function RSUDashboard() {
                         },
                       }}
                     >
-                      Gerenciamento de coletas e equipes
+                      Gerenciamento de coletas e equipes -{" "}
+                      {apiData?.totalRSUHoje ? `${apiData.totalRSUHoje} saídas hoje` : "Carregando..."}
                     </Typography>
                   </Box>
                 </Box>
@@ -564,7 +695,7 @@ export default function RSUDashboard() {
             />
           </AppBar>
 
-          {/* Tabs Navigation - Redesigned for a more professional look */}
+          {/* Tabs Navigation */}
           <Paper
             elevation={2}
             sx={{
@@ -692,23 +823,27 @@ export default function RSUDashboard() {
             }}
           >
             <Container maxWidth="xl" disableGutters>
-              {/* Stats Cards - Agora usando o componente reutilizável */}
-              <StatsCards themeColors={themeColors} keyframes={keyframes} />
+              {/* Stats Cards */}
+              <StatsCards themeColors={themeColors} keyframes={keyframes} apiData={apiData} />
 
-              {/* Resource Comparison Stats - Novo componente adicionado antes da tabela */}
+              {/* Real Time Stats - NOVO */}
+           
+              {/* Resource Comparison Stats */}
               <RSUResourceComparisonStats
                 themeColors={themeColors}
                 keyframes={keyframes}
                 onRefresh={handleRefreshData}
+                apiData={apiData}
               />
 
-              {/* RSU Table Section */}
+              {/* RSU Table Section - ATUALIZADO para usar novos dados */}
               <RSUTable
-                rsuData={rsuData}
+                rsuData={tableData}
                 loading={loading}
                 themeColors={themeColors}
                 keyframes={keyframes}
                 onRefresh={handleRefreshData}
+                tabelaGraficoData={tabelaGraficoData}
               />
 
               {/* Shift Distribution Chart */}
@@ -765,7 +900,7 @@ export default function RSUDashboard() {
                               fontWeight: 400,
                             }}
                           >
-                            Colaboradores nos turnos matutino, vespertino e noturno
+                            Colaboradores nos turnos diurno e noturno
                           </Typography>
                         </Box>
                       </Box>
@@ -784,14 +919,6 @@ export default function RSUDashboard() {
                     sx={{
                       paddingBottom: "0.75rem",
                       borderBottom: `1px solid ${themeColors.divider}`,
-                      "& .MuiCardHeader-title": {
-                        fontWeight: 600,
-                        fontSize: "1.125rem",
-                        color: themeColors.text.primary,
-                      },
-                      "& .MuiCardHeader-action": {
-                        margin: 0,
-                      },
                     }}
                   />
                   <CardContent sx={{ padding: "1.5rem" }}>
@@ -802,109 +929,16 @@ export default function RSUDashboard() {
                         height: "300px",
                       }}
                     >
-                      <ShiftDistributionChart themeColors={themeColors} chartsLoaded={chartsLoaded} />
+                      <ShiftDistributionChart themeColors={themeColors} chartsLoaded={chartsLoaded} data={shiftData} />
                     </Box>
                   </CardContent>
                 </Card>
               </Box>
 
-              {/* PA Distribution Chart */}
-              <Box component="section" sx={{ mb: 4 }}>
-                <Card
-                  sx={{
-                    borderRadius: "16px",
-                    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
-                    transition: "all 0.3s ease",
-                    overflow: "hidden",
-                    "&:hover": {
-                      boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)",
-                      transform: "translateY(-4px)",
-                    },
-                    background: themeColors.background.card,
-                  }}
-                >
-                  <CardHeader
-                    title={
-                      <Box sx={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                        <Box
-                          sx={{
-                            width: { xs: "32px", sm: "36px" },
-                            height: { xs: "32px", sm: "36px" },
-                            borderRadius: "12px",
-                            background: themeColors.info.main,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            animation: `${keyframes.pulse} 2s ease-in-out infinite`,
-                          }}
-                        >
-                          <Warehouse
-                            sx={{
-                              color: "white",
-                              fontSize: { xs: "1.1rem", sm: "1.3rem" },
-                            }}
-                          />
-                        </Box>
-                        <Box>
-                          <Typography
-                            sx={{
-                              fontWeight: 600,
-                              fontSize: { xs: "1.1rem", sm: "1.2rem" },
-                              color: themeColors.text.primary,
-                            }}
-                          >
-                            Distribuição por PA
-                          </Typography>
-                          <Typography
-                            sx={{
-                              fontSize: { xs: "0.8rem", sm: "0.85rem" },
-                              color: themeColors.text.secondary,
-                              fontWeight: 400,
-                            }}
-                          >
-                            Saídas por ponto de apoio
-                          </Typography>
-                        </Box>
-                      </Box>
-                    }
-                    action={
-                      <IconButton
-                        sx={{
-                          color: themeColors.text.secondary,
-                          "&:hover": { color: themeColors.info.main },
-                        }}
-                        onClick={handleRefreshData}
-                      >
-                        <Refresh />
-                      </IconButton>
-                    }
-                    sx={{
-                      paddingBottom: "0.75rem",
-                      borderBottom: `1px solid ${themeColors.divider}`,
-                      "& .MuiCardHeader-title": {
-                        fontWeight: 600,
-                        fontSize: "1.125rem",
-                        color: themeColors.text.primary,
-                      },
-                      "& .MuiCardHeader-action": {
-                        margin: 0,
-                      },
-                    }}
-                  />
-                  <CardContent sx={{ padding: "1.5rem" }}>
-                    <Box
-                      sx={{
-                        width: "100%",
-                        position: "relative",
-                      }}
-                    >
-                      <PADistributionChart chartsLoaded={chartsLoaded} themeColors={themeColors} />
-                    </Box>
-                  </CardContent>
-                </Card>
-              </Box>
+              {/* PA Distribution Chart - Novo gráfico de pizza */}
+             
 
-              {/* Weekly Distribution Chart */}
+              {/* Weekly Distribution Chart - ATUALIZADO para usar novos dados */}
               <Box component="section" sx={{ mb: 4 }}>
                 <Card
                   sx={{
@@ -958,7 +992,7 @@ export default function RSUDashboard() {
                               fontWeight: 400,
                             }}
                           >
-                            Saídas por dia da semana
+                           
                           </Typography>
                         </Box>
                       </Box>
@@ -977,14 +1011,6 @@ export default function RSUDashboard() {
                     sx={{
                       paddingBottom: "0.75rem",
                       borderBottom: `1px solid ${themeColors.divider}`,
-                      "& .MuiCardHeader-title": {
-                        fontWeight: 600,
-                        fontSize: "1.125rem",
-                        color: themeColors.text.primary,
-                      },
-                      "& .MuiCardHeader-action": {
-                        margin: 0,
-                      },
                     }}
                   />
                   <CardContent sx={{ padding: "1.5rem" }}>
@@ -992,10 +1018,15 @@ export default function RSUDashboard() {
                       sx={{
                         width: "100%",
                         position: "relative",
-                        height: "450px", // Aumentado para melhor visualização
+                        height: "450px",
                       }}
                     >
-                      <WeeklyDistributionChart data={weeklyData} themeColors={themeColors} height={400} />
+                      <WeeklyTowerChart
+                        data={weeklyChartData}
+                        themeColors={themeColors}
+                        height={400}
+                        loading={loading}
+                      />
                     </Box>
                   </CardContent>
                 </Card>
