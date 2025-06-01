@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import {
   Dialog,
   DialogContent,
@@ -15,10 +16,14 @@ import {
   alpha,
   Avatar,
   Divider,
+  TextField,
+  InputAdornment,
 } from "@mui/material"
-import { Close, DirectionsCar, LocationOn, Person, CheckCircle, Cancel, Build } from "@mui/icons-material"
+import { Close, DirectionsCar, CheckCircle, Cancel, Build, Search, Clear } from "@mui/icons-material"
 
-const EquipmentListModal = ({ open, onClose, title, equipments, themeColors, statusFilter }) => {
+const EquipmentListModal = ({ open, onClose, title, equipments, themeColors }) => {
+  const [searchTerm, setSearchTerm] = useState("")
+
   const getStatusIcon = (status) => {
     switch (status) {
       case "Ativo":
@@ -45,19 +50,37 @@ const EquipmentListModal = ({ open, onClose, title, equipments, themeColors, sta
     }
   }
 
-  const filteredEquipments = statusFilter ? equipments.filter((eq) => eq.status === statusFilter) : equipments
+  // Filter equipments based on search term
+  const filteredEquipments = equipments.filter((equipment) => {
+    const searchLower = searchTerm.toLowerCase()
+    return (
+      equipment.prefix?.toLowerCase().includes(searchLower) ||
+      equipment.type?.toLowerCase().includes(searchLower) ||
+      equipment.status?.toLowerCase().includes(searchLower)
+    )
+  })
+
+  const handleClearSearch = () => {
+    setSearchTerm("")
+  }
+
+  const handleClose = () => {
+    setSearchTerm("")
+    onClose()
+  }
 
   return (
     <Dialog
       open={open}
-      onClose={onClose}
-      maxWidth="sm"
+      onClose={handleClose}
+      maxWidth="md"
       fullWidth
       PaperProps={{
         sx: {
-          borderRadius: "20px",
-          boxShadow: "0 20px 40px rgba(0, 0, 0, 0.1)",
+          borderRadius: "24px",
+          boxShadow: "0 24px 48px rgba(0, 0, 0, 0.12)",
           overflow: "hidden",
+          maxHeight: "80vh",
         },
       }}
     >
@@ -65,7 +88,7 @@ const EquipmentListModal = ({ open, onClose, title, equipments, themeColors, sta
         sx={{
           background: `linear-gradient(135deg, ${themeColors.primary.main} 0%, ${themeColors.primary.dark} 100%)`,
           color: "#ffffff",
-          padding: "20px 24px",
+          padding: "24px",
           position: "relative",
           overflow: "hidden",
           "&::before": {
@@ -73,10 +96,20 @@ const EquipmentListModal = ({ open, onClose, title, equipments, themeColors, sta
             position: "absolute",
             top: 0,
             right: 0,
+            width: "200px",
+            height: "200px",
+            background: `radial-gradient(circle, ${alpha("#ffffff", 0.15)} 0%, transparent 70%)`,
+            transform: "translate(50%, -50%)",
+          },
+          "&::after": {
+            content: '""',
+            position: "absolute",
+            bottom: 0,
+            left: 0,
             width: "150px",
             height: "150px",
             background: `radial-gradient(circle, ${alpha("#ffffff", 0.1)} 0%, transparent 70%)`,
-            transform: "translate(50%, -50%)",
+            transform: "translate(-50%, 50%)",
           },
         }}
       >
@@ -89,72 +122,135 @@ const EquipmentListModal = ({ open, onClose, title, equipments, themeColors, sta
             zIndex: 1,
           }}
         >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
             <Avatar
               sx={{
-                width: 48,
-                height: 48,
-                background: `linear-gradient(135deg, ${alpha("#ffffff", 0.2)} 0%, ${alpha("#ffffff", 0.1)} 100%)`,
+                width: 56,
+                height: 56,
+                background: `linear-gradient(135deg, ${alpha("#ffffff", 0.25)} 0%, ${alpha("#ffffff", 0.15)} 100%)`,
                 backdropFilter: "blur(10px)",
                 border: `2px solid ${alpha("#ffffff", 0.3)}`,
+                boxShadow: "0 8px 16px rgba(0,0,0,0.1)",
               }}
             >
-              <DirectionsCar sx={{ fontSize: 24, color: "#ffffff" }} />
+              <DirectionsCar sx={{ fontSize: 28, color: "#ffffff" }} />
             </Avatar>
             <Box>
               <Typography
-                variant="h6"
+                variant="h5"
                 sx={{
                   fontWeight: 700,
-                  fontSize: "1.3rem",
+                  fontSize: "1.5rem",
                   textShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                  mb: 0.5,
                 }}
               >
                 {title}
               </Typography>
               <Typography
-                variant="subtitle2"
+                variant="subtitle1"
                 sx={{
                   opacity: 0.9,
-                  fontSize: "0.9rem",
+                  fontSize: "1rem",
                   fontWeight: 500,
                 }}
               >
-                {filteredEquipments.length} equipamento(s)
+                {filteredEquipments.length} de {equipments.length} equipamento(s)
               </Typography>
             </Box>
           </Box>
           <IconButton
-            onClick={onClose}
+            onClick={handleClose}
             sx={{
               color: "#ffffff",
-              backgroundColor: alpha("#ffffff", 0.1),
+              backgroundColor: alpha("#ffffff", 0.15),
+              width: 48,
+              height: 48,
               "&:hover": {
-                backgroundColor: alpha("#ffffff", 0.2),
+                backgroundColor: alpha("#ffffff", 0.25),
                 transform: "scale(1.1)",
               },
               transition: "all 0.3s ease",
             }}
           >
-            <Close />
+            <Close sx={{ fontSize: 24 }} />
           </IconButton>
         </Box>
       </DialogTitle>
+
+      {/* Search Bar */}
+      <Box
+        sx={{
+          padding: "20px 24px",
+          backgroundColor: alpha(themeColors.primary.main, 0.02),
+          borderBottom: `1px solid ${alpha(themeColors.primary.main, 0.1)}`,
+        }}
+      >
+        <TextField
+          fullWidth
+          placeholder="Pesquisar por prefixo, tipo ou status..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          variant="outlined"
+          size="medium"
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <Search sx={{ color: themeColors.text.secondary }} />
+              </InputAdornment>
+            ),
+            endAdornment: searchTerm && (
+              <InputAdornment position="end">
+                <IconButton
+                  onClick={handleClearSearch}
+                  size="small"
+                  sx={{
+                    color: themeColors.text.secondary,
+                    "&:hover": {
+                      color: themeColors.primary.main,
+                    },
+                  }}
+                >
+                  <Clear />
+                </IconButton>
+              </InputAdornment>
+            ),
+            sx: {
+              borderRadius: "12px",
+              backgroundColor: "#ffffff",
+              "& .MuiOutlinedInput-notchedOutline": {
+                borderColor: alpha(themeColors.primary.main, 0.2),
+              },
+              "&:hover .MuiOutlinedInput-notchedOutline": {
+                borderColor: alpha(themeColors.primary.main, 0.4),
+              },
+              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                borderColor: themeColors.primary.main,
+                borderWidth: "2px",
+              },
+            },
+          }}
+        />
+      </Box>
 
       <DialogContent sx={{ padding: 0, backgroundColor: "#ffffff" }}>
         {filteredEquipments.length === 0 ? (
           <Box
             sx={{
-              padding: "40px 24px",
+              padding: "60px 24px",
               textAlign: "center",
               color: themeColors.text.secondary,
             }}
           >
-            <DirectionsCar sx={{ fontSize: 48, opacity: 0.3, mb: 2 }} />
-            <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
-              Nenhum equipamento encontrado
+            <DirectionsCar sx={{ fontSize: 64, opacity: 0.3, mb: 3 }} />
+            <Typography variant="h6" sx={{ fontWeight: 600, mb: 1, fontSize: "1.2rem" }}>
+              {searchTerm ? "Nenhum equipamento encontrado" : "Nenhum equipamento disponível"}
             </Typography>
-            <Typography variant="body2">Não há equipamentos nesta categoria no momento.</Typography>
+            <Typography variant="body1" sx={{ opacity: 0.8 }}>
+              {searchTerm
+                ? `Não encontramos equipamentos que correspondam a "${searchTerm}"`
+                : "Não há equipamentos nesta categoria no momento."}
+            </Typography>
           </Box>
         ) : (
           <List sx={{ padding: 0 }}>
@@ -162,23 +258,40 @@ const EquipmentListModal = ({ open, onClose, title, equipments, themeColors, sta
               <Box key={equipment.id}>
                 <ListItem
                   sx={{
-                    padding: "16px 24px",
+                    padding: "20px 24px",
                     "&:hover": {
-                      backgroundColor: alpha(themeColors.primary.main, 0.03),
+                      backgroundColor: alpha(themeColors.primary.main, 0.04),
+                      transform: "translateX(4px)",
                     },
-                    transition: "background-color 0.2s ease",
+                    transition: "all 0.3s ease",
+                    cursor: "pointer",
                   }}
                 >
-                  <ListItemIcon sx={{ minWidth: 48 }}>{getStatusIcon(equipment.status)}</ListItemIcon>
+                  <ListItemIcon sx={{ minWidth: 56 }}>
+                    <Box
+                      sx={{
+                        width: 48,
+                        height: 48,
+                        borderRadius: "12px",
+                        backgroundColor: alpha(getStatusColor(equipment.status), 0.1),
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        border: `2px solid ${alpha(getStatusColor(equipment.status), 0.2)}`,
+                      }}
+                    >
+                      {getStatusIcon(equipment.status)}
+                    </Box>
+                  </ListItemIcon>
                   <ListItemText
                     primary={
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 1 }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 1.5 }}>
                         <Typography
-                          variant="subtitle1"
+                          variant="h6"
                           sx={{
                             fontWeight: 700,
                             color: themeColors.text.primary,
-                            fontSize: "1rem",
+                            fontSize: "1.1rem",
                           }}
                         >
                           {equipment.prefix}
@@ -187,43 +300,43 @@ const EquipmentListModal = ({ open, onClose, title, equipments, themeColors, sta
                           label={equipment.status}
                           size="small"
                           sx={{
-                            backgroundColor: alpha(getStatusColor(equipment.status), 0.12),
+                            backgroundColor: alpha(getStatusColor(equipment.status), 0.15),
                             color: getStatusColor(equipment.status),
                             fontWeight: 600,
-                            fontSize: "0.75rem",
-                            borderRadius: "6px",
-                            border: `1px solid ${alpha(getStatusColor(equipment.status), 0.2)}`,
+                            fontSize: "0.8rem",
+                            borderRadius: "8px",
+                            border: `1px solid ${alpha(getStatusColor(equipment.status), 0.3)}`,
+                            height: "28px",
                           }}
                         />
                       </Box>
                     }
                     secondary={
-                      <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                          <DirectionsCar sx={{ fontSize: 14, color: themeColors.text.secondary }} />
-                          <Typography variant="body2" sx={{ color: themeColors.text.secondary, fontSize: "0.85rem" }}>
-                            {equipment.type} - {equipment.model}
-                          </Typography>
-                        </Box>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                          <LocationOn sx={{ fontSize: 14, color: themeColors.text.secondary }} />
-                          <Typography variant="body2" sx={{ color: themeColors.text.secondary, fontSize: "0.85rem" }}>
-                            {equipment.location}
-                          </Typography>
-                        </Box>
-                        {equipment.operator && equipment.operator !== "-" && (
-                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                            <Person sx={{ fontSize: 14, color: themeColors.text.secondary }} />
-                            <Typography variant="body2" sx={{ color: themeColors.text.secondary, fontSize: "0.85rem" }}>
-                              {equipment.operator}
-                            </Typography>
-                          </Box>
-                        )}
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                        <DirectionsCar sx={{ fontSize: 18, color: themeColors.text.secondary }} />
+                        <Typography
+                          variant="body1"
+                          sx={{
+                            color: themeColors.text.secondary,
+                            fontSize: "0.95rem",
+                            fontWeight: 500,
+                          }}
+                        >
+                          {equipment.type}
+                        </Typography>
                       </Box>
                     }
                   />
                 </ListItem>
-                {index < filteredEquipments.length - 1 && <Divider sx={{ marginLeft: "72px", marginRight: "24px" }} />}
+                {index < filteredEquipments.length - 1 && (
+                  <Divider
+                    sx={{
+                      marginLeft: "80px",
+                      marginRight: "24px",
+                      borderColor: alpha(themeColors.primary.main, 0.08),
+                    }}
+                  />
+                )}
               </Box>
             ))}
           </List>

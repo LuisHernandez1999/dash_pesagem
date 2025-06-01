@@ -1,8 +1,7 @@
 "use client"
 
 import React from "react"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Dialog,
   DialogTitle,
@@ -20,8 +19,25 @@ import {
   Divider,
   Chip,
   Avatar,
+  FormGroup,
+  FormControlLabel,
+  Checkbox,
+  Collapse,
+  Alert,
+  CircularProgress,
 } from "@mui/material"
-import { Close, Engineering, Save, Cancel, DirectionsCar, Construction, Build } from "@mui/icons-material"
+import { 
+  Close, 
+  Engineering, 
+  Save, 
+  Cancel, 
+  DirectionsCar, 
+  Construction, 
+  Build, 
+  Warning,
+  ErrorOutline 
+} from "@mui/icons-material"
+import { criarEquipamento } from "../service/equipamento"
 
 const EquipmentModal = ({ open, onClose, onSave, themeColors, equipment = null }) => {
   const [formData, setFormData] = useState({
@@ -30,18 +46,51 @@ const EquipmentModal = ({ open, onClose, onSave, themeColors, equipment = null }
     status: equipment?.status || "Ativo",
   })
 
+  const [motivoInatividade, setMotivoInatividade] = useState({
+    manutencao: false,
+    garagem: false,
+  })
+
   const [errors, setErrors] = useState({})
+  const [loading, setLoading] = useState(false)
+  const [apiError, setApiError] = useState(null)
 
   const equipmentTypes = [
-    { value: "Carroceria", label: "Carroceria", icon: DirectionsCar, color: themeColors.primary.main },
-    { value: "Pá Carregadeira", label: "Pá Carregadeira", icon: Construction, color: themeColors.warning.main },
+    { value: "Caminhão Carroceiria", label: "Caminhão Carroceiria", icon: DirectionsCar, color: themeColors.primary.main },
+    { value: "Pá Carregadeira'", label: "Pá Carregadeira", icon: Construction, color: themeColors.warning.main },
     { value: "Retroescavadeira", label: "Retroescavadeira", icon: Build, color: themeColors.error.main },
   ]
 
   const statusOptions = [
     { value: "Ativo", label: "Ativo", color: themeColors.success.main },
     { value: "Inativo", label: "Inativo", color: themeColors.error.main },
+    { value: "Manutenção", label: "Manutenção", color: themeColors.warning.main },
   ]
+
+  // Reset form when modal opens/closes
+  useEffect(() => {
+    if (open) {
+      if (equipment) {
+        setFormData({
+          prefix: equipment.prefix || "",
+          type: equipment.type || "",
+          status: equipment.status || "Ativo",
+        })
+      } else {
+        setFormData({
+          prefix: "",
+          type: "",
+          status: "Ativo",
+        })
+      }
+      setMotivoInatividade({
+        manutencao: false,
+        garagem: false,
+      })
+      setErrors({})
+      setApiError(null)
+    }
+  }, [open, equipment])
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({
@@ -49,11 +98,34 @@ const EquipmentModal = ({ open, onClose, onSave, themeColors, equipment = null }
       [field]: value,
     }))
 
+    // Reset motivo inatividade se status não for Inativo
+    if (field === "status" && value !== "Inativo") {
+      setMotivoInatividade({
+        manutencao: false,
+        garagem: false,
+      })
+    }
+
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors((prev) => ({
         ...prev,
         [field]: "",
+      }))
+    }
+  }
+
+  const handleMotivoChange = (motivo) => (event) => {
+    setMotivoInatividade((prev) => ({
+      ...prev,
+      [motivo]: event.target.checked,
+    }))
+
+    // Clear motivo error when user selects something
+    if (errors.motivo) {
+      setErrors((prev) => ({
+        ...prev,
+        motivo: "",
       }))
     }
   }
@@ -68,14 +140,106 @@ const EquipmentModal = ({ open, onClose, onSave, themeColors, equipment = null }
       newErrors.type = "Tipo é obrigatório"
     }
 
+    // Validar motivo da inatividade se status for Inativo
+    if (formData.status === "Inativo") {
+      if (!motivoInatividade.manutencao && !motivoInatividade.garagem) {
+        newErrors.motivo = "Selecione pelo menos um motivo da inatividade"
+      }
+    }
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSave = () => {
-    if (validateForm()) {
-      onSave(formData)
-      handleClose()
+  const handleSave = async () => {
+    if (!validateForm()) return
+
+    setLoading(true)
+    setApiError(null)
+    console.log("🔄 Iniciando salvamento do equipamento:", formData)
+
+    try {
+      if (equipment?.id) {
+        // Editing existing equipment - usar função de edição
+        console.log("📝 Modo de edição não implementado neste modal")
+        setApiError({
+          title: "Funcionalidade não disponível",
+          message: "Este modal é apenas para criação. Use o modal de edição para alterar equipamentos.",
+          details: ""
+        })
+      } else {
+        // Creating new equipment
+        console.log("🆕 Criando novo equipamento:", formData)
+        
+        // Preparar motivo da inatividade se aplicável
+        let motivoTexto = null
+        if (formData.status === "Inativo") {
+          const motivos = []
+          if (motivoInatividade.manutencao) motivos.push("Manutenção")
+          if (motivoInatividade.garagem) motivos.push("Garagem")
+          motivoTexto = motivos.join(", ")
+        }
+
+        const result = await criarEquipamento(
+          formData.prefix, 
+          formData.type, 
+          formData.status, 
+          motivoTexto
+        )
+        
+        console.log("📊 Resultado da criação:", result)
+
+        // Verificar se há erro de resposta não-JSON
+        if (!result.sucesso && result.erroDetalhado === "Resposta HTML recebida em vez de JSON") {
+          setApiError({
+            title: "❌ Erro na API - Resposta HTML",
+            message: "A API retornou uma página HTML em vez de JSON. Isso indica um problema no servidor.",
+            details: `
+            URL chamada: ${result.urlChamada}
+            Status HTTP: ${result.status}
+            
+            Possíveis causas:
+            • Endpoint não existe (404)
+            • Erro interno do servidor (500)
+            • URL incorreta
+            • Servidor retornando página de erro
+            
+            Resposta recebida (primeiros 300 caracteres):
+            ${result.respostaTexto?.substring(0, 300)}...
+          `,
+          })
+          console.error("❌ Erro de resposta HTML:", result)
+        } else if (!result.sucesso && result.erroDetalhado === "Resposta não é JSON válido") {
+          setApiError({
+            title: "❌ Erro na API - Resposta Inválida",
+            message: "A API retornou uma resposta que não é JSON válido.",
+            details: `
+            URL chamada: ${result.urlChamada}
+            Status HTTP: ${result.status}
+            
+            Resposta recebida (primeiros 300 caracteres):
+            ${result.respostaTexto?.substring(0, 300)}...
+          `,
+          })
+          console.error("❌ Erro de resposta inválida:", result)
+        } else {
+          // Resposta válida, processar normalmente
+          onSave(result)
+          if (result.sucesso) {
+            handleClose()
+          }
+        }
+      }
+    } catch (error) {
+      console.error("❌ Erro ao salvar equipamento:", error)
+      setApiError({
+        title: "Erro inesperado",
+        message: error.message || "Ocorreu um erro ao processar sua solicitação.",
+        details: "Verifique o console para mais detalhes.",
+      })
+    } finally {
+      setLoading(false)
+      console.log("✅ Processo de salvamento finalizado")
     }
   }
 
@@ -85,7 +249,12 @@ const EquipmentModal = ({ open, onClose, onSave, themeColors, equipment = null }
       type: "",
       status: "Ativo",
     })
+    setMotivoInatividade({
+      manutencao: false,
+      garagem: false,
+    })
     setErrors({})
+    setApiError(null)
     onClose()
   }
 
@@ -104,6 +273,8 @@ const EquipmentModal = ({ open, onClose, onSave, themeColors, equipment = null }
     return statusObj ? statusObj.color : themeColors.text.secondary
   }
 
+  const isInactive = formData.status === "Inativo"
+
   return (
     <Dialog
       open={open}
@@ -120,7 +291,7 @@ const EquipmentModal = ({ open, onClose, onSave, themeColors, equipment = null }
         },
       }}
     >
-      {/* Header - Ainda mais reduzido */}
+      {/* Header */}
       <DialogTitle
         sx={{
           background: `linear-gradient(135deg, ${themeColors.success.main} 0%, ${themeColors.success.light} 100%)`,
@@ -138,6 +309,7 @@ const EquipmentModal = ({ open, onClose, onSave, themeColors, equipment = null }
         >
           <IconButton
             onClick={handleClose}
+            disabled={loading}
             sx={{
               position: "absolute",
               right: -4,
@@ -184,6 +356,28 @@ const EquipmentModal = ({ open, onClose, onSave, themeColors, equipment = null }
 
       {/* Content */}
       <DialogContent sx={{ padding: "32px", backgroundColor: "#ffffff" }}>
+        {apiError && (
+          <Alert
+            severity="error"
+            sx={{
+              mb: 3,
+              borderRadius: "12px",
+              "& .MuiAlert-icon": {
+                alignItems: "center",
+              },
+            }}
+            icon={<ErrorOutline />}
+          >
+            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+              {apiError.title}
+            </Typography>
+            <Typography variant="body2">{apiError.message}</Typography>
+            <Typography variant="caption" sx={{ display: "block", mt: 1, fontSize: "0.7rem", opacity: 0.8 }}>
+              {apiError.details}
+            </Typography>
+          </Alert>
+        )}
+
         <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
           {/* Prefixo */}
           <Box>
@@ -206,6 +400,7 @@ const EquipmentModal = ({ open, onClose, onSave, themeColors, equipment = null }
               error={!!errors.prefix}
               helperText={errors.prefix || "Ex: CAR-001, PC-002, RE-003"}
               placeholder="Digite o prefixo do equipamento"
+              disabled={loading}
               sx={{
                 "& .MuiOutlinedInput-root": {
                   borderRadius: "16px",
@@ -242,6 +437,7 @@ const EquipmentModal = ({ open, onClose, onSave, themeColors, equipment = null }
                 value={formData.type}
                 onChange={(e) => handleInputChange("type", e.target.value)}
                 displayEmpty
+                disabled={loading}
                 sx={{
                   borderRadius: "16px",
                   fontSize: "1rem",
@@ -302,6 +498,7 @@ const EquipmentModal = ({ open, onClose, onSave, themeColors, equipment = null }
               <Select
                 value={formData.status}
                 onChange={(e) => handleInputChange("status", e.target.value)}
+                disabled={loading}
                 sx={{
                   borderRadius: "16px",
                   fontSize: "0.95rem",
@@ -331,6 +528,92 @@ const EquipmentModal = ({ open, onClose, onSave, themeColors, equipment = null }
               </Select>
             </FormControl>
           </Box>
+
+          {/* Motivo da Inatividade - Aparece apenas quando status é Inativo */}
+          <Collapse in={isInactive}>
+            <Box
+              sx={{
+                p: 3,
+                borderRadius: "16px",
+                background: `linear-gradient(135deg, ${alpha(themeColors.error.main, 0.05)} 0%, ${alpha(themeColors.error.main, 0.02)} 100%)`,
+                border: `2px solid ${alpha(themeColors.error.main, 0.15)}`,
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+                <Warning sx={{ color: themeColors.error.main, fontSize: "1.2rem" }} />
+                <Typography
+                  variant="subtitle1"
+                  sx={{
+                    fontWeight: 600,
+                    color: themeColors.error.main,
+                    fontSize: "1rem",
+                  }}
+                >
+                  Motivo da Inatividade
+                </Typography>
+              </Box>
+              
+              <Typography
+                variant="body2"
+                sx={{
+                  color: themeColors.text.secondary,
+                  mb: 2,
+                  fontSize: "0.9rem",
+                }}
+              >
+                Selecione o(s) motivo(s) pelos quais o equipamento está inativo:
+              </Typography>
+
+              <FormGroup>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={motivoInatividade.manutencao}
+                      onChange={handleMotivoChange("manutencao")}
+                      disabled={loading}
+                      sx={{
+                        color: themeColors.error.main,
+                        "&.Mui-checked": {
+                          color: themeColors.error.main,
+                        },
+                      }}
+                    />
+                  }
+                  label={
+                    <Typography sx={{ fontSize: "0.95rem", fontWeight: 500 }}>
+                      Em Manutenção
+                    </Typography>
+                  }
+                />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={motivoInatividade.garagem}
+                      onChange={handleMotivoChange("garagem")}
+                      disabled={loading}
+                      sx={{
+                        color: themeColors.error.main,
+                        "&.Mui-checked": {
+                          color: themeColors.error.main,
+                        },
+                      }}
+                    />
+                  }
+                  label={
+                    <Typography sx={{ fontSize: "0.95rem", fontWeight: 500 }}>
+                      Em Garagem
+                    </Typography>
+                  }
+                />
+              </FormGroup>
+
+              {errors.motivo && (
+                <Typography variant="caption" color="error" sx={{ mt: 1, display: "block" }}>
+                  {errors.motivo}
+                </Typography>
+              )}
+            </Box>
+          </Collapse>
 
           {/* Preview Card */}
           {formData.prefix && formData.type && (
@@ -376,6 +659,14 @@ const EquipmentModal = ({ open, onClose, onSave, themeColors, equipment = null }
                     <Typography variant="body2" sx={{ color: themeColors.text.secondary, fontSize: "0.9rem", mt: 0.3 }}>
                       {formData.type}
                     </Typography>
+                    {isInactive && (motivoInatividade.manutencao || motivoInatividade.garagem) && (
+                      <Typography variant="caption" sx={{ color: themeColors.error.main, fontSize: "0.8rem", mt: 0.5, display: "block" }}>
+                        Motivo: {[
+                          motivoInatividade.manutencao && "Manutenção",
+                          motivoInatividade.garagem && "Garagem"
+                        ].filter(Boolean).join(", ")}
+                      </Typography>
+                    )}
                   </Box>
                   <Chip
                     label={formData.status}
@@ -394,7 +685,7 @@ const EquipmentModal = ({ open, onClose, onSave, themeColors, equipment = null }
         </Box>
       </DialogContent>
 
-      {/* Actions - Com melhor separação */}
+      {/* Actions */}
       <DialogActions
         sx={{
           padding: "20px 32px 24px",
@@ -408,6 +699,7 @@ const EquipmentModal = ({ open, onClose, onSave, themeColors, equipment = null }
         <Button
           onClick={handleClose}
           startIcon={<Cancel />}
+          disabled={loading}
           sx={{
             color: themeColors.text.secondary,
             borderColor: alpha(themeColors.text.secondary, 0.3),
@@ -428,8 +720,9 @@ const EquipmentModal = ({ open, onClose, onSave, themeColors, equipment = null }
 
         <Button
           onClick={handleSave}
-          startIcon={<Save />}
+          startIcon={loading ? <CircularProgress size={16} color="inherit" /> : <Save />}
           variant="outlined"
+          disabled={loading}
           sx={{
             backgroundColor: "white",
             color: themeColors.success.main,
@@ -446,10 +739,16 @@ const EquipmentModal = ({ open, onClose, onSave, themeColors, equipment = null }
               transform: "translateY(-1px)",
               boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
             },
+            "&:disabled": {
+              backgroundColor: "#f5f5f5",
+              color: "#999",
+              borderColor: "#ddd",
+              transform: "none",
+            },
             transition: "all 0.3s ease",
           }}
         >
-          {equipment ? "Atualizar" : "Cadastrar"} Equipamento
+          {loading ? "Criando..." : "Cadastrar Equipamento"}
         </Button>
       </DialogActions>
     </Dialog>

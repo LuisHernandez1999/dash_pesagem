@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   AppBar,
   Toolbar,
@@ -21,6 +21,7 @@ import { Construction, CheckCircle, Cancel, Today, Refresh, Menu as MenuIcon } f
 import EquipmentTable from "../../components/equipamentes_table"
 import WeeklyDistributionChart from "../../components/grafic_equipmanents"
 import EquipmentListModal from "../../components/equipaments_list"
+import { listarPrefixosEImplementos, listarEquipamentosTable } from "../../service/equipamento"
 
 // Animation keyframes
 const keyframes = {
@@ -180,18 +181,118 @@ const CustomStatCard = ({ title, value, icon: Icon, color, highlight, onClick })
   </Card>
 )
 
+// Function to transform API equipment data to match modal component expectations
+const transformEquipmentData = (equipmentList) => {
+  return equipmentList.map((equipment, index) => ({
+    id: index + 1,
+    prefix: equipment.prefixo,
+    status: equipment.status,
+    type: equipment.implemento,
+  }))
+}
+
+// Function to transform table equipment data from API
+const transformTableEquipmentData = (equipmentList) => {
+  return equipmentList.map((equipment, index) => ({
+    id: index + 1,
+    prefix: equipment.prefixo_equipamento || "",
+    type: equipment.implemento || "",
+    status: equipment.status_equipamento || "",
+    model: "N/A",
+    location: "N/A",
+    lastMaintenance: "N/A",
+    nextMaintenance: "N/A",
+    operator: "N/A",
+    workingHours: 0,
+  }))
+}
+
 export default function EquipmentDashboard() {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
 
-  // State variables
-  const [loading, setLoading] = useState(false)
-  const [statsData, setStatsData] = useState({
-    totalEquipments: 45,
-    activeEquipments: 38,
-    inactiveEquipments: 7,
-    maintenanceToday: 3,
+  // API data state for cards
+  const [apiData, setApiData] = useState({
+    contagem_total: 0,
+    contagem_ativos: 0,
+    contagem_inativos: 0,
+    contagem_manutencao: 0,
+    todos: [],
+    ativos: [],
+    inativos: [],
   })
+
+  // Table data state (from API)
+  const [tableData, setTableData] = useState({
+    equipamentos: [],
+    pagina_atual: 1,
+    total_paginas: 1,
+    total_equipamentos: 0,
+  })
+
+  // Current equipment list for modal
+  const [currentModalList, setCurrentModalList] = useState([])
+
+  // Loading states
+  const [loading, setLoading] = useState(true)
+  const [tableLoading, setTableLoading] = useState(true)
+
+  // Fetch equipment data for cards from API
+  useEffect(() => {
+    const fetchEquipmentData = async () => {
+      try {
+        setLoading(true)
+        const data = await listarPrefixosEImplementos()
+
+        console.log("Cards API Response:", data)
+
+        setApiData({
+          contagem_total: data.contagem_total || 0,
+          contagem_ativos: data.contagem_ativos || 0,
+          contagem_inativos: data.contagem_inativos || 0,
+          contagem_manutencao: data.contagem_manutencao || 0,
+          todos: data.todos || [],
+          ativos: data.ativos || [],
+          inativos: data.inativos || [],
+        })
+      } catch (error) {
+        console.error("Erro ao carregar dados dos cards:", error)
+        setSnackbarMessage("Erro ao carregar dados dos cards")
+        setSnackbarSeverity("error")
+        setSnackbarOpen(true)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchEquipmentData()
+  }, [])
+
+  // Fetch table data from API
+  useEffect(() => {
+    const fetchTableData = async () => {
+      try {
+        setTableLoading(true)
+        const data = await listarEquipamentosTable({
+          pagina: 1,
+          itensPorPagina: 100,
+        })
+
+        console.log("Table API Response:", data)
+
+        setTableData(data)
+      } catch (error) {
+        console.error("Erro ao carregar dados da tabela:", error)
+        setSnackbarMessage("Erro ao carregar dados da tabela")
+        setSnackbarSeverity("error")
+        setSnackbarOpen(true)
+      } finally {
+        setTableLoading(false)
+      }
+    }
+
+    fetchTableData()
+  }, [])
 
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarMessage, setSnackbarMessage] = useState("")
@@ -200,85 +301,8 @@ export default function EquipmentDashboard() {
   // Equipment list modal state
   const [listModalOpen, setListModalOpen] = useState(false)
   const [listModalTitle, setListModalTitle] = useState("")
-  const [listModalFilter, setListModalFilter] = useState("")
 
-  // Mock equipment data
-  const [equipments, setEquipments] = useState([
-    {
-      id: 1,
-      prefix: "CAR-001",
-      type: "Carroceria",
-      model: "Mercedes-Benz Atego 1719",
-      status: "Ativo",
-      location: "PA1 - Centro",
-      lastMaintenance: "2024-01-15",
-      nextMaintenance: "2024-04-15",
-      operator: "João Silva",
-      workingHours: 1250,
-    },
-    {
-      id: 2,
-      prefix: "PC-002",
-      type: "Pá Carregadeira",
-      model: "Caterpillar 924K",
-      status: "Ativo",
-      location: "PA2 - Norte",
-      lastMaintenance: "2024-01-10",
-      nextMaintenance: "2024-04-10",
-      operator: "Maria Santos",
-      workingHours: 980,
-    },
-    {
-      id: 3,
-      prefix: "RE-003",
-      type: "Retroescavadeira",
-      model: "JCB 3CX",
-      status: "Inativo",
-      location: "Oficina Central",
-      lastMaintenance: "2024-01-20",
-      nextMaintenance: "2024-02-20",
-      operator: "-",
-      workingHours: 1450,
-    },
-    {
-      id: 4,
-      prefix: "CAR-004",
-      type: "Carroceria",
-      model: "Volvo VM 270",
-      status: "Ativo",
-      location: "PA3 - Sul",
-      lastMaintenance: "2024-01-12",
-      nextMaintenance: "2024-04-12",
-      operator: "Pedro Costa",
-      workingHours: 1100,
-    },
-    {
-      id: 5,
-      prefix: "PC-005",
-      type: "Pá Carregadeira",
-      model: "Komatsu WA200",
-      status: "Ativo",
-      location: "PA1 - Centro",
-      lastMaintenance: "2024-01-18",
-      nextMaintenance: "2024-04-18",
-      operator: "Ana Oliveira",
-      workingHours: 850,
-    },
-    {
-      id: 6,
-      prefix: "RE-006",
-      type: "Retroescavadeira",
-      model: "Case 580N",
-      status: "Manutenção",
-      location: "Oficina Central",
-      lastMaintenance: "2024-01-22",
-      nextMaintenance: "2024-04-22",
-      operator: "-",
-      workingHours: 1320,
-    },
-  ])
-
-  // Weekly distribution data
+  // Weekly distribution data (stays mocked as requested)
   const [weeklyData, setWeeklyData] = useState([
     { day: "Segunda", carroceria: 8, paCarregadeira: 5, retroescavadeira: 3 },
     { day: "Terça", carroceria: 10, paCarregadeira: 6, retroescavadeira: 4 },
@@ -291,37 +315,101 @@ export default function EquipmentDashboard() {
 
   // Handle card clicks
   const handleCardClick = (cardType) => {
+    let equipmentList = []
+
     switch (cardType) {
       case "total":
         setListModalTitle("Todos os Equipamentos")
-        setListModalFilter("")
+        equipmentList = transformEquipmentData(apiData.todos)
         break
       case "active":
         setListModalTitle("Equipamentos Ativos")
-        setListModalFilter("Ativo")
+        equipmentList = transformEquipmentData(apiData.ativos)
         break
       case "inactive":
         setListModalTitle("Equipamentos Inativos")
-        setListModalFilter("Inativo")
+        equipmentList = transformEquipmentData(apiData.inativos)
         break
       case "maintenance":
         setListModalTitle("Equipamentos em Manutenção")
-        setListModalFilter("Manutenção")
+        equipmentList = []
         break
     }
+
+    setCurrentModalList(equipmentList)
     setListModalOpen(true)
   }
 
   // Handle refresh data
-  const handleRefreshData = () => {
-    setLoading(true)
-    // Simulate API call
-    setTimeout(() => {
-      setSnackbarMessage("Dados atualizados com sucesso!")
+  const handleRefreshData = async () => {
+    try {
+      console.log("🔄 Iniciando atualização de todos os dados")
+      setLoading(true)
+      setTableLoading(true)
+
+      // Refresh cards data
+      console.log("📊 Atualizando dados dos cards")
+      const cardsData = await listarPrefixosEImplementos()
+      console.log("📊 Dados dos cards recebidos:", cardsData)
+      setApiData({
+        contagem_total: cardsData.contagem_total || 0,
+        contagem_ativos: cardsData.contagem_ativos || 0,
+        contagem_inativos: cardsData.contagem_inativos || 0,
+        contagem_manutencao: cardsData.contagem_manutencao || 0,
+        todos: cardsData.todos || [],
+        ativos: cardsData.ativos || [],
+        inativos: cardsData.inativos || [],
+      })
+
+      // Refresh table data
+      console.log("📋 Atualizando dados da tabela")
+      const tableDataResponse = await listarEquipamentosTable({
+        pagina: 1,
+        itensPorPagina: 100,
+      })
+      console.log("📋 Dados da tabela recebidos:", tableDataResponse)
+      setTableData(tableDataResponse)
+
+      setSnackbarMessage("Todos os dados atualizados com sucesso!")
       setSnackbarSeverity("success")
       setSnackbarOpen(true)
+      console.log("✅ Atualização de dados concluída com sucesso")
+    } catch (error) {
+      console.error("❌ Erro ao atualizar dados:", error)
+      setSnackbarMessage("Erro ao atualizar dados")
+      setSnackbarSeverity("error")
+      setSnackbarOpen(true)
+    } finally {
       setLoading(false)
-    }, 1000)
+      setTableLoading(false)
+      console.log("🏁 Processo de atualização finalizado")
+    }
+  }
+
+  // Handle table refresh
+  const handleTableRefresh = async () => {
+    try {
+      console.log("🔄 Iniciando atualização da tabela")
+      setTableLoading(true)
+      const data = await listarEquipamentosTable({
+        pagina: 1,
+        itensPorPagina: 100,
+      })
+      console.log("📋 Novos dados da tabela recebidos:", data)
+      setTableData(data)
+      setSnackbarMessage("Dados da tabela atualizados!")
+      setSnackbarSeverity("success")
+      setSnackbarOpen(true)
+      console.log("✅ Atualização da tabela concluída com sucesso")
+    } catch (error) {
+      console.error("❌ Erro ao atualizar tabela:", error)
+      setSnackbarMessage("Erro ao atualizar tabela")
+      setSnackbarSeverity("error")
+      setSnackbarOpen(true)
+    } finally {
+      setTableLoading(false)
+      console.log("🏁 Processo de atualização da tabela finalizado")
+    }
   }
 
   // Handle snackbar close
@@ -496,28 +584,28 @@ export default function EquipmentDashboard() {
               >
                 <CustomStatCard
                   title="Total de Equipamentos"
-                  value={statsData.totalEquipments}
+                  value={apiData.contagem_total}
                   icon={Construction}
                   color={themeColors.primary.main}
                   onClick={() => handleCardClick("total")}
                 />
                 <CustomStatCard
                   title="Equipamentos Ativos"
-                  value={statsData.activeEquipments}
+                  value={apiData.contagem_ativos}
                   icon={CheckCircle}
                   color={themeColors.success.main}
                   onClick={() => handleCardClick("active")}
                 />
                 <CustomStatCard
                   title="Equipamentos Inativos"
-                  value={statsData.inactiveEquipments}
+                  value={apiData.contagem_inativos}
                   icon={Cancel}
                   color={themeColors.error.main}
                   onClick={() => handleCardClick("inactive")}
                 />
                 <CustomStatCard
                   title="Em Manutenção"
-                  value={statsData.maintenanceToday}
+                  value={apiData.contagem_manutencao}
                   icon={Today}
                   color={themeColors.warning.main}
                   onClick={() => handleCardClick("maintenance")}
@@ -525,28 +613,27 @@ export default function EquipmentDashboard() {
               </Box>
             </Box>
 
-            {/* Equipment Table */}
+            {/* Equipment Table - Using real API data */}
             <EquipmentTable
-              equipments={equipments}
-              loading={loading}
+              equipments={transformTableEquipmentData(tableData.equipamentos)}
+              loading={tableLoading}
               themeColors={themeColors}
-              onRefresh={handleRefreshData}
+              onRefresh={handleTableRefresh}
             />
 
-            {/* Weekly Distribution Chart */}
+            {/* Weekly Distribution Chart - Using mock data as requested */}
             <WeeklyDistributionChart weeklyData={weeklyData} themeColors={themeColors} onRefresh={handleRefreshData} />
           </Container>
         </Box>
       </Box>
 
-      {/* Equipment List Modal */}
+      {/* Equipment List Modal - Using real API data */}
       <EquipmentListModal
         open={listModalOpen}
         onClose={() => setListModalOpen(false)}
         title={listModalTitle}
-        equipments={equipments}
+        equipments={currentModalList}
         themeColors={themeColors}
-        statusFilter={listModalFilter}
       />
 
       {/* Snackbar for notifications */}

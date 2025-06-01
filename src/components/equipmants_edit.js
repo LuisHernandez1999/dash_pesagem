@@ -11,30 +11,46 @@ import {
   TextField,
   Button,
   FormControl,
-  InputLabel,
   Select,
   MenuItem,
-  Grid,
   alpha,
-  Avatar,
+  CircularProgress,
+  Alert,
 } from "@mui/material"
-import { Close, Engineering, Save, Cancel, DirectionsCar } from "@mui/icons-material"
-import { useState } from "react"
+import { Close, Save, Cancel, Edit, ErrorOutline } from "@mui/icons-material"
+import { useState, useEffect } from "react"
+import { editarEquipamento } from "../service/equipamento"
 
-const EquipmentModal = ({ open, onClose, onSave, themeColors }) => {
+const EquipmentModal = ({ open, onClose, onSave, equipment, themeColors }) => {
   const [formData, setFormData] = useState({
     prefix: "",
     type: "",
-    model: "",
     status: "",
-    location: "",
-    operator: "",
-    workingHours: 0,
-    lastMaintenance: "",
-    nextMaintenance: "",
   })
 
   const [errors, setErrors] = useState({})
+  const [loading, setLoading] = useState(false)
+  const [apiError, setApiError] = useState(null)
+
+  // Pre-populate form when equipment data changes
+  useEffect(() => {
+    if (equipment) {
+      setFormData({
+        prefix: equipment.prefix || "",
+        type: equipment.type || "",
+        status: equipment.status || "",
+      })
+    } else {
+      // Reset form for new equipment
+      setFormData({
+        prefix: "",
+        type: "",
+        status: "",
+      })
+    }
+    setErrors({})
+    setApiError(null)
+  }, [equipment])
 
   const handleInputChange = (field) => (event) => {
     const value = event.target.value
@@ -56,58 +72,99 @@ const EquipmentModal = ({ open, onClose, onSave, themeColors }) => {
 
     if (!formData.prefix.trim()) newErrors.prefix = "Prefixo é obrigatório"
     if (!formData.type) newErrors.type = "Tipo é obrigatório"
-    if (!formData.model.trim()) newErrors.model = "Modelo é obrigatório"
     if (!formData.status) newErrors.status = "Status é obrigatório"
-    if (!formData.location.trim()) newErrors.location = "Localização é obrigatória"
-    if (!formData.lastMaintenance) newErrors.lastMaintenance = "Data da última manutenção é obrigatória"
-    if (!formData.nextMaintenance) newErrors.nextMaintenance = "Data da próxima manutenção é obrigatória"
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSave = () => {
-    if (validateForm()) {
-      onSave(formData)
-      onClose()
+  const handleSave = async () => {
+    if (!validateForm()) return
+
+    setLoading(true)
+    setApiError(null)
+    console.log("🔄 Iniciando salvamento do equipamento:", formData)
+
+    try {
+      if (equipment?.id) {
+        // Editing existing equipment
+        console.log(`📝 Editando equipamento ID: ${equipment.id}`)
+        console.log("📊 Dados para edição:", {
+          id: equipment.id,
+          prefix: formData.prefix,
+          type: formData.type,
+          status: formData.status,
+        })
+
+        const result = await editarEquipamento(equipment.id, formData.prefix, formData.type, formData.status)
+        console.log("📊 Resultado da edição:", result)
+
+        // Verificar se há erro de resposta não-JSON
+        if (result.erroDetalhado === "Resposta não é JSON válido. Possível HTML ou texto recebido.") {
+          setApiError({
+            title: "Erro na resposta da API",
+            message: "A API retornou uma resposta inválida. Verifique a URL e os parâmetros.",
+            details: `Resposta recebida (primeiros 200 caracteres): ${result.respostaTexto?.substring(0, 200)}...`
+          })
+          console.error("❌ Erro de resposta não-JSON:", result.respostaTexto)
+        } else {
+          onSave(result)
+        }
+      } else {
+        // Creating new equipment (implement this API call later)
+        console.log("🆕 Criando novo equipamento:", formData)
+        onSave({
+          sucesso: true,
+          mensagem: "Equipamento criado com sucesso!",
+          dados: { ...formData, id: Date.now() },
+        })
+      }
+    } catch (error) {
+      console.error("❌ Erro ao salvar equipamento:", error)
+      setApiError({
+        title: "Erro inesperado",
+        message: error.message || "Ocorreu um erro ao processar sua solicitação.",
+        details: "Verifique o console para mais detalhes."
+      })
+    } finally {
+      setLoading(false)
+      console.log("✅ Processo de salvamento finalizado")
     }
   }
 
   const handleCancel = () => {
+    setErrors({})
     setFormData({
       prefix: "",
       type: "",
-      model: "",
       status: "",
-      location: "",
-      operator: "",
-      workingHours: 0,
-      lastMaintenance: "",
-      nextMaintenance: "",
     })
-    setErrors({})
+    setApiError(null)
     onClose()
   }
+
+  const isEditing = !!equipment?.id
 
   return (
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth="md"
+      maxWidth="xs"
       fullWidth
       PaperProps={{
         sx: {
-          borderRadius: "24px",
-          boxShadow: "0 24px 48px rgba(0, 0, 0, 0.15)",
+          borderRadius: "20px",
+          boxShadow: "0 20px 40px rgba(0, 0, 0, 0.15)",
           overflow: "hidden",
-          background: `linear-gradient(135deg, ${alpha(themeColors.primary.main, 0.02)} 0%, ${alpha(themeColors.primary.light, 0.01)} 100%)`,
+          border: "1px solid #f1f5f9",
         },
       }}
     >
-      {/* Header */}
       <DialogTitle
         sx={{
-          background: `linear-gradient(135deg, ${themeColors.success.main} 0%, ${themeColors.success.dark} 100%)`,
+          background: isEditing
+            ? `linear-gradient(135deg, #f59e0b 0%, #d97706 100%)`
+            : `linear-gradient(135deg, #10b981 0%, #059669 100%)`,
           color: "#ffffff",
           padding: "24px 32px",
           position: "relative",
@@ -117,10 +174,10 @@ const EquipmentModal = ({ open, onClose, onSave, themeColors }) => {
             position: "absolute",
             top: 0,
             right: 0,
-            width: "200px",
-            height: "200px",
-            background: `radial-gradient(circle, ${alpha("#ffffff", 0.1)} 0%, transparent 70%)`,
-            transform: "translate(50%, -50%)",
+            width: "120px",
+            height: "120px",
+            background: `radial-gradient(circle, ${alpha("#ffffff", 0.15)} 0%, transparent 70%)`,
+            transform: "translate(30%, -30%)",
           },
         }}
       >
@@ -134,264 +191,249 @@ const EquipmentModal = ({ open, onClose, onSave, themeColors }) => {
           }}
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <Avatar
+            <Box
               sx={{
-                width: 56,
-                height: 56,
-                background: `linear-gradient(135deg, ${alpha("#ffffff", 0.2)} 0%, ${alpha("#ffffff", 0.1)} 100%)`,
+                width: 48,
+                height: 48,
+                borderRadius: "12px",
+                backgroundColor: alpha("#ffffff", 0.2),
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
                 backdropFilter: "blur(10px)",
-                border: `2px solid ${alpha("#ffffff", 0.3)}`,
+                border: `1px solid ${alpha("#ffffff", 0.3)}`,
               }}
             >
-              <Engineering sx={{ fontSize: 28, color: "#ffffff" }} />
-            </Avatar>
+              <Edit sx={{ color: "#ffffff", fontSize: 24 }} />
+            </Box>
             <Box>
               <Typography
-                variant="h5"
+                variant="h6"
                 sx={{
                   fontWeight: 700,
-                  fontSize: "1.5rem",
+                  fontSize: "1.3rem",
+                  color: "#ffffff",
                   textShadow: "0 2px 4px rgba(0,0,0,0.2)",
                 }}
               >
-                Cadastrar Equipamento
+                {isEditing ? "Editar Equipamento" : "Novo Equipamento"}
               </Typography>
               <Typography
-                variant="subtitle1"
+                variant="body2"
                 sx={{
-                  opacity: 0.9,
-                  fontSize: "1rem",
-                  fontWeight: 500,
+                  color: alpha("#ffffff", 0.9),
+                  fontSize: "0.9rem",
                 }}
               >
-                Preencha os dados abaixo
+                {isEditing ? "Modificar informações" : "Cadastrar novo equipamento"}
               </Typography>
             </Box>
           </Box>
           <IconButton
             onClick={handleCancel}
+            disabled={loading}
             sx={{
               color: "#ffffff",
-              backgroundColor: alpha("#ffffff", 0.1),
+              backgroundColor: alpha("#ffffff", 0.15),
               backdropFilter: "blur(10px)",
+              border: `1px solid ${alpha("#ffffff", 0.2)}`,
+              width: 44,
+              height: 44,
               "&:hover": {
-                backgroundColor: alpha("#ffffff", 0.2),
-                transform: "scale(1.1)",
+                backgroundColor: alpha("#ffffff", 0.25),
+                transform: "scale(1.05)",
               },
-              transition: "all 0.3s ease",
+              transition: "all 0.2s ease",
             }}
           >
-            <Close />
+            <Close sx={{ fontSize: 20 }} />
           </IconButton>
         </Box>
       </DialogTitle>
 
       <DialogContent sx={{ padding: "32px", backgroundColor: "#ffffff" }}>
-        <Grid container spacing={3}>
-          {/* Informações Básicas */}
-          <Grid item xs={12}>
+        {apiError && (
+          <Alert 
+            severity="error" 
+            sx={{ 
+              mb: 3, 
+              borderRadius: "12px",
+              "& .MuiAlert-icon": {
+                alignItems: "center"
+              }
+            }}
+            icon={<ErrorOutline />}
+          >
+            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+              {apiError.title}
+            </Typography>
+            <Typography variant="body2">
+              {apiError.message}
+            </Typography>
+            <Typography variant="caption" sx={{ display: "block", mt: 1, fontSize: "0.7rem", opacity: 0.8 }}>
+              {apiError.details}
+            </Typography>
+          </Alert>
+        )}
+        
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+          {/* Prefixo */}
+          <Box>
             <Typography
-              variant="h6"
+              variant="body2"
               sx={{
-                fontWeight: 700,
-                color: themeColors.text.primary,
-                mb: 3,
-                display: "flex",
-                alignItems: "center",
-                gap: 1,
+                color: "#64748b",
+                fontSize: "0.75rem",
+                fontWeight: 600,
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
+                mb: 1,
               }}
             >
-              <DirectionsCar sx={{ color: themeColors.primary.main }} />
-              Informações Básicas
+              Prefixo
             </Typography>
-          </Grid>
-
-          <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
-              label="Prefixo"
               value={formData.prefix}
               onChange={handleInputChange("prefix")}
               error={!!errors.prefix}
               helperText={errors.prefix}
+              disabled={loading}
               sx={{
                 "& .MuiOutlinedInput-root": {
                   borderRadius: "12px",
+                  backgroundColor: "#f8fafc",
+                  "&:hover": {
+                    backgroundColor: "#ffffff",
+                  },
+                  "&.Mui-focused": {
+                    backgroundColor: "#ffffff",
+                  },
                 },
               }}
             />
-          </Grid>
+          </Box>
 
-          <Grid item xs={12} sm={6}>
+          {/* Implemento */}
+          <Box>
+            <Typography
+              variant="body2"
+              sx={{
+                color: "#64748b",
+                fontSize: "0.75rem",
+                fontWeight: 600,
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
+                mb: 1,
+              }}
+            >
+              Implemento
+            </Typography>
             <FormControl fullWidth error={!!errors.type}>
-              <InputLabel>Tipo</InputLabel>
               <Select
                 value={formData.type}
                 onChange={handleInputChange("type")}
-                label="Tipo"
+                displayEmpty
+                disabled={loading}
                 sx={{
                   borderRadius: "12px",
+                  backgroundColor: "#f8fafc",
+                  "&:hover": {
+                    backgroundColor: "#ffffff",
+                  },
+                  "&.Mui-focused": {
+                    backgroundColor: "#ffffff",
+                  },
                 }}
               >
-                <MenuItem value="Carroceria">Carroceria</MenuItem>
-                <MenuItem value="Pá Carregadeira">Pá Carregadeira</MenuItem>
+                <MenuItem value="" disabled>
+                  <em>Selecione o tipo</em>
+                </MenuItem>
                 <MenuItem value="Retroescavadeira">Retroescavadeira</MenuItem>
+                <MenuItem value="Pá Carregadeira'">Pá Carregadeira</MenuItem>
+                <MenuItem value="Caminhão Carroceiria">Caminhão Carroceiria</MenuItem>
               </Select>
               {errors.type && (
-                <Typography variant="caption" color="error" sx={{ mt: 1, ml: 2 }}>
+                <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1 }}>
                   {errors.type}
                 </Typography>
               )}
             </FormControl>
-          </Grid>
+          </Box>
 
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label="Modelo"
-              value={formData.model}
-              onChange={handleInputChange("model")}
-              error={!!errors.model}
-              helperText={errors.model}
+          {/* Status */}
+          <Box>
+            <Typography
+              variant="body2"
               sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "12px",
-                },
+                color: "#64748b",
+                fontSize: "0.75rem",
+                fontWeight: 600,
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
+                mb: 1,
               }}
-            />
-          </Grid>
-
-          <Grid item xs={12} sm={6}>
+            >
+              Status
+            </Typography>
             <FormControl fullWidth error={!!errors.status}>
-              <InputLabel>Status</InputLabel>
               <Select
                 value={formData.status}
                 onChange={handleInputChange("status")}
-                label="Status"
+                displayEmpty
+                disabled={loading}
                 sx={{
                   borderRadius: "12px",
+                  backgroundColor: "#f8fafc",
+                  "&:hover": {
+                    backgroundColor: "#ffffff",
+                  },
+                  "&.Mui-focused": {
+                    backgroundColor: "#ffffff",
+                  },
                 }}
               >
+                <MenuItem value="" disabled>
+                  <em>Selecione o status</em>
+                </MenuItem>
                 <MenuItem value="Ativo">Ativo</MenuItem>
                 <MenuItem value="Inativo">Inativo</MenuItem>
                 <MenuItem value="Manutenção">Manutenção</MenuItem>
               </Select>
               {errors.status && (
-                <Typography variant="caption" color="error" sx={{ mt: 1, ml: 2 }}>
+                <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1 }}>
                   {errors.status}
                 </Typography>
               )}
             </FormControl>
-          </Grid>
-
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Localização"
-              value={formData.location}
-              onChange={handleInputChange("location")}
-              error={!!errors.location}
-              helperText={errors.location}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "12px",
-                },
-              }}
-            />
-          </Grid>
-
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Operador"
-              value={formData.operator}
-              onChange={handleInputChange("operator")}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "12px",
-                },
-              }}
-            />
-          </Grid>
-
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Horas Trabalhadas"
-              type="number"
-              value={formData.workingHours}
-              onChange={handleInputChange("workingHours")}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "12px",
-                },
-              }}
-            />
-          </Grid>
-
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Última Manutenção"
-              type="date"
-              value={formData.lastMaintenance}
-              onChange={handleInputChange("lastMaintenance")}
-              error={!!errors.lastMaintenance}
-              helperText={errors.lastMaintenance}
-              InputLabelProps={{
-                shrink: true,
-              }}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "12px",
-                },
-              }}
-            />
-          </Grid>
-
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Próxima Manutenção"
-              type="date"
-              value={formData.nextMaintenance}
-              onChange={handleInputChange("nextMaintenance")}
-              error={!!errors.nextMaintenance}
-              helperText={errors.nextMaintenance}
-              InputLabelProps={{
-                shrink: true,
-              }}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "12px",
-                },
-              }}
-            />
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
       </DialogContent>
 
       <DialogActions
         sx={{
           padding: "24px 32px",
-          backgroundColor: "#ffffff",
-          borderTop: `1px solid ${alpha(themeColors.primary.main, 0.1)}`,
-          boxShadow: "0 -2px 8px rgba(0, 0, 0, 0.05)",
+          backgroundColor: "#f8fafc",
+          borderTop: "1px solid #f1f5f9",
+          gap: 2,
         }}
       >
         <Button
           onClick={handleCancel}
           startIcon={<Cancel />}
+          disabled={loading}
           sx={{
-            color: themeColors.text.secondary,
-            borderColor: alpha(themeColors.text.secondary, 0.3),
+            color: "#64748b",
+            borderColor: "#e2e8f0",
             "&:hover": {
-              borderColor: themeColors.text.secondary,
-              backgroundColor: alpha(themeColors.text.secondary, 0.05),
+              borderColor: "#cbd5e1",
+              backgroundColor: "#f1f5f9",
             },
             borderRadius: "12px",
             px: 3,
-            py: 1,
+            py: 1.5,
+            textTransform: "none",
+            fontWeight: 500,
           }}
           variant="outlined"
         >
@@ -399,24 +441,35 @@ const EquipmentModal = ({ open, onClose, onSave, themeColors }) => {
         </Button>
         <Button
           onClick={handleSave}
-          startIcon={<Save />}
+          startIcon={loading ? <CircularProgress size={16} color="inherit" /> : <Save />}
           variant="contained"
+          disabled={loading}
           sx={{
-            background: `linear-gradient(135deg, ${themeColors.success.main} 0%, ${themeColors.success.dark} 100%)`,
+            background: isEditing
+              ? `linear-gradient(135deg, #f59e0b 0%, #d97706 100%)`
+              : `linear-gradient(135deg, #10b981 0%, #059669 100%)`,
             color: "#ffffff",
             borderRadius: "12px",
             px: 3,
-            py: 1,
-            boxShadow: `0 4px 12px ${alpha(themeColors.success.main, 0.3)}`,
+            py: 1.5,
+            textTransform: "none",
+            fontWeight: 500,
+            boxShadow: "0 4px 12px rgba(59, 130, 246, 0.2)",
             "&:hover": {
-              background: `linear-gradient(135deg, ${themeColors.success.dark} 0%, ${themeColors.success.main} 100%)`,
-              transform: "translateY(-2px)",
-              boxShadow: `0 6px 16px ${alpha(themeColors.success.main, 0.4)}`,
+              background: isEditing
+                ? `linear-gradient(135deg, #d97706 0%, #b45309 100%)`
+                : `linear-gradient(135deg, #059669 0%, #047857 100%)`,
+              transform: "translateY(-1px)",
+              boxShadow: "0 6px 16px rgba(59, 130, 246, 0.3)",
             },
-            transition: "all 0.3s ease",
+            "&:disabled": {
+              background: "#94a3b8",
+              transform: "none",
+            },
+            transition: "all 0.2s ease",
           }}
         >
-          Salvar
+          {loading ? "Salvando..." : "Salvar"}
         </Button>
       </DialogActions>
     </Dialog>

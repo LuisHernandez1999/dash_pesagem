@@ -25,13 +25,15 @@ import {
   Grid,
   Divider,
   Button,
+  Snackbar,
+  Alert,
 } from "@mui/material"
 import { Search, Refresh, Engineering, Visibility, Edit, Add } from "@mui/icons-material"
 import EquipmentModal from "./equipamente_modal"
 import EquipmentViewModal from "./equipaments_view_modal"
 import EquipmentEditModal from "./equipmants_edit"
 
-const EquipmentTable = ({ equipments, loading, themeColors, onRefresh }) => {
+const EquipmentTable = ({ equipments = [], loading, themeColors, onRefresh, onEquipmentUpdate }) => {
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const [searchTerm, setSearchTerm] = useState("")
@@ -42,14 +44,23 @@ const EquipmentTable = ({ equipments, loading, themeColors, onRefresh }) => {
   const [selectedEquipment, setSelectedEquipment] = useState(null)
   const [editModalOpen, setEditModalOpen] = useState(false)
 
-  // Filter equipments based on search term, status and type
-  const filteredEquipments = equipments.filter((equipment) => {
-    const matchesSearch =
-      equipment.prefix.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      equipment.type.toLowerCase().includes(searchTerm.toLowerCase())
+  // Snackbar states
+  const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const [snackbarMessage, setSnackbarMessage] = useState("")
+  const [snackbarSeverity, setSnackbarSeverity] = useState("success")
 
-    const matchesStatus = statusFilter === "Todos" || equipment.status === statusFilter
-    const matchesType = typeFilter === "Todos" || equipment.type === typeFilter
+  // Filter equipments based on search term, status and type with safe checks
+  const filteredEquipments = equipments.filter((equipment) => {
+    // Safe checks for undefined/null values
+    const prefix = equipment?.prefix || ""
+    const type = equipment?.type || ""
+    const status = equipment?.status || ""
+
+    const matchesSearch =
+      prefix.toLowerCase().includes(searchTerm.toLowerCase()) || type.toLowerCase().includes(searchTerm.toLowerCase())
+
+    const matchesStatus = statusFilter === "Todos" || status === statusFilter
+    const matchesType = typeFilter === "Todos" || type === typeFilter
 
     return matchesSearch && matchesStatus && matchesType
   })
@@ -79,11 +90,13 @@ const EquipmentTable = ({ equipments, loading, themeColors, onRefresh }) => {
 
   // Handle modal open/close
   const handleOpenModal = () => {
+    setSelectedEquipment(null) // Garantir que é modo criação
     setModalOpen(true)
   }
 
   const handleCloseModal = () => {
     setModalOpen(false)
+    setSelectedEquipment(null)
   }
 
   // Handle view modal
@@ -108,18 +121,72 @@ const EquipmentTable = ({ equipments, loading, themeColors, onRefresh }) => {
     setSelectedEquipment(null)
   }
 
-  // Handle equipment update
-  const handleUpdateEquipment = (updatedEquipment) => {
-    console.log("Equipamento atualizado:", updatedEquipment)
-    // Aqui você adicionaria a lógica para atualizar o equipamento
+  // Handle equipment update with success feedback
+  const handleUpdateEquipment = (result) => {
+    console.log("🔄 Processando atualização de equipamento:", result)
+
+    if (result.sucesso) {
+      console.log("✅ Atualização bem-sucedida:", result.mensagem)
+      setSnackbarMessage(result.mensagem)
+      setSnackbarSeverity("success")
+      setSnackbarOpen(true)
+
+      // Refresh the table data
+      console.log("🔄 Solicitando atualização da tabela")
+      if (onRefresh) {
+        onRefresh()
+      }
+
+      // Notify parent component about the update
+      if (onEquipmentUpdate) {
+        console.log("📢 Notificando componente pai sobre atualização")
+        onEquipmentUpdate(result.dados)
+      }
+    } else {
+      console.error("❌ Erro na atualização:", result.mensagem)
+      setSnackbarMessage(result.mensagem)
+      setSnackbarSeverity("error")
+      setSnackbarOpen(true)
+    }
+
     handleCloseEditModal()
+    console.log("🏁 Processo de atualização finalizado")
   }
 
-  // Handle equipment save
-  const handleSaveEquipment = (equipmentData) => {
-    console.log("Novo equipamento:", equipmentData)
-    // Aqui você adicionaria a lógica para salvar o equipamento
-    handleCloseModal()
+  // Handle equipment creation with success feedback
+  const handleCreateEquipment = (result) => {
+    console.log("🔄 Processando criação de equipamento:", result)
+
+    if (result.sucesso) {
+      console.log("✅ Criação bem-sucedida:", result.mensagem)
+      setSnackbarMessage(result.mensagem)
+      setSnackbarSeverity("success")
+      setSnackbarOpen(true)
+
+      // Refresh the table data
+      console.log("🔄 Solicitando atualização da tabela após criação")
+      if (onRefresh) {
+        onRefresh()
+      }
+
+      // Notify parent component about the creation
+      if (onEquipmentUpdate) {
+        console.log("📢 Notificando componente pai sobre criação")
+        onEquipmentUpdate(result.dados)
+      }
+    } else {
+      console.error("❌ Erro na criação:", result.mensagem)
+      setSnackbarMessage(result.mensagem)
+      setSnackbarSeverity("error")
+      setSnackbarOpen(true)
+    }
+
+    console.log("🏁 Processo de criação finalizado")
+  }
+
+  // Handle snackbar close
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false)
   }
 
   // Get status color
@@ -139,15 +206,34 @@ const EquipmentTable = ({ equipments, loading, themeColors, onRefresh }) => {
   // Get equipment type color
   const getTypeColor = (type) => {
     switch (type) {
-      case "Carroceria":
+      case "Caminhão Carroceiria":
         return themeColors.primary.main
       case "Pá Carregadeira":
+      case "Pá Carregadeira'":
         return themeColors.warning.main
       case "Retroescavadeira":
         return themeColors.error.main
       default:
         return themeColors.text.secondary
     }
+  }
+
+  // Show loading state
+  if (loading) {
+    return (
+      <Card
+        sx={{
+          borderRadius: "20px",
+          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.06)",
+          background: themeColors.background.card,
+          mb: 4,
+          p: 4,
+          textAlign: "center",
+        }}
+      >
+        <Typography>Carregando equipamentos...</Typography>
+      </Card>
+    )
   }
 
   return (
@@ -461,7 +547,7 @@ const EquipmentTable = ({ equipments, loading, themeColors, onRefresh }) => {
                   <MenuItem value="Todos" sx={{ fontSize: "0.95rem", fontWeight: 500 }}>
                     Todos os Tipos
                   </MenuItem>
-                  <MenuItem value="Carroceria" sx={{ fontSize: "0.95rem", fontWeight: 500 }}>
+                  <MenuItem value="Caminhão Carroceiria" sx={{ fontSize: "0.95rem", fontWeight: 500 }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                       <Box
                         sx={{
@@ -471,10 +557,10 @@ const EquipmentTable = ({ equipments, loading, themeColors, onRefresh }) => {
                           backgroundColor: themeColors.primary.main,
                         }}
                       />
-                      Carroceria
+                      Caminhão Carroceiria
                     </Box>
                   </MenuItem>
-                  <MenuItem value="Pá Carregadeira" sx={{ fontSize: "0.95rem", fontWeight: 500 }}>
+                  <MenuItem value="Pá Carregadeira'" sx={{ fontSize: "0.95rem", fontWeight: 500 }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                       <Box
                         sx={{
@@ -581,34 +667,34 @@ const EquipmentTable = ({ equipments, loading, themeColors, onRefresh }) => {
                           fontSize: "0.95rem",
                         }}
                       >
-                        {equipment.prefix}
+                        {equipment?.prefix || "N/A"}
                       </Typography>
                     </TableCell>
                     <TableCell>
                       <Chip
-                        label={equipment.type}
+                        label={equipment?.type || "N/A"}
                         size="medium"
                         sx={{
-                          backgroundColor: alpha(getTypeColor(equipment.type), 0.12),
-                          color: getTypeColor(equipment.type),
+                          backgroundColor: alpha(getTypeColor(equipment?.type), 0.12),
+                          color: getTypeColor(equipment?.type),
                           fontWeight: 600,
                           fontSize: "0.85rem",
                           borderRadius: "8px",
-                          border: `1px solid ${alpha(getTypeColor(equipment.type), 0.2)}`,
+                          border: `1px solid ${alpha(getTypeColor(equipment?.type), 0.2)}`,
                         }}
                       />
                     </TableCell>
                     <TableCell>
                       <Chip
-                        label={equipment.status}
+                        label={equipment?.status || "N/A"}
                         size="medium"
                         sx={{
-                          backgroundColor: alpha(getStatusColor(equipment.status), 0.12),
-                          color: getStatusColor(equipment.status),
+                          backgroundColor: alpha(getStatusColor(equipment?.status), 0.12),
+                          color: getStatusColor(equipment?.status),
                           fontWeight: 600,
                           fontSize: "0.85rem",
                           borderRadius: "8px",
-                          border: `1px solid ${alpha(getStatusColor(equipment.status), 0.2)}`,
+                          border: `1px solid ${alpha(getStatusColor(equipment?.status), 0.2)}`,
                         }}
                       />
                     </TableCell>
@@ -684,8 +770,9 @@ const EquipmentTable = ({ equipments, loading, themeColors, onRefresh }) => {
       <EquipmentModal
         open={modalOpen}
         onClose={handleCloseModal}
-        onSave={handleSaveEquipment}
+        onSave={handleCreateEquipment}
         themeColors={themeColors}
+        equipment={selectedEquipment}
       />
 
       {/* Modal de Visualização */}
@@ -704,8 +791,27 @@ const EquipmentTable = ({ equipments, loading, themeColors, onRefresh }) => {
         onSave={handleUpdateEquipment}
         themeColors={themeColors}
       />
+
+      {/* Snackbar para feedback */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={4000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+      >
+        <Alert
+          onClose={handleSnackbarClose}
+          severity={snackbarSeverity}
+          sx={{
+            width: "100%",
+            borderRadius: "12px",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+          }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </>
   )
 }
-
 export default EquipmentTable
