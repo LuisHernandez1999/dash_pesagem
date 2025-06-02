@@ -20,8 +20,13 @@ import {
 import { Construction, CheckCircle, Cancel, Today, Refresh, Menu as MenuIcon } from "@mui/icons-material"
 import EquipmentTable from "../../components/equipamentes_table"
 import WeeklyDistributionChart from "../../components/grafic_equipmanents"
+import EquipmentTypeSummary from "../../components/equipament_summary"
 import EquipmentListModal from "../../components/equipaments_list"
-import { listarPrefixosEImplementos, listarEquipamentosTable } from "../../service/equipamento"
+import {
+  listarPrefixosEImplementos,
+  listarEquipamentosTable,
+  contarEquipamentosSemana,
+} from "../../service/equipamento"
 
 // Animation keyframes
 const keyframes = {
@@ -207,6 +212,103 @@ const transformTableEquipmentData = (equipmentList) => {
   }))
 }
 
+// Function to transform weekly API data to chart format
+const transformWeeklyData = (equipamentos) => {
+  console.log("🔍 Iniciando transformação dos dados semanais")
+  console.log("📊 Equipamentos recebidos:", equipamentos)
+
+  const days = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"]
+
+  // Função para normalizar nomes de equipamentos (remover acentos, aspas, etc.)
+  const normalizeEquipmentName = (name) => {
+    return name
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "") // Remove acentos
+      .replace(/['"]/g, "") // Remove aspas
+      .replace(/\s+/g, "") // Remove espaços
+  }
+
+  // Mapeamento de nomes de equipamentos para as chaves do gráfico
+  const equipmentMapping = {
+    retroescavadeira: "retroescavadeira",
+    pacarregadeira: "paCarregadeira",
+    caminhaocarroceria: "carroceria",
+    carroceria: "carroceria",
+    caminhaocarroceiria: "carroceria", // Corrigindo o erro de digitação
+  }
+
+  // Detectar todos os tipos de equipamentos únicos
+  const uniqueEquipmentTypes = [...new Set(equipamentos.map((eq) => normalizeEquipmentName(eq.equipamento)))]
+  console.log("🔧 Tipos de equipamentos detectados:", uniqueEquipmentTypes)
+
+  // Criar um objeto com todos os tipos de equipamentos inicializados com 0
+  const createEmptyDayData = (day) => {
+    const dayData = { day }
+
+    // Garantir que sempre temos as três propriedades padrão
+    dayData.carroceria = 0
+    dayData.paCarregadeira = 0
+    dayData.retroescavadeira = 0
+
+    return dayData
+  }
+
+  const result = days.map((day) => {
+    const dayData = createEmptyDayData(day)
+
+    console.log(`📅 Processando dia: ${day}`)
+
+    equipamentos.forEach((equipment) => {
+      const equipmentName = equipment.equipamento
+      const normalizedName = normalizeEquipmentName(equipmentName)
+      const mappedName = equipmentMapping[normalizedName] || normalizedName
+
+      // Mapear o nome do dia para a propriedade correspondente
+      let dayValue = 0
+      switch (day) {
+        case "Segunda":
+          dayValue = equipment.segunda || 0
+          break
+        case "Terça":
+          dayValue = equipment.terca || 0
+          break
+        case "Quarta":
+          dayValue = equipment.quarta || 0
+          break
+        case "Quinta":
+          dayValue = equipment.quinta || 0
+          break
+        case "Sexta":
+          dayValue = equipment.sexta || 0
+          break
+        case "Sábado":
+          dayValue = equipment.sabado || 0
+          break
+        case "Domingo":
+          dayValue = equipment.domingo || 0
+          break
+      }
+
+      console.log(`🔧 Equipamento: ${equipmentName}, Normalizado: ${normalizedName}, Mapeado para: ${mappedName}`)
+      console.log(`📊 Valor para ${day}:`, dayValue)
+
+      if (dayData.hasOwnProperty(mappedName)) {
+        dayData[mappedName] = dayValue
+        console.log(`✅ Atribuído ${dayValue} para ${mappedName} no dia ${day}`)
+      } else {
+        console.log(`❌ Propriedade ${mappedName} não encontrada no dayData`)
+      }
+    })
+
+    console.log(`📊 Dados finais para ${day}:`, dayData)
+    return dayData
+  })
+
+  console.log("🎯 Resultado final da transformação:", result)
+  return result
+}
+
 export default function EquipmentDashboard() {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
@@ -236,6 +338,10 @@ export default function EquipmentDashboard() {
   // Loading states
   const [loading, setLoading] = useState(true)
   const [tableLoading, setTableLoading] = useState(true)
+
+  // Weekly distribution data from API
+  const [weeklyData, setWeeklyData] = useState([])
+  const [weeklyLoading, setWeeklyLoading] = useState(true)
 
   // Fetch equipment data for cards from API
   useEffect(() => {
@@ -294,6 +400,77 @@ export default function EquipmentDashboard() {
     fetchTableData()
   }, [])
 
+  // Fetch weekly distribution data from API
+  useEffect(() => {
+    const fetchWeeklyData = async () => {
+      try {
+        setWeeklyLoading(true)
+        console.log("🚀 Iniciando busca dos dados semanais")
+
+        const data = await contarEquipamentosSemana()
+
+        console.log("📡 Resposta completa da API:", data)
+        console.log("📊 Tipo de data:", typeof data)
+        console.log("📊 Data é array?", Array.isArray(data))
+        console.log("📊 Equipamentos:", data?.equipamentos)
+        console.log("📊 Tipo de equipamentos:", typeof data?.equipamentos)
+        console.log("📊 Equipamentos é array?", Array.isArray(data?.equipamentos))
+        console.log("📊 Quantidade de equipamentos:", data?.equipamentos?.length)
+
+        if (data && data.equipamentos && Array.isArray(data.equipamentos) && data.equipamentos.length > 0) {
+          console.log("✅ Dados válidos encontrados, iniciando transformação")
+          const transformedData = transformWeeklyData(data.equipamentos)
+          console.log("🎯 Dados transformados:", transformedData)
+          setWeeklyData(transformedData)
+        } else {
+          console.log("❌ Nenhum equipamento válido encontrado")
+          console.log("🔍 Detalhes do problema:")
+          console.log("  - data existe?", !!data)
+          console.log("  - data.equipamentos existe?", !!data?.equipamentos)
+          console.log("  - é array?", Array.isArray(data?.equipamentos))
+          console.log("  - tem itens?", data?.equipamentos?.length > 0)
+
+          // Fallback to empty data
+          const fallbackData = [
+            { day: "Segunda", carroceria: 0, paCarregadeira: 0, retroescavadeira: 0 },
+            { day: "Terça", carroceria: 0, paCarregadeira: 0, retroescavadeira: 0 },
+            { day: "Quarta", carroceria: 0, paCarregadeira: 0, retroescavadeira: 0 },
+            { day: "Quinta", carroceria: 0, paCarregadeira: 0, retroescavadeira: 0 },
+            { day: "Sexta", carroceria: 0, paCarregadeira: 0, retroescavadeira: 0 },
+            { day: "Sábado", carroceria: 0, paCarregadeira: 0, retroescavadeira: 0 },
+            { day: "Domingo", carroceria: 0, paCarregadeira: 0, retroescavadeira: 0 },
+          ]
+          console.log("🔄 Usando dados de fallback:", fallbackData)
+          setWeeklyData(fallbackData)
+        }
+      } catch (error) {
+        console.error("💥 Erro ao carregar dados semanais:", error)
+        console.error("💥 Stack trace:", error.stack)
+        setSnackbarMessage("Erro ao carregar dados do gráfico semanal")
+        setSnackbarSeverity("error")
+        setSnackbarOpen(true)
+
+        // Fallback to empty data
+        const fallbackData = [
+          { day: "Segunda", carroceria: 0, paCarregadeira: 0, retroescavadeira: 0 },
+          { day: "Terça", carroceria: 0, paCarregadeira: 0, retroescavadeira: 0 },
+          { day: "Quarta", carroceria: 0, paCarregadeira: 0, retroescavadeira: 0 },
+          { day: "Quinta", carroceria: 0, paCarregadeira: 0, retroescavadeira: 0 },
+          { day: "Sexta", carroceria: 0, paCarregadeira: 0, retroescavadeira: 0 },
+          { day: "Sábado", carroceria: 0, paCarregadeira: 0, retroescavadeira: 0 },
+          { day: "Domingo", carroceria: 0, paCarregadeira: 0, retroescavadeira: 0 },
+        ]
+        console.log("🔄 Usando dados de fallback após erro:", fallbackData)
+        setWeeklyData(fallbackData)
+      } finally {
+        setWeeklyLoading(false)
+        console.log("🏁 Busca de dados semanais finalizada")
+      }
+    }
+
+    fetchWeeklyData()
+  }, [])
+
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarMessage, setSnackbarMessage] = useState("")
   const [snackbarSeverity, setSnackbarSeverity] = useState("success")
@@ -301,17 +478,6 @@ export default function EquipmentDashboard() {
   // Equipment list modal state
   const [listModalOpen, setListModalOpen] = useState(false)
   const [listModalTitle, setListModalTitle] = useState("")
-
-  // Weekly distribution data (stays mocked as requested)
-  const [weeklyData, setWeeklyData] = useState([
-    { day: "Segunda", carroceria: 8, paCarregadeira: 5, retroescavadeira: 3 },
-    { day: "Terça", carroceria: 10, paCarregadeira: 6, retroescavadeira: 4 },
-    { day: "Quarta", carroceria: 12, paCarregadeira: 7, retroescavadeira: 5 },
-    { day: "Quinta", carroceria: 9, paCarregadeira: 5, retroescavadeira: 3 },
-    { day: "Sexta", carroceria: 11, paCarregadeira: 6, retroescavadeira: 4 },
-    { day: "Sábado", carroceria: 6, paCarregadeira: 3, retroescavadeira: 2 },
-    { day: "Domingo", carroceria: 4, paCarregadeira: 2, retroescavadeira: 1 },
-  ])
 
   // Handle card clicks
   const handleCardClick = (cardType) => {
@@ -346,6 +512,7 @@ export default function EquipmentDashboard() {
       console.log("🔄 Iniciando atualização de todos os dados")
       setLoading(true)
       setTableLoading(true)
+      setWeeklyLoading(true)
 
       // Refresh cards data
       console.log("📊 Atualizando dados dos cards")
@@ -370,6 +537,15 @@ export default function EquipmentDashboard() {
       console.log("📋 Dados da tabela recebidos:", tableDataResponse)
       setTableData(tableDataResponse)
 
+      // Refresh weekly data
+      console.log("📈 Atualizando dados semanais")
+      const weeklyDataResponse = await contarEquipamentosSemana()
+      console.log("📈 Dados semanais recebidos:", weeklyDataResponse)
+      if (weeklyDataResponse && weeklyDataResponse.equipamentos) {
+        const transformedWeeklyData = transformWeeklyData(weeklyDataResponse.equipamentos)
+        setWeeklyData(transformedWeeklyData)
+      }
+
       setSnackbarMessage("Todos os dados atualizados com sucesso!")
       setSnackbarSeverity("success")
       setSnackbarOpen(true)
@@ -382,6 +558,7 @@ export default function EquipmentDashboard() {
     } finally {
       setLoading(false)
       setTableLoading(false)
+      setWeeklyLoading(false)
       console.log("🏁 Processo de atualização finalizado")
     }
   }
@@ -412,10 +589,78 @@ export default function EquipmentDashboard() {
     }
   }
 
+  // Handle weekly chart refresh
+  const handleWeeklyRefresh = async () => {
+    try {
+      console.log("🔄 Iniciando atualização dos dados semanais")
+      setWeeklyLoading(true)
+      const data = await contarEquipamentosSemana()
+      console.log("📈 Novos dados semanais recebidos:", data)
+
+      if (data && data.equipamentos) {
+        const transformedData = transformWeeklyData(data.equipamentos)
+        setWeeklyData(transformedData)
+        setSnackbarMessage("Dados do gráfico semanal atualizados!")
+        setSnackbarSeverity("success")
+        setSnackbarOpen(true)
+      }
+
+      console.log("✅ Atualização dos dados semanais concluída com sucesso")
+    } catch (error) {
+      console.error("❌ Erro ao atualizar dados semanais:", error)
+      setSnackbarMessage("Erro ao atualizar dados do gráfico semanal")
+      setSnackbarSeverity("error")
+      setSnackbarOpen(true)
+    } finally {
+      setWeeklyLoading(false)
+      console.log("🏁 Processo de atualização dos dados semanais finalizado")
+    }
+  }
+
+  // Handle equipment type summary refresh
+  const handleEquipmentTypeSummaryRefresh = async () => {
+    try {
+      console.log("🔄 Iniciando atualização dos dados de tipos de equipamentos")
+      setLoading(true)
+      const data = await listarPrefixosEImplementos()
+      console.log("📊 Novos dados de tipos recebidos:", data)
+
+      setApiData({
+        contagem_total: data.contagem_total || 0,
+        contagem_ativos: data.contagem_ativos || 0,
+        contagem_inativos: data.contagem_inativos || 0,
+        contagem_manutencao: data.contagem_manutencao || 0,
+        todos: data.todos || [],
+        ativos: data.ativos || [],
+        inativos: data.inativos || [],
+      })
+
+      setSnackbarMessage("Dados de tipos de equipamentos atualizados!")
+      setSnackbarSeverity("success")
+      setSnackbarOpen(true)
+      console.log("✅ Atualização dos dados de tipos concluída com sucesso")
+    } catch (error) {
+      console.error("❌ Erro ao atualizar dados de tipos:", error)
+      setSnackbarMessage("Erro ao atualizar dados de tipos de equipamentos")
+      setSnackbarSeverity("error")
+      setSnackbarOpen(true)
+    } finally {
+      setLoading(false)
+      console.log("🏁 Processo de atualização dos tipos finalizado")
+    }
+  }
+
   // Handle snackbar close
   const handleSnackbarClose = () => {
     setSnackbarOpen(false)
   }
+
+  // Adicione este log antes do return do componente
+  console.log("🎨 Renderizando dashboard com weeklyData:", weeklyData)
+  console.log("🎨 weeklyLoading:", weeklyLoading)
+  console.log("🎨 Tipo de weeklyData:", typeof weeklyData)
+  console.log("🎨 weeklyData é array?", Array.isArray(weeklyData))
+  console.log("🎨 Tamanho do weeklyData:", weeklyData?.length)
 
   return (
     <>
@@ -621,8 +866,21 @@ export default function EquipmentDashboard() {
               onRefresh={handleTableRefresh}
             />
 
-            {/* Weekly Distribution Chart - Using mock data as requested */}
-            <WeeklyDistributionChart weeklyData={weeklyData} themeColors={themeColors} onRefresh={handleRefreshData} />
+            {/* Equipment Type Summary - NEW COMPONENT */}
+            <EquipmentTypeSummary
+              equipmentData={apiData}
+              loading={loading}
+              onRefresh={handleEquipmentTypeSummaryRefresh}
+              themeColors={themeColors}
+            />
+
+            {/* Weekly Distribution Chart - Now using real API data */}
+            <WeeklyDistributionChart
+              weeklyData={weeklyData}
+              themeColors={themeColors}
+              onRefresh={handleWeeklyRefresh}
+              loading={weeklyLoading}
+            />
           </Container>
         </Box>
       </Box>

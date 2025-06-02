@@ -217,3 +217,27 @@ export async function criarEquipamento(prefixo, implemento, status, motivoInativ
     };
   }
 }
+
+export const contarEquipamentosSemana = async () => { 
+  try {
+    const response = await axios.get(`${API_BASE_URL}/api/soltura/equipamento_semana_distrib/`);
+
+    const equipamentos = Object.entries(response.data.contagem).map(([equipamento, dias]) => ({
+      equipamento: equipamento,
+      segunda: dias['Segunda'] || 0,
+      terca: dias['Terça'] || 0,
+      quarta: dias['Quarta'] || 0,
+      quinta: dias['Quinta'] || 0,
+      sexta: dias['Sexta'] || 0,
+      sabado: dias['Sábado'] || 0,
+      domingo: dias['Domingo'] || 0,
+    }));
+
+    return {
+      equipamentos: equipamentos,
+    };
+  } catch (error) {
+    console.error('Erro ao buscar a contagem de equipamentos por dia da semana:', error);
+    throw error;
+  }
+};
