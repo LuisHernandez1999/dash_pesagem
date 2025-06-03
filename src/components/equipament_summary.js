@@ -1,10 +1,20 @@
 "use client"
 
-import React, { useMemo } from "react"
+import React, { useMemo, useState, useEffect, useRef, useCallback } from "react"
 import { Card, CardContent, CardHeader, Box, Typography, alpha, IconButton, Chip } from "@mui/material"
 import { LocalShipping, Construction, Agriculture, Refresh, TrendingUp, Assessment } from "@mui/icons-material"
 
-const EquipmentTypeSummary = React.memo(({ equipmentData, loading = false, onRefresh, themeColors }) => {
+const EquipmentTypeSummary = React.memo(({ equipmentData, loading = false, onRefresh, themeColors, apiFunction }) => {
+  // State for auto-refresh functionality
+  const [isAutoUpdating, setIsAutoUpdating] = useState(false)
+  const [lastUpdate, setLastUpdate] = useState(null)
+  const [hasDataChanged, setHasDataChanged] = useState(false)
+
+  // Refs for efficient comparison and control
+  const prevDataRef = useRef(null)
+  const intervalRef = useRef(null)
+  const isUpdatingRef = useRef(false)
+
   // Processar dados dos equipamentos por tipo
   const equipmentStats = useMemo(() => {
     if (!equipmentData?.todos || !Array.isArray(equipmentData.todos)) {
@@ -67,6 +77,177 @@ const EquipmentTypeSummary = React.memo(({ equipmentData, loading = false, onRef
     return stats
   }, [equipmentData])
 
+  // Efficient data comparison
+  const compareData = useCallback((current, previous) => {
+    if (!previous) return true
+
+    return (
+      current.carroceria.count !== previous.carroceria.count ||
+      current.retroescavadeira.count !== previous.retroescavadeira.count ||
+      current.paCarregadeira.count !== previous.paCarregadeira.count ||
+      current.total !== previous.total
+    )
+  }, [])
+
+  // Auto-refresh function
+  const performAutoRefresh = useCallback(async () => {
+    // Prevent multiple simultaneous calls
+    if (isUpdatingRef.current || !apiFunction) {
+      console.log("🚫 EquipmentTypeSummary: Auto-refresh já em andamento ou sem API function")
+      return
+    }
+
+    try {
+      isUpdatingRef.current = true
+      setIsAutoUpdating(true)
+
+      console.log("🔄 EquipmentTypeSummary: Iniciando auto-refresh")
+
+      // Call the API function (should be passed from parent)
+      const newData = await apiFunction()
+
+      // Process new data to get stats
+      const newStats = processDataToStats(newData)
+
+      // Compare with previous data
+      const hasChanged = compareData(newStats, prevDataRef.current)
+
+      if (hasChanged) {
+        console.log("✅ EquipmentTypeSummary: Dados alterados, atualizando")
+
+        // Trigger parent refresh
+        if (onRefresh) {
+          onRefresh()
+        }
+
+        // Update refs and state
+        prevDataRef.current = newStats
+        setHasDataChanged(true)
+        setLastUpdate(new Date())
+
+        // Reset change indicator after animation
+        setTimeout(() => {
+          setHasDataChanged(false)
+        }, 2000)
+      } else {
+        console.log("ℹ️ EquipmentTypeSummary: Nenhuma alteração nos dados")
+      }
+    } catch (error) {
+      console.error("❌ EquipmentTypeSummary: Erro no auto-refresh:", error)
+    } finally {
+      isUpdatingRef.current = false
+      setIsAutoUpdating(false)
+    }
+  }, [apiFunction, onRefresh, compareData])
+
+  // Helper function to process data to stats format
+  const processDataToStats = useCallback((data) => {
+    if (!data?.todos || !Array.isArray(data.todos)) {
+      return {
+        carroceria: { count: 0, percentage: 0 },
+        retroescavadeira: { count: 0, percentage: 0 },
+        paCarregadeira: { count: 0, percentage: 0 },
+        total: 0,
+      }
+    }
+
+    const todos = data.todos
+    const total = todos.length
+
+    const normalizeType = (type) => {
+      return type
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]/g, "")
+    }
+
+    const counts = {
+      carroceria: 0,
+      retroescavadeira: 0,
+      paCarregadeira: 0,
+    }
+
+    todos.forEach((equipment) => {
+      const normalizedType = normalizeType(equipment.implemento || "")
+
+      if (normalizedType.includes("carroceria") || normalizedType.includes("caminhao")) {
+        counts.carroceria++
+      } else if (normalizedType.includes("retroescavadeira") || normalizedType.includes("retro")) {
+        counts.retroescavadeira++
+      } else if (normalizedType.includes("pacarregadeira") || normalizedType.includes("carregadeira")) {
+        counts.paCarregadeira++
+      }
+    })
+
+    return {
+      carroceria: {
+        count: counts.carroceria,
+        percentage: total > 0 ? (counts.carroceria / total) * 100 : 0,
+      },
+      retroescavadeira: {
+        count: counts.retroescavadeira,
+        percentage: total > 0 ? (counts.retroescavadeira / total) * 100 : 0,
+      },
+      paCarregadeira: {
+        count: counts.paCarregadeira,
+        percentage: total > 0 ? (counts.paCarregadeira / total) * 100 : 0,
+      },
+      total,
+    }
+  }, [])
+
+  // Set up auto-refresh interval
+  useEffect(() => {
+    // Initialize previous data
+    if (equipmentStats && !prevDataRef.current) {
+      prevDataRef.current = equipmentStats
+    }
+
+    // Clear any existing interval
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current)
+    }
+
+    // Set up new interval (7 minutes = 420000 ms)
+    if (apiFunction) {
+      intervalRef.current = setInterval(performAutoRefresh, 420000)
+      console.log("⏰ EquipmentTypeSummary: Auto-refresh configurado para 7 minutos")
+    }
+
+    // Cleanup on unmount
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+        console.log("🧹 EquipmentTypeSummary: Auto-refresh limpo")
+      }
+    }
+  }, [performAutoRefresh, apiFunction, equipmentStats])
+
+  // Update previous data when equipmentStats changes
+  useEffect(() => {
+    if (equipmentStats && prevDataRef.current) {
+      const hasChanged = compareData(equipmentStats, prevDataRef.current)
+      if (hasChanged) {
+        prevDataRef.current = equipmentStats
+        setLastUpdate(new Date())
+      }
+    }
+  }, [equipmentStats, compareData])
+
+  // Enhanced refresh handler
+  const handleRefresh = useCallback(async () => {
+    if (onRefresh) {
+      setHasDataChanged(true)
+      await onRefresh()
+      setLastUpdate(new Date())
+
+      setTimeout(() => {
+        setHasDataChanged(false)
+      }, 2000)
+    }
+  }, [onRefresh])
+
   // Configurações dos tipos de equipamentos
   const equipmentTypes = useMemo(
     () => [
@@ -100,6 +281,12 @@ const EquipmentTypeSummary = React.memo(({ equipmentData, loading = false, onRef
     ],
     [],
   )
+
+  // Memoized last update display
+  const lastUpdateDisplay = useMemo(() => {
+    if (!lastUpdate) return ""
+    return `Atualizado: ${lastUpdate.toLocaleTimeString()}`
+  }, [lastUpdate])
 
   if (loading) {
     return (
@@ -142,7 +329,30 @@ const EquipmentTypeSummary = React.memo(({ equipmentData, loading = false, onRef
         background: "rgba(255, 255, 255, 0.95)",
         backdropFilter: "blur(20px)",
         mb: 4,
-        border: "1px solid rgba(0, 0, 0, 0.05)",
+        border: hasDataChanged ? "2px solid #3B82F6" : "1px solid rgba(0, 0, 0, 0.05)",
+        animation: hasDataChanged ? "pulse 1.5s ease-out" : "none",
+        "@keyframes pulse": {
+          "0%": { transform: "scale(1)", boxShadow: "0 4px 16px rgba(0, 0, 0, 0.06)" },
+          "50%": { transform: "scale(1.02)", boxShadow: "0 8px 32px rgba(59, 130, 246, 0.2)" },
+          "100%": { transform: "scale(1)", boxShadow: "0 4px 16px rgba(0, 0, 0, 0.06)" },
+        },
+        "&::before": isAutoUpdating
+          ? {
+              content: '""',
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              background: "linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.05), transparent)",
+              animation: "shimmer 1.5s ease-in-out infinite",
+              zIndex: 1,
+              "@keyframes shimmer": {
+                "0%": { backgroundPosition: "-200px 0" },
+                "100%": { backgroundPosition: "calc(200px + 100%) 0" },
+              },
+            }
+          : {},
       }}
     >
       <CardHeader
@@ -158,6 +368,8 @@ const EquipmentTypeSummary = React.memo(({ equipmentData, loading = false, onRef
                 alignItems: "center",
                 justifyContent: "center",
                 border: `1px solid ${alpha("#3B82F6", 0.15)}`,
+                position: "relative",
+                zIndex: 2,
               }}
             >
               <Assessment
@@ -167,7 +379,7 @@ const EquipmentTypeSummary = React.memo(({ equipmentData, loading = false, onRef
                 }}
               />
             </Box>
-            <Box>
+            <Box sx={{ position: "relative", zIndex: 2 }}>
               <Typography
                 sx={{
                   fontWeight: 700,
@@ -196,11 +408,23 @@ const EquipmentTypeSummary = React.memo(({ equipmentData, loading = false, onRef
                   Análise detalhada por categoria de equipamento
                 </Typography>
               </Box>
+              {lastUpdate && (
+                <Typography
+                  sx={{
+                    fontSize: "0.7rem",
+                    color: "#9CA3AF",
+                    fontWeight: 400,
+                    mt: 0.5,
+                  }}
+                >
+                  {lastUpdateDisplay}
+                </Typography>
+              )}
             </Box>
           </Box>
         }
         action={
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, position: "relative", zIndex: 2 }}>
             <Chip
               label={`${equipmentStats.total} Total`}
               size="small"
@@ -210,26 +434,38 @@ const EquipmentTypeSummary = React.memo(({ equipmentData, loading = false, onRef
                 fontWeight: 600,
                 fontSize: "0.75rem",
                 height: "24px",
+                animation: hasDataChanged ? "bounce 0.6s ease-out" : "none",
+                "@keyframes bounce": {
+                  "0%, 20%, 50%, 80%, 100%": { transform: "translateY(0)" },
+                  "40%": { transform: "translateY(-4px)" },
+                  "60%": { transform: "translateY(-2px)" },
+                },
               }}
             />
             {onRefresh && (
               <IconButton
                 sx={{
-                  color: "#6B7280",
-                  background: alpha("#3B82F6", 0.06),
+                  color: isAutoUpdating ? "#3B82F6" : "#6B7280",
+                  background: isAutoUpdating ? alpha("#3B82F6", 0.1) : alpha("#3B82F6", 0.06),
                   borderRadius: "10px",
                   width: "36px",
                   height: "36px",
                   border: "1px solid rgba(0, 0, 0, 0.06)",
                   transition: "all 0.1s ease",
+                  animation: isAutoUpdating ? "spin 1s linear infinite" : "none",
                   "&:hover": {
                     color: "white",
                     background: `linear-gradient(135deg, #3B82F6, #8B5CF6)`,
                     transform: "rotate(180deg)",
                     boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)",
                   },
+                  "@keyframes spin": {
+                    "0%": { transform: "rotate(0deg)" },
+                    "100%": { transform: "rotate(360deg)" },
+                  },
                 }}
-                onClick={onRefresh}
+                onClick={handleRefresh}
+                disabled={isAutoUpdating}
               >
                 <Refresh sx={{ fontSize: "1.1rem" }} />
               </IconButton>
@@ -246,7 +482,7 @@ const EquipmentTypeSummary = React.memo(({ equipmentData, loading = false, onRef
         }}
       />
 
-      <CardContent sx={{ padding: "1.5rem" }}>
+      <CardContent sx={{ padding: "1.5rem", position: "relative", zIndex: 2 }}>
         <Box
           sx={{
             display: "grid",
@@ -269,6 +505,7 @@ const EquipmentTypeSummary = React.memo(({ equipmentData, loading = false, onRef
                   padding: "1.5rem",
                   transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                   overflow: "hidden",
+                  animation: hasDataChanged ? `cardPulse-${type.key} 1s ease-out` : "none",
                   "&:hover": {
                     transform: "translateY(-4px) scale(1.02)",
                     boxShadow: `0 12px 40px ${alpha(type.color, 0.15)}`,
@@ -289,6 +526,11 @@ const EquipmentTypeSummary = React.memo(({ equipmentData, loading = false, onRef
                     height: "3px",
                     background: type.gradient,
                     borderRadius: "16px 16px 0 0",
+                  },
+                  [`@keyframes cardPulse-${type.key}`]: {
+                    "0%": { transform: "scale(1)" },
+                    "50%": { transform: "scale(1.05)", boxShadow: `0 8px 25px ${alpha(type.color, 0.2)}` },
+                    "100%": { transform: "scale(1)" },
                   },
                 }}
               >
@@ -343,6 +585,12 @@ const EquipmentTypeSummary = React.memo(({ equipmentData, loading = false, onRef
                       WebkitBackgroundClip: "text",
                       WebkitTextFillColor: "transparent",
                       textShadow: `0 2px 4px ${alpha(type.color, 0.2)}`,
+                      animation: hasDataChanged ? "numberPulse 0.8s ease-out" : "none",
+                      "@keyframes numberPulse": {
+                        "0%": { transform: "scale(1)" },
+                        "50%": { transform: "scale(1.1)" },
+                        "100%": { transform: "scale(1)" },
+                      },
                     }}
                   >
                     {stats.count}
@@ -447,6 +695,12 @@ const EquipmentTypeSummary = React.memo(({ equipmentData, loading = false, onRef
             background: `linear-gradient(135deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.3))`,
             padding: "1rem",
             textAlign: "center",
+            animation: hasDataChanged ? "totalPulse 1s ease-out" : "none",
+            "@keyframes totalPulse": {
+              "0%": { transform: "scale(1)", backgroundColor: "rgba(255, 255, 255, 0.6)" },
+              "50%": { transform: "scale(1.02)", backgroundColor: "rgba(59, 130, 246, 0.1)" },
+              "100%": { transform: "scale(1)", backgroundColor: "rgba(255, 255, 255, 0.6)" },
+            },
           }}
         >
           <Typography
