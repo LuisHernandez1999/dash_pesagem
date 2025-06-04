@@ -25,7 +25,11 @@ import WeeklyDistributionChart from "../../components/grafic_equipmanents"
 import EquipmentTypeSummary from "../../components/equipament_summary"
 import EquipmentListModal from "../../components/equipaments_list"
 import Sidebar from "../../components/sidebar"
-import { listarPrefixosEImplementos, listarEquipamentosTable, contarEquipamentosSemana } from "../../service/equipamento"
+import {
+  listarPrefixosEImplementos,
+  listarEquipamentosTable,
+  contarEquipamentosSemana,
+} from "../../service/equipamento"
 
 // Animation keyframes
 const keyframes = {
@@ -218,27 +222,43 @@ const MemoizedStatCard = React.memo(CustomStatCard, (prevProps, nextProps) => {
 
 // Function to transform API equipment data to match modal component expectations
 const transformEquipmentData = (equipmentList) => {
+  if (!Array.isArray(equipmentList)) return []
+
   return equipmentList.map((equipment, index) => ({
     id: index + 1,
-    prefix: equipment.prefixo,
-    status: equipment.status,
-    type: equipment.implemento,
+    prefix: equipment.prefixo_equipamento || equipment.prefixo || "",
+    status: equipment.status_equipamento || equipment.status || "",
+    type: equipment.implemento || "",
+  }))
+}
+
+// Function to transform table equipment data from API for maintenance modal
+const transformMaintenanceEquipmentData = (equipmentList) => {
+  if (!Array.isArray(equipmentList)) return []
+
+  return equipmentList.map((equipment, index) => ({
+    id: index + 1,
+    prefix: equipment.prefixo_equipamento || equipment.prefixo || "",
+    status: "Manutenção",
+    type: equipment.implemento || "",
   }))
 }
 
 // Function to transform table equipment data from API
 const transformTableEquipmentData = (equipmentList) => {
+  if (!Array.isArray(equipmentList)) return []
+
   return equipmentList.map((equipment, index) => ({
     id: index + 1,
     prefix: equipment.prefixo_equipamento || "",
     type: equipment.implemento || "",
     status: equipment.status_equipamento || "",
-    model: "N/A",
-    location: "N/A",
-    lastMaintenance: "N/A",
-    nextMaintenance: "N/A",
-    operator: "N/A",
-    workingHours: 0,
+    model: equipment.modelo || "N/A",
+    location: equipment.localizacao || "N/A",
+    lastMaintenance: equipment.ultima_manutencao || "N/A",
+    nextMaintenance: equipment.proxima_manutencao || "N/A",
+    operator: equipment.operador || "N/A",
+    workingHours: equipment.horas_trabalhadas || 0,
   }))
 }
 
@@ -246,6 +266,11 @@ const transformTableEquipmentData = (equipmentList) => {
 const transformWeeklyData = (equipamentos) => {
   console.log("🔍 Iniciando transformação dos dados semanais")
   console.log("📊 Equipamentos recebidos:", equipamentos)
+
+  if (!Array.isArray(equipamentos) || equipamentos.length === 0) {
+    console.log("❌ Nenhum equipamento válido encontrado")
+    return []
+  }
 
   const days = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"]
 
@@ -355,6 +380,9 @@ export default function EquipmentDashboard() {
     inativos: [],
   })
 
+  // User data state (from API or authentication)
+  const [user, setUser] = useState(null)
+
   // Optimized state management
   const [cardHighlights, setCardHighlights] = useState({
     total: false,
@@ -396,12 +424,6 @@ export default function EquipmentDashboard() {
   const [weeklyData, setWeeklyData] = useState([])
   const [weeklyLoading, setWeeklyLoading] = useState(true)
 
-  // Mock user data for sidebar
-  const user = {
-    name: "Admin User",
-    email: "admin@limpagyn.com",
-  }
-
   // Optimized data comparison function
   const compareCardData = useCallback((current, previous) => {
     return {
@@ -411,6 +433,39 @@ export default function EquipmentDashboard() {
       maintenance: current.contagem_manutencao !== previous.contagem_manutencao,
     }
   }, [])
+
+  // Function to fetch equipment by status using listarEquipamentosTable
+  const fetchEquipmentsByStatus = useCallback(async (status, motivo_inatividade = null) => {
+    try {
+      console.log(
+        `🔍 Buscando equipamentos com status: ${status}${motivo_inatividade ? ` e motivo: ${motivo_inatividade}` : ""}`,
+      )
+
+      const params = {
+        status: status,
+        pagina: 1,
+        itensPorPagina: 1000, // Buscar todos
+      }
+
+      if (motivo_inatividade) {
+        params.motivo_inatividade = motivo_inatividade
+      }
+
+      const data = await listarEquipamentosTable(params)
+
+      console.log(`✅ Encontrados ${data.equipamentos?.length || 0} equipamentos`)
+
+      return data.equipamentos || []
+    } catch (error) {
+      console.error(`❌ Erro ao buscar equipamentos com status ${status}:`, error)
+      return []
+    }
+  }, [])
+
+  // Function to fetch maintenance equipments
+  const fetchMaintenanceEquipments = useCallback(async () => {
+    return await fetchEquipmentsByStatus("Inativo", "Manutenção")
+  }, [fetchEquipmentsByStatus])
 
   // Optimized fetch function with debouncing
   const fetchEquipmentData = useCallback(
@@ -569,37 +624,14 @@ export default function EquipmentDashboard() {
           setWeeklyData(transformedData)
         } else {
           console.log("❌ Nenhum equipamento válido encontrado")
-
-          // Fallback to empty data
-          const fallbackData = [
-            { day: "Segunda", carroceria: 0, paCarregadeira: 0, retroescavadeira: 0 },
-            { day: "Terça", carroceria: 0, paCarregadeira: 0, retroescavadeira: 0 },
-            { day: "Quarta", carroceria: 0, paCarregadeira: 0, retroescavadeira: 0 },
-            { day: "Quinta", carroceria: 0, paCarregadeira: 0, retroescavadeira: 0 },
-            { day: "Sexta", carroceria: 0, paCarregadeira: 0, retroescavadeira: 0 },
-            { day: "Sábado", carroceria: 0, paCarregadeira: 0, retroescavadeira: 0 },
-            { day: "Domingo", carroceria: 0, paCarregadeira: 0, retroescavadeira: 0 },
-          ]
-          console.log("🔄 Usando dados de fallback:", fallbackData)
-          setWeeklyData(fallbackData)
+          setWeeklyData([])
         }
       } catch (error) {
         console.error("💥 Erro ao carregar dados semanais:", error)
         setSnackbarMessage("Erro ao carregar dados do gráfico semanal")
         setSnackbarSeverity("error")
         setSnackbarOpen(true)
-
-        // Fallback to empty data
-        const fallbackData = [
-          { day: "Segunda", carroceria: 0, paCarregadeira: 0, retroescavadeira: 0 },
-          { day: "Terça", carroceria: 0, paCarregadeira: 0, retroescavadeira: 0 },
-          { day: "Quarta", carroceria: 0, paCarregadeira: 0, retroescavadeira: 0 },
-          { day: "Quinta", carroceria: 0, paCarregadeira: 0, retroescavadeira: 0 },
-          { day: "Sexta", carroceria: 0, paCarregadeira: 0, retroescavadeira: 0 },
-          { day: "Sábado", carroceria: 0, paCarregadeira: 0, retroescavadeira: 0 },
-          { day: "Domingo", carroceria: 0, paCarregadeira: 0, retroescavadeira: 0 },
-        ]
-        setWeeklyData(fallbackData)
+        setWeeklyData([])
       } finally {
         setWeeklyLoading(false)
       }
@@ -618,32 +650,67 @@ export default function EquipmentDashboard() {
 
   // Handle card clicks
   const handleCardClick = useCallback(
-    (cardType) => {
+    async (cardType) => {
       let equipmentList = []
 
       switch (cardType) {
         case "total":
           setListModalTitle("Todos os Equipamentos")
-          equipmentList = transformEquipmentData(apiData.todos)
+          try {
+            // Buscar todos os equipamentos usando a API de tabela
+            const allEquipments = await fetchEquipmentsByStatus("", null) // Sem filtro de status
+            equipmentList = transformEquipmentData(allEquipments)
+          } catch (error) {
+            console.error("❌ Erro ao buscar todos os equipamentos:", error)
+            // Fallback para os dados da primeira API (mesmo com discrepância)
+            equipmentList = transformEquipmentData(apiData.todos)
+          }
           break
         case "active":
           setListModalTitle("Equipamentos Ativos")
-          equipmentList = transformEquipmentData(apiData.ativos)
+          try {
+            // Buscar equipamentos ativos usando a API de tabela
+            const activeEquipments = await fetchEquipmentsByStatus("Ativo")
+            equipmentList = transformEquipmentData(activeEquipments)
+          } catch (error) {
+            console.error("❌ Erro ao buscar equipamentos ativos:", error)
+            // Fallback para os dados da primeira API
+            equipmentList = transformEquipmentData(apiData.ativos)
+          }
           break
         case "inactive":
           setListModalTitle("Equipamentos Inativos")
-          equipmentList = transformEquipmentData(apiData.inativos)
+          try {
+            // Buscar equipamentos inativos usando a API de tabela
+            const inactiveEquipments = await fetchEquipmentsByStatus("Inativo")
+            equipmentList = transformEquipmentData(inactiveEquipments)
+          } catch (error) {
+            console.error("❌ Erro ao buscar equipamentos inativos:", error)
+            // Fallback para os dados da primeira API
+            equipmentList = transformEquipmentData(apiData.inativos)
+          }
           break
         case "maintenance":
           setListModalTitle("Equipamentos em Manutenção")
-          equipmentList = []
+          try {
+            // Buscar equipamentos em manutenção da API
+            const maintenanceEquipments = await fetchMaintenanceEquipments()
+            equipmentList = transformMaintenanceEquipmentData(maintenanceEquipments)
+            console.log("🔧 Lista de equipamentos em manutenção:", equipmentList)
+          } catch (error) {
+            console.error("❌ Erro ao buscar equipamentos em manutenção:", error)
+            setSnackbarMessage("Erro ao carregar equipamentos em manutenção")
+            setSnackbarSeverity("error")
+            setSnackbarOpen(true)
+            equipmentList = []
+          }
           break
       }
 
       setCurrentModalList(equipmentList)
       setListModalOpen(true)
     },
-    [apiData],
+    [apiData, fetchMaintenanceEquipments, fetchEquipmentsByStatus],
   )
 
   // Handle refresh data

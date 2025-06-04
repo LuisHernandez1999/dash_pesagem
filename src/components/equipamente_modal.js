@@ -581,7 +581,7 @@ const EquipmentModal = ({ open, onClose, onSave, themeColors, equipment = null }
                   }
                   label={
                     <Typography sx={{ fontSize: "0.95rem", fontWeight: 500 }}>
-                      Em Manutenção
+                      Manutenção
                     </Typography>
                   }
                 />

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Card,
   CardContent,
@@ -27,11 +27,17 @@ import {
   Button,
   Snackbar,
   Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  DialogContentText,
 } from "@mui/material"
-import { Search, Refresh, Engineering, Visibility, Edit, Add } from "@mui/icons-material"
+import { Search, Refresh, Engineering, Visibility, Edit, Add, Delete, Warning } from "@mui/icons-material"
 import EquipmentModal from "./equipamente_modal"
 import EquipmentViewModal from "./equipaments_view_modal"
 import EquipmentEditModal from "./equipmants_edit"
+import { deletarEquipamento } from "../service/equipamento"
 
 const EquipmentTable = ({ equipments = [], loading, themeColors, onRefresh, onEquipmentUpdate }) => {
   const [page, setPage] = useState(0)
@@ -43,13 +49,22 @@ const EquipmentTable = ({ equipments = [], loading, themeColors, onRefresh, onEq
   const [viewModalOpen, setViewModalOpen] = useState(false)
   const [selectedEquipment, setSelectedEquipment] = useState(null)
   const [editModalOpen, setEditModalOpen] = useState(false)
-
-  // Snackbar states
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
+  const [equipmentToDelete, setEquipmentToDelete] = useState(null)
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarMessage, setSnackbarMessage] = useState("")
   const [snackbarSeverity, setSnackbarSeverity] = useState("success")
+  const [showRecentOnly, setShowRecentOnly] = useState(false)
 
-  // Filter equipments based on search term, status and type with safe checks
+  // Adicione este efeito após as declarações de estado
+  useEffect(() => {
+    // Este efeito será executado sempre que a lista de equipamentos mudar
+    console.log("📊 Lista de equipamentos atualizada:", equipments.length)
+    // Resetar para a primeira página quando os dados mudam significativamente
+    setPage(0)
+  }, [equipments])
+
+  // Filter equipments based on search term, status, type and recent items with safe checks
   const filteredEquipments = equipments.filter((equipment) => {
     // Safe checks for undefined/null values
     const prefix = equipment?.prefix || ""
@@ -153,6 +168,55 @@ const EquipmentTable = ({ equipments = [], loading, themeColors, onRefresh, onEq
     console.log("🏁 Processo de atualização finalizado")
   }
 
+  // Handle delete confirmation dialog
+  const handleOpenDeleteConfirmation = (equipment) => {
+    setEquipmentToDelete(equipment)
+    setConfirmDialogOpen(true)
+  }
+
+  const handleCloseDeleteConfirmation = () => {
+    setConfirmDialogOpen(false)
+    setEquipmentToDelete(null)
+  }
+
+  // Handle equipment deletion
+  const handleConfirmDelete = async () => {
+    if (!equipmentToDelete) return
+
+    console.log("🗑️ Iniciando processo de exclusão do equipamento:", equipmentToDelete.id)
+
+    try {
+      const result = await deletarEquipamento(equipmentToDelete.id)
+
+      if (result.sucesso) {
+        console.log("✅ Exclusão bem-sucedida:", result.mensagem)
+        setSnackbarMessage(result.mensagem)
+        setSnackbarSeverity("success")
+        setSnackbarOpen(true)
+
+        // Refresh the table data immediately
+        console.log("🔄 Atualizando tabela após exclusão")
+        if (onRefresh) {
+          await onRefresh() // Aguarda a conclusão da atualização
+        }
+      } else {
+        console.error("❌ Erro na exclusão:", result.mensagem)
+        setSnackbarMessage(result.mensagem)
+        setSnackbarSeverity("error")
+        setSnackbarOpen(true)
+      }
+    } catch (error) {
+      console.error("❌ Erro inesperado na exclusão:", error)
+      setSnackbarMessage("Erro inesperado ao tentar excluir o equipamento.")
+      setSnackbarSeverity("error")
+      setSnackbarOpen(true)
+    }
+
+    // Fechar o diálogo de confirmação
+    handleCloseDeleteConfirmation()
+    console.log("🏁 Processo de exclusão finalizado")
+  }
+
   // Handle equipment creation with success feedback
   const handleCreateEquipment = (result) => {
     console.log("🔄 Processando criação de equipamento:", result)
@@ -216,6 +280,14 @@ const EquipmentTable = ({ equipments = [], loading, themeColors, onRefresh, onEq
       default:
         return themeColors.text.secondary
     }
+  }
+
+  // Toggle recent items filter
+  const toggleRecentFilter = () => {
+    console.log("Toggling recent filter. Current state:", showRecentOnly)
+    console.log("Equipment data sample:", equipments[0])
+    setShowRecentOnly(!showRecentOnly)
+    setPage(0) // Reset to first page when filter changes
   }
 
   // Show loading state
@@ -440,7 +512,7 @@ const EquipmentTable = ({ equipments = [], loading, themeColors, onRefresh, onEq
           </Box>
 
           {/* Filtros */}
-          <Grid container spacing={3}>
+          <Grid container spacing={3} alignItems="center">
             <Grid item xs={12} sm={6}>
               <FormControl fullWidth>
                 <Select
@@ -497,19 +569,6 @@ const EquipmentTable = ({ equipments = [], loading, themeColors, onRefresh, onEq
                         }}
                       />
                       Inativo
-                    </Box>
-                  </MenuItem>
-                  <MenuItem value="Manutenção" sx={{ fontSize: "0.95rem", fontWeight: 500 }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <Box
-                        sx={{
-                          width: 8,
-                          height: 8,
-                          borderRadius: "50%",
-                          backgroundColor: themeColors.warning.main,
-                        }}
-                      />
-                      Em Manutenção
                     </Box>
                   </MenuItem>
                 </Select>
@@ -732,6 +791,22 @@ const EquipmentTable = ({ equipments = [], loading, themeColors, onRefresh, onEq
                         >
                           <Edit fontSize="small" />
                         </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleOpenDeleteConfirmation(equipment)}
+                          sx={{
+                            color: themeColors.text.secondary,
+                            backgroundColor: alpha(themeColors.error.main, 0.08),
+                            borderRadius: "8px",
+                            "&:hover": {
+                              color: themeColors.error.main,
+                              backgroundColor: alpha(themeColors.error.main, 0.15),
+                            },
+                            transition: "all 0.2s ease",
+                          }}
+                        >
+                          <Delete fontSize="small" />
+                        </IconButton>
                       </Box>
                     </TableCell>
                   </TableRow>
@@ -792,6 +867,93 @@ const EquipmentTable = ({ equipments = [], loading, themeColors, onRefresh, onEq
         themeColors={themeColors}
       />
 
+      {/* Dialog de Confirmação de Exclusão */}
+      <Dialog
+        open={confirmDialogOpen}
+        onClose={handleCloseDeleteConfirmation}
+        maxWidth="sm"
+        fullWidth
+        sx={{
+          "& .MuiDialog-paper": {
+            borderRadius: "16px",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 2,
+            color: themeColors.error.main,
+            fontWeight: 700,
+            fontSize: "1.2rem",
+            pb: 2,
+          }}
+        >
+          <Warning sx={{ fontSize: "1.5rem" }} />
+          Confirmar Exclusão
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText
+            sx={{
+              color: themeColors.text.primary,
+              fontSize: "1rem",
+              lineHeight: 1.6,
+            }}
+          >
+            Tem certeza que deseja excluir o equipamento{" "}
+            <strong style={{ color: themeColors.primary.main }}>{equipmentToDelete?.prefix}</strong>?
+          </DialogContentText>
+          <DialogContentText
+            sx={{
+              color: themeColors.text.secondary,
+              fontSize: "0.9rem",
+              mt: 1,
+              fontStyle: "italic",
+            }}
+          >
+            Esta ação não pode ser desfeita.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ p: 3, pt: 1 }}>
+          <Button
+            onClick={handleCloseDeleteConfirmation}
+            variant="outlined"
+            sx={{
+              borderRadius: "8px",
+              textTransform: "none",
+              fontWeight: 600,
+              borderColor: themeColors.text.secondary,
+              color: themeColors.text.secondary,
+              "&:hover": {
+                borderColor: themeColors.text.primary,
+                color: themeColors.text.primary,
+                backgroundColor: alpha(themeColors.text.primary, 0.05),
+              },
+            }}
+          >
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleConfirmDelete}
+            variant="contained"
+            sx={{
+              borderRadius: "8px",
+              textTransform: "none",
+              fontWeight: 600,
+              backgroundColor: themeColors.error.main,
+              color: "#ffffff",
+              "&:hover": {
+                backgroundColor: themeColors.error.dark,
+              },
+            }}
+          >
+            Excluir
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* Snackbar para feedback */}
       <Snackbar
         open={snackbarOpen}
@@ -814,4 +976,5 @@ const EquipmentTable = ({ equipments = [], loading, themeColors, onRefresh, onEq
     </>
   )
 }
+
 export default EquipmentTable

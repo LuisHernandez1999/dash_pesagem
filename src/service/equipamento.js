@@ -241,3 +241,34 @@ export const contarEquipamentosSemana = async () => {
     throw error;
   }
 };
+
+
+export async function deletarEquipamento(id) {
+  try {
+    const response = await axios.delete(`${API_BASE_URL}/api/equipamentos/${id}/deletar/`);
+
+    // Mapeamento completo da resposta
+    return {
+      sucesso: response.data.success,
+      mensagem: response.data.message,  // <- Corrigido para "message"
+      status: response.status
+    };
+
+  } catch (error) {
+    if (error.response) {
+      // Erro com resposta do servidor
+      return {
+        sucesso: false,
+        mensagem: error.response.data.message || "Erro ao deletar equipamento.", // <- Corrigido
+        status: error.response.status
+      };
+    } else {
+      // Erro sem resposta (ex: servidor caiu)
+      return {
+        sucesso: false,
+        mensagem: "Erro inesperado ao tentar se conectar com o servidor.",
+        status: 0
+      };
+    }
+  }
+}
