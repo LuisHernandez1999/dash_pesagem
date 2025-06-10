@@ -52,8 +52,6 @@ import {
   Line,
   AreaChart,
   Area,
-  RadialBarChart,
-  RadialBar,
   ComposedChart,
   Pie,
 } from "recharts"
@@ -181,127 +179,161 @@ const mockData = {
 // Cores do tema
 const themeColors = {
   primary: {
-    main: "#1976d2",
-    light: "#42a5f5",
-    dark: "#1565c0",
+    main: "#2563eb",
+    light: "#3b82f6",
+    dark: "#1d4ed8",
   },
   secondary: {
-    main: "#dc004e",
-    light: "#ff5983",
-    dark: "#9a0036",
+    main: "#64748b",
+    light: "#94a3b8",
+    dark: "#475569",
   },
   success: {
-    main: "#2e7d32",
-    light: "#4caf50",
-    dark: "#1b5e20",
+    main: "#059669",
+    light: "#10b981",
+    dark: "#047857",
   },
   warning: {
-    main: "#ed6c02",
-    light: "#ff9800",
-    dark: "#e65100",
+    main: "#d97706",
+    light: "#f59e0b",
+    dark: "#b45309",
   },
   info: {
-    main: "#0288d1",
-    light: "#03a9f4",
-    dark: "#01579b",
+    main: "#0284c7",
+    light: "#0ea5e9",
+    dark: "#0369a1",
   },
   purple: {
-    main: "#7b1fa2",
-    light: "#9c27b0",
-    dark: "#4a148c",
+    main: "#7c3aed",
+    light: "#8b5cf6",
+    dark: "#6d28d9",
   },
   green: {
-    main: "#1b5e20",
-    light: "#2e7d32",
-    dark: "#0d3f14",
+    main: "#374151",
+    light: "#4b5563",
+    dark: "#1f2937",
   },
   gradient: {
-    primary: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-    secondary: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-    success: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-    warning: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
-    green: "linear-gradient(135deg, #0d3f14 0%, #1b5e20 100%)",
+    primary: "linear-gradient(135deg, #374151 0%, #4b5563 100%)",
+    secondary: "linear-gradient(135deg, #64748b 0%, #94a3b8 100%)",
+    success: "linear-gradient(135deg, #059669 0%, #10b981 100%)",
+    warning: "linear-gradient(135deg, #d97706 0%, #f59e0b 100%)",
+    green: "linear-gradient(135deg, #1f2937 0%, #374151 100%)",
   },
 }
 
-// Cores para gráficos mais vibrantes e contrastantes
-const chartColors = ["#00E676", "#FF6B35", "#4FC3F7", "#AB47BC", "#FFA726", "#26A69A", "#EF5350", "#42A5F5"]
+// Update chart colors to be more professional and colorful
+const chartColors = ["#60a5fa", "#34d399", "#fbbf24", "#a78bfa", "#22d3ee", "#fb7185", "#a3e635", "#fb923c"]
 
-// Componente de Card Estatístico
+// Componente de Card Estatístico Melhorado
 const StatCard = ({ title, value, icon: Icon, color, subtitle, progress, delay = 0 }) => (
   <Grow in={true} timeout={800} style={{ transitionDelay: `${delay}ms` }}>
     <Card
       sx={{
-        height: "180px",
-        background: `linear-gradient(135deg, ${color} 0%, ${alpha(color, 0.8)} 100%)`,
-        color: "white",
+        height: "200px",
+        background: "#ffffff",
+        color: "#1e293b",
         position: "relative",
         overflow: "hidden",
-        borderRadius: "20px",
-        boxShadow: `0 8px 32px ${alpha(color, 0.3)}`,
+        borderRadius: "24px",
+        boxShadow: "0 4px 20px rgba(0, 0, 0, 0.06)",
         transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
         cursor: "pointer",
+        border: "1px solid #f1f5f9",
         "&:hover": {
-          transform: "translateY(-8px) scale(1.02)",
-          boxShadow: `0 16px 48px ${alpha(color, 0.4)}`,
-        },
-        "&::before": {
-          content: '""',
-          position: "absolute",
-          top: 0,
-          right: 0,
-          width: "100px",
-          height: "100px",
-          background: `radial-gradient(circle, ${alpha("#fff", 0.1)} 0%, transparent 70%)`,
-          borderRadius: "50%",
-          transform: "translate(30px, -30px)",
+          transform: "translateY(-2px)",
+          boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
+          border: `1px solid ${alpha(color, 0.2)}`,
         },
       }}
     >
       <CardContent
-        sx={{ p: 3, height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}
+        sx={{
+          p: 4,
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between",
+        }}
       >
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-          <Box>
-            <Typography variant="h3" sx={{ fontWeight: 800, fontSize: "2.5rem", mb: 1 }}>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 2 }}>
+          <Box sx={{ flex: 1 }}>
+            <Typography
+              variant="h2"
+              sx={{
+                fontWeight: 700,
+                fontSize: "3rem",
+                mb: 1,
+                color: "#0f172a",
+                lineHeight: 1,
+                letterSpacing: "-0.02em",
+              }}
+            >
               {value}
             </Typography>
-            <Typography variant="h6" sx={{ fontWeight: 600, opacity: 0.9, fontSize: "1.1rem" }}>
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 600,
+                fontSize: "1.1rem",
+                color: "#475569",
+                lineHeight: 1.3,
+                mb: 0.5,
+              }}
+            >
               {title}
             </Typography>
             {subtitle && (
-              <Typography variant="body2" sx={{ opacity: 0.8, mt: 0.5 }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: color,
+                  fontWeight: 500,
+                  fontSize: "0.875rem",
+                }}
+              >
                 {subtitle}
               </Typography>
             )}
           </Box>
           <Box
             sx={{
-              width: 60,
-              height: 60,
-              borderRadius: "50%",
-              background: alpha("#fff", 0.2),
+              width: 64,
+              height: 64,
+              borderRadius: "20px",
+              background: alpha(color, 0.08),
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              backdropFilter: "blur(10px)",
+              border: `1px solid ${alpha(color, 0.15)}`,
+              flexShrink: 0,
+              ml: 2,
             }}
           >
-            <Icon sx={{ fontSize: 32 }} />
+            <Icon sx={{ fontSize: 28, color: color }} />
           </Box>
         </Box>
+
         {progress !== undefined && (
-          <Box sx={{ mt: 2 }}>
+          <Box sx={{ mt: "auto" }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+              <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 500 }}>
+                Progresso
+              </Typography>
+              <Typography variant="caption" sx={{ color: color, fontWeight: 600 }}>
+                {progress}%
+              </Typography>
+            </Box>
             <LinearProgress
               variant="determinate"
               value={progress}
               sx={{
-                height: 6,
-                borderRadius: 3,
-                backgroundColor: alpha("#fff", 0.2),
+                height: 8,
+                borderRadius: 4,
+                backgroundColor: alpha(color, 0.08),
                 "& .MuiLinearProgress-bar": {
-                  backgroundColor: "#fff",
-                  borderRadius: 3,
+                  backgroundColor: color,
+                  borderRadius: 4,
                 },
               }}
             />
@@ -315,35 +347,45 @@ const StatCard = ({ title, value, icon: Icon, color, subtitle, progress, delay =
 // Componente de Card de Localização
 const LocationCard = ({ location, data, delay = 0 }) => {
   const isActive = data.veiculos > 0 || data.motoristas > 0 || data.coletores > 0
+  const statusColor = isActive ? "#059669" : "#ef4444"
 
   return (
     <Fade in={true} timeout={1000} style={{ transitionDelay: `${delay}ms` }}>
       <Card
         sx={{
           height: "220px",
-          background: isActive
-            ? `linear-gradient(135deg, ${themeColors.success.main} 0%, ${themeColors.success.light} 100%)`
-            : `linear-gradient(135deg, #64748b 0%, #94a3b8 100%)`,
-          color: "white",
+          background: "#ffffff",
+          color: "#1e293b",
           borderRadius: "20px",
-          boxShadow: isActive
-            ? `0 8px 32px ${alpha(themeColors.success.main, 0.3)}`
-            : "0 8px 32px rgba(100, 116, 139, 0.3)",
+          boxShadow: "0 8px 32px rgba(0, 0, 0, 0.08)",
           transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
           position: "relative",
           overflow: "hidden",
+          border: "1px solid #e2e8f0",
           "&:hover": {
-            transform: "translateY(-6px)",
-            boxShadow: isActive
-              ? `0 16px 48px ${alpha(themeColors.success.main, 0.4)}`
-              : "0 16px 48px rgba(100, 116, 139, 0.4)",
+            transform: "translateY(-4px)",
+            boxShadow: "0 16px 48px rgba(0, 0, 0, 0.12)",
           },
         }}
       >
         <CardContent sx={{ p: 3, height: "100%" }}>
           <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-            <LocationOn sx={{ fontSize: 28, mr: 1 }} />
-            <Typography variant="h5" sx={{ fontWeight: 700 }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 40,
+                height: 40,
+                borderRadius: "50%",
+                background: alpha(statusColor, 0.1),
+                border: "1px solid #e2e8f0",
+                mr: 2,
+              }}
+            >
+              <LocationOn sx={{ fontSize: 22, color: statusColor }} />
+            </Box>
+            <Typography variant="h5" sx={{ fontWeight: 600, color: "#1e293b" }}>
               {location}
             </Typography>
             <Chip
@@ -351,9 +393,10 @@ const LocationCard = ({ location, data, delay = 0 }) => {
               size="small"
               sx={{
                 ml: "auto",
-                backgroundColor: alpha("#fff", 0.2),
-                color: "white",
+                backgroundColor: alpha(statusColor, 0.1),
+                color: statusColor,
                 fontWeight: 600,
+                border: `1px solid ${alpha(statusColor, 0.3)}`,
               }}
             />
           </Box>
@@ -361,36 +404,78 @@ const LocationCard = ({ location, data, delay = 0 }) => {
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <Box sx={{ display: "flex", alignItems: "center" }}>
-                <LocalShipping sx={{ fontSize: 20, mr: 1, opacity: 0.8 }} />
-                <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: 30,
+                    height: 30,
+                    borderRadius: "50%",
+                    background: alpha("#3b82f6", 0.1),
+                    border: "1px solid #e2e8f0",
+                    mr: 1,
+                  }}
+                >
+                  <LocalShipping sx={{ fontSize: 16, color: "#3b82f6" }} />
+                </Box>
+                <Typography variant="body1" sx={{ fontWeight: 500, color: "#475569" }}>
                   Veículos
                 </Typography>
               </Box>
-              <Typography variant="h6" sx={{ fontWeight: 700 }}>
+              <Typography variant="h6" sx={{ fontWeight: 700, color: "#1e293b" }}>
                 {data.veiculos}
               </Typography>
             </Box>
 
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <Box sx={{ display: "flex", alignItems: "center" }}>
-                <Person sx={{ fontSize: 20, mr: 1, opacity: 0.8 }} />
-                <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: 30,
+                    height: 30,
+                    borderRadius: "50%",
+                    background: alpha("#059669", 0.1),
+                    border: "1px solid #e2e8f0",
+                    mr: 1,
+                  }}
+                >
+                  <Person sx={{ fontSize: 16, color: "#059669" }} />
+                </Box>
+                <Typography variant="body1" sx={{ fontWeight: 500, color: "#475569" }}>
                   Motoristas
                 </Typography>
               </Box>
-              <Typography variant="h6" sx={{ fontWeight: 700 }}>
+              <Typography variant="h6" sx={{ fontWeight: 700, color: "#1e293b" }}>
                 {data.motoristas}
               </Typography>
             </Box>
 
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <Box sx={{ display: "flex", alignItems: "center" }}>
-                <RecyclingOutlined sx={{ fontSize: 20, mr: 1, opacity: 0.8 }} />
-                <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: 30,
+                    height: 30,
+                    borderRadius: "50%",
+                    background: alpha("#f59e0b", 0.1),
+                    border: "1px solid #e2e8f0",
+                    mr: 1,
+                  }}
+                >
+                  <RecyclingOutlined sx={{ fontSize: 16, color: "#f59e0b" }} />
+                </Box>
+                <Typography variant="body1" sx={{ fontWeight: 500, color: "#475569" }}>
                   Coletores
                 </Typography>
               </Box>
-              <Typography variant="h6" sx={{ fontWeight: 700 }}>
+              <Typography variant="h6" sx={{ fontWeight: 700, color: "#1e293b" }}>
                 {data.coletores}
               </Typography>
             </Box>
@@ -407,39 +492,49 @@ const PieChartCard = ({ title, data, height = 300 }) => (
     sx={{
       height: height + 120,
       borderRadius: "24px",
-      boxShadow: "0 20px 60px rgba(0, 0, 0, 0.12)",
+      boxShadow: "0 8px 24px rgba(0, 0, 0, 0.08)",
       overflow: "hidden",
-      background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
-      border: "1px solid rgba(0, 230, 118, 0.1)",
-      position: "relative",
-      "&::before": {
-        content: '""',
-        position: "absolute",
-        top: 0,
-        left: 0,
-        right: 0,
-        height: "4px",
-        background: "linear-gradient(90deg, #00E676, #4FC3F7, #AB47BC)",
-      },
+      background: "#ffffff",
+      border: "1px solid #e2e8f0",
     }}
   >
     <CardContent sx={{ p: 4, height: "100%" }}>
-      <Typography
-        variant="h6"
+      <Box
         sx={{
-          fontWeight: 800,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
           mb: 3,
-          color: "#1e293b",
-          fontSize: "1.3rem",
-          textAlign: "center",
-          background: "linear-gradient(135deg, #1e293b 0%, #475569 100%)",
-          backgroundClip: "text",
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
+          pb: 2,
+          borderBottom: "1px solid #f1f5f9",
         }}
       >
-        {title}
-      </Typography>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 40,
+            height: 40,
+            borderRadius: "50%",
+            background: alpha("#8b5cf6", 0.1),
+            border: `1px solid ${alpha("#8b5cf6", 0.3)}`,
+            mr: 2,
+          }}
+        >
+          <PieChart sx={{ fontSize: 20, color: "#8b5cf6" }} />
+        </Box>
+        <Typography
+          variant="h6"
+          sx={{
+            fontWeight: 600,
+            color: "#1e293b",
+            fontSize: "1.3rem",
+          }}
+        >
+          {title}
+        </Typography>
+      </Box>
       <ResponsiveContainer width="100%" height={height}>
         <RechartsPieChart>
           <Pie
@@ -480,39 +575,49 @@ const BarChartCard = ({ title, data, height = 300 }) => (
     sx={{
       height: height + 120,
       borderRadius: "24px",
-      boxShadow: "0 20px 60px rgba(0, 0, 0, 0.12)",
+      boxShadow: "0 8px 24px rgba(0, 0, 0, 0.08)",
       overflow: "hidden",
-      background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
-      border: "1px solid rgba(0, 230, 118, 0.1)",
-      position: "relative",
-      "&::before": {
-        content: '""',
-        position: "absolute",
-        top: 0,
-        left: 0,
-        right: 0,
-        height: "4px",
-        background: "linear-gradient(90deg, #00E676, #FF6B35, #4FC3F7)",
-      },
+      background: "#ffffff",
+      border: "1px solid #e2e8f0",
     }}
   >
     <CardContent sx={{ p: 4, height: "100%" }}>
-      <Typography
-        variant="h6"
+      <Box
         sx={{
-          fontWeight: 800,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
           mb: 3,
-          color: "#1e293b",
-          fontSize: "1.3rem",
-          textAlign: "center",
-          background: "linear-gradient(135deg, #1e293b 0%, #475569 100%)",
-          backgroundClip: "text",
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
+          pb: 2,
+          borderBottom: "1px solid #f1f5f9",
         }}
       >
-        {title}
-      </Typography>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 40,
+            height: 40,
+            borderRadius: "50%",
+            background: alpha("#3b82f6", 0.1),
+            border: `1px solid ${alpha("#3b82f6", 0.3)}`,
+            mr: 2,
+          }}
+        >
+          <BarChart sx={{ fontSize: 20, color: "#3b82f6" }} />
+        </Box>
+        <Typography
+          variant="h6"
+          sx={{
+            fontWeight: 600,
+            color: "#1e293b",
+            fontSize: "1.3rem",
+          }}
+        >
+          {title}
+        </Typography>
+      </Box>
       <ResponsiveContainer width="100%" height={height}>
         <RechartsBarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeWidth={1} />
@@ -528,9 +633,9 @@ const BarChartCard = ({ title, data, height = 300 }) => (
             }}
           />
           <Legend />
-          <Bar dataKey="veiculos" fill="#00E676" name="Veículos" radius={[6, 6, 0, 0]} />
-          <Bar dataKey="motoristas" fill="#FF6B35" name="Motoristas" radius={[6, 6, 0, 0]} />
-          <Bar dataKey="coletores" fill="#4FC3F7" name="Coletores" radius={[6, 6, 0, 0]} />
+          <Bar dataKey="veiculos" fill="#60a5fa" name="Veículos" radius={[6, 6, 0, 0]} />
+          <Bar dataKey="motoristas" fill="#34d399" name="Motoristas" radius={[6, 6, 0, 0]} />
+          <Bar dataKey="coletores" fill="#fbbf24" name="Coletores" radius={[6, 6, 0, 0]} />
         </RechartsBarChart>
       </ResponsiveContainer>
     </CardContent>
@@ -543,39 +648,49 @@ const LineChartCard = ({ title, data, height = 300 }) => (
     sx={{
       height: height + 120,
       borderRadius: "24px",
-      boxShadow: "0 20px 60px rgba(0, 0, 0, 0.12)",
+      boxShadow: "0 8px 24px rgba(0, 0, 0, 0.08)",
       overflow: "hidden",
-      background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
-      border: "1px solid rgba(0, 230, 118, 0.1)",
-      position: "relative",
-      "&::before": {
-        content: '""',
-        position: "absolute",
-        top: 0,
-        left: 0,
-        right: 0,
-        height: "4px",
-        background: "linear-gradient(90deg, #00E676, #FF6B35, #4FC3F7)",
-      },
+      background: "#ffffff",
+      border: "1px solid #e2e8f0",
     }}
   >
     <CardContent sx={{ p: 4, height: "100%" }}>
-      <Typography
-        variant="h6"
+      <Box
         sx={{
-          fontWeight: 800,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
           mb: 3,
-          color: "#1e293b",
-          fontSize: "1.3rem",
-          textAlign: "center",
-          background: "linear-gradient(135deg, #1e293b 0%, #475569 100%)",
-          backgroundClip: "text",
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
+          pb: 2,
+          borderBottom: "1px solid #f1f5f9",
         }}
       >
-        {title}
-      </Typography>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 40,
+            height: 40,
+            borderRadius: "50%",
+            background: alpha("#059669", 0.1),
+            border: `1px solid ${alpha("#059669", 0.3)}`,
+            mr: 2,
+          }}
+        >
+          <TrendingUp sx={{ fontSize: 20, color: "#059669" }} />
+        </Box>
+        <Typography
+          variant="h6"
+          sx={{
+            fontWeight: 600,
+            color: "#1e293b",
+            fontSize: "1.3rem",
+          }}
+        >
+          {title}
+        </Typography>
+      </Box>
       <ResponsiveContainer width="100%" height={height}>
         <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeWidth={1} />
@@ -594,29 +709,29 @@ const LineChartCard = ({ title, data, height = 300 }) => (
           <Line
             type="monotone"
             dataKey="veiculos"
-            stroke="#00E676"
+            stroke="#60a5fa"
             strokeWidth={5}
             name="Veículos"
-            dot={{ fill: "#00E676", strokeWidth: 3, r: 8 }}
-            activeDot={{ r: 10, stroke: "#00E676", strokeWidth: 3, fill: "#fff" }}
+            dot={{ fill: "#60a5fa", strokeWidth: 3, r: 8 }}
+            activeDot={{ r: 10, stroke: "#60a5fa", strokeWidth: 3, fill: "#fff" }}
           />
           <Line
             type="monotone"
             dataKey="motoristas"
-            stroke="#FF6B35"
+            stroke="#34d399"
             strokeWidth={5}
             name="Motoristas"
-            dot={{ fill: "#FF6B35", strokeWidth: 3, r: 8 }}
-            activeDot={{ r: 10, stroke: "#FF6B35", strokeWidth: 3, fill: "#fff" }}
+            dot={{ fill: "#34d399", strokeWidth: 3, r: 8 }}
+            activeDot={{ r: 10, stroke: "#34d399", strokeWidth: 3, fill: "#fff" }}
           />
           <Line
             type="monotone"
             dataKey="coletores"
-            stroke="#4FC3F7"
+            stroke="#fbbf24"
             strokeWidth={5}
             name="Coletores"
-            dot={{ fill: "#4FC3F7", strokeWidth: 3, r: 8 }}
-            activeDot={{ r: 10, stroke: "#4FC3F7", strokeWidth: 3, fill: "#fff" }}
+            dot={{ fill: "#fbbf24", strokeWidth: 3, r: 8 }}
+            activeDot={{ r: 10, stroke: "#fbbf24", strokeWidth: 3, fill: "#fff" }}
           />
         </LineChart>
       </ResponsiveContainer>
@@ -624,72 +739,63 @@ const LineChartCard = ({ title, data, height = 300 }) => (
   </Card>
 )
 
-// Componente de Gráfico Radial ULTRA Melhorado com Visibilidade Máxima
-const RadialChartCard = ({ title, data, height = 300 }) => (
+// Componente de Gráfico de Barras para Eficiência
+const EfficiencyBarChartCard = ({ title, data, height = 300 }) => (
   <Card
     sx={{
       height: height + 120,
       borderRadius: "24px",
-      boxShadow: "0 20px 60px rgba(0, 0, 0, 0.12)",
+      boxShadow: "0 8px 24px rgba(0, 0, 0, 0.08)",
       overflow: "hidden",
-      background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
-      border: "1px solid rgba(0, 230, 118, 0.1)",
-      position: "relative",
-      "&::before": {
-        content: '""',
-        position: "absolute",
-        top: 0,
-        left: 0,
-        right: 0,
-        height: "4px",
-        background: "linear-gradient(90deg, #00E676, #FF6B35, #4FC3F7, #AB47BC)",
-      },
+      background: "#ffffff",
+      border: "1px solid #e2e8f0",
     }}
   >
     <CardContent sx={{ p: 4, height: "100%" }}>
-      <Typography
-        variant="h6"
+      <Box
         sx={{
-          fontWeight: 800,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
           mb: 3,
-          color: "#1e293b",
-          fontSize: "1.3rem",
-          textAlign: "center",
-          background: "linear-gradient(135deg, #1e293b 0%, #475569 100%)",
-          backgroundClip: "text",
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
+          pb: 2,
+          borderBottom: "1px solid #f1f5f9",
         }}
       >
-        {title}
-      </Typography>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 40,
+            height: 40,
+            borderRadius: "50%",
+            background: alpha("#f59e0b", 0.1),
+            border: `1px solid ${alpha("#f59e0b", 0.3)}`,
+            mr: 2,
+          }}
+        >
+          <Speed sx={{ fontSize: 20, color: "#f59e0b" }} />
+        </Box>
+        <Typography
+          variant="h6"
+          sx={{
+            fontWeight: 600,
+            color: "#1e293b",
+            fontSize: "1.3rem",
+          }}
+        >
+          {title}
+        </Typography>
+      </Box>
       <ResponsiveContainer width="100%" height={height}>
-        <RadialBarChart cx="50%" cy="50%" innerRadius="30%" outerRadius="85%" data={data}>
-          <RadialBar
-            minAngle={15}
-            label={{
-              position: "insideStart",
-              fill: "#fff",
-              fontSize: 16,
-              fontWeight: 800,
-              formatter: (value) => `${value}%`,
-            }}
-            background={{ fill: "#f1f5f9", stroke: "#e2e8f0", strokeWidth: 2 }}
-            dataKey="value"
-            cornerRadius={12}
-            stroke="#fff"
-            strokeWidth={4}
-          />
-          <Legend
-            iconSize={20}
-            layout="vertical"
-            verticalAlign="middle"
-            wrapperStyle={{
-              paddingLeft: "30px",
-              fontSize: "15px",
-              fontWeight: 600,
-              color: "#1e293b",
-            }}
+        <RechartsBarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeWidth={1} />
+          <XAxis dataKey="name" tick={{ fill: "#64748b", fontSize: 13, fontWeight: 600 }} />
+          <YAxis
+            tick={{ fill: "#64748b", fontSize: 13, fontWeight: 600 }}
+            domain={[0, 100]}
+            tickFormatter={(value) => `${value}%`}
           />
           <Tooltip
             contentStyle={{
@@ -699,9 +805,11 @@ const RadialChartCard = ({ title, data, height = 300 }) => (
               boxShadow: "0 12px 40px rgba(0, 0, 0, 0.15)",
               padding: "16px",
             }}
-            formatter={(value, name) => [`${value}%`, `Eficiência ${name}`]}
+            formatter={(value) => [`${value}%`, "Eficiência"]}
           />
-        </RadialBarChart>
+          <Legend />
+          <Bar dataKey="value" fill="#60a5fa" name="Eficiência %" radius={[6, 6, 0, 0]} />
+        </RechartsBarChart>
       </ResponsiveContainer>
     </CardContent>
   </Card>
@@ -762,39 +870,35 @@ export default function FleetDashboard() {
     value: item.total,
   }))
 
-  // Dados MELHORADOS para o gráfico radial com valores mais visíveis e realistas
-  const radialData = [
+  // Dados para o gráfico de barras de eficiência
+  const efficiencyData = [
     {
       name: "PA1",
-      value: 85, // PA1 está muito ativo (85%)
-      fill: "#00E676",
+      value: 85,
     },
     {
       name: "PA2",
-      value: 15, // PA2 tem baixa atividade (15%)
-      fill: "#FF6B35",
+      value: 15,
     },
     {
       name: "PA3",
-      value: 25, // PA3 tem atividade moderada (25%)
-      fill: "#4FC3F7",
+      value: 25,
     },
     {
       name: "PA4",
-      value: 10, // PA4 tem atividade mínima (10%)
-      fill: "#AB47BC",
+      value: 10,
     },
   ]
 
   return (
-    <Box sx={{ minHeight: "100vh", backgroundColor: "#f1f5f9" }}>
+    <Box sx={{ minHeight: "100vh", backgroundColor: "#fdfdfd" }}>
       {/* Header Verde Escuro */}
       <AppBar
         position="sticky"
         sx={{
-          background: themeColors.gradient.green,
-          boxShadow: "0 8px 32px rgba(13, 63, 20, 0.4)",
-          backdropFilter: "blur(20px)",
+          background: "#ffffff",
+          boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+          color: "#1e293b",
         }}
       >
         <Toolbar sx={{ py: 2, px: 4 }}>
@@ -804,26 +908,24 @@ export default function FleetDashboard() {
                 width: 50,
                 height: 50,
                 borderRadius: "12px",
-                background: "rgba(255, 255, 255, 0.2)",
+                background: alpha("#3b82f6", 0.08),
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 mr: 3,
-                backdropFilter: "blur(10px)",
-                border: "1px solid rgba(255, 255, 255, 0.3)",
+                border: `2px solid ${alpha("#3b82f6", 0.15)}`,
               }}
             >
-              <Dashboard sx={{ fontSize: 28, color: "white" }} />
+              <Dashboard sx={{ fontSize: 28, color: "#3b82f6" }} />
             </Box>
 
             <Box>
               <Typography
                 variant="h4"
                 sx={{
-                  fontWeight: 800,
+                  fontWeight: 700,
                   fontSize: "2.2rem",
-                  color: "white",
-                  textShadow: "0 2px 4px rgba(0,0,0,0.3)",
+                  color: "#1e293b",
                   letterSpacing: "-0.02em",
                 }}
               >
@@ -832,7 +934,7 @@ export default function FleetDashboard() {
               <Typography
                 variant="subtitle1"
                 sx={{
-                  color: "rgba(255, 255, 255, 0.9)",
+                  color: "#64748b",
                   fontSize: "1rem",
                   fontWeight: 500,
                   mt: 0.5,
@@ -852,13 +954,12 @@ export default function FleetDashboard() {
                 px: 2,
                 py: 1,
                 borderRadius: "12px",
-                background: "rgba(255, 255, 255, 0.1)",
-                backdropFilter: "blur(10px)",
-                border: "1px solid rgba(255, 255, 255, 0.2)",
+                background: alpha("#059669", 0.08),
+                border: `1px solid ${alpha("#059669", 0.15)}`,
               }}
             >
-              <Speed sx={{ fontSize: 20, color: "rgba(255, 255, 255, 0.8)" }} />
-              <Typography variant="caption" sx={{ color: "rgba(255, 255, 255, 0.9)", fontWeight: 600 }}>
+              <Speed sx={{ fontSize: 20, color: "#059669" }} />
+              <Typography variant="caption" sx={{ color: "#059669", fontWeight: 600 }}>
                 Tempo Real
               </Typography>
             </Box>
@@ -866,14 +967,12 @@ export default function FleetDashboard() {
             <Badge badgeContent={3} color="error">
               <IconButton
                 sx={{
-                  color: "white",
-                  background: "rgba(255, 255, 255, 0.1)",
-                  backdropFilter: "blur(10px)",
+                  background: alpha("#64748b", 0.08),
+                  border: "1px solid #e2e8f0",
+                  color: "#64748b",
                   "&:hover": {
-                    background: "rgba(255, 255, 255, 0.2)",
-                    transform: "scale(1.05)",
+                    background: alpha("#f59e0b", 0.15),
                   },
-                  transition: "all 0.3s ease",
                 }}
               >
                 <Notifications />
@@ -882,14 +981,12 @@ export default function FleetDashboard() {
 
             <IconButton
               sx={{
-                color: "white",
-                background: "rgba(255, 255, 255, 0.1)",
-                backdropFilter: "blur(10px)",
+                background: alpha("#64748b", 0.08),
+                border: "1px solid #e2e8f0",
+                color: "#64748b",
                 "&:hover": {
-                  background: "rgba(255, 255, 255, 0.2)",
-                  transform: "scale(1.05)",
+                  background: alpha("#8b5cf6", 0.15),
                 },
-                transition: "all 0.3s ease",
               }}
             >
               <Settings />
@@ -900,18 +997,18 @@ export default function FleetDashboard() {
                 sx={{
                   width: 40,
                   height: 40,
-                  background: "rgba(255, 255, 255, 0.2)",
-                  backdropFilter: "blur(10px)",
-                  border: "2px solid rgba(255, 255, 255, 0.3)",
+                  background: "#f8fafc",
+                  border: "2px solid #e2e8f0",
+                  color: "#64748b",
                 }}
               >
                 <AccountCircle />
               </Avatar>
               <Box sx={{ display: { xs: "none", sm: "block" } }}>
-                <Typography variant="body2" sx={{ color: "white", fontWeight: 600 }}>
+                <Typography variant="body2" sx={{ color: "#1e293b", fontWeight: 600 }}>
                   Administrador
                 </Typography>
-                <Typography variant="caption" sx={{ color: "rgba(255, 255, 255, 0.8)" }}>
+                <Typography variant="caption" sx={{ color: "#64748b" }}>
                   {lastUpdate.toLocaleTimeString()}
                 </Typography>
               </Box>
@@ -921,17 +1018,14 @@ export default function FleetDashboard() {
               onClick={handleRefresh}
               startIcon={<Refresh />}
               sx={{
-                color: "white",
-                background: "rgba(255, 255, 255, 0.1)",
-                backdropFilter: "blur(10px)",
-                border: "1px solid rgba(255, 255, 255, 0.2)",
+                background: alpha("#64748b", 0.08),
+                border: "1px solid #e2e8f0",
+                color: "#64748b",
                 borderRadius: "12px",
                 px: 3,
                 "&:hover": {
-                  background: "rgba(255, 255, 255, 0.2)",
-                  transform: "translateY(-2px)",
+                  background: alpha("#059669", 0.15),
                 },
-                transition: "all 0.3s ease",
               }}
             >
               Atualizar
@@ -947,14 +1041,28 @@ export default function FleetDashboard() {
           <Typography
             variant="h5"
             sx={{
-              fontWeight: 700,
+              fontWeight: 600,
               mb: 3,
               color: "#1e293b",
               display: "flex",
               alignItems: "center",
             }}
           >
-            <Assessment sx={{ mr: 2, color: themeColors.primary.main }} />
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 40,
+                height: 40,
+                borderRadius: "50%",
+                background: alpha(themeColors.primary.main, 0.1),
+                border: `1px solid ${alpha(themeColors.primary.main, 0.3)}`,
+                mr: 2,
+              }}
+            >
+              <Assessment sx={{ color: themeColors.primary.main }} />
+            </Box>
             Resumo Geral
           </Typography>
 
@@ -1013,14 +1121,28 @@ export default function FleetDashboard() {
           <Typography
             variant="h5"
             sx={{
-              fontWeight: 700,
+              fontWeight: 600,
               mb: 3,
               color: "#1e293b",
               display: "flex",
               alignItems: "center",
             }}
           >
-            <BarChart sx={{ mr: 2, color: themeColors.info.main }} />
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 40,
+                height: 40,
+                borderRadius: "50%",
+                background: alpha(themeColors.info.main, 0.1),
+                border: `1px solid ${alpha(themeColors.info.main, 0.3)}`,
+                mr: 2,
+              }}
+            >
+              <BarChart sx={{ color: themeColors.info.main }} />
+            </Box>
             Análise Geral
           </Typography>
 
@@ -1037,7 +1159,7 @@ export default function FleetDashboard() {
           >
             <PieChartCard title="Distribuição de Recursos" data={pieData} />
             <BarChartCard title="Recursos por Localização" data={locationData} />
-            <RadialChartCard title="Eficiência por PA" data={radialData} />
+            <EfficiencyBarChartCard title="Eficiência por PA" data={efficiencyData} />
           </Box>
         </Box>
 
@@ -1046,14 +1168,28 @@ export default function FleetDashboard() {
           <Typography
             variant="h5"
             sx={{
-              fontWeight: 700,
+              fontWeight: 600,
               mb: 3,
               color: "#1e293b",
               display: "flex",
               alignItems: "center",
             }}
           >
-            <LocationOn sx={{ mr: 2, color: themeColors.success.main }} />
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 40,
+                height: 40,
+                borderRadius: "50%",
+                background: alpha(themeColors.success.main, 0.1),
+                border: `1px solid ${alpha(themeColors.success.main, 0.3)}`,
+                mr: 2,
+              }}
+            >
+              <LocationOn sx={{ color: themeColors.success.main }} />
+            </Box>
             Status por Localização
           </Typography>
 
@@ -1084,14 +1220,28 @@ export default function FleetDashboard() {
           <Typography
             variant="h5"
             sx={{
-              fontWeight: 700,
+              fontWeight: 600,
               mb: 3,
               color: "#1e293b",
               display: "flex",
               alignItems: "center",
             }}
           >
-            <TrendingUp sx={{ mr: 2, color: themeColors.purple.main }} />
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 40,
+                height: 40,
+                borderRadius: "50%",
+                background: alpha(themeColors.purple.main, 0.1),
+                border: `1px solid ${alpha(themeColors.purple.main, 0.3)}`,
+                mr: 2,
+              }}
+            >
+              <TrendingUp sx={{ color: themeColors.purple.main }} />
+            </Box>
             Detalhamento de Serviços - PA1
           </Typography>
 
@@ -1115,14 +1265,28 @@ export default function FleetDashboard() {
           <Typography
             variant="h5"
             sx={{
-              fontWeight: 700,
+              fontWeight: 600,
               mb: 3,
               color: "#1e293b",
               display: "flex",
               alignItems: "center",
             }}
           >
-            <PieChart sx={{ mr: 2, color: themeColors.secondary.main }} />
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 40,
+                height: 40,
+                borderRadius: "50%",
+                background: alpha(themeColors.secondary.main, 0.1),
+                border: `1px solid ${alpha(themeColors.secondary.main, 0.3)}`,
+                mr: 2,
+              }}
+            >
+              <PieChart sx={{ color: themeColors.secondary.main }} />
+            </Box>
             Análise Comparativa - Todas as PAs
           </Typography>
 
@@ -1138,41 +1302,51 @@ export default function FleetDashboard() {
           >
             <Card
               sx={{
-                borderRadius: "24px",
-                boxShadow: "0 20px 60px rgba(0, 0, 0, 0.12)",
-                overflow: "hidden",
-                background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
                 height: 470,
-                border: "1px solid rgba(0, 230, 118, 0.1)",
-                position: "relative",
-                "&::before": {
-                  content: '""',
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: "4px",
-                  background: "linear-gradient(90deg, #00E676, #FF6B35)",
-                },
+                borderRadius: "24px",
+                boxShadow: "0 8px 24px rgba(0, 0, 0, 0.08)",
+                overflow: "hidden",
+                background: "#ffffff",
+                border: "1px solid #e2e8f0",
               }}
             >
               <CardContent sx={{ p: 4, height: "100%" }}>
-                <Typography
-                  variant="h6"
+                <Box
                   sx={{
-                    fontWeight: 800,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
                     mb: 3,
-                    color: "#1e293b",
-                    fontSize: "1.3rem",
-                    textAlign: "center",
-                    background: "linear-gradient(135deg, #1e293b 0%, #475569 100%)",
-                    backgroundClip: "text",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
+                    pb: 2,
+                    borderBottom: "1px solid #f1f5f9",
                   }}
                 >
-                  Comparativo de Eficiência
-                </Typography>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: 40,
+                      height: 40,
+                      borderRadius: "50%",
+                      background: alpha("#3b82f6", 0.1),
+                      border: `1px solid ${alpha("#3b82f6", 0.3)}`,
+                      mr: 2,
+                    }}
+                  >
+                    <Assessment sx={{ fontSize: 20, color: "#3b82f6" }} />
+                  </Box>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontWeight: 600,
+                      color: "#1e293b",
+                      fontSize: "1.3rem",
+                    }}
+                  >
+                    Comparativo de Eficiência
+                  </Typography>
+                </Box>
                 <ResponsiveContainer width="100%" height={350}>
                   <ComposedChart data={locationData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeWidth={1} />
@@ -1188,14 +1362,14 @@ export default function FleetDashboard() {
                       }}
                     />
                     <Legend />
-                    <Bar dataKey="veiculos" fill="#00E676" name="Veículos" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="veiculos" fill="#60a5fa" name="Veículos" radius={[6, 6, 0, 0]} />
                     <Line
                       type="monotone"
                       dataKey="total"
-                      stroke="#FF6B35"
+                      stroke="#34d399"
                       strokeWidth={5}
                       name="Total"
-                      dot={{ fill: "#FF6B35", strokeWidth: 3, r: 8 }}
+                      dot={{ fill: "#34d399", strokeWidth: 3, r: 8 }}
                     />
                   </ComposedChart>
                 </ResponsiveContainer>
@@ -1204,41 +1378,51 @@ export default function FleetDashboard() {
 
             <Card
               sx={{
-                borderRadius: "24px",
-                boxShadow: "0 20px 60px rgba(0, 0, 0, 0.12)",
-                overflow: "hidden",
-                background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
                 height: 470,
-                border: "1px solid rgba(0, 230, 118, 0.1)",
-                position: "relative",
-                "&::before": {
-                  content: '""',
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: "4px",
-                  background: "linear-gradient(90deg, #00E676, #4FC3F7)",
-                },
+                borderRadius: "24px",
+                boxShadow: "0 8px 24px rgba(0, 0, 0, 0.08)",
+                overflow: "hidden",
+                background: "#ffffff",
+                border: "1px solid #e2e8f0",
               }}
             >
               <CardContent sx={{ p: 4, height: "100%" }}>
-                <Typography
-                  variant="h6"
+                <Box
                   sx={{
-                    fontWeight: 800,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
                     mb: 3,
-                    color: "#1e293b",
-                    fontSize: "1.3rem",
-                    textAlign: "center",
-                    background: "linear-gradient(135deg, #1e293b 0%, #475569 100%)",
-                    backgroundClip: "text",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
+                    pb: 2,
+                    borderBottom: "1px solid #f1f5f9",
                   }}
                 >
-                  Área de Cobertura
-                </Typography>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: 40,
+                      height: 40,
+                      borderRadius: "50%",
+                      background: alpha("#8b5cf6", 0.1),
+                      border: `1px solid ${alpha("#8b5cf6", 0.3)}`,
+                      mr: 2,
+                    }}
+                  >
+                    <LocationOn sx={{ fontSize: 20, color: "#8b5cf6" }} />
+                  </Box>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontWeight: 600,
+                      color: "#1e293b",
+                      fontSize: "1.3rem",
+                    }}
+                  >
+                    Área de Cobertura
+                  </Typography>
+                </Box>
                 <ResponsiveContainer width="100%" height={350}>
                   <AreaChart data={locationData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeWidth={1} />
@@ -1257,16 +1441,16 @@ export default function FleetDashboard() {
                       type="monotone"
                       dataKey="motoristas"
                       stackId="1"
-                      stroke="#00E676"
-                      fill="#00E676"
+                      stroke="#60a5fa"
+                      fill="#60a5fa"
                       name="Motoristas"
                     />
                     <Area
                       type="monotone"
                       dataKey="coletores"
                       stackId="1"
-                      stroke="#4FC3F7"
-                      fill="#4FC3F7"
+                      stroke="#fbbf24"
+                      fill="#fbbf24"
                       name="Coletores"
                     />
                   </AreaChart>
