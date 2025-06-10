@@ -23,6 +23,10 @@ import {
   Slide,
   Zoom,
   Alert,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogActions,
 } from "@mui/material"
 import {
   Security,
@@ -35,10 +39,14 @@ import {
   VpnKey,
   CheckCircleOutline,
   Info,
+  Phone,
+  WhatsApp,
+  Send,
+  MarkEmailRead,
 } from "@mui/icons-material"
 import { ThemeProvider, createTheme, alpha, keyframes } from "@mui/material/styles"
 import CssBaseline from "@mui/material/CssBaseline"
-import { getCaptcha } from "../../service/captcha"
+import { getCaptcha, verifyCaptchaService } from "../../service/captcha"
 
 // Animações CSS personalizadas
 const float = keyframes`
@@ -73,6 +81,17 @@ const shake = keyframes`
   0%, 100% { transform: translateX(0); }
   10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
   20%, 40%, 60%, 80% { transform: translateX(5px); }
+`
+
+const slideInUp = keyframes`
+  from {
+    transform: translateY(100px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 `
 
 // Tema personalizado com detalhes premium
@@ -181,6 +200,17 @@ const theme = createTheme({
             transform: "translateY(-2px)",
             boxShadow: "0 25px 90px rgba(0, 0, 0, 0.15), 0 15px 40px rgba(46, 125, 50, 0.3)",
           },
+        },
+      },
+    },
+    MuiDialog: {
+      styleOverrides: {
+        paper: {
+          borderRadius: 24,
+          boxShadow: "0 25px 80px rgba(0, 0, 0, 0.15), 0 15px 40px rgba(46, 125, 50, 0.3)",
+          backdropFilter: "blur(20px)",
+          border: "1px solid rgba(255, 255, 255, 0.2)",
+          overflow: "visible",
         },
       },
     },
@@ -388,6 +418,218 @@ const AnimatedBox = ({ children, delay = 0, direction = "up", ...props }) => {
   )
 }
 
+// Modal de Envio de Mensagem
+const SendMessageModal = ({ open, onClose, phoneNumber }) => {
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        sx: {
+          animation: `${slideInUp} 0.5s ease-out`,
+        },
+      }}
+    >
+      <DialogTitle sx={{ textAlign: "center", pb: 2 }}>
+        <Box
+          sx={{
+            width: 80,
+            height: 80,
+            borderRadius: "50%",
+            background: "linear-gradient(135deg, #25D366, #128C7E)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            margin: "0 auto 16px",
+            boxShadow: "0 8px 32px rgba(37, 211, 102, 0.3)",
+            animation: `${pulse} 2s ease-in-out infinite`,
+          }}
+        >
+          <WhatsApp sx={{ fontSize: 40, color: "white" }} />
+        </Box>
+        <Typography variant="h5" fontWeight={700} color="primary.dark">
+          Enviando Mensagem
+        </Typography>
+      </DialogTitle>
+
+      <DialogContent sx={{ textAlign: "center", pb: 3 }}>
+        <Box sx={{ mb: 3 }}>
+          <CircularProgress
+            size={60}
+            thickness={4}
+            sx={{
+              color: "#25D366",
+              mb: 2,
+            }}
+          />
+          <Typography variant="h6" gutterBottom color="text.primary">
+            Preparando envio via WhatsApp
+          </Typography>
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+            Uma mensagem será enviada para o número:
+          </Typography>
+          <Chip
+            label={phoneNumber}
+            color="primary"
+            variant="outlined"
+            size="large"
+            icon={<Phone />}
+            sx={{
+              fontSize: "1.1rem",
+              fontWeight: 600,
+              py: 2,
+              px: 1,
+            }}
+          />
+        </Box>
+
+        <Paper
+          elevation={0}
+          sx={{
+            p: 3,
+            backgroundColor: alpha("#25D366", 0.05),
+            borderRadius: 3,
+            border: `1px solid ${alpha("#25D366", 0.2)}`,
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", mb: 1 }}>
+            <Send sx={{ color: "#25D366", mr: 1 }} />
+            <Typography variant="subtitle1" color="#25D366" fontWeight={600}>
+              Processando Envio
+            </Typography>
+          </Box>
+          <Typography variant="body2" color="text.secondary">
+            Aguarde enquanto preparamos sua mensagem de recuperação de senha...
+          </Typography>
+        </Paper>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// Modal de Mensagem Enviada
+const MessageSentModal = ({ open, onClose, phoneNumber }) => {
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        sx: {
+          animation: `${slideInUp} 0.5s ease-out`,
+        },
+      }}
+    >
+      <DialogTitle sx={{ textAlign: "center", pb: 2 }}>
+        <Box
+          sx={{
+            width: 80,
+            height: 80,
+            borderRadius: "50%",
+            background: "linear-gradient(135deg, #4CAF50, #66BB6A)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            margin: "0 auto 16px",
+            boxShadow: "0 8px 32px rgba(76, 175, 80, 0.3)",
+            animation: `${bounce} 1s ease`,
+          }}
+        >
+          <MarkEmailRead sx={{ fontSize: 40, color: "white" }} />
+        </Box>
+        <Typography variant="h5" fontWeight={700} color="success.main">
+          Mensagem Enviada!
+        </Typography>
+      </DialogTitle>
+
+      <DialogContent sx={{ textAlign: "center", pb: 3 }}>
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="h6" gutterBottom color="text.primary">
+            ✅ Envio realizado com sucesso!
+          </Typography>
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+            Uma mensagem com o link de recuperação de senha foi enviada para:
+          </Typography>
+          <Chip
+            label={phoneNumber}
+            color="success"
+            variant="outlined"
+            size="large"
+            icon={<WhatsApp />}
+            sx={{
+              fontSize: "1.1rem",
+              fontWeight: 600,
+              py: 2,
+              px: 1,
+              mb: 3,
+            }}
+          />
+        </Box>
+
+        <Paper
+          elevation={0}
+          sx={{
+            p: 3,
+            backgroundColor: alpha("#4CAF50", 0.05),
+            borderRadius: 3,
+            border: `1px solid ${alpha("#4CAF50", 0.2)}`,
+            mb: 3,
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", mb: 2 }}>
+            <CheckCircle sx={{ color: "#4CAF50", mr: 1 }} />
+            <Typography variant="subtitle1" color="#4CAF50" fontWeight={600}>
+              Próximos Passos
+            </Typography>
+          </Box>
+          <Typography variant="body2" color="text.secondary" align="left">
+            • Verifique seu WhatsApp no número informado
+            <br />• Clique no link recebido para redefinir sua senha
+            <br />• O link é válido por 24 horas
+            <br />• Caso não receba, verifique se o número está correto
+          </Typography>
+        </Paper>
+
+        <Alert
+          severity="info"
+          sx={{
+            borderRadius: 2,
+            "& .MuiAlert-message": {
+              width: "100%",
+            },
+          }}
+        >
+          <Typography variant="body2" fontWeight={500}>
+            💡 Dica: Se não receber a mensagem em alguns minutos, verifique se o WhatsApp está funcionando corretamente
+            em seu dispositivo.
+          </Typography>
+        </Alert>
+      </DialogContent>
+
+      <DialogActions sx={{ justifyContent: "center", pb: 3 }}>
+        <Button
+          onClick={onClose}
+          variant="contained"
+          size="large"
+          startIcon={<CheckCircle />}
+          sx={{
+            background: "linear-gradient(135deg, #4CAF50, #66BB6A)",
+            "&:hover": {
+              background: "linear-gradient(135deg, #2E7D32, #4CAF50)",
+            },
+            px: 4,
+          }}
+        >
+          Entendi
+        </Button>
+      </DialogActions>
+    </Dialog>
+  )
+}
+
 export default function CaptchaPage() {
   const [captchaData, setCaptchaData] = useState(null)
   const [userInput, setUserInput] = useState("")
@@ -397,7 +639,10 @@ export default function CaptchaPage() {
   const [showBackdrop, setShowBackdrop] = useState(false)
   const [showTooltips, setShowTooltips] = useState(false)
   const [attempts, setAttempts] = useState(0)
+  const [showSendModal, setShowSendModal] = useState(false)
+  const [showSentModal, setShowSentModal] = useState(false)
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
+  const [phoneNumber, setPhoneNumber] = useState("")
 
   // Mostrar tooltips após um tempo
   useEffect(() => {
@@ -432,17 +677,42 @@ export default function CaptchaPage() {
       return
     }
 
+    if (!phoneNumber.trim()) {
+      setError("Por favor, digite seu número de telefone.")
+      return
+    }
+
     setLoading(true)
     setShowBackdrop(true)
 
-    // Simular verificação
-    setTimeout(() => {
-      if (userInput.toLowerCase() === captchaData?.captchaText?.toLowerCase()) {
+    // Mostrar modal de envio
+    setShowSendModal(true)
+
+    try {
+      // Simular delay para mostrar o modal de envio
+      await new Promise((resolve) => setTimeout(resolve, 2000))
+
+      const result = await verifyCaptchaService({
+        captchaId: captchaData.captchaId,
+        userInput: userInput,
+        phoneNumber: phoneNumber,
+      })
+
+      // Fechar modal de envio
+      setShowSendModal(false)
+
+      if (result.success) {
+        // Simular delay para envio da mensagem
+        await new Promise((resolve) => setTimeout(resolve, 1000))
+
+        // Mostrar modal de mensagem enviada
+        setShowSentModal(true)
+
         setSuccess(true)
         setError("")
         setAttempts(0)
       } else {
-        setError("Código incorreto. Tente novamente.")
+        setError(result.error || "Código incorreto. Tente novamente.")
         setUserInput("")
         setAttempts((prev) => prev + 1)
 
@@ -454,9 +724,14 @@ export default function CaptchaPage() {
           }, 1000)
         }
       }
+    } catch (err) {
+      setShowSendModal(false)
+      setError("Erro ao verificar captcha. Tente novamente.")
+      console.error("Erro na verificação:", err)
+    } finally {
       setLoading(false)
       setShowBackdrop(false)
-    }, 1500)
+    }
   }
 
   const handleRefresh = () => {
@@ -469,8 +744,10 @@ export default function CaptchaPage() {
   const resetForm = () => {
     setSuccess(false)
     setUserInput("")
+    setPhoneNumber("")
     setError("")
     setAttempts(0)
+    setShowSentModal(false)
     fetchCaptcha()
   }
 
@@ -482,6 +759,11 @@ export default function CaptchaPage() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
 
+      {/* Modais */}
+      <SendMessageModal open={showSendModal} onClose={() => setShowSendModal(false)} phoneNumber={phoneNumber} />
+
+      <MessageSentModal open={showSentModal} onClose={() => setShowSentModal(false)} phoneNumber={phoneNumber} />
+
       {/* Backdrop para loading */}
       <Backdrop
         sx={{
@@ -489,7 +771,7 @@ export default function CaptchaPage() {
           backgroundColor: "rgba(0, 0, 0, 0.7)",
           backdropFilter: "blur(8px)",
         }}
-        open={showBackdrop}
+        open={showBackdrop && !showSendModal && !showSentModal}
       >
         <Box sx={{ textAlign: "center", color: "white" }}>
           <CircularProgress color="primary" size={60} thickness={4} />
@@ -805,8 +1087,9 @@ export default function CaptchaPage() {
                         paragraph
                         sx={{ mb: 4, fontSize: "1.1rem", maxWidth: "90%", mx: "auto" }}
                       >
-                        Você passou na verificação de segurança. Agora pode prosseguir com segurança para acessar o
-                        sistema.
+                        Verificação realizada com sucesso para o número: <strong>{phoneNumber}</strong>
+                        <br />
+                        Agora você pode prosseguir com segurança para acessar o sistema.
                       </Typography>
 
                       <Box
@@ -979,6 +1262,25 @@ export default function CaptchaPage() {
                           </Alert>
                         </Fade>
                       )}
+
+                      {/* Phone Number Field */}
+                      <TextField
+                        fullWidth
+                        label="Número de Telefone"
+                        variant="outlined"
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(e.target.value)}
+                        disabled={loading || success}
+                        placeholder="Ex: (11) 99999-9999"
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <Phone color="primary" />
+                            </InputAdornment>
+                          ),
+                        }}
+                        sx={{ mb: 3 }}
+                      />
 
                       {/* Input Field */}
                       <TextField
