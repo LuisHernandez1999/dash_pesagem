@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   AppBar,
   Toolbar,
@@ -9,12 +9,13 @@ import {
   CardContent,
   Box,
   Container,
-  useTheme,
   alpha,
   LinearProgress,
   Fade,
   Grow,
   Button,
+  CircularProgress,
+  Alert,
 } from "@mui/material"
 import {
   LocalShipping,
@@ -40,130 +41,9 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  LineChart,
-  Line,
   Pie,
 } from "recharts"
-
-// Dados simulados baseados no JSON fornecido
-const mockData = {
-  success: true,
-  data: {
-    PA1: {
-      veiculos: 3,
-      motoristas: 6,
-      coletores: 6,
-    },
-    PA2: {
-      veiculos: 0,
-      motoristas: 0,
-      coletores: 0,
-    },
-    PA3: {
-      veiculos: 0,
-      motoristas: 0,
-      coletores: 0,
-    },
-    PA4: {
-      veiculos: 0,
-      motoristas: 0,
-      coletores: 0,
-    },
-    contagem_por_garagem_e_servico: {
-      PA1: {
-        Rsu: {
-          veiculos: 0,
-          motoristas: 0,
-          coletores: 0,
-        },
-        Seletiva: {
-          veiculos: 0,
-          motoristas: 0,
-          coletores: 0,
-        },
-        Remoção: {
-          veiculos: 0,
-          motoristas: 0,
-          coletores: 0,
-        },
-        remoção: {
-          veiculos: 1,
-          motoristas: 1,
-          coletores: 2,
-        },
-        rsu: {
-          veiculos: 1,
-          motoristas: 1,
-          coletores: 2,
-        },
-        seletiva: {
-          veiculos: 1,
-          motoristas: 4,
-          coletores: 2,
-        },
-      },
-      PA2: {
-        Rsu: {
-          veiculos: 0,
-          motoristas: 0,
-          coletores: 0,
-        },
-        Seletiva: {
-          veiculos: 0,
-          motoristas: 0,
-          coletores: 0,
-        },
-        Remoção: {
-          veiculos: 0,
-          motoristas: 0,
-          coletores: 0,
-        },
-      },
-      PA3: {
-        Rsu: {
-          veiculos: 0,
-          motoristas: 0,
-          coletores: 0,
-        },
-        Seletiva: {
-          veiculos: 0,
-          motoristas: 0,
-          coletores: 0,
-        },
-        Remoção: {
-          veiculos: 0,
-          motoristas: 0,
-          coletores: 0,
-        },
-      },
-      PA4: {
-        Rsu: {
-          veiculos: 0,
-          motoristas: 0,
-          coletores: 0,
-        },
-        Seletiva: {
-          veiculos: 0,
-          motoristas: 0,
-          coletores: 0,
-        },
-        Remoção: {
-          veiculos: 0,
-          motoristas: 0,
-          coletores: 0,
-        },
-      },
-    },
-    total_solturas: 6,
-    contagem_rsu: 0,
-    contagem_seletiva: 0,
-    contagem_remocao: 0,
-    contagem_equipamentos: 6,
-    contagem_equipamentos_rsu: 0,
-    contagem_equipamentos_remocao: 0,
-    contagem_equipamentos_seletiva: 0,
-  },
-}
+import { getDashGeral } from "../../service/geral"
 
 // Cores do tema
 const themeColors = {
@@ -202,19 +82,12 @@ const themeColors = {
     light: "#4b5563",
     dark: "#1f2937",
   },
-  gradient: {
-    primary: "linear-gradient(135deg, #374151 0%, #4b5563 100%)",
-    secondary: "linear-gradient(135deg, #64748b 0%, #94a3b8 100%)",
-    success: "linear-gradient(135deg, #059669 0%, #10b981 100%)",
-    warning: "linear-gradient(135deg, #d97706 0%, #f59e0b 100%)",
-    green: "linear-gradient(135deg, #1f2937 0%, #374151 100%)",
-  },
 }
 
-// Update chart colors to be more professional and colorful
+// Cores dos gráficos
 const chartColors = ["#60a5fa", "#34d399", "#fbbf24", "#a78bfa", "#22d3ee", "#fb7185", "#a3e635", "#fb923c"]
 
-// Componente de Card Estatístico Melhorado
+// Componente de Card Estatístico
 const StatCard = ({ title, value, icon: Icon, color, subtitle, progress, delay = 0 }) => (
   <Grow in={true} timeout={800} style={{ transitionDelay: `${delay}ms` }}>
     <Card
@@ -333,7 +206,7 @@ const StatCard = ({ title, value, icon: Icon, color, subtitle, progress, delay =
   </Grow>
 )
 
-// Componente de Gráfico de Pizza Ultra Melhorado
+// Componente de Gráfico de Pizza
 const PieChartCard = ({ title, data, height = 300 }) => (
   <Card
     sx={{
@@ -397,9 +270,9 @@ const PieChartCard = ({ title, data, height = 300 }) => (
             stroke="#fff"
             strokeWidth={4}
           >
-            {data.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={chartColors[index % chartColors.length]} />
-            ))}
+            {data &&
+              Array.isArray(data) &&
+              data.map((entry, index) => <Cell key={`cell-${index}`} fill={chartColors[index % chartColors.length]} />)}
           </Pie>
           <Tooltip
             contentStyle={{
@@ -416,7 +289,7 @@ const PieChartCard = ({ title, data, height = 300 }) => (
   </Card>
 )
 
-// Componente de Gráfico de Barras Ultra Melhorado
+// Componente de Gráfico de Barras
 const BarChartCard = ({ title, data, height = 300 }) => (
   <Card
     sx={{
@@ -484,103 +357,6 @@ const BarChartCard = ({ title, data, height = 300 }) => (
           <Bar dataKey="motoristas" fill="#34d399" name="Motoristas" radius={[6, 6, 0, 0]} />
           <Bar dataKey="coletores" fill="#fbbf24" name="Coletores" radius={[6, 6, 0, 0]} />
         </RechartsBarChart>
-      </ResponsiveContainer>
-    </CardContent>
-  </Card>
-)
-
-// Componente de Gráfico de Linha Ultra Melhorado
-const LineChartCard = ({ title, data, height = 300 }) => (
-  <Card
-    sx={{
-      height: height + 120,
-      borderRadius: "24px",
-      boxShadow: "0 8px 24px rgba(0, 0, 0, 0.08)",
-      overflow: "hidden",
-      background: "#ffffff",
-      border: "1px solid #e2e8f0",
-    }}
-  >
-    <CardContent sx={{ p: 4, height: "100%" }}>
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          mb: 3,
-          pb: 2,
-          borderBottom: "1px solid #f1f5f9",
-        }}
-      >
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: 40,
-            height: 40,
-            borderRadius: "50%",
-            background: alpha("#059669", 0.1),
-            border: `1px solid ${alpha("#059669", 0.3)}`,
-            mr: 2,
-          }}
-        >
-          <TrendingUp sx={{ fontSize: 20, color: "#059669" }} />
-        </Box>
-        <Typography
-          variant="h6"
-          sx={{
-            fontWeight: 600,
-            color: "#1e293b",
-            fontSize: "1.3rem",
-          }}
-        >
-          {title}
-        </Typography>
-      </Box>
-      <ResponsiveContainer width="100%" height={height}>
-        <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeWidth={1} />
-          <XAxis dataKey="name" tick={{ fill: "#64748b", fontSize: 13, fontWeight: 600 }} />
-          <YAxis tick={{ fill: "#64748b", fontSize: 13, fontWeight: 600 }} />
-          <Tooltip
-            contentStyle={{
-              backgroundColor: "#fff",
-              border: "none",
-              borderRadius: "16px",
-              boxShadow: "0 12px 40px rgba(0, 0, 0, 0.15)",
-              padding: "16px",
-            }}
-          />
-          <Legend />
-          <Line
-            type="monotone"
-            dataKey="veiculos"
-            stroke="#60a5fa"
-            strokeWidth={5}
-            name="Veículos"
-            dot={{ fill: "#60a5fa", strokeWidth: 3, r: 8 }}
-            activeDot={{ r: 10, stroke: "#60a5fa", strokeWidth: 3, fill: "#fff" }}
-          />
-          <Line
-            type="monotone"
-            dataKey="motoristas"
-            stroke="#34d399"
-            strokeWidth={5}
-            name="Motoristas"
-            dot={{ fill: "#34d399", strokeWidth: 3, r: 8 }}
-            activeDot={{ r: 10, stroke: "#34d399", strokeWidth: 3, fill: "#fff" }}
-          />
-          <Line
-            type="monotone"
-            dataKey="coletores"
-            stroke="#fbbf24"
-            strokeWidth={5}
-            name="Coletores"
-            dot={{ fill: "#fbbf24", strokeWidth: 3, r: 8 }}
-            activeDot={{ r: 10, stroke: "#fbbf24", strokeWidth: 3, fill: "#fff" }}
-          />
-        </LineChart>
       </ResponsiveContainer>
     </CardContent>
   </Card>
@@ -655,7 +431,7 @@ const EfficiencyBarChartCard = ({ title, data, height = 300 }) => (
             formatter={(value) => [`${value}%`, "Eficiência"]}
           />
           <Legend />
-          <Bar dataKey="value" fill="#60a5fa" name="Eficiência %" radius={[6, 6, 0, 0]} />
+          <Bar dataKey="value" fill="#f59e0b" name="Eficiência %" radius={[6, 6, 0, 0]} />
         </RechartsBarChart>
       </ResponsiveContainer>
     </CardContent>
@@ -663,35 +439,154 @@ const EfficiencyBarChartCard = ({ title, data, height = 300 }) => (
 )
 
 export default function FleetDashboard() {
-  const theme = useTheme()
-  const [data, setData] = useState(mockData.data)
-  const [lastUpdate, setLastUpdate] = useState(new Date())
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [lastUpdate, setLastUpdate] = useState(null)
 
-  const handleRefresh = () => {
-    setLastUpdate(new Date())
+  const fetchData = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      console.log("Iniciando busca de dados...")
+      const apiData = await getDashGeral()
+      console.log("Dados recebidos da API:", apiData)
+
+      if (apiData) {
+        setData(apiData)
+        setLastUpdate(new Date())
+        console.log("Dados definidos no estado:", apiData)
+      } else {
+        console.error("API retornou dados nulos")
+        setError("Erro ao carregar dados da API")
+      }
+    } catch (err) {
+      console.error("Erro ao buscar dados:", err)
+      setError(`Erro ao conectar com a API: ${err.message}`)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  // Calcular totais
-  const totalVeiculos = Object.values(data)
-    .slice(0, 4)
-    .reduce((sum, location) => sum + location.veiculos, 0)
-  const totalMotoristas = Object.values(data)
-    .slice(0, 4)
-    .reduce((sum, location) => sum + location.motoristas, 0)
-  const totalColetores = Object.values(data)
-    .slice(0, 4)
-    .reduce((sum, location) => sum + location.coletores, 0)
+  useEffect(() => {
+    fetchData()
+  }, [])
+
+  const handleRefresh = () => {
+    fetchData()
+  }
+
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          minHeight: "100vh",
+          backgroundColor: "#fdfdfd",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexDirection: "column",
+          gap: 3,
+        }}
+      >
+        <CircularProgress size={60} sx={{ color: "#3b82f6" }} />
+        <Typography variant="h6" sx={{ color: "#64748b", fontWeight: 600 }}>
+          Carregando dados do dashboard...
+        </Typography>
+      </Box>
+    )
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ minHeight: "100vh", backgroundColor: "#fdfdfd", p: 4 }}>
+        <Container maxWidth="md">
+          <Alert
+            severity="error"
+            sx={{
+              borderRadius: "16px",
+              fontSize: "1.1rem",
+              "& .MuiAlert-message": {
+                width: "100%",
+              },
+            }}
+            action={
+              <Button color="inherit" size="small" onClick={handleRefresh} startIcon={<Refresh />}>
+                Tentar Novamente
+              </Button>
+            }
+          >
+            <Typography variant="h6" sx={{ mb: 1 }}>
+              Erro ao carregar dashboard
+            </Typography>
+            <Typography variant="body2">{error}</Typography>
+          </Alert>
+        </Container>
+      </Box>
+    )
+  }
+
+  if (!data) {
+    return (
+      <Box sx={{ minHeight: "100vh", backgroundColor: "#fdfdfd", p: 4 }}>
+        <Container maxWidth="md">
+          <Alert severity="warning" sx={{ borderRadius: "16px" }}>
+            <Typography variant="h6" sx={{ mb: 1 }}>
+              Nenhum dado disponível
+            </Typography>
+            <Typography variant="body2">Os dados não foram carregados. Verifique a conexão com a API.</Typography>
+            <Button onClick={handleRefresh} startIcon={<Refresh />} sx={{ mt: 2 }}>
+              Tentar Novamente
+            </Button>
+          </Alert>
+        </Container>
+      </Box>
+    )
+  }
+
+  console.log("Renderizando dashboard com dados:", data)
+
+  // Calcular totais com os dados da API
+  const totalVeiculos =
+    (data.pa1?.veiculos || 0) + (data.pa2?.veiculos || 0) + (data.pa3?.veiculos || 0) + (data.pa4?.veiculos || 0)
+  const totalMotoristas =
+    (data.pa1?.motoristas || 0) +
+    (data.pa2?.motoristas || 0) +
+    (data.pa3?.motoristas || 0) +
+    (data.pa4?.motoristas || 0)
+  const totalColetores =
+    (data.pa1?.coletores || 0) + (data.pa2?.coletores || 0) + (data.pa3?.coletores || 0) + (data.pa4?.coletores || 0)
+
+  console.log("Totais calculados:", { totalVeiculos, totalMotoristas, totalColetores })
 
   // Preparar dados para gráficos
-  const locationData = Object.entries(data)
-    .slice(0, 4)
-    .map(([name, values]) => ({
-      name,
-      veiculos: values.veiculos,
-      motoristas: values.motoristas,
-      coletores: values.coletores,
-      total: values.veiculos + values.motoristas + values.coletores,
-    }))
+  const locationData = [
+    {
+      name: "PA1",
+      veiculos: data.pa1?.veiculos || 0,
+      motoristas: data.pa1?.motoristas || 0,
+      coletores: data.pa1?.coletores || 0,
+    },
+    {
+      name: "PA2",
+      veiculos: data.pa2?.veiculos || 0,
+      motoristas: data.pa2?.motoristas || 0,
+      coletores: data.pa2?.coletores || 0,
+    },
+    {
+      name: "PA3",
+      veiculos: data.pa3?.veiculos || 0,
+      motoristas: data.pa3?.motoristas || 0,
+      coletores: data.pa3?.coletores || 0,
+    },
+    {
+      name: "PA4",
+      veiculos: data.pa4?.veiculos || 0,
+      motoristas: data.pa4?.motoristas || 0,
+      coletores: data.pa4?.coletores || 0,
+    },
+  ]
 
   const pieData = [
     { name: "Veículos", value: totalVeiculos },
@@ -699,47 +594,23 @@ export default function FleetDashboard() {
     { name: "Coletores", value: totalColetores },
   ]
 
-  // Dados corrigidos para PA1
-  const pa1ServiceData = Object.entries(data.contagem_por_garagem_e_servico.PA1)
-    .filter(([service, values]) => {
-      return values.veiculos > 0 || values.motoristas > 0 || values.coletores > 0
-    })
-    .map(([name, values]) => ({
-      name: name.charAt(0).toUpperCase() + name.slice(1),
-      veiculos: values.veiculos,
-      motoristas: values.motoristas,
-      coletores: values.coletores,
-      total: values.veiculos + values.motoristas + values.coletores,
-    }))
+  // Calcular eficiência baseada nos dados reais
+  const calculateEfficiency = (pa) => {
+    const total = (pa?.veiculos || 0) + (pa?.motoristas || 0) + (pa?.coletores || 0)
+    const maxPossible = 12 // Assumindo um máximo teórico baseado nos seus dados
+    return total > 0 ? Math.min(Math.round((total / maxPossible) * 100), 100) : 0
+  }
 
-  const pa1PieData = pa1ServiceData.map((item) => ({
-    name: item.name,
-    value: item.total,
-  }))
-
-  // Dados para o gráfico de barras de eficiência
   const efficiencyData = [
-    {
-      name: "PA1",
-      value: 85,
-    },
-    {
-      name: "PA2",
-      value: 15,
-    },
-    {
-      name: "PA3",
-      value: 25,
-    },
-    {
-      name: "PA4",
-      value: 10,
-    },
+    { name: "PA1", value: calculateEfficiency(data.pa1), fill: "#3b82f6" },
+    { name: "PA2", value: calculateEfficiency(data.pa2), fill: "#10b981" },
+    { name: "PA3", value: calculateEfficiency(data.pa3), fill: "#f59e0b" },
+    { name: "PA4", value: calculateEfficiency(data.pa4), fill: "#8b5cf6" },
   ]
 
   return (
     <Box sx={{ minHeight: "100vh", backgroundColor: "#fdfdfd" }}>
-      {/* Header Verde Escuro */}
+      {/* Header */}
       <AppBar
         position="sticky"
         sx={{
@@ -793,47 +664,49 @@ export default function FleetDashboard() {
           </Box>
 
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-           
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 1,
-                px: 3,
-                py: 1.5,
-                borderRadius: "12px",
-                background: alpha("#3b82f6", 0.08),
-                border: `1px solid ${alpha("#3b82f6", 0.15)}`,
-                ml: 2,
-              }}
-            >
-              <Typography
-                variant="body2"
+            {lastUpdate && (
+              <Box
                 sx={{
-                  color: "#3b82f6",
-                  fontWeight: 700,
-                  fontSize: "0.9rem",
-                  letterSpacing: "0.5px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                  px: 3,
+                  py: 1.5,
+                  borderRadius: "12px",
+                  background: alpha("#3b82f6", 0.08),
+                  border: `1px solid ${alpha("#3b82f6", 0.15)}`,
+                  ml: 2,
                 }}
               >
-                Última Atualização:
-              </Typography>
-              <Typography
-                variant="body2"
-                sx={{
-                  color: "#1e293b",
-                  fontWeight: 600,
-                  fontSize: "0.9rem",
-                  fontFamily: "monospace",
-                }}
-              >
-                {lastUpdate.toLocaleTimeString()}
-              </Typography>
-            </Box>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: "#3b82f6",
+                    fontWeight: 700,
+                    fontSize: "0.9rem",
+                    letterSpacing: "0.5px",
+                  }}
+                >
+                  Última Atualização:
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: "#1e293b",
+                    fontWeight: 600,
+                    fontSize: "0.9rem",
+                    fontFamily: "monospace",
+                  }}
+                >
+                  {lastUpdate.toLocaleTimeString()}
+                </Typography>
+              </Box>
+            )}
 
             <Button
               onClick={handleRefresh}
               startIcon={<Refresh />}
+              disabled={loading}
               sx={{
                 background: alpha("#64748b", 0.08),
                 border: "1px solid #e2e8f0",
@@ -900,7 +773,7 @@ export default function FleetDashboard() {
               icon={LocalShipping}
               color={themeColors.primary.main}
               subtitle="Em operação"
-              progress={75}
+              progress={totalVeiculos > 0 ? Math.min((totalVeiculos / 10) * 100, 100) : 0}
               delay={0}
             />
             <StatCard
@@ -909,7 +782,7 @@ export default function FleetDashboard() {
               icon={Person}
               color={themeColors.success.main}
               subtitle="Disponíveis"
-              progress={85}
+              progress={totalMotoristas > 0 ? Math.min((totalMotoristas / 10) * 100, 100) : 0}
               delay={100}
             />
             <StatCard
@@ -918,16 +791,16 @@ export default function FleetDashboard() {
               icon={RecyclingOutlined}
               color={themeColors.info.main}
               subtitle="Em campo"
-              progress={90}
+              progress={totalColetores > 0 ? Math.min((totalColetores / 20) * 100, 100) : 0}
               delay={200}
             />
             <StatCard
               title="Equipamentos"
-              value={data.contagem_equipamentos}
+              value={data.contagemEquipamentos || 0}
               icon={Build}
               color={themeColors.warning.main}
               subtitle="Ativos"
-              progress={60}
+              progress={data.contagemEquipamentos > 0 ? Math.min((data.contagemEquipamentos / 10) * 100, 100) : 0}
               delay={300}
             />
           </Box>
@@ -980,10 +853,7 @@ export default function FleetDashboard() {
           </Box>
         </Box>
 
-        {/* Cards de Localização */}
-        {/* REMOVING LOCATION SECTION */}
-
-        {/* Detalhamento de Serviços - Todas as PAs */}
+        {/* Detalhamento de Serviços */}
         <Box sx={{ mb: 5 }}>
           <Typography
             variant="h5"
@@ -1013,7 +883,7 @@ export default function FleetDashboard() {
             Detalhamento de Serviços
           </Typography>
 
-          {/* Componentes compactos em linha para cada PA */}
+          {/* Cards para cada PA */}
           <Box
             sx={{
               display: "grid",
@@ -1022,378 +892,406 @@ export default function FleetDashboard() {
                 sm: "repeat(2, 1fr)",
                 lg: "repeat(4, 1fr)",
               },
-              gap: 2,
+              gap: 3,
               mb: 4,
             }}
           >
-            {Object.entries(data.contagem_por_garagem_e_servico).map(([paName, paData], index) => {
-              const totalVeiculos = Object.values(paData).reduce((sum, service) => sum + service.veiculos, 0)
-              const totalMotoristas = Object.values(paData).reduce((sum, service) => sum + service.motoristas, 0)
-              const totalColetores = Object.values(paData).reduce((sum, service) => sum + service.coletores, 0)
-              const isActive = totalVeiculos > 0 || totalMotoristas > 0 || totalColetores > 0
-              const statusColor = isActive ? "#059669" : "#ef4444"
+            {[
+              { name: "PA1", data: data.pa1, color: "#3b82f6" },
+              { name: "PA2", data: data.pa2, color: "#10b981" },
+              { name: "PA3", data: data.pa3, color: "#f59e0b" },
+              { name: "PA4", data: data.pa4, color: "#8b5cf6" },
+            ].map(({ name, data: paData, color }, index) => {
+              const totalVeiculos = paData?.veiculos || 0
+              const totalMotoristas = paData?.motoristas || 0
+              const totalColetores = paData?.coletores || 0
 
-              // Calcular porcentagens por serviço
-              const servicosData = {
-                rsu: { veiculos: 0, motoristas: 0, coletores: 0 },
-                seletiva: { veiculos: 0, motoristas: 0, coletores: 0 },
-                remocao: { veiculos: 0, motoristas: 0, coletores: 0 },
-              }
+              // Calcular percentuais dos serviços baseado nos dados da API
+              const servicosData = data.contagemPorGaragemEServico?.[name] || {}
 
-              // Somar dados dos serviços (considerando variações de nomenclatura)
-              Object.entries(paData).forEach(([serviceName, serviceData]) => {
-                const normalizedName = serviceName.toLowerCase()
-                if (normalizedName.includes("rsu")) {
-                  servicosData.rsu.veiculos += serviceData.veiculos
-                  servicosData.rsu.motoristas += serviceData.motoristas
-                  servicosData.rsu.coletores += serviceData.coletores
-                } else if (normalizedName.includes("seletiva")) {
-                  servicosData.seletiva.veiculos += serviceData.veiculos
-                  servicosData.seletiva.motoristas += serviceData.motoristas
-                  servicosData.seletiva.coletores += serviceData.coletores
-                } else if (normalizedName.includes("remoção") || normalizedName.includes("remocao")) {
-                  servicosData.remocao.veiculos += serviceData.veiculos
-                  servicosData.remocao.motoristas += serviceData.motoristas
-                  servicosData.remocao.coletores += serviceData.coletores
-                }
-              })
+              // Somar dados de RSU (maiúsculo e minúsculo)
+              const rsuData = servicosData.rsu || servicosData.Rsu || {}
+              const seletivaData = servicosData.seletiva || servicosData.Seletiva || {}
+              const remocaoData = servicosData.remoção || servicosData.Remoção || {}
 
-              // Calcular porcentagens
-              const totalGeral = totalVeiculos + totalMotoristas + totalColetores
-              const rsuPercent =
-                totalGeral > 0
-                  ? Math.round(
-                      ((servicosData.rsu.veiculos + servicosData.rsu.motoristas + servicosData.rsu.coletores) /
-                        totalGeral) *
-                        100,
-                    )
-                  : 0
-              const seletivaPercent =
-                totalGeral > 0
-                  ? Math.round(
-                      ((servicosData.seletiva.veiculos +
-                        servicosData.seletiva.motoristas +
-                        servicosData.seletiva.coletores) /
-                        totalGeral) *
-                        100,
-                    )
-                  : 0
-              const remocaoPercent =
-                totalGeral > 0
-                  ? Math.round(
-                      ((servicosData.remocao.veiculos +
-                        servicosData.remocao.motoristas +
-                        servicosData.remocao.coletores) /
-                        totalGeral) *
-                        100,
-                    )
-                  : 0
+              const rsuTotal = (rsuData.veiculos || 0) + (rsuData.motoristas || 0) + (rsuData.coletores || 0)
+              const seletivaTotal =
+                (seletivaData.veiculos || 0) + (seletivaData.motoristas || 0) + (seletivaData.coletores || 0)
+              const remocaoTotal =
+                (remocaoData.veiculos || 0) + (remocaoData.motoristas || 0) + (remocaoData.coletores || 0)
+
+              const servicosTotal = rsuTotal + seletivaTotal + remocaoTotal
+              const rsuPercent = servicosTotal > 0 ? Math.round((rsuTotal / servicosTotal) * 100) : 0
+              const seletivaPercent = servicosTotal > 0 ? Math.round((seletivaTotal / servicosTotal) * 100) : 0
+              const remocaoPercent = servicosTotal > 0 ? Math.round((remocaoTotal / servicosTotal) * 100) : 0
 
               return (
-                <Fade in={true} timeout={1000} style={{ transitionDelay: `${index * 100}ms` }} key={paName}>
-                  <Box
+                <Fade in={true} timeout={1000} style={{ transitionDelay: `${index * 100}ms` }} key={name}>
+                  <Card
                     sx={{
                       background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
-                      borderRadius: "16px",
-                      border: "1px solid #e2e8f0",
-                      p: 3,
-                      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                      borderRadius: "20px",
+                      border: `2px solid ${alpha(color, 0.1)}`,
+                      p: 0,
+                      transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
                       position: "relative",
                       overflow: "hidden",
+                      height: "280px",
                       "&:hover": {
-                        transform: "translateY(-2px)",
-                        boxShadow: `0 8px 25px ${alpha(statusColor, 0.15)}`,
+                        transform: "translateY(-4px) scale(1.02)",
+                        boxShadow: `0 20px 40px ${alpha(color, 0.2)}`,
+                        border: `2px solid ${alpha(color, 0.3)}`,
                       },
                     }}
                   >
-                    {/* Header da PA */}
-                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", mb: 2.5 }}>
-                      <Box sx={{ display: "flex", alignItems: "center" }}>
-                        <Typography
-                          variant="h6"
-                          sx={{
-                            fontWeight: 700,
-                            color: "#1e293b",
-                            fontSize: "1.1rem",
-                          }}
-                        >
-                          {paName}
-                        </Typography>
+                    <CardContent sx={{ p: 3, height: "100%", display: "flex", flexDirection: "column" }}>
+                      {/* Header da PA */}
+                      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "flex-start", mb: 3 }}>
+                        <Box sx={{ display: "flex", alignItems: "center" }}>
+                          <Box
+                            sx={{
+                              width: 48,
+                              height: 48,
+                              borderRadius: "14px",
+                              background: `linear-gradient(135deg, ${color}, ${alpha(color, 0.8)})`,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              mr: 2,
+                              boxShadow: `0 8px 16px ${alpha(color, 0.3)}`,
+                            }}
+                          >
+                            <Typography
+                              variant="h6"
+                              sx={{
+                                fontWeight: 800,
+                                color: "#ffffff",
+                                fontSize: "1rem",
+                                letterSpacing: "0.5px",
+                              }}
+                            >
+                              {name}
+                            </Typography>
+                          </Box>
+                          <Box>
+                            <Typography
+                              variant="h6"
+                              sx={{
+                                fontWeight: 700,
+                                color: "#1e293b",
+                                fontSize: "1.1rem",
+                                lineHeight: 1.2,
+                              }}
+                            >
+                              Posto De Apoio
+                            </Typography>
+                          </Box>
+                        </Box>
                       </Box>
-                    </Box>
 
-                    {/* Métricas em linha horizontal */}
-                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-                      {/* Veículos */}
-                      <Box sx={{ textAlign: "center", flex: 1 }}>
+                      {/* Métricas principais */}
+                      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
+                        <Box sx={{ textAlign: "center", flex: 1 }}>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              width: 40,
+                              height: 40,
+                              borderRadius: "12px",
+                              background: alpha("#3b82f6", 0.1),
+                              mx: "auto",
+                              mb: 1.5,
+                              border: `2px solid ${alpha("#3b82f6", 0.2)}`,
+                            }}
+                          >
+                            <LocalShipping sx={{ fontSize: 18, color: "#3b82f6" }} />
+                          </Box>
+                          <Typography
+                            variant="h4"
+                            sx={{
+                              fontWeight: 800,
+                              color: "#1e293b",
+                              fontSize: "1.8rem",
+                              lineHeight: 1,
+                              mb: 0.5,
+                            }}
+                          >
+                            {totalVeiculos}
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: "#64748b",
+                              fontWeight: 600,
+                              fontSize: "0.7rem",
+                              textTransform: "uppercase",
+                              letterSpacing: "0.5px",
+                            }}
+                          >
+                            Veículos
+                          </Typography>
+                        </Box>
+
                         <Box
                           sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            width: 32,
-                            height: 32,
-                            borderRadius: "8px",
-                            background: alpha("#3b82f6", 0.1),
-                            mx: "auto",
-                            mb: 1,
+                            width: "1px",
+                            background: "linear-gradient(180deg, transparent, #e2e8f0, transparent)",
+                            mx: 1,
                           }}
-                        >
-                          <LocalShipping sx={{ fontSize: 16, color: "#3b82f6" }} />
+                        />
+
+                        <Box sx={{ textAlign: "center", flex: 1 }}>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              width: 40,
+                              height: 40,
+                              borderRadius: "12px",
+                              background: alpha("#059669", 0.1),
+                              mx: "auto",
+                              mb: 1.5,
+                              border: `2px solid ${alpha("#059669", 0.2)}`,
+                            }}
+                          >
+                            <Person sx={{ fontSize: 18, color: "#059669" }} />
+                          </Box>
+                          <Typography
+                            variant="h4"
+                            sx={{
+                              fontWeight: 800,
+                              color: "#1e293b",
+                              fontSize: "1.8rem",
+                              lineHeight: 1,
+                              mb: 0.5,
+                            }}
+                          >
+                            {totalMotoristas}
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: "#64748b",
+                              fontWeight: 600,
+                              fontSize: "0.7rem",
+                              textTransform: "uppercase",
+                              letterSpacing: "0.5px",
+                            }}
+                          >
+                            Motoristas
+                          </Typography>
                         </Box>
-                        <Typography
-                          variant="h5"
+
+                        <Box
                           sx={{
-                            fontWeight: 700,
-                            color: "#1e293b",
-                            fontSize: "1.4rem",
-                            lineHeight: 1,
-                            mb: 0.5,
+                            width: "1px",
+                            background: "linear-gradient(180deg, transparent, #e2e8f0, transparent)",
+                            mx: 1,
                           }}
-                        >
-                          {totalVeiculos}
-                        </Typography>
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            color: "#64748b",
-                            fontWeight: 500,
-                            fontSize: "0.7rem",
-                            textTransform: "uppercase",
-                            letterSpacing: "0.5px",
-                          }}
-                        >
-                          Veículos
-                        </Typography>
+                        />
+
+                        <Box sx={{ textAlign: "center", flex: 1 }}>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              width: 40,
+                              height: 40,
+                              borderRadius: "12px",
+                              background: alpha("#f59e0b", 0.1),
+                              mx: "auto",
+                              mb: 1.5,
+                              border: `2px solid ${alpha("#f59e0b", 0.2)}`,
+                            }}
+                          >
+                            <RecyclingOutlined sx={{ fontSize: 18, color: "#f59e0b" }} />
+                          </Box>
+                          <Typography
+                            variant="h4"
+                            sx={{
+                              fontWeight: 800,
+                              color: "#1e293b",
+                              fontSize: "1.8rem",
+                              lineHeight: 1,
+                              mb: 0.5,
+                            }}
+                          >
+                            {totalColetores}
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: "#64748b",
+                              fontWeight: 600,
+                              fontSize: "0.7rem",
+                              textTransform: "uppercase",
+                              letterSpacing: "0.5px",
+                            }}
+                          >
+                            Coletores
+                          </Typography>
+                        </Box>
                       </Box>
 
-                      {/* Divisor */}
+                      {/* Distribuição por Serviços */}
                       <Box
                         sx={{
-                          width: "1px",
-                          height: "40px",
-                          background: alpha("#e2e8f0", 0.8),
-                          mx: 1,
-                        }}
-                      />
-
-                      {/* Motoristas */}
-                      <Box sx={{ textAlign: "center", flex: 1 }}>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            width: 32,
-                            height: 32,
-                            borderRadius: "8px",
-                            background: alpha("#059669", 0.1),
-                            mx: "auto",
-                            mb: 1,
-                          }}
-                        >
-                          <Person sx={{ fontSize: 16, color: "#059669" }} />
-                        </Box>
-                        <Typography
-                          variant="h5"
-                          sx={{
-                            fontWeight: 700,
-                            color: "#1e293b",
-                            fontSize: "1.4rem",
-                            lineHeight: 1,
-                            mb: 0.5,
-                          }}
-                        >
-                          {totalMotoristas}
-                        </Typography>
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            color: "#64748b",
-                            fontWeight: 500,
-                            fontSize: "0.7rem",
-                            textTransform: "uppercase",
-                            letterSpacing: "0.5px",
-                          }}
-                        >
-                          Motoristas
-                        </Typography>
-                      </Box>
-
-                      {/* Divisor */}
-                      <Box
-                        sx={{
-                          width: "1px",
-                          height: "40px",
-                          background: alpha("#e2e8f0", 0.8),
-                          mx: 1,
-                        }}
-                      />
-
-                      {/* Coletores */}
-                      <Box sx={{ textAlign: "center", flex: 1 }}>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            width: 32,
-                            height: 32,
-                            borderRadius: "8px",
-                            background: alpha("#f59e0b", 0.1),
-                            mx: "auto",
-                            mb: 1,
-                          }}
-                        >
-                          <RecyclingOutlined sx={{ fontSize: 16, color: "#f59e0b" }} />
-                        </Box>
-                        <Typography
-                          variant="h5"
-                          sx={{
-                            fontWeight: 700,
-                            color: "#1e293b",
-                            fontSize: "1.4rem",
-                            lineHeight: 1,
-                            mb: 0.5,
-                          }}
-                        >
-                          {totalColetores}
-                        </Typography>
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            color: "#64748b",
-                            fontWeight: 500,
-                            fontSize: "0.7rem",
-                            textTransform: "uppercase",
-                            letterSpacing: "0.5px",
-                          }}
-                        >
-                          Coletores
-                        </Typography>
-                      </Box>
-                    </Box>
-
-                    {/* Distribuição por Serviços */}
-                    <Box
-                      sx={{
-                        borderTop: "1px solid #f1f5f9",
-                        pt: 2,
-                      }}
-                    >
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          color: "#64748b",
-                          fontWeight: 600,
-                          fontSize: "0.7rem",
-                          textTransform: "uppercase",
-                          letterSpacing: "0.5px",
-                          mb: 1.5,
-                          display: "block",
-                          textAlign: "center",
+                          borderTop: `2px solid ${alpha("#f1f5f9", 0.8)}`,
+                          pt: 2.5,
+                          mt: "auto",
                         }}
                       >
-                        Distribuição por Serviço
-                      </Typography>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: "#64748b",
+                            fontWeight: 700,
+                            fontSize: "0.7rem",
+                            textTransform: "uppercase",
+                            letterSpacing: "1px",
+                            mb: 2,
+                            display: "block",
+                            textAlign: "center",
+                          }}
+                        >
+                          Distribuição por Serviço
+                        </Typography>
 
-                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        {/* RSU */}
-                        <Box sx={{ textAlign: "center", flex: 1 }}>
-                          <Typography
-                            variant="h6"
-                            sx={{
-                              fontWeight: 700,
-                              color: "#8b5cf6",
-                              fontSize: "1.1rem",
-                              lineHeight: 1,
-                              mb: 0.5,
-                            }}
-                          >
-                            {rsuPercent}%
-                          </Typography>
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              color: "#8b5cf6",
-                              fontWeight: 600,
-                              fontSize: "0.65rem",
-                              textTransform: "uppercase",
-                              letterSpacing: "0.5px",
-                            }}
-                          >
-                            RSU
-                          </Typography>
-                        </Box>
+                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 1 }}>
+                          <Box sx={{ textAlign: "center", flex: 1, minWidth: "70px" }}>
+                            <Box
+                              sx={{
+                                width: 32,
+                                height: 32,
+                                borderRadius: "8px",
+                                background: alpha("#8b5cf6", 0.1),
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                mx: "auto",
+                                mb: 1,
+                                border: `2px solid ${alpha("#8b5cf6", 0.2)}`,
+                              }}
+                            >
+                              <Typography
+                                variant="caption"
+                                sx={{
+                                  fontWeight: 800,
+                                  color: "#8b5cf6",
+                                  fontSize: "0.7rem",
+                                }}
+                              >
+                                {rsuPercent}%
+                              </Typography>
+                            </Box>
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                color: "#8b5cf6",
+                                fontWeight: 700,
+                                fontSize: "0.65rem",
+                                textTransform: "uppercase",
+                                letterSpacing: "0.5px",
+                              }}
+                            >
+                              RSU
+                            </Typography>
+                          </Box>
 
-                        {/* Seletiva */}
-                        <Box sx={{ textAlign: "center", flex: 1 }}>
-                          <Typography
-                            variant="h6"
-                            sx={{
-                              fontWeight: 700,
-                              color: "#10b981",
-                              fontSize: "1.1rem",
-                              lineHeight: 1,
-                              mb: 0.5,
-                            }}
-                          >
-                            {seletivaPercent}%
-                          </Typography>
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              color: "#10b981",
-                              fontWeight: 600,
-                              fontSize: "0.65rem",
-                              textTransform: "uppercase",
-                              letterSpacing: "0.5px",
-                            }}
-                          >
-                            Seletiva
-                          </Typography>
-                        </Box>
+                          <Box sx={{ textAlign: "center", flex: 1, minWidth: "70px" }}>
+                            <Box
+                              sx={{
+                                width: 32,
+                                height: 32,
+                                borderRadius: "8px",
+                                background: alpha("#10b981", 0.1),
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                mx: "auto",
+                                mb: 1,
+                                border: `2px solid ${alpha("#10b981", 0.2)}`,
+                              }}
+                            >
+                              <Typography
+                                variant="caption"
+                                sx={{
+                                  fontWeight: 800,
+                                  color: "#10b981",
+                                  fontSize: "0.7rem",
+                                }}
+                              >
+                                {seletivaPercent}%
+                              </Typography>
+                            </Box>
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                color: "#10b981",
+                                fontWeight: 700,
+                                fontSize: "0.65rem",
+                                textTransform: "uppercase",
+                                letterSpacing: "0.5px",
+                              }}
+                            >
+                              Seletiva
+                            </Typography>
+                          </Box>
 
-                        {/* Remoção */}
-                        <Box sx={{ textAlign: "center", flex: 1 }}>
-                          <Typography
-                            variant="h6"
-                            sx={{
-                              fontWeight: 700,
-                              color: "#f59e0b",
-                              fontSize: "1.1rem",
-                              lineHeight: 1,
-                              mb: 0.5,
-                            }}
-                          >
-                            {remocaoPercent}%
-                          </Typography>
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              color: "#f59e0b",
-                              fontWeight: 600,
-                              fontSize: "0.65rem",
-                              textTransform: "uppercase",
-                              letterSpacing: "0.5px",
-                            }}
-                          >
-                            Remoção
-                          </Typography>
+                          <Box sx={{ textAlign: "center", flex: 1, minWidth: "70px" }}>
+                            <Box
+                              sx={{
+                                width: 32,
+                                height: 32,
+                                borderRadius: "8px",
+                                background: alpha("#f59e0b", 0.1),
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                mx: "auto",
+                                mb: 1,
+                                border: `2px solid ${alpha("#f59e0b", 0.2)}`,
+                              }}
+                            >
+                              <Typography
+                                variant="caption"
+                                sx={{
+                                  fontWeight: 800,
+                                  color: "#f59e0b",
+                                  fontSize: "0.7rem",
+                                }}
+                              >
+                                {remocaoPercent}%
+                              </Typography>
+                            </Box>
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                color: "#f59e0b",
+                                fontWeight: 700,
+                                fontSize: "0.65rem",
+                                textTransform: "uppercase",
+                                letterSpacing: "0.5px",
+                              }}
+                            >
+                              Remoção
+                            </Typography>
+                          </Box>
                         </Box>
                       </Box>
-                    </Box>
-                  </Box>
+                    </CardContent>
+                  </Card>
                 </Fade>
               )
             })}
           </Box>
-
-          {/* Gráfico comparativo de todas as PAs */}
-          {/* Componente compactos em linha para cada PA */}
         </Box>
 
-        {/* Nova Seção: Comparativo de Recursos */}
+        {/* Comparativo de Recursos */}
         <Box sx={{ mb: 5 }}>
           <Typography
             variant="h5"
@@ -1420,7 +1318,7 @@ export default function FleetDashboard() {
             >
               <BarChart sx={{ color: themeColors.secondary.main }} />
             </Box>
-            Comparativo de Recursos 
+            Comparativo de Recursos
           </Typography>
 
           <Box
@@ -1433,16 +1331,8 @@ export default function FleetDashboard() {
               gap: 3,
             }}
           >
-            <BarChartCard
-              title="Comparativo de Recursos - Todas as PAs"
-              data={Object.entries(data.contagem_por_garagem_e_servico).map(([paName, paData]) => ({
-                name: paName,
-                veiculos: Object.values(paData).reduce((sum, service) => sum + service.veiculos, 0),
-                motoristas: Object.values(paData).reduce((sum, service) => sum + service.motoristas, 0),
-                coletores: Object.values(paData).reduce((sum, service) => sum + service.coletores, 0),
-              }))}
-              height={350}
-            />
+            <BarChartCard title="Comparativo de Recursos - Todas as PAs" data={locationData} height={350} />
+
             <Card
               sx={{
                 height: 470,
@@ -1491,29 +1381,17 @@ export default function FleetDashboard() {
                   </Typography>
                 </Box>
 
-                {/* Cards de distribuição por PA */}
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 2, height: "calc(100% - 100px)" }}>
-                  {Object.entries(data.contagem_por_garagem_e_servico).map(([paName, paData], index) => {
-                    const totalPA = Object.values(paData).reduce(
-                      (sum, service) => sum + service.veiculos + service.motoristas + service.coletores,
-                      0,
-                    )
-                    const totalGeral = Object.entries(data.contagem_por_garagem_e_servico).reduce(
-                      (sum, [_, paData]) =>
-                        sum +
-                        Object.values(paData).reduce(
-                          (paSum, service) => paSum + service.veiculos + service.motoristas + service.coletores,
-                          0,
-                        ),
-                      0,
-                    )
+                  {locationData.map((paData, index) => {
+                    const totalPA = paData.veiculos + paData.motoristas + paData.coletores
+                    const totalGeral = totalVeiculos + totalMotoristas + totalColetores
                     const percentage = totalGeral > 0 ? Math.round((totalPA / totalGeral) * 100) : 0
                     const isActive = totalPA > 0
                     const paColor = isActive ? ["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6"][index] : "#e2e8f0"
 
                     return (
                       <Box
-                        key={paName}
+                        key={paData.name}
                         sx={{
                           display: "flex",
                           alignItems: "center",
@@ -1528,7 +1406,6 @@ export default function FleetDashboard() {
                           },
                         }}
                       >
-                        {/* Indicador visual */}
                         <Box
                           sx={{
                             width: 12,
@@ -1540,7 +1417,6 @@ export default function FleetDashboard() {
                           }}
                         />
 
-                        {/* Nome da PA */}
                         <Typography
                           variant="h6"
                           sx={{
@@ -1550,10 +1426,9 @@ export default function FleetDashboard() {
                             minWidth: "40px",
                           }}
                         >
-                          {paName}
+                          {paData.name}
                         </Typography>
 
-                        {/* Barra de progresso */}
                         <Box sx={{ flex: 1, mx: 2 }}>
                           <Box
                             sx={{
@@ -1576,7 +1451,6 @@ export default function FleetDashboard() {
                           </Box>
                         </Box>
 
-                        {/* Valores */}
                         <Box sx={{ textAlign: "right", minWidth: "80px" }}>
                           <Typography
                             variant="h6"
@@ -1604,7 +1478,6 @@ export default function FleetDashboard() {
                     )
                   })}
 
-                  {/* Resumo total */}
                   <Box
                     sx={{
                       mt: "auto",
@@ -1633,16 +1506,7 @@ export default function FleetDashboard() {
                         fontSize: "1.4rem",
                       }}
                     >
-                      {Object.entries(data.contagem_por_garagem_e_servico).reduce(
-                        (sum, [_, paData]) =>
-                          sum +
-                          Object.values(paData).reduce(
-                            (paSum, service) => paSum + service.veiculos + service.motoristas + service.coletores,
-                            0,
-                          ),
-                        0,
-                      )}{" "}
-                      recursos
+                      {totalVeiculos + totalMotoristas + totalColetores} recursos
                     </Typography>
                   </Box>
                 </Box>
