@@ -5,13 +5,9 @@ import {
   AppBar,
   Toolbar,
   Typography,
-  Card,
-  CardContent,
-  CardHeader,
   Box,
   Container,
   IconButton,
-  Divider,
   useMediaQuery,
   useTheme,
   alpha,
@@ -29,9 +25,6 @@ import {
   Today,
   Refresh,
   Menu as MenuIcon,
-  Timeline,
-  PieChart as PieChartIcon,
-  Warehouse,
   RecyclingRounded,
   Home,
 } from "@mui/icons-material"
@@ -44,6 +37,7 @@ import EquipmentChart from "../../components/equipament_chart"
 import WorkforceChart from "../../components/work_chart"
 import PADistributionChart from "../../components/pa_chart"
 import CollectionTypeChart from "../../components/coleta_chart"
+import { getDashGeral } from "../../service/geral"
 
 // Animation keyframes
 const keyframes = {
@@ -227,80 +221,19 @@ const themeColors = {
   divider: "rgba(226, 232, 240, 0.8)",
 }
 
-// Dados de exemplo para Coleta Domiciliar
-const domiciliarEquipamentos = [
-  { pa: "1", previsto: 15, realizado: 15, manutencao: 0, reservas: 0 },
-  { pa: "2", previsto: 14, realizado: 15, manutencao: 0, reservas: 1 },
-  { pa: "3", previsto: 15, realizado: 15, manutencao: 0, reservas: 0 },
-  { pa: "4", previsto: 15, realizado: 14, manutencao: 1, reservas: 2 },
-]
+// Valores fixos de previsto para RSU/Domiciliar
+const PREVISTO_RSU = {
+  equipamentos: 45,
+  coletores: 178,
+  motoristas: 59,
+}
 
-const domiciliarMaoDeObra = [
-  { pa: "1", previstoMotorista: 15, realizadoMotorista: 15, previstoColetores: 45, realizadoColetores: 44, faltas: 1 },
-  { pa: "2", previstoMotorista: 14, realizadoMotorista: 15, previstoColetores: 42, realizadoColetores: 34, faltas: 8 },
-  { pa: "3", previstoMotorista: 15, realizadoMotorista: 15, previstoColetores: 45, realizadoColetores: 44, faltas: 1 },
-  { pa: "4", previstoMotorista: 15, realizadoMotorista: 14, previstoColetores: 45, realizadoColetores: 31, faltas: 14 },
-]
-
-const domiciliarResumo = [
-  { label: "Mot. Previsto", value: 59 },
-  { label: "Mot. Realizado", value: 59 },
-  { label: "Col. Previsto", value: 178 },
-  { label: "Col. Realizado", value: 142 },
-  { label: "Faltas", value: 36 },
-  { label: "Faltas Totais", value: 36 },
-]
-
-// Dados de exemplo para Coleta Seletiva
-const seletivaEquipamentos = [
-  { pa: "1", previsto: 5, realizado: 6, manutencao: 0, reservas: 0 },
-  { pa: "2", previsto: 5, realizado: 5, manutencao: 0, reservas: 0 },
-  { pa: "3", previsto: 4, realizado: 4, manutencao: 0, reservas: 0 },
-  { pa: "4", previsto: 5, realizado: 5, manutencao: 0, reservas: 0 },
-]
-
-const seletivaMaoDeObra = [
-  { pa: "1", previstoMotorista: 4, realizadoMotorista: 6, previstoColetores: 8, realizadoColetores: 8, faltas: 0 },
-  { pa: "2", previstoMotorista: 5, realizadoMotorista: 5, previstoColetores: 10, realizadoColetores: 10, faltas: 0 },
-  { pa: "3", previstoMotorista: 4, realizadoMotorista: 4, previstoColetores: 8, realizadoColetores: 4, faltas: 4 },
-  { pa: "4", previstoMotorista: 5, realizadoMotorista: 5, previstoColetores: 10, realizadoColetores: 10, faltas: 0 },
-]
-
-const seletivaResumo = [
-  { label: "Mot. Previsto", value: 18 },
-  { label: "Mot. Realizado", value: 20 },
-  { label: "Col. Previsto", value: 36 },
-  { label: "Col. Realizado", value: 32 },
-  { label: "Faltas", value: 4 },
-  { label: "Faltas Totais", value: 4 },
-]
-
-// Dados para gráficos
-const equipamentosChartData = [
-  { name: "PA1", previsto: 20, realizado: 21, manutencao: 0, reservas: 0 },
-  { name: "PA2", previsto: 19, realizado: 20, manutencao: 0, reservas: 1 },
-  { name: "PA3", previsto: 19, realizado: 19, manutencao: 0, reservas: 0 },
-  { name: "PA4", previsto: 20, realizado: 19, manutencao: 1, reservas: 2 },
-]
-
-const maoDeObraChartData = [
-  { name: "PA1", motoristas: 21, coletores: 52 },
-  { name: "PA2", motoristas: 20, coletores: 44 },
-  { name: "PA3", motoristas: 19, coletores: 48 },
-  { name: "PA4", motoristas: 19, coletores: 41 },
-]
-
-const paDistributionData = [
-  { name: "PA1", value: 21, color: themeColors.primary.main },
-  { name: "PA2", value: 20, color: themeColors.success.main },
-  { name: "PA3", value: 19, color: themeColors.warning.main },
-  { name: "PA4", value: 19, color: themeColors.error.main },
-]
-
-const collectionTypeData = [
-  { name: "Domiciliar", value: 70, color: themeColors.primary.main },
-  { name: "Seletiva", value: 20, color: themeColors.success.main },
-]
+// Valores fixos de previsto para Seletiva
+const PREVISTO_SELETIVA = {
+  equipamentos: 45,
+  coletores: 36,
+  motoristas: 18,
+}
 
 export default function RCUControlDashboard() {
   const theme = useTheme()
@@ -308,6 +241,8 @@ export default function RCUControlDashboard() {
   const isTablet = useMediaQuery(theme.breakpoints.down("md"))
 
   // State variables
+  const [currentTime, setCurrentTime] = useState("")
+  const [isClient, setIsClient] = useState(false)
   const [loading, setLoading] = useState(true)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [snackbarOpen, setSnackbarOpen] = useState(false)
@@ -317,22 +252,448 @@ export default function RCUControlDashboard() {
   const [highlightedStat, setHighlightedStat] = useState(null)
   const [chartsLoaded, setChartsLoaded] = useState(false)
 
+  // API Data State
+  const [apiData, setApiData] = useState(null)
+  const [currentDate, setCurrentDate] = useState("")
+
+  // Dados processados da API
+  const [domiciliarEquipamentos, setDomiciliarEquipamentos] = useState([])
+  const [domiciliarMaoDeObra, setDomiciliarMaoDeObra] = useState([])
+  const [domiciliarResumo, setDomiciliarResumo] = useState([])
+  const [seletivaEquipamentos, setSeletivaEquipamentos] = useState([])
+  const [seletivaMaoDeObra, setSeletivaMaoDeObra] = useState([])
+  const [seletivaResumo, setSeletivaResumo] = useState([])
+  const [equipamentosChartData, setEquipamentosChartData] = useState([])
+  const [maoDeObraChartData, setMaoDeObraChartData] = useState([])
+  const [paDistributionData, setPaDistributionData] = useState([])
+  const [collectionTypeData, setCollectionTypeData] = useState([])
+
+  const [domiciliarEquipamentosChartData, setDomiciliarEquipamentosChartData] = useState([])
+  const [domiciliarMaoDeObraChartData, setDomiciliarMaoDeObraChartData] = useState([])
+  const [domiciliarPaDistributionData, setDomiciliarPaDistributionData] = useState([])
+  const [domiciliarCollectionTypeData, setDomiciliarCollectionTypeData] = useState([])
+
+  const [seletivaEquipamentosChartData, setSeletivaEquipamentosChartData] = useState([])
+  const [seletivaMaoDeObraChartData, setSeletivaMaoDeObraChartData] = useState([])
+  const [seletivaPaDistributionData, setSeletivaPaDistributionData] = useState([])
+  const [seletivaCollectionTypeData, setSeletivaCollectionTypeData] = useState([])
+
   // Estatísticas gerais
   const [statsData, setStatsData] = useState({
-    totalEquipamentos: 78,
-    totalMotoristas: 77,
-    totalColetores: 174,
-    totalFaltas: 40,
+    domiciliar: {
+      totalEquipamentos: 0,
+      totalMotoristas: 0,
+      totalColetores: 0,
+      totalFaltas: 0,
+    },
+    seletiva: {
+      totalEquipamentos: 0,
+      totalMotoristas: 0,
+      totalColetores: 0,
+      totalFaltas: 0,
+    },
   })
 
-  // Simular carregamento de dados
+  // Corrigir erro de hidratação
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false)
-      setChartsLoaded(true)
-    }, 1500)
+    setIsClient(true)
+  }, [])
 
-    return () => clearTimeout(timer)
+  // Atualizar relógio a cada segundo
+  useEffect(() => {
+    if (!isClient) return
+
+    const updateTime = () => {
+      const now = new Date()
+      setCurrentTime(
+        now.toLocaleTimeString("pt-BR", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        }),
+      )
+    }
+
+    updateTime() // Atualizar imediatamente
+    const timer = setInterval(updateTime, 1000)
+
+    return () => clearInterval(timer)
+  }, [isClient])
+
+  // Função para processar dados da API
+  const processApiData = (data) => {
+    if (!data) return
+
+    console.log("Processando dados da API:", data)
+
+    // Processar dados para Domiciliar (RSU)
+    const domiciliarEquip = []
+    const domiciliarMO = []
+    let totalDomiciliarEquipRealizado = 0
+    let totalDomiciliarMotoristasRealizado = 0
+    let totalDomiciliarColetoresRealizado = 0
+
+    // Processar dados para Seletiva
+    const seletivaEquip = []
+    const seletivaMO = []
+    let totalSeletivaEquipRealizado = 0
+    let totalSeletivaMotoristasRealizado = 0
+    let totalSeletivaColetoresRealizado = 0
+
+    // Dados para gráficos
+    const equipChartData = []
+    const moChartData = []
+    const paDistData = []
+
+    // Processar cada PA
+    const pasArray = ["PA1", "PA2", "PA3", "PA4"]
+
+    pasArray.forEach((pa, index) => {
+      const paNumber = (index + 1).toString()
+      const paData = data[pa]
+
+      console.log(`Processando ${pa}:`, paData)
+
+      if (paData) {
+        // Domiciliar (RSU na API)
+        const domiciliar = paData.Domiciliar
+        if (domiciliar) {
+          console.log(`${pa} - Domiciliar:`, domiciliar)
+
+          const realizadoVeiculos = domiciliar.veiculos || 0
+          const realizadoMotoristas = domiciliar.motoristas || 0
+          const realizadoColetores = domiciliar.coletores || 0
+
+          // Para equipamentos, usar o valor de veículos como base
+          domiciliarEquip.push({
+            pa: paNumber,
+            previsto: Math.round(PREVISTO_RSU.equipamentos / 4), // Dividir por 4 PAs
+            realizado: realizadoVeiculos,
+            manutencao: 0,
+            reservas: 0,
+          })
+
+          domiciliarMO.push({
+            pa: paNumber,
+            previstoMotorista: Math.round(PREVISTO_RSU.motoristas / 4), // Dividir por 4 PAs
+            realizadoMotorista: realizadoMotoristas,
+            previstoColetores: Math.round(PREVISTO_RSU.coletores / 4), // Dividir por 4 PAs
+            realizadoColetores: realizadoColetores,
+            faltas:
+              Math.round(PREVISTO_RSU.motoristas / 4) -
+              realizadoMotoristas +
+              (Math.round(PREVISTO_RSU.coletores / 4) - realizadoColetores),
+          })
+
+          totalDomiciliarEquipRealizado += realizadoVeiculos
+          totalDomiciliarMotoristasRealizado += realizadoMotoristas
+          totalDomiciliarColetoresRealizado += realizadoColetores
+        } else {
+          // Adicionar dados zerados se não houver dados
+          domiciliarEquip.push({
+            pa: paNumber,
+            previsto: Math.round(PREVISTO_RSU.equipamentos / 4),
+            realizado: 0,
+            manutencao: 0,
+            reservas: 0,
+          })
+
+          domiciliarMO.push({
+            pa: paNumber,
+            previstoMotorista: Math.round(PREVISTO_RSU.motoristas / 4),
+            realizadoMotorista: 0,
+            previstoColetores: Math.round(PREVISTO_RSU.coletores / 4),
+            realizadoColetores: 0,
+            faltas: Math.round(PREVISTO_RSU.motoristas / 4) + Math.round(PREVISTO_RSU.coletores / 4),
+          })
+        }
+
+        // Seletiva
+        const seletiva = paData.Seletiva
+        if (seletiva) {
+          console.log(`${pa} - Seletiva:`, seletiva)
+
+          const realizadoVeiculos = seletiva.veiculos || 0
+          const realizadoMotoristas = seletiva.motoristas || 0
+          const realizadoColetores = seletiva.coletores || 0
+
+          seletivaEquip.push({
+            pa: paNumber,
+            previsto: Math.round(PREVISTO_SELETIVA.equipamentos / 4),
+            realizado: realizadoVeiculos,
+            manutencao: 0,
+            reservas: 0,
+          })
+
+          seletivaMO.push({
+            pa: paNumber,
+            previstoMotorista: Math.round(PREVISTO_SELETIVA.motoristas / 4),
+            realizadoMotorista: realizadoMotoristas,
+            previstoColetores: Math.round(PREVISTO_SELETIVA.coletores / 4),
+            realizadoColetores: realizadoColetores,
+            faltas:
+              Math.round(PREVISTO_SELETIVA.motoristas / 4) -
+              realizadoMotoristas +
+              (Math.round(PREVISTO_SELETIVA.coletores / 4) - realizadoColetores),
+          })
+
+          totalSeletivaEquipRealizado += realizadoVeiculos
+          totalSeletivaMotoristasRealizado += realizadoMotoristas
+          totalSeletivaColetoresRealizado += realizadoColetores
+        } else {
+          // Adicionar dados zerados se não houver dados
+          seletivaEquip.push({
+            pa: paNumber,
+            previsto: Math.round(PREVISTO_SELETIVA.equipamentos / 4),
+            realizado: 0,
+            manutencao: 0,
+            reservas: 0,
+          })
+
+          seletivaMO.push({
+            pa: paNumber,
+            previstoMotorista: Math.round(PREVISTO_SELETIVA.motoristas / 4),
+            realizadoMotorista: 0,
+            previstoColetores: Math.round(PREVISTO_SELETIVA.coletores / 4),
+            realizadoColetores: 0,
+            faltas: Math.round(PREVISTO_SELETIVA.motoristas / 4) + Math.round(PREVISTO_SELETIVA.coletores / 4),
+          })
+        }
+
+        // Dados para gráficos
+        const totalEquipPA = (domiciliar?.veiculos || 0) + (seletiva?.veiculos || 0)
+        const totalMotoristasPA = (domiciliar?.motoristas || 0) + (seletiva?.motoristas || 0)
+        const totalColetoresPA = (domiciliar?.coletores || 0) + (seletiva?.coletores || 0)
+
+        equipChartData.push({
+          name: `PA${paNumber}`,
+          previsto: Math.round((PREVISTO_RSU.equipamentos + PREVISTO_SELETIVA.equipamentos) / 4),
+          realizado: totalEquipPA,
+          manutencao: 0,
+          reservas: 0,
+        })
+
+        moChartData.push({
+          name: `PA${paNumber}`,
+          motoristas: totalMotoristasPA,
+          coletores: totalColetoresPA,
+        })
+
+        paDistData.push({
+          name: `PA${paNumber}`,
+          value: totalEquipPA,
+          color: [themeColors.primary.main, themeColors.success.main, themeColors.warning.main, themeColors.error.main][
+            index
+          ],
+        })
+      }
+    })
+
+    // Dados específicos para gráficos da Seletiva
+    const seletivaEquipChartData = []
+    const seletivaMoChartData = []
+    const seletivaPaDistData = []
+
+    // Dados específicos para gráficos da Domiciliar
+    const domiciliarEquipChartData = []
+    const domiciliarMoChartData = []
+    const domiciliarPaDistData = []
+
+    // Processar dados específicos por seção
+    pasArray.forEach((pa, index) => {
+      const paNumber = (index + 1).toString()
+      const paData = data[pa]
+
+      if (paData) {
+        const domiciliar = paData.Domiciliar
+        const seletiva = paData.Seletiva
+
+        // Gráficos específicos para Domiciliar
+        domiciliarEquipChartData.push({
+          name: `PA${paNumber}`,
+          previsto: Math.round(PREVISTO_RSU.equipamentos / 4),
+          realizado: domiciliar?.veiculos || 0,
+          manutencao: 0,
+          reservas: 0,
+        })
+
+        domiciliarMoChartData.push({
+          name: `PA${paNumber}`,
+          motoristas: domiciliar?.motoristas || 0,
+          coletores: domiciliar?.coletores || 0,
+        })
+
+        domiciliarPaDistData.push({
+          name: `PA${paNumber}`,
+          value: domiciliar?.veiculos || 0,
+          color: [themeColors.primary.main, themeColors.success.main, themeColors.warning.main, themeColors.error.main][
+            index
+          ],
+        })
+
+        // Gráficos específicos para Seletiva
+        seletivaEquipChartData.push({
+          name: `PA${paNumber}`,
+          previsto: Math.round(PREVISTO_SELETIVA.equipamentos / 4),
+          realizado: seletiva?.veiculos || 0,
+          manutencao: 0,
+          reservas: 0,
+        })
+
+        seletivaMoChartData.push({
+          name: `PA${paNumber}`,
+          motoristas: seletiva?.motoristas || 0,
+          coletores: seletiva?.coletores || 0,
+        })
+
+        seletivaPaDistData.push({
+          name: `PA${paNumber}`,
+          value: seletiva?.veiculos || 0,
+          color: [themeColors.primary.main, themeColors.success.main, themeColors.warning.main, themeColors.error.main][
+            index
+          ],
+        })
+      }
+    })
+
+    // Dados específicos para tipos de coleta por seção
+    const domiciliarCollectionData = [
+      { name: "Domiciliar", value: totalDomiciliarEquipRealizado, color: themeColors.primary.main },
+    ]
+
+    const seletivaCollectionData = [
+      { name: "Seletiva", value: totalSeletivaEquipRealizado, color: themeColors.success.main },
+    ]
+
+    // Calcular faltas totais e separadas
+    const totalDomiciliarFaltas =
+      PREVISTO_RSU.motoristas -
+      totalDomiciliarMotoristasRealizado +
+      (PREVISTO_RSU.coletores - totalDomiciliarColetoresRealizado)
+    const totalSeletivaFaltas =
+      PREVISTO_SELETIVA.motoristas -
+      totalSeletivaMotoristasRealizado +
+      (PREVISTO_SELETIVA.coletores - totalSeletivaColetoresRealizado)
+
+    // Faltas separadas
+    const faltasMotoristasRSU = PREVISTO_RSU.motoristas - totalDomiciliarMotoristasRealizado
+    const faltasColetoresRSU = PREVISTO_RSU.coletores - totalDomiciliarColetoresRealizado
+    const faltasMotoristasSelativa = PREVISTO_SELETIVA.motoristas - totalSeletivaMotoristasRealizado
+    const faltasColetoresSeletiva = PREVISTO_SELETIVA.coletores - totalSeletivaColetoresRealizado
+
+    console.log("Totais calculados:")
+    console.log(
+      "Domiciliar - Equipamentos:",
+      totalDomiciliarEquipRealizado,
+      "Motoristas:",
+      totalDomiciliarMotoristasRealizado,
+      "Coletores:",
+      totalDomiciliarColetoresRealizado,
+      "Faltas:",
+      totalDomiciliarFaltas,
+    )
+    console.log(
+      "Seletiva - Equipamentos:",
+      totalSeletivaEquipRealizado,
+      "Motoristas:",
+      totalSeletivaMotoristasRealizado,
+      "Coletores:",
+      totalSeletivaColetoresRealizado,
+      "Faltas:",
+      totalSeletivaFaltas,
+    )
+
+    // Resumos com faltas separadas
+    const domiciliarRes = [
+      { label: "Mot. Previsto", value: PREVISTO_RSU.motoristas },
+      { label: "Mot. Realizado", value: totalDomiciliarMotoristasRealizado },
+      { label: "Mot. Faltantes", value: faltasMotoristasRSU },
+      { label: "Col. Previsto", value: PREVISTO_RSU.coletores },
+      { label: "Col. Realizado", value: totalDomiciliarColetoresRealizado },
+      { label: "Col. Faltantes", value: faltasColetoresRSU },
+      { label: "Faltas Totais", value: totalDomiciliarFaltas },
+    ]
+
+    const seletivaRes = [
+      { label: "Mot. Previsto", value: PREVISTO_SELETIVA.motoristas },
+      { label: "Mot. Realizado", value: totalSeletivaMotoristasRealizado },
+      { label: "Mot. Faltantes", value: faltasMotoristasSelativa },
+      { label: "Col. Previsto", value: PREVISTO_SELETIVA.coletores },
+      { label: "Col. Realizado", value: totalSeletivaColetoresRealizado },
+      { label: "Col. Faltantes", value: faltasColetoresSeletiva },
+      { label: "Faltas Totais", value: totalSeletivaFaltas },
+    ]
+
+    const collectionData = [
+      { name: "Domiciliar", value: totalDomiciliarEquipRealizado, color: themeColors.primary.main },
+      { name: "Seletiva", value: totalSeletivaEquipRealizado, color: themeColors.success.main },
+    ]
+
+    // Atualizar states
+    setDomiciliarEquipamentos(domiciliarEquip)
+    setDomiciliarMaoDeObra(domiciliarMO)
+    setDomiciliarResumo(domiciliarRes)
+    setSeletivaEquipamentos(seletivaEquip)
+    setSeletivaMaoDeObra(seletivaMO)
+    setSeletivaResumo(seletivaRes)
+    setEquipamentosChartData(equipChartData)
+    setMaoDeObraChartData(moChartData)
+    setPaDistributionData(paDistData)
+    setCollectionTypeData(collectionData)
+
+    // Atualizar states específicos
+    setDomiciliarEquipamentosChartData(domiciliarEquipChartData)
+    setDomiciliarMaoDeObraChartData(domiciliarMoChartData)
+    setDomiciliarPaDistributionData(domiciliarPaDistData)
+    setDomiciliarCollectionTypeData(domiciliarCollectionData)
+
+    setSeletivaEquipamentosChartData(seletivaEquipChartData)
+    setSeletivaMaoDeObraChartData(seletivaMoChartData)
+    setSeletivaPaDistributionData(seletivaPaDistData)
+    setSeletivaCollectionTypeData(seletivaCollectionData)
+
+    setStatsData({
+      domiciliar: {
+        totalEquipamentos: totalDomiciliarEquipRealizado,
+        totalMotoristas: totalDomiciliarMotoristasRealizado,
+        totalColetores: totalDomiciliarColetoresRealizado,
+        totalFaltas: totalDomiciliarFaltas,
+      },
+      seletiva: {
+        totalEquipamentos: totalSeletivaEquipRealizado,
+        totalMotoristas: totalSeletivaMotoristasRealizado,
+        totalColetores: totalSeletivaColetoresRealizado,
+        totalFaltas: totalSeletivaFaltas,
+      },
+    })
+
+    console.log("Dados processados com sucesso!")
+  }
+
+  // Carregar dados da API
+  const loadData = async () => {
+    try {
+      setLoading(true)
+      console.log("Carregando dados da API...")
+      const data = await getDashGeral()
+      console.log("Dados recebidos da API:", data)
+      setApiData(data)
+      setCurrentDate(data.data || "")
+      processApiData(data)
+      setChartsLoaded(true)
+    } catch (error) {
+      console.error("Erro ao carregar dados:", error)
+      setSnackbarMessage("Erro ao carregar dados da API: " + error.message)
+      setSnackbarSeverity("error")
+      setSnackbarOpen(true)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Carregar dados na inicialização
+  useEffect(() => {
+    loadData()
   }, [])
 
   // Handle sidebar collapse
@@ -347,15 +708,10 @@ export default function RCUControlDashboard() {
 
   // Handle refresh data
   const handleRefreshData = () => {
-    setLoading(true)
+    loadData()
     setSnackbarMessage("Dados atualizados com sucesso!")
     setSnackbarSeverity("success")
     setSnackbarOpen(true)
-
-    // Simular atualização de dados
-    setTimeout(() => {
-      setLoading(false)
-    }, 1000)
   }
 
   // Handle snackbar close
@@ -410,74 +766,135 @@ export default function RCUControlDashboard() {
           <AppBar
             position="sticky"
             sx={{
-              backgroundColor: `${themeColors.background.paper} !important`,
-              color: `${themeColors.text.primary} !important`,
-              boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05) !important",
+              backgroundColor: "#ffffff",
+              color: themeColors.text.primary,
+              boxShadow: "0 2px 12px rgba(0, 0, 0, 0.08)",
               position: "relative",
               zIndex: 10,
               transition: "all 0.3s ease",
+              borderBottom: `2px solid ${alpha(themeColors.primary.main, 0.1)}`,
             }}
           >
-            <Toolbar>
+            <Toolbar sx={{ minHeight: { xs: 64, sm: 80 }, px: { xs: 2, sm: 3 } }}>
               {isMobile && (
-                <IconButton edge="start" color="inherit" aria-label="menu" sx={{ mr: 2 }}>
+                <IconButton
+                  edge="start"
+                  color="inherit"
+                  aria-label="menu"
+                  sx={{
+                    mr: 2,
+                    backgroundColor: alpha(themeColors.primary.main, 0.1),
+                    "&:hover": { backgroundColor: alpha(themeColors.primary.main, 0.2) },
+                  }}
+                >
                   <MenuIcon />
                 </IconButton>
               )}
+
               <Box
                 sx={{
                   display: "flex",
-                  flexDirection: "column",
+                  alignItems: "center",
                   flexGrow: 1,
+                  gap: 3,
                 }}
               >
-                <Box sx={{ display: "flex", alignItems: "center" }}>
-                  <Box
-                    sx={{
-                      width: "52px",
-                      height: "52px",
-                      borderRadius: "14px",
-                      background: `linear-gradient(135deg, ${themeColors.primary.main} 0%, ${themeColors.primary.light} 100%)`,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      mr: 2,
-                      boxShadow: `0 6px 16px ${alpha(themeColors.primary.main, 0.4)}`,
-                      animation: `${keyframes.pulse} 2s ease-in-out infinite, ${keyframes.glow} 3s infinite ease-in-out`,
-                    }}
-                  >
-                    <LocalShipping sx={{ color: "white", fontSize: "2rem" }} />
+                {/* Logo e Título */}
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                 
+
+                  <Box>
+                    <Typography
+                      variant="h4"
+                      sx={{
+                        fontWeight: 800,
+                        fontSize: { xs: "1.5rem", sm: "2rem", md: "2.2rem" },
+                        color: themeColors.text.primary,
+                        letterSpacing: "-0.02em",
+                        lineHeight: 1.2,
+                      }}
+                    >
+                      Controle de Rsu e Seletiva
+                    </Typography>
+                    <Typography
+                      variant="subtitle1"
+                      sx={{
+                        color: themeColors.text.secondary,
+                        fontSize: { xs: "0.85rem", sm: "0.95rem" },
+                        fontWeight: 500,
+                        letterSpacing: "0.5px",
+                      }}
+                    >
+                      Sistema de Gestão Operacional
+                    </Typography>
                   </Box>
-                  <Typography
-                    variant="h5"
-                    sx={{
-                      fontWeight: 800,
-                      fontSize: { xs: "1.35rem", sm: "1.8rem" },
-                      color: themeColors.text.primary,
-                      letterSpacing: "-0.02em",
-                    }}
-                  >
-                    Controle de RCU
-                  </Typography>
                 </Box>
-                <Typography
-                  variant="subtitle1"
+
+                {/* Spacer */}
+                <Box sx={{ flexGrow: 1 }} />
+
+                {/* Data e Relógio */}
+                <Box
                   sx={{
-                    color: themeColors.text.secondary,
-                    fontSize: { xs: "0.85rem", sm: "0.95rem" },
-                    ml: { xs: "0", sm: "4.5rem" },
-                    mt: "-0.3rem",
-                    fontWeight: 500,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 2,
+                    backgroundColor: alpha(themeColors.primary.main, 0.05),
+                    borderRadius: "12px",
+                    padding: { xs: "8px 12px", sm: "12px 16px" },
+                    border: `1px solid ${alpha(themeColors.primary.main, 0.1)}`,
                   }}
                 >
-                  12/05/2025
-                </Typography>
-              </Box>
-              <Box sx={{ display: "flex", gap: 1 }}>
+                  <Box sx={{ textAlign: "right" }}>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: themeColors.text.secondary,
+                        fontSize: { xs: "0.75rem", sm: "0.8rem" },
+                        fontWeight: 500,
+                        letterSpacing: "0.5px",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      {currentDate || "Carregando..."}
+                    </Typography>
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        color: themeColors.text.primary,
+                        fontSize: { xs: "1rem", sm: "1.1rem" },
+                        fontWeight: 700,
+                        fontFamily: "'JetBrains Mono', 'Courier New', monospace",
+                        letterSpacing: "1px",
+                      }}
+                    >
+                      {isClient ? currentTime : "--:--:--"}
+                    </Typography>
+                  </Box>
+                  <Box
+                    sx={{
+                      width: "8px",
+                      height: "8px",
+                      borderRadius: "50%",
+                      backgroundColor: "#10b981",
+                      animation: `${keyframes.pulse} 2s infinite`,
+                      boxShadow: "0 0 8px rgba(16, 185, 129, 0.6)",
+                    }}
+                  />
+                </Box>
+
+                {/* Botão de Refresh */}
                 <IconButton
                   sx={{
                     color: themeColors.text.secondary,
-                    "&:hover": { color: themeColors.primary.main },
+                    backgroundColor: alpha(themeColors.primary.main, 0.05),
+                    border: `1px solid ${alpha(themeColors.primary.main, 0.1)}`,
+                    "&:hover": {
+                      backgroundColor: alpha(themeColors.primary.main, 0.1),
+                      transform: "scale(1.05)",
+                      color: themeColors.primary.main,
+                    },
+                    transition: "all 0.2s ease",
                   }}
                   onClick={handleRefreshData}
                 >
@@ -485,10 +902,14 @@ export default function RCUControlDashboard() {
                 </IconButton>
               </Box>
             </Toolbar>
-            <Divider
+
+            {/* Linha decorativa */}
+            <Box
               sx={{
-                height: "1px",
-                background: `${alpha(themeColors.primary.main, 0.2)}`,
+                height: "3px",
+                background: `linear-gradient(90deg, ${themeColors.primary.main} 0%, ${themeColors.success.main} 50%, ${themeColors.info.main} 100%)`,
+                animation: `${keyframes.gradientShift} 3s ease infinite`,
+                backgroundSize: "200% 200%",
               }}
             />
           </AppBar>
@@ -575,7 +996,7 @@ export default function RCUControlDashboard() {
                         <Box>
                           <StatCard
                             title="Total de Equipamentos"
-                            value="59"
+                            value={statsData.domiciliar.totalEquipamentos.toString()}
                             icon={<LocalShipping />}
                             color={themeColors.primary.main}
                             highlight={highlightedStat === "totalEquipamentos"}
@@ -586,7 +1007,7 @@ export default function RCUControlDashboard() {
                         <Box>
                           <StatCard
                             title="Total de Motoristas"
-                            value="59"
+                            value={statsData.domiciliar.totalMotoristas.toString()}
                             icon={<People />}
                             color={themeColors.secondary.main}
                             highlight={highlightedStat === "totalMotoristas"}
@@ -597,7 +1018,7 @@ export default function RCUControlDashboard() {
                         <Box>
                           <StatCard
                             title="Total de Coletores"
-                            value="142"
+                            value={statsData.domiciliar.totalColetores.toString()}
                             icon={<Engineering />}
                             color={themeColors.warning.main}
                             highlight={highlightedStat === "totalColetores"}
@@ -608,7 +1029,7 @@ export default function RCUControlDashboard() {
                         <Box>
                           <StatCard
                             title="Total de Faltas"
-                            value="36"
+                            value={statsData.domiciliar.totalFaltas.toString()}
                             icon={<Today />}
                             color={themeColors.error.main}
                             highlight={highlightedStat === "totalFaltas"}
@@ -659,7 +1080,7 @@ export default function RCUControlDashboard() {
                         <Box sx={{ width: { xs: "100%", md: "50%" } }}>
                           <EquipmentChart
                             title="Equipamentos por PA"
-                            data={equipamentosChartData}
+                            data={domiciliarEquipamentosChartData}
                             themeColors={themeColors}
                             chartsLoaded={chartsLoaded}
                           />
@@ -669,7 +1090,7 @@ export default function RCUControlDashboard() {
                         <Box sx={{ width: { xs: "100%", md: "50%" } }}>
                           <WorkforceChart
                             title="Mão de Obra por PA"
-                            data={maoDeObraChartData}
+                            data={domiciliarMaoDeObraChartData}
                             themeColors={themeColors}
                             chartsLoaded={chartsLoaded}
                           />
@@ -682,7 +1103,7 @@ export default function RCUControlDashboard() {
                         <Box sx={{ width: { xs: "100%", md: "50%" } }}>
                           <PADistributionChart
                             title="Distribuição por PA"
-                            data={paDistributionData}
+                            data={domiciliarPaDistributionData}
                             themeColors={themeColors}
                             chartsLoaded={chartsLoaded}
                           />
@@ -692,7 +1113,7 @@ export default function RCUControlDashboard() {
                         <Box sx={{ width: { xs: "100%", md: "50%" } }}>
                           <CollectionTypeChart
                             title="Tipos de Coleta"
-                            data={collectionTypeData}
+                            data={domiciliarCollectionTypeData}
                             themeColors={themeColors}
                             chartsLoaded={chartsLoaded}
                           />
@@ -740,7 +1161,7 @@ export default function RCUControlDashboard() {
                         <Box>
                           <StatCard
                             title="Total de Equipamentos"
-                            value="19"
+                            value={statsData.seletiva.totalEquipamentos.toString()}
                             icon={<LocalShipping />}
                             color={themeColors.primary.main}
                             highlight={highlightedStat === "totalEquipamentos"}
@@ -751,7 +1172,7 @@ export default function RCUControlDashboard() {
                         <Box>
                           <StatCard
                             title="Total de Motoristas"
-                            value="20"
+                            value={statsData.seletiva.totalMotoristas.toString()}
                             icon={<People />}
                             color={themeColors.secondary.main}
                             highlight={highlightedStat === "totalMotoristas"}
@@ -762,7 +1183,7 @@ export default function RCUControlDashboard() {
                         <Box>
                           <StatCard
                             title="Total de Coletores"
-                            value="32"
+                            value={statsData.seletiva.totalColetores.toString()}
                             icon={<Engineering />}
                             color={themeColors.warning.main}
                             highlight={highlightedStat === "totalColetores"}
@@ -773,7 +1194,7 @@ export default function RCUControlDashboard() {
                         <Box>
                           <StatCard
                             title="Total de Faltas"
-                            value="4"
+                            value={statsData.seletiva.totalFaltas.toString()}
                             icon={<Today />}
                             color={themeColors.error.main}
                             highlight={highlightedStat === "totalFaltas"}
@@ -824,7 +1245,7 @@ export default function RCUControlDashboard() {
                         <Box sx={{ width: { xs: "100%", md: "50%" } }}>
                           <EquipmentChart
                             title="Equipamentos por PA"
-                            data={equipamentosChartData}
+                            data={seletivaEquipamentosChartData}
                             themeColors={themeColors}
                             chartsLoaded={chartsLoaded}
                           />
@@ -834,7 +1255,7 @@ export default function RCUControlDashboard() {
                         <Box sx={{ width: { xs: "100%", md: "50%" } }}>
                           <WorkforceChart
                             title="Mão de Obra por PA"
-                            data={maoDeObraChartData}
+                            data={seletivaMaoDeObraChartData}
                             themeColors={themeColors}
                             chartsLoaded={chartsLoaded}
                           />
@@ -847,7 +1268,7 @@ export default function RCUControlDashboard() {
                         <Box sx={{ width: { xs: "100%", md: "50%" } }}>
                           <PADistributionChart
                             title="Distribuição por PA"
-                            data={paDistributionData}
+                            data={seletivaPaDistributionData}
                             themeColors={themeColors}
                             chartsLoaded={chartsLoaded}
                           />
@@ -857,7 +1278,7 @@ export default function RCUControlDashboard() {
                         <Box sx={{ width: { xs: "100%", md: "50%" } }}>
                           <CollectionTypeChart
                             title="Tipos de Coleta"
-                            data={collectionTypeData}
+                            data={seletivaCollectionTypeData}
                             themeColors={themeColors}
                             chartsLoaded={chartsLoaded}
                           />
