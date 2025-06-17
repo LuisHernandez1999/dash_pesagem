@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import {
   AppBar,
   Toolbar,
@@ -43,7 +43,6 @@ import {
   ResponsiveContainer,
   Pie,
 } from "recharts"
-import { getDashGeral } from "../../service/geral"
 import { createTheme } from "@mui/material/styles"
 
 // No início do arquivo, adicionar breakpoint customizado
@@ -101,6 +100,9 @@ const themeColors = {
 
 // Cores dos gráficos
 const chartColors = ["#60a5fa", "#34d399", "#fbbf24", "#a78bfa", "#22d3ee", "#fb7185", "#a3e635", "#fb923c"]
+
+// Cores dos gráficos suaves
+const softChartColors = ["#64748b", "#94a3b8", "#cbd5e1", "#e2e8f0", "#f1f5f9", "#f8fafc"]
 
 // Componente de Card Estatístico
 const StatCard = ({ title, value, icon: Icon, color, subtitle, progress, delay = 0 }) => (
@@ -250,7 +252,7 @@ const StatCard = ({ title, value, icon: Icon, color, subtitle, progress, delay =
   </Grow>
 )
 
-// Componente de Gráfico de Pizza
+// Componente de Gráfico de Pizza - Versão moderna
 const PieChartCard = ({ title, data, height = 400 }) => (
   <Card
     sx={{
@@ -262,7 +264,7 @@ const PieChartCard = ({ title, data, height = 400 }) => (
       borderRadius: "24px",
       boxShadow: "0 8px 24px rgba(0, 0, 0, 0.08)",
       overflow: "hidden",
-      background: "#ffffff",
+      background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
       border: "1px solid #e2e8f0",
     }}
   >
@@ -274,7 +276,7 @@ const PieChartCard = ({ title, data, height = 400 }) => (
           justifyContent: "center",
           mb: 3,
           pb: 2,
-          borderBottom: "1px solid #f1f5f9",
+          borderBottom: "2px solid #f1f5f9",
         }}
       >
         <Box
@@ -282,66 +284,148 @@ const PieChartCard = ({ title, data, height = 400 }) => (
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            width: 40,
-            height: 40,
+            width: 48,
+            height: 48,
             borderRadius: "50%",
-            background: alpha("#8b5cf6", 0.1),
-            border: `1px solid ${alpha("#8b5cf6", 0.3)}`,
+            background: "linear-gradient(135deg, #64748b, #94a3b8)",
+            border: `2px solid ${alpha("#64748b", 0.3)}`,
             mr: 2,
+            boxShadow: "0 8px 16px rgba(100, 116, 139, 0.3)",
           }}
         >
-          <PieChart sx={{ fontSize: 20, color: "#8b5cf6" }} />
+          <PieChart sx={{ fontSize: 24, color: "#ffffff" }} />
         </Box>
         <Typography
           variant="h6"
           sx={{
-            fontWeight: 600,
+            fontWeight: 700,
             color: "#1e293b",
             fontSize: {
-              xs: "1.3rem",
-              xl: "1.3rem",
-              "2xl": "1.6rem", // Para TVs
+              xs: "1.4rem",
+              xl: "1.4rem",
+              "2xl": "1.7rem", // Para TVs
             },
           }}
         >
           {title}
         </Typography>
       </Box>
-      <ResponsiveContainer width="100%" height={height}>
-        <RechartsPieChart>
-          <Pie
-            data={data}
-            cx="50%"
-            cy="50%"
-            labelLine={false}
-            label={({ name, percent, value }) => `${name}: ${value} (${(percent * 100).toFixed(0)}%)`}
-            outerRadius={100}
-            innerRadius={40}
-            fill="#8884d8"
-            dataKey="value"
-            stroke="#fff"
-            strokeWidth={4}
-          >
-            {data &&
-              Array.isArray(data) &&
-              data.map((entry, index) => <Cell key={`cell-${index}`} fill={chartColors[index % chartColors.length]} />)}
-          </Pie>
-          <Tooltip
-            contentStyle={{
-              backgroundColor: "#fff",
-              border: "none",
-              borderRadius: "16px",
-              boxShadow: "0 12px 40px rgba(0, 0, 0, 0.15)",
-              padding: "16px",
+
+      <Box sx={{ display: "flex", flexDirection: "column", height: "calc(100% - 100px)" }}>
+        <ResponsiveContainer width="100%" height="70%">
+          <RechartsPieChart>
+            <Pie
+              data={data}
+              cx="50%"
+              cy="50%"
+              labelLine={false}
+              outerRadius={110}
+              innerRadius={0}
+              fill="#8884d8"
+              dataKey="value"
+              stroke="#fff"
+              strokeWidth={2}
+            >
+              {data &&
+                Array.isArray(data) &&
+                data.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={chartColors[index % chartColors.length]} />
+                ))}
+            </Pie>
+            <Tooltip
+              contentStyle={{
+                backgroundColor: "#fff",
+                border: "none",
+                borderRadius: "16px",
+                boxShadow: "0 12px 40px rgba(0, 0, 0, 0.15)",
+                padding: "16px",
+              }}
+              formatter={(value, name) => [`${value} unidades`, name]}
+            />
+          </RechartsPieChart>
+        </ResponsiveContainer>
+
+        {/* Legenda customizada */}
+        <Box sx={{ mt: 4, display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 2 }}>
+          {data &&
+            Array.isArray(data) &&
+            data.map((entry, index) => (
+              <Box
+                key={entry.name}
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                  px: 2,
+                  py: 1,
+                  borderRadius: "12px",
+                  background: alpha(chartColors[index % chartColors.length], 0.1),
+                  border: `1px solid ${alpha(chartColors[index % chartColors.length], 0.2)}`,
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 12,
+                    height: 12,
+                    borderRadius: "50%",
+                    background: chartColors[index % chartColors.length],
+                    boxShadow: `0 0 0 2px ${alpha(chartColors[index % chartColors.length], 0.3)}`,
+                  }}
+                />
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontWeight: 600,
+                    color: "#1e293b",
+                    fontSize: "0.9rem",
+                  }}
+                >
+                  {entry.name}: {entry.value}
+                </Typography>
+              </Box>
+            ))}
+
+          {/* Total */}
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              px: 2,
+              py: 1,
+              borderRadius: "12px",
+              background: alpha("#1e293b", 0.1),
+              border: `1px solid ${alpha("#1e293b", 0.2)}`,
+              ml: 1,
             }}
-          />
-        </RechartsPieChart>
-      </ResponsiveContainer>
+          >
+            <Box
+              sx={{
+                width: 12,
+                height: 12,
+                borderRadius: "50%",
+                background: "#1e293b",
+                boxShadow: `0 0 0 2px ${alpha("#1e293b", 0.3)}`,
+              }}
+            />
+            <Typography
+              variant="body2"
+              sx={{
+                fontWeight: 700,
+                color: "#1e293b",
+                fontSize: "0.9rem",
+              }}
+            >
+              TOTAL: {data && Array.isArray(data) ? data.reduce((sum, entry) => sum + entry.value, 0) : 0}
+            </Typography>
+          </Box>
+        </Box>
+      </Box>
     </CardContent>
   </Card>
 )
 
-// Componente de Gráfico de Barras
+// Componente de Gráfico de Barras - Versão melhorada
 const BarChartCard = ({ title, data, height = 400 }) => (
   <Card
     sx={{
@@ -353,7 +437,7 @@ const BarChartCard = ({ title, data, height = 400 }) => (
       borderRadius: "24px",
       boxShadow: "0 8px 24px rgba(0, 0, 0, 0.08)",
       overflow: "hidden",
-      background: "#ffffff",
+      background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
       border: "1px solid #e2e8f0",
     }}
   >
@@ -365,7 +449,7 @@ const BarChartCard = ({ title, data, height = 400 }) => (
           justifyContent: "center",
           mb: 3,
           pb: 2,
-          borderBottom: "1px solid #f1f5f9",
+          borderBottom: "2px solid #f1f5f9",
         }}
       >
         <Box
@@ -373,36 +457,49 @@ const BarChartCard = ({ title, data, height = 400 }) => (
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            width: 40,
-            height: 40,
+            width: 48,
+            height: 48,
             borderRadius: "50%",
-            background: alpha("#3b82f6", 0.1),
-            border: `1px solid ${alpha("#3b82f6", 0.3)}`,
+            background: "linear-gradient(135deg, #ef4444, #dc2626)",
+            border: `2px solid ${alpha("#ef4444", 0.3)}`,
             mr: 2,
+            boxShadow: "0 8px 16px rgba(239, 68, 68, 0.3)",
           }}
         >
-          <BarChart sx={{ fontSize: 20, color: "#3b82f6" }} />
+          <BarChart sx={{ fontSize: 24, color: "#ffffff" }} />
         </Box>
         <Typography
           variant="h6"
           sx={{
-            fontWeight: 600,
+            fontWeight: 700,
             color: "#1e293b",
             fontSize: {
-              xs: "1.3rem",
-              xl: "1.3rem",
-              "2xl": "1.6rem", // Para TVs
+              xs: "1.4rem",
+              xl: "1.4rem",
+              "2xl": "1.7rem", // Para TVs
             },
           }}
         >
           {title}
         </Typography>
       </Box>
-      <ResponsiveContainer width="100%" height={height}>
-        <RechartsBarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+      <ResponsiveContainer width="100%" height="70%">
+        <RechartsBarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 60 }} barCategoryGap="30%">
           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeWidth={1} />
-          <XAxis dataKey="name" tick={{ fill: "#64748b", fontSize: 13, fontWeight: 600 }} />
-          <YAxis tick={{ fill: "#64748b", fontSize: 13, fontWeight: 600 }} />
+          <XAxis
+            dataKey="name"
+            tick={{ fill: "#64748b", fontSize: 14, fontWeight: 600 }}
+            axisLine={{ stroke: "#e2e8f0", strokeWidth: 2 }}
+            interval={0}
+            angle={0}
+            textAnchor="middle"
+            height={60}
+          />
+          <YAxis
+            tick={{ fill: "#64748b", fontSize: 14, fontWeight: 600 }}
+            axisLine={{ stroke: "#e2e8f0", strokeWidth: 2 }}
+            label={{ value: "Pessoas", angle: -90, position: "insideLeft" }}
+          />
           <Tooltip
             contentStyle={{
               backgroundColor: "#fff",
@@ -411,13 +508,96 @@ const BarChartCard = ({ title, data, height = 400 }) => (
               boxShadow: "0 12px 40px rgba(0, 0, 0, 0.15)",
               padding: "16px",
             }}
+            formatter={(value, name) => [`${value} pessoas`, "Falta de Pessoal"]}
           />
-          <Legend />
-          <Bar dataKey="veiculos" fill="#60a5fa" name="Veículos" radius={[6, 6, 0, 0]} />
-          <Bar dataKey="motoristas" fill="#34d399" name="Motoristas" radius={[6, 6, 0, 0]} />
-          <Bar dataKey="coletores" fill="#fbbf24" name="Coletores" radius={[6, 6, 0, 0]} />
+          <Bar dataKey="falta" name="Falta de Pessoal" radius={[8, 8, 0, 0]} maxBarSize={60}>
+            {data.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={chartColors[index % chartColors.length]} />
+            ))}
+          </Bar>
+          <defs>
+            <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#ef4444" stopOpacity={0.9} />
+              <stop offset="95%" stopColor="#dc2626" stopOpacity={0.7} />
+            </linearGradient>
+          </defs>
         </RechartsBarChart>
       </ResponsiveContainer>
+      {/* Legenda customizada */}
+      <Box sx={{ mt: 2, display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 2 }}>
+        {data &&
+          Array.isArray(data) &&
+          data.map((entry, index) => (
+            <Box
+              key={entry.name}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+                px: 2,
+                py: 1,
+                borderRadius: "12px",
+                background: alpha(chartColors[index % chartColors.length], 0.1),
+                border: `1px solid ${alpha(chartColors[index % chartColors.length], 0.2)}`,
+              }}
+            >
+              <Box
+                sx={{
+                  width: 12,
+                  height: 12,
+                  borderRadius: "50%",
+                  background: chartColors[index % chartColors.length],
+                  boxShadow: `0 0 0 2px ${alpha(chartColors[index % chartColors.length], 0.3)}`,
+                }}
+              />
+              <Typography
+                variant="body2"
+                sx={{
+                  fontWeight: 600,
+                  color: "#1e293b",
+                  fontSize: "0.9rem",
+                }}
+              >
+                {entry.name}: {entry.falta}
+              </Typography>
+            </Box>
+          ))}
+
+        {/* Total */}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            px: 2,
+            py: 1,
+            borderRadius: "12px",
+            background: alpha("#1e293b", 0.1),
+            border: `1px solid ${alpha("#1e293b", 0.2)}`,
+            ml: 1,
+          }}
+        >
+          <Box
+            sx={{
+              width: 12,
+              height: 12,
+              borderRadius: "50%",
+              background: "#1e293b",
+              boxShadow: `0 0 0 2px ${alpha("#1e293b", 0.3)}`,
+            }}
+          />
+          <Typography
+            variant="body2"
+            sx={{
+              fontWeight: 700,
+              color: "#1e293b",
+              fontSize: "0.9rem",
+            }}
+          >
+            TOTAL: {data && Array.isArray(data) ? data.reduce((sum, entry) => sum + entry.falta, 0) : 0}
+          </Typography>
+        </Box>
+      </Box>
     </CardContent>
   </Card>
 )
@@ -507,42 +687,50 @@ const EfficiencyBarChartCard = ({ title, data, height = 400 }) => (
 )
 
 export default function FleetDashboard() {
-  const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [data, setData] = useState({
+    pa1: { veiculos: 4, motoristas: 5, coletores: 10 }, // Total: 19
+    pa2: { veiculos: 3, motoristas: 6, coletores: 11 }, // Total: 20
+    pa3: { veiculos: 4, motoristas: 3, coletores: 8 }, // Total: 15
+    pa4: { veiculos: 2, motoristas: 5, coletores: 6 }, // Total: 13
+    contagemEquipamentos: 25,
+    contagemPorGaragemEServico: {
+      PA1: {
+        rsu: { veiculos: 2, motoristas: 3, coletores: 5 }, // Total: 10
+        seletiva: { veiculos: 1, motoristas: 1, coletores: 3 }, // Total: 5
+        remoção: { veiculos: 1, motoristas: 1, coletores: 2 }, // Total: 4
+      },
+      PA2: {
+        rsu: { veiculos: 2, motoristas: 4, coletores: 6 }, // Total: 12
+        seletiva: { veiculos: 1, motoristas: 1, coletores: 3 }, // Total: 5
+        remoção: { veiculos: 0, motoristas: 1, coletores: 2 }, // Total: 3
+      },
+      PA3: {
+        rsu: { veiculos: 2, motoristas: 2, coletores: 4 }, // Total: 8
+        seletiva: { veiculos: 1, motoristas: 1, coletores: 2 }, // Total: 4
+        remoção: { veiculos: 1, motoristas: 0, coletores: 2 }, // Total: 3
+      },
+      PA4: {
+        rsu: { veiculos: 1, motoristas: 3, coletores: 3 }, // Total: 7
+        seletiva: { veiculos: 1, motoristas: 1, coletores: 2 }, // Total: 4
+        remoção: { veiculos: 0, motoristas: 1, coletores: 1 }, // Total: 2
+      },
+    },
+  })
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-  const [lastUpdate, setLastUpdate] = useState(null)
-
-  const fetchData = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-
-      console.log("Iniciando busca de dados...")
-      const apiData = await getDashGeral()
-      console.log("Dados recebidos da API:", apiData)
-
-      if (apiData) {
-        setData(apiData)
-        setLastUpdate(new Date())
-        console.log("Dados definidos no estado:", apiData)
-      } else {
-        console.error("API retornou dados nulos")
-        setError("Erro ao carregar dados da API")
-      }
-    } catch (err) {
-      console.error("Erro ao buscar dados:", err)
-      setError(`Erro ao conectar com a API: ${err.message}`)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchData()
-  }, [])
+  const [lastUpdate, setLastUpdate] = useState(new Date())
 
   const handleRefresh = () => {
-    fetchData()
+    setLastUpdate(new Date())
+    // Simular uma pequena atualização nos dados
+    setData((prev) => ({
+      ...prev,
+      pa1: {
+        veiculos: Math.max(1, prev.pa1.veiculos + Math.floor(Math.random() * 3) - 1),
+        motoristas: Math.max(1, prev.pa1.motoristas + Math.floor(Math.random() * 3) - 1),
+        coletores: Math.max(1, prev.pa1.coletores + Math.floor(Math.random() * 3) - 1),
+      },
+    }))
   }
 
   if (loading) {
@@ -674,6 +862,25 @@ export default function FleetDashboard() {
     { name: "PA2", value: calculateEfficiency(data.pa2), fill: "#10b981" },
     { name: "PA3", value: calculateEfficiency(data.pa3), fill: "#f59e0b" },
     { name: "PA4", value: calculateEfficiency(data.pa4), fill: "#8b5cf6" },
+  ]
+
+  // Dados mockados para saídas
+  const totalSaidas = 145
+  const saidasRemocao = 42
+  const saidasSeletiva = 38
+  const saidasDomiciliar = 65
+
+  // Dados mockados para falta de mão de obra (só motoristas e coletores)
+  const faltaMaoObraData = [
+    { name: "RSU", falta: 18 }, // Aumentado
+    { name: "SELETIVA", falta: 14 }, // Aumentado
+  ]
+
+  // Dados mockados para solturas em andamento
+  const solturasAndamentoData = [
+    { name: "RSU", value: 35 }, // Aumentado
+    { name: "SELETIVA", value: 28 }, // Aumentado
+    { name: "DOMICILIAR", value: 32 }, // Aumentado
   ]
 
   return (
@@ -900,39 +1107,39 @@ export default function FleetDashboard() {
             }}
           >
             <StatCard
-              title="Total de Veículos"
-              value={totalVeiculos}
+              title="Total de Saídas"
+              value={totalSaidas}
               icon={LocalShipping}
               color={themeColors.primary.main}
-              subtitle="Em operação"
-              progress={totalVeiculos > 0 ? Math.min((totalVeiculos / 10) * 100, 100) : 0}
+              subtitle="Até o momento"
+              progress={Math.min((totalSaidas / 200) * 100, 100)}
               delay={0}
             />
             <StatCard
-              title="Total de Motoristas"
-              value={totalMotoristas}
-              icon={Person}
-              color={themeColors.success.main}
-              subtitle="Em operação"
-              progress={totalMotoristas > 0 ? Math.min((totalMotoristas / 10) * 100, 100) : 0}
+              title="Saídas de Remoção"
+              value={saidasRemocao}
+              icon={Build}
+              color={themeColors.warning.main}
+              subtitle="Registradas"
+              progress={Math.min((saidasRemocao / 60) * 100, 100)}
               delay={100}
             />
             <StatCard
-              title="Total de Coletores"
-              value={totalColetores}
+              title="Saídas Seletiva"
+              value={saidasSeletiva}
               icon={RecyclingOutlined}
-              color={themeColors.info.main}
-              subtitle="Em operação"
-              progress={totalColetores > 0 ? Math.min((totalColetores / 20) * 100, 100) : 0}
+              color={themeColors.success.main}
+              subtitle="Registradas"
+              progress={Math.min((saidasSeletiva / 60) * 100, 100)}
               delay={200}
             />
             <StatCard
-              title="Equipamentos"
-              value={data.contagemEquipamentos || 0}
-              icon={Build}
-              color={themeColors.warning.main}
-              subtitle="Em operação"
-              progress={data.contagemEquipamentos > 0 ? Math.min((data.contagemEquipamentos / 10) * 100, 100) : 0}
+              title="Saídas Domiciliar"
+              value={saidasDomiciliar}
+              icon={Person}
+              color={themeColors.info.main}
+              subtitle="Registradas"
+              progress={Math.min((saidasDomiciliar / 80) * 100, 100)}
               delay={300}
             />
           </Box>
@@ -970,7 +1177,7 @@ export default function FleetDashboard() {
             >
               <BarChart sx={{ color: themeColors.secondary.main }} />
             </Box>
-            Comparativo de Recursos
+            Análise Operacional
           </Typography>
 
           <Box
@@ -983,196 +1190,9 @@ export default function FleetDashboard() {
               gap: 3,
             }}
           >
-            <BarChartCard title="Comparativo de Recursos - Todas as PAs" data={locationData} height={400} />
+            <BarChartCard title="Falta de Mão de Obra" data={faltaMaoObraData} height={400} />
 
-            <Card
-              sx={{
-                height: 520,
-                borderRadius: "24px",
-                boxShadow: "0 8px 24px rgba(0, 0, 0, 0.08)",
-                overflow: "hidden",
-                background: "#ffffff",
-                border: "1px solid #e2e8f0",
-              }}
-            >
-              <CardContent sx={{ p: 4, height: "100%" }}>
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    mb: 3,
-                    pb: 2,
-                    borderBottom: "1px solid #f1f5f9",
-                  }}
-                >
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      width: 40,
-                      height: 40,
-                      borderRadius: "50%",
-                      background: alpha("#10b981", 0.1),
-                      border: `1px solid ${alpha("#10b981", 0.3)}`,
-                      mr: 2,
-                    }}
-                  >
-                    <Assessment sx={{ fontSize: 20, color: "#10b981" }} />
-                  </Box>
-                  <Typography
-                    variant="h6"
-                    sx={{
-                      fontWeight: 600,
-                      color: "#1e293b",
-                      fontSize: {
-                        xs: "1.3rem",
-                        xl: "1.3rem",
-                        "2xl": "1.6rem", // Para TVs
-                      },
-                    }}
-                  >
-                    Distribuição Total por PA
-                  </Typography>
-                </Box>
-
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 2, height: "calc(100% - 100px)" }}>
-                  {locationData.map((paData, index) => {
-                    const totalPA = paData.veiculos + paData.motoristas + paData.coletores
-                    const totalGeral = totalVeiculos + totalMotoristas + totalColetores
-                    const percentage = totalGeral > 0 ? Math.round((totalPA / totalGeral) * 100) : 0
-                    const isActive = totalPA > 0
-                    const paColor = isActive ? ["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6"][index] : "#e2e8f0"
-
-                    return (
-                      <Box
-                        key={paData.name}
-                        sx={{
-                          display: "flex",
-                          alignItems: "center",
-                          p: 2,
-                          borderRadius: "12px",
-                          background: alpha(paColor, 0.05),
-                          border: `1px solid ${alpha(paColor, 0.15)}`,
-                          transition: "all 0.3s ease",
-                          "&:hover": {
-                            transform: "translateX(4px)",
-                            boxShadow: `0 4px 12px ${alpha(paColor, 0.2)}`,
-                          },
-                          transition: "all 0.3s ease",
-                          "&:hover": {
-                            transform: "translateX(4px)",
-                            boxShadow: `0 4px 12px ${alpha(paColor, 0.2)}`,
-                          },
-                        }}
-                      >
-                        <Box
-                          sx={{
-                            width: 12,
-                            height: 12,
-                            borderRadius: "50%",
-                            background: paColor,
-                            mr: 2,
-                            boxShadow: `0 0 0 3px ${alpha(paColor, 0.2)}`,
-                          }}
-                        />
-
-                        <Typography
-                          variant="h6"
-                          sx={{
-                            fontWeight: 700,
-                            color: "#1e293b",
-                            fontSize: "1.3rem",
-                            minWidth: "50px",
-                          }}
-                        >
-                          {paData.name}
-                        </Typography>
-
-                        <Box sx={{ flex: 1, mx: 2 }}>
-                          <Box
-                            sx={{
-                              width: "100%",
-                              height: 8,
-                              borderRadius: 4,
-                              background: "#f1f5f9",
-                              overflow: "hidden",
-                            }}
-                          >
-                            <Box
-                              sx={{
-                                width: `${percentage}%`,
-                                height: "100%",
-                                background: `linear-gradient(90deg, ${paColor}, ${alpha(paColor, 0.8)})`,
-                                borderRadius: 4,
-                                transition: "width 1s ease-in-out",
-                              }}
-                            />
-                          </Box>
-                        </Box>
-
-                        <Box sx={{ textAlign: "right", minWidth: "80px" }}>
-                          <Typography
-                            variant="h6"
-                            sx={{
-                              fontWeight: 700,
-                              color: paColor,
-                              fontSize: "1.1rem",
-                              lineHeight: 1,
-                            }}
-                          >
-                            {totalPA}
-                          </Typography>
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              color: "#64748b",
-                              fontWeight: 500,
-                              fontSize: "0.75rem",
-                            }}
-                          >
-                            ({percentage}%)
-                          </Typography>
-                        </Box>
-                      </Box>
-                    )
-                  })}
-
-                  <Box
-                    sx={{
-                      mt: "auto",
-                      pt: 2,
-                      borderTop: "1px solid #f1f5f9",
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: "#64748b",
-                        fontWeight: 600,
-                        fontSize: "0.9rem",
-                      }}
-                    >
-                      Total Geral
-                    </Typography>
-                    <Typography
-                      variant="h5"
-                      sx={{
-                        fontWeight: 700,
-                        color: "#1e293b",
-                        fontSize: "1.8rem",
-                      }}
-                    >
-                      {totalVeiculos + totalMotoristas + totalColetores} recursos
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
+            <PieChartCard title="Solturas em Andamento" data={solturasAndamentoData} height={400} />
           </Box>
         </Box>
 
@@ -1267,9 +1287,9 @@ export default function FleetDashboard() {
                       position: "relative",
                       overflow: "hidden",
                       height: {
-                        xs: "280px",
-                        xl: "280px",
-                        "2xl": "320px", // Para TVs
+                        xs: "380px", // Aumentado de 320px
+                        xl: "380px", // Aumentado de 320px
+                        "2xl": "420px", // Aumentado de 360px
                       },
                       "&:hover": {
                         transform: "translateY(-4px) scale(1.02)",
@@ -1511,8 +1531,8 @@ export default function FleetDashboard() {
                           <Box sx={{ textAlign: "center", flex: 1, minWidth: "70px" }}>
                             <Box
                               sx={{
-                                width: 32,
-                                height: 32,
+                                width: 36,
+                                height: 36,
                                 borderRadius: "8px",
                                 background: alpha("#8b5cf6", 0.1),
                                 display: "flex",
@@ -1528,10 +1548,10 @@ export default function FleetDashboard() {
                                 sx={{
                                   fontWeight: 800,
                                   color: "#8b5cf6",
-                                  fontSize: "0.7rem",
+                                  fontSize: "0.95rem",
                                 }}
                               >
-                                {rsuPercent}%
+                                {rsuTotal}
                               </Typography>
                             </Box>
                             <Typography
@@ -1539,9 +1559,10 @@ export default function FleetDashboard() {
                               sx={{
                                 color: "#8b5cf6",
                                 fontWeight: 700,
-                                fontSize: "0.65rem",
+                                fontSize: "0.85rem",
                                 textTransform: "uppercase",
-                                letterSpacing: "0.5px",
+                                letterSpacing: "0.3px",
+                                lineHeight: 1.2,
                               }}
                             >
                               RSU
@@ -1551,8 +1572,8 @@ export default function FleetDashboard() {
                           <Box sx={{ textAlign: "center", flex: 1, minWidth: "70px" }}>
                             <Box
                               sx={{
-                                width: 32,
-                                height: 32,
+                                width: 36,
+                                height: 36,
                                 borderRadius: "8px",
                                 background: alpha("#10b981", 0.1),
                                 display: "flex",
@@ -1568,10 +1589,10 @@ export default function FleetDashboard() {
                                 sx={{
                                   fontWeight: 800,
                                   color: "#10b981",
-                                  fontSize: "0.7rem",
+                                  fontSize: "0.95rem",
                                 }}
                               >
-                                {seletivaPercent}%
+                                {seletivaTotal}
                               </Typography>
                             </Box>
                             <Typography
@@ -1579,7 +1600,7 @@ export default function FleetDashboard() {
                               sx={{
                                 color: "#10b981",
                                 fontWeight: 700,
-                                fontSize: "0.65rem",
+                                fontSize: "0.85rem",
                                 textTransform: "uppercase",
                                 letterSpacing: "0.5px",
                               }}
@@ -1591,8 +1612,8 @@ export default function FleetDashboard() {
                           <Box sx={{ textAlign: "center", flex: 1, minWidth: "70px" }}>
                             <Box
                               sx={{
-                                width: 32,
-                                height: 32,
+                                width: 36,
+                                height: 36,
                                 borderRadius: "8px",
                                 background: alpha("#f59e0b", 0.1),
                                 display: "flex",
@@ -1608,10 +1629,10 @@ export default function FleetDashboard() {
                                 sx={{
                                   fontWeight: 800,
                                   color: "#f59e0b",
-                                  fontSize: "0.7rem",
+                                  fontSize: "0.95rem",
                                 }}
                               >
-                                {remocaoPercent}%
+                                {remocaoTotal}
                               </Typography>
                             </Box>
                             <Typography
@@ -1619,7 +1640,7 @@ export default function FleetDashboard() {
                               sx={{
                                 color: "#f59e0b",
                                 fontWeight: 700,
-                                fontSize: "0.65rem",
+                                fontSize: "0.85rem",
                                 textTransform: "uppercase",
                                 letterSpacing: "0.5px",
                               }}
