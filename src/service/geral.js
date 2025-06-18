@@ -1,58 +1,135 @@
-// Serviço para buscar dados do dashboard geral de solturas
-export async function getDashGeral() {
+import axios from "axios"
+
+const API_URL = "http://127.0.0.1:8000"
+
+export const getDashGeral = async () => {
   try {
-    const response = await fetch("http://127.0.0.1:8000/api/soltura/dash_geral/", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
+    const response = await axios.get(`${API_URL}/api/soltura/dash_geral/`)
+    const apiResponse = response.data
+
+    console.log("Resposta completa da API:", apiResponse) // Para debug
+
+    // A API retorna { success: true, data: { ... } }
+    // Precisamos acessar apiResponse.data, não response.data
+    const data = apiResponse.data
+
+    if (!data) {
+      throw new Error("Dados não encontrados na resposta da API")
+    }
+
+    // Função auxiliar para acessar dados de forma segura
+    const safeGet = (obj, path, defaultValue = 0) => {
+      try {
+        return path.split(".").reduce((current, key) => current?.[key], obj) ?? defaultValue
+      } catch {
+        return defaultValue
+      }
+    }
+
+    // Função para processar dados de uma PA
+    const processPA = (paData) => {
+      if (!paData)
+        return {
+          Seletiva: {
+            veiculos: 0,
+            motoristas: 0,
+            coletores: 0,
+            equipamentos: 0,
+            meta_batida: { motoristas: false, coletores: false, equipamentos: false },
+          },
+          Rsu: {
+            veiculos: 0,
+            motoristas: 0,
+            coletores: 0,
+            equipamentos: 0,
+            meta_batida: { motoristas: false, coletores: false, equipamentos: false },
+          },
+          Remoção: {
+            veiculos: 0,
+            motoristas: 0,
+            coletores: 0,
+            equipamentos: 0,
+            meta_batida: { motoristas: false, coletores: false, equipamentos: false },
+          },
+        }
+
+      return {
+        Seletiva: {
+          veiculos: safeGet(paData, "Seletiva.veiculos", 0),
+          motoristas: safeGet(paData, "Seletiva.motoristas", 0),
+          coletores: safeGet(paData, "Seletiva.coletores", 0),
+          equipamentos: safeGet(paData, "Seletiva.equipamentos", 0),
+          meta_batida: {
+            motoristas: safeGet(paData, "Seletiva.meta_batida.motoristas", false),
+            coletores: safeGet(paData, "Seletiva.meta_batida.coletores", false),
+            equipamentos: safeGet(paData, "Seletiva.meta_batida.equipamentos", false),
+          },
+        },
+        Rsu: {
+          veiculos: safeGet(paData, "Rsu.veiculos", 0),
+          motoristas: safeGet(paData, "Rsu.motoristas", 0),
+          coletores: safeGet(paData, "Rsu.coletores", 0),
+          equipamentos: safeGet(paData, "Rsu.equipamentos", 0),
+          meta_batida: {
+            motoristas: safeGet(paData, "Rsu.meta_batida.motoristas", false),
+            coletores: safeGet(paData, "Rsu.meta_batida.coletores", false),
+            equipamentos: safeGet(paData, "Rsu.meta_batida.equipamentos", false),
+          },
+        },
+        Remoção: {
+          veiculos: safeGet(paData, "Remoção.veiculos", 0),
+          motoristas: safeGet(paData, "Remoção.motoristas", 0),
+          coletores: safeGet(paData, "Remoção.coletores", 0),
+          equipamentos: safeGet(paData, "Remoção.equipamentos", 0),
+          meta_batida: {
+            motoristas: safeGet(paData, "Remoção.meta_batida.motoristas", false),
+            coletores: safeGet(paData, "Remoção.meta_batida.coletores", false),
+            equipamentos: safeGet(paData, "Remoção.meta_batida.equipamentos", false),
+          },
+        },
+      }
+    }
+
+    // Processar por_servico de forma segura
+    const processarPorServico = (porServico) => {
+      return {
+        Seletiva: porServico?.Seletiva || 0,
+        Rsu: porServico?.Rsu || 0,
+        Remoção: porServico?.Remoção || 0,
+      }
+    }
+
+    console.log("Dados processados:", {
+      dataAtual: data.data,
+      resultado_por_pa: data.resultado_por_pa,
+      status_frota_andamento: data.status_frota_andamento,
+      status_frota_andamento_mais_finalizado: data.status_frota_andamento_mais_finalizado,
     })
 
-    if (!response.ok) {
-      throw new Error(`Erro HTTP: ${response.status}`)
-    }
+    // Retorno estruturado COMPLETO e DEFENSIVO
+    return {
+      dataAtual: data.data || new Date().toISOString().split("T")[0],
 
-    const result = await response.json()
-
-    // Verificação da estrutura esperada: success e data devem existir
-    if (!result || !result.success || !result.data) {
-      throw new Error("Resposta da API está em formato inválido")
-    }
-
-    const apiData = result.data
-
-    // Verificação se resultado_por_pa e data existem dentro de result.data
-    if (!apiData.resultado_por_pa || !apiData.data) {
-      throw new Error("Dados incompletos na resposta da API")
-    }
-
-    const resultadoPorPA = apiData.resultado_por_pa
-
-    // Mapeamento correto: RSU = Domiciliar na nossa interface
-    const dadosFinal = {
-      data: apiData.data,
-
-      PA1: {
-        Seletiva: resultadoPorPA.PA1 && resultadoPorPA.PA1.Seletiva ? resultadoPorPA.PA1.Seletiva : null,
-        Domiciliar: resultadoPorPA.PA1 && resultadoPorPA.PA1.Rsu ? resultadoPorPA.PA1.Rsu : null,
+      resultado_por_pa: {
+        PA1: processPA(data.resultado_por_pa?.PA1),
+        PA2: processPA(data.resultado_por_pa?.PA2),
+        PA3: processPA(data.resultado_por_pa?.PA3),
+        PA4: processPA(data.resultado_por_pa?.PA4),
       },
-      PA2: {
-        Seletiva: resultadoPorPA.PA2 && resultadoPorPA.PA2.Seletiva ? resultadoPorPA.PA2.Seletiva : null,
-        Domiciliar: resultadoPorPA.PA2 && resultadoPorPA.PA2.Rsu ? resultadoPorPA.PA2.Rsu : null,
+
+      status_frota_andamento: {
+        total: safeGet(data, "status_frota_andamento.total", 0),
+        por_servico: processarPorServico(data.status_frota_andamento?.por_servico),
       },
-      PA3: {
-        Seletiva: resultadoPorPA.PA3 && resultadoPorPA.PA3.Seletiva ? resultadoPorPA.PA3.Seletiva : null,
-        Domiciliar: resultadoPorPA.PA3 && resultadoPorPA.PA3.Rsu ? resultadoPorPA.PA3.Rsu : null,
-      },
-      PA4: {
-        Seletiva: resultadoPorPA.PA4 && resultadoPorPA.PA4.Seletiva ? resultadoPorPA.PA4.Seletiva : null,
-        Domiciliar: resultadoPorPA.PA4 && resultadoPorPA.PA4.Rsu ? resultadoPorPA.PA4.Rsu : null,
+
+      status_frota_andamento_mais_finalizado: {
+        total: safeGet(data, "status_frota_andamento_mais_finalizado.total", 0),
+        por_servico: processarPorServico(data.status_frota_andamento_mais_finalizado?.por_servico),
       },
     }
-
-    console.log("Dados finais mapeados:", dadosFinal)
-    return dadosFinal
   } catch (error) {
-    throw new Error("Erro ao buscar dados do dashboard geral: " + error.message)
+    console.error("Erro ao buscar dados do dashboard:", error)
+    console.error("Detalhes do erro:", error.response?.data || error.message)
+    throw new Error(`Falha ao carregar dados: ${error.response?.status || "Erro de conexão"}`)
   }
 }

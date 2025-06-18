@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   AppBar,
   Toolbar,
@@ -42,6 +42,7 @@ import {
   Cell,
 } from "recharts"
 import { createTheme } from "@mui/material/styles"
+import { getDashGeral } from "../../service/geral"
 
 // No início do arquivo, adicionar breakpoint customizado
 const theme = createTheme({
@@ -818,7 +819,7 @@ const WorkforceAnalysisCard = () => {
     },
   }
 
-  // Calcular dados atuais baseados nos dados do dashboard
+  // Calcular dados atuais baseados nos dados reais da API
   const currentData = {
     rsu: {
       equipamentos: 0,
@@ -1139,50 +1140,65 @@ const WorkforceAnalysisCard = () => {
 }
 
 export default function FleetDashboard() {
-  const [data, setData] = useState({
-    pa1: { veiculos: 4, motoristas: 5, coletores: 10 }, // Total: 19
-    pa2: { veiculos: 3, motoristas: 6, coletores: 11 }, // Total: 20
-    pa3: { veiculos: 4, motoristas: 3, coletores: 8 }, // Total: 15
-    pa4: { veiculos: 2, motoristas: 5, coletores: 6 }, // Total: 13
-    contagemEquipamentos: 25,
-    contagemPorGaragemEServico: {
-      PA1: {
-        rsu: { veiculos: 2, motoristas: 3, coletores: 5 }, // Total: 10
-        seletiva: { veiculos: 1, motoristas: 1, coletores: 3 }, // Total: 5
-        remoção: { veiculos: 1, motoristas: 1, coletores: 2 }, // Total: 4
-      },
-      PA2: {
-        rsu: { veiculos: 2, motoristas: 4, coletores: 6 }, // Total: 12
-        seletiva: { veiculos: 1, motoristas: 1, coletores: 3 }, // Total: 5
-        remoção: { veiculos: 0, motoristas: 1, coletores: 2 }, // Total: 3
-      },
-      PA3: {
-        rsu: { veiculos: 2, motoristas: 2, coletores: 4 }, // Total: 8
-        seletiva: { veiculos: 1, motoristas: 1, coletores: 2 }, // Total: 4
-        remoção: { veiculos: 1, motoristas: 0, coletores: 2 }, // Total: 3
-      },
-      PA4: {
-        rsu: { veiculos: 1, motoristas: 3, coletores: 3 }, // Total: 7
-        seletiva: { veiculos: 1, motoristas: 1, coletores: 2 }, // Total: 4
-        remoção: { veiculos: 0, motoristas: 1, coletores: 1 }, // Total: 2
-      },
-    },
-  })
+  const [data, setData] = useState(null) // Iniciar como null para mostrar loading
+  const [apiData, setApiData] = useState(null) // Dados da API
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [lastUpdate, setLastUpdate] = useState(new Date())
 
+  const fetchDashboardData = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const apiData = await getDashGeral()
+      setApiData(apiData)
+      setData(processApiData(apiData)) // Processar dados da API
+      setLastUpdate(new Date())
+    } catch (err) {
+      setError(err.message || "Erro ao carregar dados do dashboard")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const processApiData = (apiData) => {
+    if (!apiData || !apiData.resultado_por_pa) return null
+
+    // Mapear dados das PAs
+    const processedData = {}
+
+    Object.keys(apiData.resultado_por_pa).forEach((pa) => {
+      const paData = apiData.resultado_por_pa[pa]
+
+      // Somar totais por PA
+      const totalVeiculos =
+        (paData.Seletiva?.veiculos || 0) + (paData.Rsu?.veiculos || 0) + (paData.Remoção?.veiculos || 0)
+      const totalMotoristas =
+        (paData.Seletiva?.motoristas || 0) + (paData.Rsu?.motoristas || 0) + (paData.Remoção?.motoristas || 0)
+      const totalColetores =
+        (paData.Seletiva?.coletores || 0) + (paData.Rsu?.coletores || 0) + (paData.Remoção?.coletores || 0)
+
+      processedData[pa.toLowerCase()] = {
+        veiculos: totalVeiculos,
+        motoristas: totalMotoristas,
+        coletores: totalColetores,
+      }
+    })
+
+    return {
+      ...processedData,
+      contagemPorGaragemEServico: apiData.resultado_por_pa,
+      statusFrotaAndamento: apiData.status_frota_andamento,
+      statusFrotaTotal: apiData.status_frota_andamento_mais_finalizado,
+    }
+  }
+
+  useEffect(() => {
+    fetchDashboardData()
+  }, [])
+
   const handleRefresh = () => {
-    setLastUpdate(new Date())
-    // Simular uma pequena atualização nos dados
-    setData((prev) => ({
-      ...prev,
-      pa1: {
-        veiculos: Math.max(1, prev.pa1.veiculos + Math.floor(Math.random() * 3) - 1),
-        motoristas: Math.max(1, prev.pa1.motoristas + Math.floor(Math.random() * 3) - 1),
-        coletores: Math.max(1, prev.pa1.coletores + Math.floor(Math.random() * 3) - 1),
-      },
-    }))
+    fetchDashboardData()
   }
 
   if (loading) {
@@ -1256,15 +1272,20 @@ export default function FleetDashboard() {
   console.log("Renderizando dashboard com dados:", data)
 
   // Calcular totais com os dados da API
-  const totalVeiculos =
-    (data.pa1?.veiculos || 0) + (data.pa2?.veiculos || 0) + (data.pa3?.veiculos || 0) + (data.pa4?.veiculos || 0)
-  const totalMotoristas =
-    (data.pa1?.motoristas || 0) +
-    (data.pa2?.motoristas || 0) +
-    (data.pa3?.motoristas || 0) +
-    (data.pa4?.motoristas || 0)
-  const totalColetores =
-    (data.pa1?.coletores || 0) + (data.pa2?.coletores || 0) + (data.pa3?.coletores || 0) + (data.pa4?.coletores || 0)
+  const totalVeiculos = data
+    ? (data.pa1?.veiculos || 0) + (data.pa2?.veiculos || 0) + (data.pa3?.veiculos || 0) + (data.pa4?.veiculos || 0)
+    : 0
+
+  const totalMotoristas = data
+    ? (data.pa1?.motoristas || 0) +
+      (data.pa2?.motoristas || 0) +
+      (data.pa3?.motoristas || 0) +
+      (data.pa4?.motoristas || 0)
+    : 0
+
+  const totalColetores = data
+    ? (data.pa1?.coletores || 0) + (data.pa2?.coletores || 0) + (data.pa3?.coletores || 0) + (data.pa4?.coletores || 0)
+    : 0
 
   console.log("Totais calculados:", { totalVeiculos, totalMotoristas, totalColetores })
 
@@ -1283,19 +1304,19 @@ export default function FleetDashboard() {
   ]
 
   // Dados mockados para saídas
-  const totalSaidas = 145
-  const saidasRemocao = 42
-  const saidasSeletiva = 38
-  const saidasDomiciliar = 65
+  const totalSaidas = data?.statusFrotaTotal?.total || 0
+  const saidasRemocao = data?.statusFrotaTotal?.por_servico?.["Remoção"] || 0
+  const saidasSeletiva = data?.statusFrotaTotal?.por_servico?.["Seletiva"] || 0
+  const saidasDomiciliar = data?.statusFrotaTotal?.por_servico?.["Rsu"] || 0
 
   // Dados para solturas em andamento
   const solturasAndamentoData = [
-    { name: "REMOÇÃO", value: 35 },
-    { name: "SELETIVA", value: 28 },
-    { name: "DOMICILIAR", value: 32 },
+    { name: "RSU", value: data?.statusFrotaAndamento?.por_servico?.["Rsu"] || 0 },
+    { name: "SELETIVA", value: data?.statusFrotaAndamento?.por_servico?.["Seletiva"] || 0 },
+    { name: "DOMICILIAR", value: data?.statusFrotaAndamento?.por_servico?.["Remoção"] || 0 },
   ]
 
-  // Calcular dados atuais baseados nos dados do dashboard
+  // Calcular dados atuais baseados nos dados reais da API
   const currentData = {
     rsu: {
       equipamentos: 0,
@@ -1306,17 +1327,20 @@ export default function FleetDashboard() {
       maoDeObra: 0,
     },
   }
-  currentData.rsu.equipamentos =
-    (data.pa1?.veiculos || 0) + (data.pa2?.veiculos || 0) + (data.pa3?.veiculos || 0) + (data.pa4?.veiculos || 0)
-  currentData.rsu.maoDeObra =
-    (data.pa1?.motoristas || 0) +
-    (data.pa1?.coletores || 0) +
-    ((data.pa2?.motoristas || 0) + (data.pa2?.coletores || 0)) +
-    ((data.pa3?.motoristas || 0) + (data.pa3?.coletores || 0)) +
-    ((data.pa4?.motoristas || 0) + (data.pa4?.coletores || 0))
 
-  currentData.seletiva.equipamentos = Math.floor(totalVeiculos * 0.3) // Aproximação para seletiva
-  currentData.seletiva.maoDeObra = Math.floor((totalMotoristas + totalColetores) * 0.25) // Aproximação para seletiva
+  if (data?.contagemPorGaragemEServico) {
+    // Somar equipamentos e mão de obra de todas as PAs para RSU
+    Object.values(data.contagemPorGaragemEServico).forEach((pa) => {
+      if (pa.Rsu) {
+        currentData.rsu.equipamentos += pa.Rsu.equipamentos || 0
+        currentData.rsu.maoDeObra += (pa.Rsu.motoristas || 0) + (pa.Rsu.coletores || 0)
+      }
+      if (pa.Seletiva) {
+        currentData.seletiva.equipamentos += pa.Seletiva.equipamentos || 0
+        currentData.seletiva.maoDeObra += (pa.Seletiva.motoristas || 0) + (pa.Seletiva.coletores || 0)
+      }
+    })
+  }
 
   return (
     <Box sx={{ minHeight: "100vh", backgroundColor: "#fdfdfd" }}>
@@ -1679,33 +1703,27 @@ export default function FleetDashboard() {
             }}
           >
             {[
-              { name: "PA1", data: data.pa1, color: "#3b82f6" },
-              { name: "PA2", data: data.pa2, color: "#10b981" },
-              { name: "PA3", data: data.pa3, color: "#f59e0b" },
-              { name: "PA4", data: data.pa4, color: "#8b5cf6" },
+              { name: "PA1", data: data?.pa1, color: "#3b82f6" },
+              { name: "PA2", data: data?.pa2, color: "#10b981" },
+              { name: "PA3", data: data?.pa3, color: "#f59e0b" },
+              { name: "PA4", data: data?.pa4, color: "#8b5cf6" },
             ].map(({ name, data: paData, color }, index) => {
               const totalVeiculos = paData?.veiculos || 0
               const totalMotoristas = paData?.motoristas || 0
               const totalColetores = paData?.coletores || 0
 
-              // Calcular percentuais dos serviços baseado nos dados da API
-              const servicosData = data.contagemPorGaragemEServico?.[name] || {}
+              // Usar dados reais da API para serviços
+              const servicosData = data?.contagemPorGaragemEServico?.[name] || {}
 
-              // Somar dados de RSU (maiúsculo e minúsculo)
-              const rsuData = servicosData.rsu || servicosData.Rsu || {}
-              const seletivaData = servicosData.seletiva || servicosData.Seletiva || {}
-              const remocaoData = servicosData.remoção || servicosData.Remoção || {}
+              const rsuData = servicosData.Rsu || {}
+              const seletivaData = servicosData.Seletiva || {}
+              const remocaoData = servicosData.Remoção || {}
 
               const rsuTotal = (rsuData.veiculos || 0) + (rsuData.motoristas || 0) + (rsuData.coletores || 0)
               const seletivaTotal =
                 (seletivaData.veiculos || 0) + (seletivaData.motoristas || 0) + (seletivaData.coletores || 0)
               const remocaoTotal =
                 (remocaoData.veiculos || 0) + (remocaoData.motoristas || 0) + (remocaoData.coletores || 0)
-
-              const servicosTotal = rsuTotal + seletivaTotal + remocaoTotal
-              const rsuPercent = servicosTotal > 0 ? Math.round((rsuTotal / servicosTotal) * 100) : 0
-              const seletivaPercent = servicosTotal > 0 ? Math.round((seletivaTotal / servicosTotal) * 100) : 0
-              const remocaoPercent = servicosTotal > 0 ? Math.round((remocaoTotal / servicosTotal) * 100) : 0
 
               return (
                 <Fade in={true} timeout={1000} style={{ transitionDelay: `${index * 100}ms` }} key={name}>
