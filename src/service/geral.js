@@ -90,13 +90,30 @@ export const getDashGeral = async () => {
       }
     }
 
-    // Processar por_servico de forma segura
-    const processarPorServico = (porServico) => {
-      return {
-        Seletiva: porServico?.Seletiva || 0,
-        Rsu: porServico?.Rsu || 0,
-        Remoção: porServico?.Remoção || 0,
+    // CORRIGIR: Processar por_garagem e somar por serviço
+    const processarPorGaragem = (statusFrota) => {
+      const porServico = {
+        Seletiva: 0,
+        Rsu: 0,
+        Remoção: 0,
       }
+
+      // Se tem por_garagem, somar os valores por serviço
+      if (statusFrota?.por_garagem) {
+        Object.values(statusFrota.por_garagem).forEach((garagem) => {
+          if (garagem.Seletiva) porServico.Seletiva += garagem.Seletiva
+          if (garagem.Rsu) porServico.Rsu += garagem.Rsu
+          if (garagem.Remoção) porServico.Remoção += garagem.Remoção
+        })
+      }
+      // Se tem por_servico diretamente, usar esses valores
+      else if (statusFrota?.por_servico) {
+        porServico.Seletiva = statusFrota.por_servico.Seletiva || 0
+        porServico.Rsu = statusFrota.por_servico.Rsu || 0
+        porServico.Remoção = statusFrota.por_servico.Remoção || 0
+      }
+
+      return porServico
     }
 
     console.log("Dados processados:", {
@@ -105,6 +122,13 @@ export const getDashGeral = async () => {
       status_frota_andamento: data.status_frota_andamento,
       status_frota_andamento_mais_finalizado: data.status_frota_andamento_mais_finalizado,
     })
+
+    // Processar status_frota_andamento
+    const statusAndamento = processarPorGaragem(data.status_frota_andamento)
+    const statusTotal = processarPorGaragem(data.status_frota_andamento_mais_finalizado)
+
+    console.log("Status andamento processado:", statusAndamento)
+    console.log("Status total processado:", statusTotal)
 
     // Retorno estruturado COMPLETO e DEFENSIVO
     return {
@@ -119,12 +143,12 @@ export const getDashGeral = async () => {
 
       status_frota_andamento: {
         total: safeGet(data, "status_frota_andamento.total", 0),
-        por_servico: processarPorServico(data.status_frota_andamento?.por_servico),
+        por_servico: statusAndamento,
       },
 
       status_frota_andamento_mais_finalizado: {
         total: safeGet(data, "status_frota_andamento_mais_finalizado.total", 0),
-        por_servico: processarPorServico(data.status_frota_andamento_mais_finalizado?.por_servico),
+        por_servico: statusTotal,
       },
     }
   } catch (error) {

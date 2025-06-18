@@ -26,21 +26,9 @@ import {
   Build,
   Dashboard,
   BarChart,
-  Speed,
   PlayArrow,
   CheckCircle,
 } from "@mui/icons-material"
-import {
-  BarChart as RechartsBarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  Cell,
-} from "recharts"
 import { createTheme } from "@mui/material/styles"
 import { getDashGeral } from "../../service/geral"
 
@@ -222,8 +210,10 @@ const StatCard = ({ title, value, icon: Icon, color, subtitle, delay = 0 }) => (
   </Grow>
 )
 
-// Novo componente para Solturas em Andamento
+// Novo componente para Solturas em Andamento - CORRIGIDO
 const SolturasAndamentoCard = ({ title, data, height = 400 }) => {
+  console.log("SolturasAndamentoCard recebeu dados:", data)
+
   const total = data && Array.isArray(data) ? data.reduce((sum, entry) => sum + entry.value, 0) : 0
 
   const ServiceItem = ({ service, value, color, icon: Icon }) => (
@@ -232,12 +222,12 @@ const SolturasAndamentoCard = ({ title, data, height = 400 }) => {
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        p: 2.5, // Reduzido de 3 para 2.5
+        p: 2.5,
         borderRadius: "16px",
-        background: `linear-gradient(135deg, ${alpha(color, 0.05)}, ${alpha(color, 0.02)})`,
+        background: `white`,
         border: `2px solid ${alpha(color, 0.1)}`,
         transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-        minHeight: "80px", // Adicionar altura mínima
+        minHeight: "80px",
         "&:hover": {
           transform: "translateX(4px)",
           border: `2px solid ${alpha(color, 0.2)}`,
@@ -314,7 +304,6 @@ const SolturasAndamentoCard = ({ title, data, height = 400 }) => {
         </Typography>
       </Box>
 
-      {/* Indicador de status */}
       <Box
         sx={{
           width: 12,
@@ -344,9 +333,9 @@ const SolturasAndamentoCard = ({ title, data, height = 400 }) => {
     <Card
       sx={{
         height: {
-          xs: height + 140, // Aumentado de 120 para 140
-          xl: height + 140, // Aumentado de 120 para 140
-          "2xl": height + 180, // Aumentado de 160 para 180
+          xs: height + 140,
+          xl: height + 140,
+          "2xl": height + 180,
         },
         borderRadius: "24px",
         boxShadow: "0 8px 24px rgba(0, 0, 0, 0.08)",
@@ -360,7 +349,7 @@ const SolturasAndamentoCard = ({ title, data, height = 400 }) => {
           sx={{
             display: "flex",
             alignItems: "center",
-            justifyContent: "space-between", // Mudado de "center" para "space-between"
+            justifyContent: "space-between",
             mb: 4,
             pb: 3,
             borderBottom: "2px solid #f1f5f9",
@@ -391,7 +380,7 @@ const SolturasAndamentoCard = ({ title, data, height = 400 }) => {
                 fontSize: {
                   xs: "1.4rem",
                   xl: "1.4rem",
-                  "2xl": "1.7rem", // Para TVs
+                  "2xl": "1.7rem",
                 },
               }}
             >
@@ -399,7 +388,6 @@ const SolturasAndamentoCard = ({ title, data, height = 400 }) => {
             </Typography>
           </Box>
 
-          {/* Adicionar o total ao lado do título */}
           <Box
             sx={{
               display: "flex",
@@ -407,15 +395,15 @@ const SolturasAndamentoCard = ({ title, data, height = 400 }) => {
               px: 3,
               py: 1.5,
               borderRadius: "12px",
-              background: "linear-gradient(135deg, #f8fafc, #e2e8f0)", // Mudado para cores neutras
-              border: "2px solid #cbd5e1", // Mudado para borda neutra
-              boxShadow: "0 4px 12px rgba(148, 163, 184, 0.2)", // Mudado para sombra neutra
+              background: "linear-gradient(135deg, #f8fafc, #e2e8f0)",
+              border: "2px solid #cbd5e1",
+              boxShadow: "0 4px 12px rgba(148, 163, 184, 0.2)",
             }}
           >
             <Typography
               variant="caption"
               sx={{
-                color: "#64748b", // Mudado para cor neutra
+                color: "#64748b",
                 fontWeight: 600,
                 fontSize: "0.75rem",
                 textTransform: "uppercase",
@@ -429,9 +417,8 @@ const SolturasAndamentoCard = ({ title, data, height = 400 }) => {
               variant="h5"
               sx={{
                 fontWeight: 800,
-                color: "#374151", // Mudado para cor neutra
+                color: "#374151",
                 fontSize: "1.5rem",
-                textShadow: "none", // Removido text-shadow
               }}
             >
               {total}
@@ -457,7 +444,6 @@ const SolturasAndamentoCard = ({ title, data, height = 400 }) => {
             })}
         </Box>
 
-        {/* Resumo Total */}
         <Box
           sx={{
             mt: "auto",
@@ -542,269 +528,10 @@ const SolturasAndamentoCard = ({ title, data, height = 400 }) => {
   )
 }
 
-// Componente de Gráfico de Barras - Versão melhorada
-const BarChartCard = ({ title, data, height = 400 }) => (
-  <Card
-    sx={{
-      height: {
-        xs: height + 120,
-        xl: height + 120,
-        "2xl": height + 160, // Para TVs
-      },
-      borderRadius: "24px",
-      boxShadow: "0 8px 24px rgba(0, 0, 0, 0.08)",
-      overflow: "hidden",
-      background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
-      border: "1px solid #e2e8f0",
-    }}
-  >
-    <CardContent sx={{ p: 4, height: "100%" }}>
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          mb: 3,
-          pb: 2,
-          borderBottom: "2px solid #f1f5f9",
-        }}
-      >
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: 48,
-            height: 48,
-            borderRadius: "50%",
-            background: "linear-gradient(135deg, #ef4444, #dc2626)",
-            border: `2px solid ${alpha("#ef4444", 0.3)}`,
-            mr: 2,
-            boxShadow: "0 8px 16px rgba(239, 68, 68, 0.3)",
-          }}
-        >
-          <BarChart sx={{ fontSize: 24, color: "#ffffff" }} />
-        </Box>
-        <Typography
-          variant="h6"
-          sx={{
-            fontWeight: 700,
-            color: "#1e293b",
-            fontSize: {
-              xs: "1.4rem",
-              xl: "1.4rem",
-              "2xl": "1.7rem", // Para TVs
-            },
-          }}
-        >
-          {title}
-        </Typography>
-      </Box>
-      <ResponsiveContainer width="100%" height="70%">
-        <RechartsBarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 60 }} barCategoryGap="30%">
-          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeWidth={1} />
-          <XAxis
-            dataKey="name"
-            tick={{ fill: "#64748b", fontSize: 14, fontWeight: 600 }}
-            axisLine={{ stroke: "#e2e8f0", strokeWidth: 2 }}
-            interval={0}
-            angle={0}
-            textAnchor="middle"
-            height={60}
-          />
-          <YAxis
-            tick={{ fill: "#64748b", fontSize: 14, fontWeight: 600 }}
-            axisLine={{ stroke: "#e2e8f0", strokeWidth: 2 }}
-            label={{ value: "Pessoas", angle: -90, position: "insideLeft" }}
-          />
-          <Tooltip
-            contentStyle={{
-              backgroundColor: "#fff",
-              border: "none",
-              borderRadius: "16px",
-              boxShadow: "0 12px 40px rgba(0, 0, 0, 0.15)",
-              padding: "16px",
-            }}
-            formatter={(value, name) => [`${value} pessoas`, "Falta de Pessoal"]}
-          />
-          <Bar dataKey="falta" name="Falta de Pessoal" radius={[8, 8, 0, 0]} maxBarSize={60}>
-            {data.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={chartColors[index % chartColors.length]} />
-            ))}
-          </Bar>
-          <defs>
-            <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#ef4444" stopOpacity={0.9} />
-              <stop offset="95%" stopColor="#dc2626" stopOpacity={0.7} />
-            </linearGradient>
-          </defs>
-        </RechartsBarChart>
-      </ResponsiveContainer>
-      {/* Legenda customizada */}
-      <Box sx={{ mt: 2, display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 2 }}>
-        {data &&
-          Array.isArray(data) &&
-          data.map((entry, index) => (
-            <Box
-              key={entry.name}
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 1,
-                px: 2,
-                py: 1,
-                borderRadius: "12px",
-                background: alpha(chartColors[index % chartColors.length], 0.1),
-                border: `1px solid ${alpha(chartColors[index % chartColors.length], 0.2)}`,
-              }}
-            >
-              <Box
-                sx={{
-                  width: 12,
-                  height: 12,
-                  borderRadius: "50%",
-                  background: chartColors[index % chartColors.length],
-                  boxShadow: `0 0 0 2px ${alpha(chartColors[index % chartColors.length], 0.3)}`,
-                }}
-              />
-              <Typography
-                variant="body2"
-                sx={{
-                  fontWeight: 600,
-                  color: "#1e293b",
-                  fontSize: "0.9rem",
-                }}
-              >
-                {entry.name}: {entry.falta}
-              </Typography>
-            </Box>
-          ))}
+// Componente de Análise de Mão de Obra - CORRIGIDO PARA USAR DADOS REAIS
+const WorkforceAnalysisCard = ({ apiData }) => {
+  console.log("WorkforceAnalysisCard recebeu apiData:", apiData)
 
-        {/* Total */}
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 1,
-            px: 2,
-            py: 1,
-            borderRadius: "12px",
-            background: alpha("#1e293b", 0.1),
-            border: `1px solid ${alpha("#1e293b", 0.2)}`,
-            ml: 1,
-          }}
-        >
-          <Box
-            sx={{
-              width: 12,
-              height: 12,
-              borderRadius: "50%",
-              background: "#1e293b",
-              boxShadow: `0 0 0 2px ${alpha("#1e293b", 0.3)}`,
-            }}
-          />
-          <Typography
-            variant="body2"
-            sx={{
-              fontWeight: 700,
-              color: "#1e293b",
-              fontSize: "0.9rem",
-            }}
-          >
-            TOTAL: {data && Array.isArray(data) ? data.reduce((sum, entry) => sum + entry.falta, 0) : 0}
-          </Typography>
-        </Box>
-      </Box>
-    </CardContent>
-  </Card>
-)
-
-// Componente de Gráfico de Barras para Eficiência
-const EfficiencyBarChartCard = ({ title, data, height = 400 }) => (
-  <Card
-    sx={{
-      height: {
-        xs: height + 120,
-        xl: height + 120,
-        "2xl": height + 160, // Para TVs
-      },
-      borderRadius: "24px",
-      boxShadow: "0 8px 24px rgba(0, 0, 0, 0.08)",
-      overflow: "hidden",
-      background: "#ffffff",
-      border: "1px solid #e2e8f0",
-    }}
-  >
-    <CardContent sx={{ p: 4, height: "100%" }}>
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          mb: 3,
-          pb: 2,
-          borderBottom: "1px solid #f1f5f9",
-        }}
-      >
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: 40,
-            height: 40,
-            borderRadius: "50%",
-            background: alpha("#f59e0b", 0.1),
-            border: `1px solid ${alpha("#f59e0b", 0.3)}`,
-            mr: 2,
-          }}
-        >
-          <Speed sx={{ fontSize: 20, color: "#f59e0b" }} />
-        </Box>
-        <Typography
-          variant="h6"
-          sx={{
-            fontWeight: 600,
-            color: "#1e293b",
-            fontSize: {
-              xs: "1.3rem",
-              xl: "1.3rem",
-              "2xl": "1.6rem", // Para TVs
-            },
-          }}
-        >
-          {title}
-        </Typography>
-      </Box>
-      <ResponsiveContainer width="100%" height={height}>
-        <RechartsBarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeWidth={1} />
-          <XAxis dataKey="name" tick={{ fill: "#64748b", fontSize: 13, fontWeight: 600 }} />
-          <YAxis
-            tick={{ fill: "#64748b", fontSize: 13, fontWeight: 600 }}
-            domain={[0, 100]}
-            tickFormatter={(value) => `${value}%`}
-          />
-          <Tooltip
-            contentStyle={{
-              backgroundColor: "#fff",
-              border: "none",
-              borderRadius: "16px",
-              boxShadow: "0 12px 40px rgba(0, 0, 0, 0.15)",
-              padding: "16px",
-            }}
-            formatter={(value) => [`${value}%`, "Eficiência"]}
-          />
-          <Legend />
-          <Bar dataKey="value" fill="#f59e0b" name="Eficiência %" radius={[6, 6, 0, 0]} />
-        </RechartsBarChart>
-      </ResponsiveContainer>
-    </CardContent>
-  </Card>
-)
-
-// Novo componente para Análise de Mão de Obra
-const WorkforceAnalysisCard = () => {
   // Dados das metas previstas
   const targets = {
     rsu: {
@@ -831,6 +558,22 @@ const WorkforceAnalysisCard = () => {
     },
   }
 
+  // Processar dados da API para calcular totais atuais
+  if (apiData?.resultado_por_pa) {
+    Object.values(apiData.resultado_por_pa).forEach((pa) => {
+      if (pa.Rsu) {
+        currentData.rsu.equipamentos += pa.Rsu.equipamentos || 0
+        currentData.rsu.maoDeObra += (pa.Rsu.motoristas || 0) + (pa.Rsu.coletores || 0)
+      }
+      if (pa.Seletiva) {
+        currentData.seletiva.equipamentos += pa.Seletiva.equipamentos || 0
+        currentData.seletiva.maoDeObra += (pa.Seletiva.motoristas || 0) + (pa.Seletiva.coletores || 0)
+      }
+    })
+  }
+
+  console.log("Dados atuais calculados:", currentData)
+
   const ServiceCard = ({ service, target, current, color }) => {
     const equipamentosPercent = Math.min((current.equipamentos / target.equipamentos) * 100, 100)
     const maoDeObraPercent = Math.min((current.maoDeObra / target.maoDeObra) * 100, 100)
@@ -839,9 +582,9 @@ const WorkforceAnalysisCard = () => {
     const maoDeObraStatus = maoDeObraPercent >= 90 ? "success" : maoDeObraPercent >= 70 ? "warning" : "danger"
 
     const statusColors = {
-      success: "#22c55e", // Verde suave e visível
-      warning: "#22c55e", // Verde suave e visível
-      danger: "#22c55e", // Verde suave e visível
+      success: "#22c55e",
+      warning: "#f59e0b",
+      danger: "#ef4444",
     }
 
     return (
@@ -861,7 +604,6 @@ const WorkforceAnalysisCard = () => {
         }}
       >
         <CardContent sx={{ p: 4 }}>
-          {/* Header do Serviço - REMOVER ÍCONES */}
           <Box sx={{ display: "flex", alignItems: "center", mb: 4 }}>
             <Box>
               <Typography
@@ -1140,19 +882,34 @@ const WorkforceAnalysisCard = () => {
 }
 
 export default function FleetDashboard() {
-  const [data, setData] = useState(null) // Iniciar como null para mostrar loading
-  const [apiData, setApiData] = useState(null) // Dados da API
+  const [data, setData] = useState(null)
+  const [apiData, setApiData] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [lastUpdate, setLastUpdate] = useState(new Date())
+  const [resumoData, setResumoData] = useState(null)
+  const [workforceData, setWorkforceData] = useState(null)
+  const [solturasData, setSolturasData] = useState(null)
+  const [pasData, setPasData] = useState(null)
+  const [refreshingSection, setRefreshingSection] = useState(null)
 
-  const fetchDashboardData = async () => {
+  // Função principal que busca todos os dados
+  const fetchAllData = async () => {
     setLoading(true)
     setError(null)
     try {
       const apiData = await getDashGeral()
+      console.log("Dados recebidos da API:", apiData)
       setApiData(apiData)
-      setData(processApiData(apiData)) // Processar dados da API
+      const processedData = processApiData(apiData)
+      setData(processedData)
+
+      // Atualizar todos os dados das seções
+      setResumoData(processedData)
+      setWorkforceData(apiData)
+      setSolturasData(processedData)
+      setPasData(processedData)
+
       setLastUpdate(new Date())
     } catch (err) {
       setError(err.message || "Erro ao carregar dados do dashboard")
@@ -1161,16 +918,46 @@ export default function FleetDashboard() {
     }
   }
 
+  // Função para refresh suave de seção específica
+  const refreshSection = async (sectionName) => {
+    setRefreshingSection(sectionName)
+    try {
+      const apiData = await getDashGeral()
+      const processedData = processApiData(apiData)
+
+      switch (sectionName) {
+        case "resumo":
+          setResumoData(processedData)
+          break
+        case "workforce":
+          setWorkforceData(apiData)
+          break
+        case "solturas":
+          setSolturasData(processedData)
+          break
+        case "pas":
+          setPasData(processedData)
+          break
+      }
+
+      // Atualizar dados principais também
+      setApiData(apiData)
+      setData(processedData)
+    } catch (err) {
+      console.error(`Erro ao atualizar seção ${sectionName}:`, err)
+    } finally {
+      setTimeout(() => setRefreshingSection(null), 1000) // Remove indicador após 1s
+    }
+  }
+
   const processApiData = (apiData) => {
     if (!apiData || !apiData.resultado_por_pa) return null
 
-    // Mapear dados das PAs
     const processedData = {}
 
     Object.keys(apiData.resultado_por_pa).forEach((pa) => {
       const paData = apiData.resultado_por_pa[pa]
 
-      // Somar totais por PA
       const totalVeiculos =
         (paData.Seletiva?.veiculos || 0) + (paData.Rsu?.veiculos || 0) + (paData.Remoção?.veiculos || 0)
       const totalMotoristas =
@@ -1185,6 +972,7 @@ export default function FleetDashboard() {
       }
     })
 
+    // Manter a estrutura original da API para status_frota_andamento
     return {
       ...processedData,
       contagemPorGaragemEServico: apiData.resultado_por_pa,
@@ -1194,11 +982,29 @@ export default function FleetDashboard() {
   }
 
   useEffect(() => {
-    fetchDashboardData()
+    // Carregamento inicial
+    fetchAllData()
+
+    // Refresh completo a cada 20 minutos
+    const fullRefreshInterval = setInterval(fetchAllData, 20 * 60 * 1000)
+
+    // Refresh individual das seções em tempos diferentes
+    const resumoInterval = setInterval(() => refreshSection("resumo"), 5 * 60 * 1000) // 5 min
+    const workforceInterval = setInterval(() => refreshSection("workforce"), 7 * 60 * 1000) // 7 min
+    const solturasInterval = setInterval(() => refreshSection("solturas"), 3 * 60 * 1000) // 3 min
+    const pasInterval = setInterval(() => refreshSection("pas"), 6 * 60 * 1000) // 6 min
+
+    return () => {
+      clearInterval(fullRefreshInterval)
+      clearInterval(resumoInterval)
+      clearInterval(workforceInterval)
+      clearInterval(solturasInterval)
+      clearInterval(pasInterval)
+    }
   }, [])
 
   const handleRefresh = () => {
-    fetchDashboardData()
+    fetchAllData()
   }
 
   if (loading) {
@@ -1272,75 +1078,45 @@ export default function FleetDashboard() {
   console.log("Renderizando dashboard com dados:", data)
 
   // Calcular totais com os dados da API
-  const totalVeiculos = data
-    ? (data.pa1?.veiculos || 0) + (data.pa2?.veiculos || 0) + (data.pa3?.veiculos || 0) + (data.pa4?.veiculos || 0)
+  const totalVeiculos = pasData
+    ? (pasData.pa1?.veiculos || 0) +
+      (pasData.pa2?.veiculos || 0) +
+      (pasData.pa3?.veiculos || 0) +
+      (pasData.pa4?.veiculos || 0)
     : 0
 
-  const totalMotoristas = data
-    ? (data.pa1?.motoristas || 0) +
-      (data.pa2?.motoristas || 0) +
-      (data.pa3?.motoristas || 0) +
-      (data.pa4?.motoristas || 0)
+  const totalMotoristas = pasData
+    ? (pasData.pa1?.motoristas || 0) +
+      (pasData.pa2?.motoristas || 0) +
+      (pasData.pa3?.motoristas || 0) +
+      (pasData.pa4?.motoristas || 0)
     : 0
 
-  const totalColetores = data
-    ? (data.pa1?.coletores || 0) + (data.pa2?.coletores || 0) + (data.pa3?.coletores || 0) + (data.pa4?.coletores || 0)
+  const totalColetores = pasData
+    ? (pasData.pa1?.coletores || 0) +
+      (pasData.pa2?.coletores || 0) +
+      (pasData.pa3?.coletores || 0) +
+      (pasData.pa4?.coletores || 0)
     : 0
 
   console.log("Totais calculados:", { totalVeiculos, totalMotoristas, totalColetores })
 
-  // Calcular eficiência baseada nos dados reais
-  const calculateEfficiency = (pa) => {
-    const total = (pa?.veiculos || 0) + (pa?.motoristas || 0) + (pa?.coletores || 0)
-    const maxPossible = 12 // Assumindo um máximo teórico baseado nos seus dados
-    return total > 0 ? Math.min(Math.round((total / maxPossible) * 100), 100) : 0
-  }
+  // Dados para saídas - usando os dados processados pelo serviço
+  const totalSaidas = resumoData?.statusFrotaTotal?.total || 0
+  const saidasRemocao = resumoData?.statusFrotaTotal?.por_servico?.["Remoção"] || 0
+  const saidasSeletiva = resumoData?.statusFrotaTotal?.por_servico?.["Seletiva"] || 0
+  const saidasDomiciliar = resumoData?.statusFrotaTotal?.por_servico?.["Rsu"] || 0
 
-  const efficiencyData = [
-    { name: "PA1", value: calculateEfficiency(data.pa1), fill: "#3b82f6" },
-    { name: "PA2", value: calculateEfficiency(data.pa2), fill: "#10b981" },
-    { name: "PA3", value: calculateEfficiency(data.pa3), fill: "#f59e0b" },
-    { name: "PA4", value: calculateEfficiency(data.pa4), fill: "#8b5cf6" },
-  ]
-
-  // Dados mockados para saídas
-  const totalSaidas = data?.statusFrotaTotal?.total || 0
-  const saidasRemocao = data?.statusFrotaTotal?.por_servico?.["Remoção"] || 0
-  const saidasSeletiva = data?.statusFrotaTotal?.por_servico?.["Seletiva"] || 0
-  const saidasDomiciliar = data?.statusFrotaTotal?.por_servico?.["Rsu"] || 0
-
-  // Dados para solturas em andamento
+  // Dados para solturas em andamento - CORRIGIDO PARA USAR OS DADOS PROCESSADOS
   const solturasAndamentoData = [
-    { name: "RSU", value: data?.statusFrotaAndamento?.por_servico?.["Rsu"] || 0 },
-    { name: "SELETIVA", value: data?.statusFrotaAndamento?.por_servico?.["Seletiva"] || 0 },
-    { name: "DOMICILIAR", value: data?.statusFrotaAndamento?.por_servico?.["Remoção"] || 0 },
+    { name: "RSU", value: solturasData?.statusFrotaAndamento?.por_servico?.["Rsu"] || 0 },
+    { name: "SELETIVA", value: solturasData?.statusFrotaAndamento?.por_servico?.["Seletiva"] || 0 },
+    { name: "REMOÇÃO", value: solturasData?.statusFrotaAndamento?.por_servico?.["Remoção"] || 0 },
   ]
 
-  // Calcular dados atuais baseados nos dados reais da API
-  const currentData = {
-    rsu: {
-      equipamentos: 0,
-      maoDeObra: 0,
-    },
-    seletiva: {
-      equipamentos: 0,
-      maoDeObra: 0,
-    },
-  }
-
-  if (data?.contagemPorGaragemEServico) {
-    // Somar equipamentos e mão de obra de todas as PAs para RSU
-    Object.values(data.contagemPorGaragemEServico).forEach((pa) => {
-      if (pa.Rsu) {
-        currentData.rsu.equipamentos += pa.Rsu.equipamentos || 0
-        currentData.rsu.maoDeObra += (pa.Rsu.motoristas || 0) + (pa.Rsu.coletores || 0)
-      }
-      if (pa.Seletiva) {
-        currentData.seletiva.equipamentos += pa.Seletiva.equipamentos || 0
-        currentData.seletiva.maoDeObra += (pa.Seletiva.motoristas || 0) + (pa.Seletiva.coletores || 0)
-      }
-    })
-  }
+  console.log("Status Frota Andamento completo:", data?.statusFrotaAndamento)
+  console.log("Por serviço processado:", data?.statusFrotaAndamento?.por_servico)
+  console.log("Dados para solturas em andamento:", solturasAndamentoData)
 
   return (
     <Box sx={{ minHeight: "100vh", backgroundColor: "#fdfdfd" }}>
@@ -1348,8 +1124,8 @@ export default function FleetDashboard() {
       <AppBar
         position="sticky"
         sx={{
-          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-          boxShadow: "0 4px 20px rgba(102, 126, 234, 0.3)",
+          background: "linear-gradient(135deg, ${color}, ${alpha(color, 0.8)})",
+          boxShadow: "0 4px 20px rgba(34, 197, 94, 0.3)",
           color: "#ffffff",
           backdropFilter: "blur(10px)",
         }}
@@ -1381,7 +1157,7 @@ export default function FleetDashboard() {
                   fontSize: {
                     xs: "2.2rem",
                     xl: "2.2rem",
-                    "2xl": "3rem", // Para TVs
+                    "2xl": "3rem",
                   },
                   color: "#ffffff",
                   letterSpacing: "-0.02em",
@@ -1397,7 +1173,7 @@ export default function FleetDashboard() {
                   fontSize: {
                     xs: "1rem",
                     xl: "1rem",
-                    "2xl": "1.4rem", // Para TVs
+                    "2xl": "1.4rem",
                   },
                   fontWeight: 500,
                   mt: 0.5,
@@ -1509,51 +1285,60 @@ export default function FleetDashboard() {
         maxWidth={{
           xs: "xl",
           xl: "xl",
-          "2xl": false, // Para TVs usar largura total
+          "2xl": false,
         }}
         sx={{
           py: 4,
           px: {
             xs: 4,
             xl: 4,
-            "2xl": 6, // Para TVs
+            "2xl": 6,
           },
         }}
       >
-        {/* Cards de Resumo Geral - SEM PROGRESS BAR */}
+        {/* Cards de Resumo Geral */}
         <Box sx={{ mb: 5 }}>
-          <Typography
-            variant="h5"
-            sx={{
-              fontWeight: 600,
-              mb: 3,
-              color: "#1e293b",
-              display: "flex",
-              alignItems: "center",
-              fontSize: {
-                xs: "1.5rem",
-                xl: "1.5rem",
-                "2xl": "2rem", // Para TVs
-              },
-            }}
-          >
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: 40,
-                height: 40,
-                borderRadius: "50%",
-                background: alpha(themeColors.success.main, 0.1),
-                border: `1px solid ${alpha(themeColors.success.main, 0.3)}`,
-                mr: 2,
-              }}
-            >
-              <Assessment sx={{ color: themeColors.success.main }} />
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Box sx={{ display: "flex", alignItems: "center" }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 40,
+                  height: 40,
+                  borderRadius: "50%",
+                  background: alpha(themeColors.success.main, 0.1),
+                  border: `1px solid ${alpha(themeColors.success.main, 0.3)}`,
+                  mr: 2,
+                }}
+              >
+                <Assessment sx={{ color: themeColors.success.main }} />
+              </Box>
+              <Typography
+                variant="h5"
+                sx={{
+                  fontWeight: 600,
+                  color: "#1e293b",
+                  fontSize: {
+                    xs: "1.5rem",
+                    xl: "1.5rem",
+                    "2xl": "2rem",
+                  },
+                }}
+              >
+                Resumo Geral
+              </Typography>
             </Box>
-            Resumo Geral
-          </Typography>
+            {refreshingSection === "resumo" && (
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <CircularProgress size={16} sx={{ color: themeColors.success.main }} />
+                <Typography variant="caption" sx={{ color: themeColors.success.main, fontWeight: 600 }}>
+                  Atualizando...
+                </Typography>
+              </Box>
+            )}
+          </Box>
 
           <Box
             sx={{
@@ -1603,38 +1388,47 @@ export default function FleetDashboard() {
 
         {/* Comparativo de Recursos */}
         <Box sx={{ mb: 5 }}>
-          <Typography
-            variant="h5"
-            sx={{
-              fontWeight: 600,
-              mb: 3,
-              color: "#1e293b",
-              display: "flex",
-              alignItems: "center",
-              fontSize: {
-                xs: "1.5rem",
-                xl: "1.5rem",
-                "2xl": "2rem", // Para TVs
-              },
-            }}
-          >
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: 40,
-                height: 40,
-                borderRadius: "50%",
-                background: alpha(themeColors.secondary.main, 0.1),
-                border: `1px solid ${alpha(themeColors.secondary.main, 0.3)}`,
-                mr: 2,
-              }}
-            >
-              <BarChart sx={{ color: themeColors.secondary.main }} />
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Box sx={{ display: "flex", alignItems: "center" }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 40,
+                  height: 40,
+                  borderRadius: "50%",
+                  background: alpha(themeColors.secondary.main, 0.1),
+                  border: `1px solid ${alpha(themeColors.secondary.main, 0.3)}`,
+                  mr: 2,
+                }}
+              >
+                <BarChart sx={{ color: themeColors.secondary.main }} />
+              </Box>
+              <Typography
+                variant="h5"
+                sx={{
+                  fontWeight: 600,
+                  color: "#1e293b",
+                  fontSize: {
+                    xs: "1.5rem",
+                    xl: "1.5rem",
+                    "2xl": "2rem",
+                  },
+                }}
+              >
+                Análise Operacional
+              </Typography>
             </Box>
-            Análise Operacional
-          </Typography>
+            {(refreshingSection === "workforce" || refreshingSection === "solturas") && (
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <CircularProgress size={16} sx={{ color: themeColors.secondary.main }} />
+                <Typography variant="caption" sx={{ color: themeColors.secondary.main, fontWeight: 600 }}>
+                  Atualizando...
+                </Typography>
+              </Box>
+            )}
+          </Box>
 
           <Box
             sx={{
@@ -1646,46 +1440,54 @@ export default function FleetDashboard() {
               gap: 3,
             }}
           >
-            <WorkforceAnalysisCard />
-
+            <WorkforceAnalysisCard apiData={workforceData} />
             <SolturasAndamentoCard title="Solturas em Andamento" data={solturasAndamentoData} height={400} />
           </Box>
         </Box>
 
         {/* Detalhamento de Serviços */}
         <Box sx={{ mb: 5 }}>
-          <Typography
-            variant="h5"
-            sx={{
-              fontWeight: 600,
-              mb: 3,
-              color: "#1e293b",
-              display: "flex",
-              alignItems: "center",
-              fontSize: {
-                xs: "1.5rem",
-                xl: "1.5rem",
-                "2xl": "2rem", // Para TVs
-              },
-            }}
-          >
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: 40,
-                height: 40,
-                borderRadius: "50%",
-                background: alpha(themeColors.purple.main, 0.1),
-                border: `1px solid ${alpha(themeColors.purple.main, 0.3)}`,
-                mr: 2,
-              }}
-            >
-              <TrendingUp sx={{ color: themeColors.purple.main }} />
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Box sx={{ display: "flex", alignItems: "center" }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 40,
+                  height: 40,
+                  borderRadius: "50%",
+                  background: alpha(themeColors.purple.main, 0.1),
+                  border: `1px solid ${alpha(themeColors.purple.main, 0.3)}`,
+                  mr: 2,
+                }}
+              >
+                <TrendingUp sx={{ color: themeColors.purple.main }} />
+              </Box>
+              <Typography
+                variant="h5"
+                sx={{
+                  fontWeight: 600,
+                  color: "#1e293b",
+                  fontSize: {
+                    xs: "1.5rem",
+                    xl: "1.5rem",
+                    "2xl": "2rem",
+                  },
+                }}
+              >
+                Detalhamento de Serviços
+              </Typography>
             </Box>
-            Detalhamento de Serviços
-          </Typography>
+            {refreshingSection === "pas" && (
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <CircularProgress size={16} sx={{ color: themeColors.purple.main }} />
+                <Typography variant="caption" sx={{ color: themeColors.purple.main, fontWeight: 600 }}>
+                  Atualizando...
+                </Typography>
+              </Box>
+            )}
+          </Box>
 
           {/* Cards para cada PA */}
           <Box
@@ -1696,24 +1498,23 @@ export default function FleetDashboard() {
                 sm: "repeat(2, 1fr)",
                 lg: "repeat(4, 1fr)",
                 xl: "repeat(4, 1fr)",
-                "2xl": "repeat(2, 1fr)", // Para TVs, 2 por linha para melhor proporção
+                "2xl": "repeat(2, 1fr)",
               },
               gap: 4,
               mb: 4,
             }}
           >
             {[
-              { name: "PA1", data: data?.pa1, color: "#3b82f6" },
-              { name: "PA2", data: data?.pa2, color: "#10b981" },
-              { name: "PA3", data: data?.pa3, color: "#f59e0b" },
-              { name: "PA4", data: data?.pa4, color: "#8b5cf6" },
+              { name: "PA1", data: pasData?.pa1, color: "#3b82f6" },
+              { name: "PA2", data: pasData?.pa2, color: "#10b981" },
+              { name: "PA3", data: pasData?.pa3, color: "#f59e0b" },
+              { name: "PA4", data: pasData?.pa4, color: "#8b5cf6" },
             ].map(({ name, data: paData, color }, index) => {
               const totalVeiculos = paData?.veiculos || 0
               const totalMotoristas = paData?.motoristas || 0
               const totalColetores = paData?.coletores || 0
 
-              // Usar dados reais da API para serviços
-              const servicosData = data?.contagemPorGaragemEServico?.[name] || {}
+              const servicosData = pasData?.contagemPorGaragemEServico?.[name] || {}
 
               const rsuData = servicosData.Rsu || {}
               const seletivaData = servicosData.Seletiva || {}
@@ -1737,9 +1538,9 @@ export default function FleetDashboard() {
                       position: "relative",
                       overflow: "hidden",
                       height: {
-                        xs: "380px", // Aumentado de 320px
-                        xl: "380px", // Aumentado de 320px
-                        "2xl": "420px", // Aumentado de 360px
+                        xs: "380px",
+                        xl: "380px",
+                        "2xl": "420px",
                       },
                       "&:hover": {
                         transform: "translateY(-4px) scale(1.02)",
@@ -1820,7 +1621,7 @@ export default function FleetDashboard() {
                               fontSize: {
                                 xs: "1.8rem",
                                 xl: "1.8rem",
-                                "2xl": "2.2rem", // Para TVs
+                                "2xl": "2.2rem",
                               },
                               lineHeight: 1,
                               mb: 0.5,
@@ -1875,7 +1676,7 @@ export default function FleetDashboard() {
                               fontSize: {
                                 xs: "1.8rem",
                                 xl: "1.8rem",
-                                "2xl": "2.2rem", // Para TVs
+                                "2xl": "2.2rem",
                               },
                               lineHeight: 1,
                               mb: 0.5,
@@ -1930,7 +1731,7 @@ export default function FleetDashboard() {
                               fontSize: {
                                 xs: "1.8rem",
                                 xl: "1.8rem",
-                                "2xl": "2.2rem", // Para TVs
+                                "2xl": "2.2rem",
                               },
                               lineHeight: 1,
                               mb: 0.5,
