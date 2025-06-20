@@ -23,9 +23,11 @@ import {
   Refresh,
   Assessment,
   TrendingUp,
+  DeleteSweepOutlined,
   Build,
-  Dashboard,
+   HomeOutlined,
   BarChart,
+  DeleteOutline,
   PlayArrow,
   CheckCircle,
 } from "@mui/icons-material"
@@ -300,7 +302,7 @@ const SolturasAndamentoCard = ({ title, data, height = 400 }) => {
             letterSpacing: "0.5px",
           }}
         >
-          Unidades
+          Solturas
         </Typography>
       </Box>
 
@@ -918,7 +920,7 @@ export default function FleetDashboard() {
     }
   }
 
-  // Função para refresh suave de seção específica
+  // função para refresh suave de seção específica
   const refreshSection = async (sectionName) => {
     setRefreshingSection(sectionName)
     try {
@@ -1132,31 +1134,16 @@ export default function FleetDashboard() {
       >
         <Toolbar sx={{ py: 2, px: 4 }}>
           <Box sx={{ display: "flex", alignItems: "center", flexGrow: 1 }}>
-            <Box
-              sx={{
-                width: 50,
-                height: 50,
-                borderRadius: "12px",
-                background: "rgba(255, 255, 255, 0.15)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                mr: 3,
-                border: "2px solid rgba(255, 255, 255, 0.2)",
-                backdropFilter: "blur(10px)",
-              }}
-            >
-              <Dashboard sx={{ fontSize: 28, color: "#ffffff" }} />
-            </Box>
+           
 
             <Box>
               <Typography
                 variant="h4"
                 sx={{
-                  fontWeight: 700,
+                  fontWeight: 500,
                   fontSize: {
-                    xs: "2.2rem",
-                    xl: "2.2rem",
+                    xs: "2.8rem",
+                    xl: "2.8rem",
                     "2xl": "3rem",
                   },
                   color: "#ffffff",
@@ -1362,7 +1349,7 @@ export default function FleetDashboard() {
             <StatCard
               title="Saídas de Remoção"
               value={saidasRemocao}
-              icon={Build}
+              icon={DeleteSweepOutlined}
               color={themeColors.warning.main}
               subtitle="Registradas"
               delay={100}
@@ -1378,7 +1365,7 @@ export default function FleetDashboard() {
             <StatCard
               title="Saídas Domiciliar"
               value={saidasDomiciliar}
-              icon={Person}
+               icon={ HomeOutlined}
               color={themeColors.info.main}
               subtitle="Registradas"
               delay={300}
