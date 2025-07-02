@@ -1292,8 +1292,6 @@ export default function RCUControlDashboard() {
           </Box>
         </Box>
       </Box>
-
-      {/* Snackbar for notifications */}
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={3000}

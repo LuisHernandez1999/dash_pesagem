@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+
 import {
   AppBar,
   Toolbar,
@@ -10,27 +11,27 @@ import {
   Box,
   Container,
   alpha,
-  Fade,
-  Grow,
   Button,
   CircularProgress,
   Alert,
 } from "@mui/material"
+
 import {
   LocalShipping,
-  Person,
   RecyclingOutlined,
   Refresh,
   Assessment,
   TrendingUp,
   DeleteSweepOutlined,
   Build,
-   HomeOutlined,
+  HomeOutlined,
   BarChart,
-  DeleteOutline,
   PlayArrow,
   CheckCircle,
+  Person,
+  Group,
 } from "@mui/icons-material"
+
 import { createTheme } from "@mui/material/styles"
 import { getDashGeral } from "../../service/geral"
 
@@ -90,132 +91,9 @@ const themeColors = {
 // Cores dos gráficos
 const chartColors = ["#60a5fa", "#34d399", "#fbbf24", "#a78bfa", "#22d3ee", "#fb7185", "#a3e635", "#fb923c"]
 
-// Componente de Card Estatístico (SEM PROGRESS BAR) - VOLTANDO COMO ERA ANTES
-const StatCard = ({ title, value, icon: Icon, color, subtitle, delay = 0 }) => (
-  <Grow in={true} timeout={800} style={{ transitionDelay: `${delay}ms` }}>
-    <Card
-      sx={{
-        height: {
-          xs: "180px", // Voltando para 180px
-          xl: "180px",
-          "2xl": "220px",
-        },
-        background: "#ffffff",
-        color: "#1e293b",
-        position: "relative",
-        overflow: "hidden",
-        borderRadius: "24px",
-        boxShadow: "0 4px 20px rgba(0, 0, 0, 0.06)",
-        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-        cursor: "pointer",
-        border: "1px solid #f1f5f9",
-        "&:hover": {
-          transform: "translateY(-2px)",
-          boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
-          border: `1px solid ${alpha(color, 0.2)}`,
-        },
-      }}
-    >
-      <CardContent
-        sx={{
-          p: 4,
-          height: "100%",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center", // Centralizado verticalmente
-        }}
-      >
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <Box sx={{ flex: 1 }}>
-            <Typography
-              variant="h2"
-              sx={{
-                fontWeight: 700,
-                fontSize: {
-                  xs: "3rem",
-                  xl: "3rem",
-                  "2xl": "4.5rem", // Para TVs
-                },
-                mb: 1,
-                color: "#0f172a",
-                lineHeight: 1,
-                letterSpacing: "-0.02em",
-              }}
-            >
-              {value}
-            </Typography>
-            <Typography
-              variant="h6"
-              sx={{
-                fontWeight: 600,
-                fontSize: {
-                  xs: "1.1rem",
-                  xl: "1.1rem",
-                  "2xl": "1.4rem", // Para TVs
-                },
-                color: "#475569",
-                lineHeight: 1.3,
-                mb: 0.5,
-              }}
-            >
-              {title}
-            </Typography>
-            {subtitle && (
-              <Typography
-                variant="body2"
-                sx={{
-                  color: color,
-                  fontWeight: 500,
-                  fontSize: "0.875rem",
-                }}
-              >
-                {subtitle}
-              </Typography>
-            )}
-          </Box>
-          <Box
-            sx={{
-              width: {
-                xs: 64,
-                xl: 64,
-                "2xl": 80, // Para TVs
-              },
-              height: {
-                xs: 64,
-                xl: 64,
-                "2xl": 80, // Para TVs
-              },
-              borderRadius: "20px",
-              background: alpha(color, 0.08),
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              border: `1px solid ${alpha(color, 0.15)}`,
-              flexShrink: 0,
-              ml: 2,
-            }}
-          >
-            <Icon
-              sx={{
-                fontSize: {
-                  xs: 28,
-                  xl: 28,
-                  "2xl": 36, // Para TVs
-                },
-                color: color,
-              }}
-            />
-          </Box>
-        </Box>
-      </CardContent>
-    </Card>
-  </Grow>
-)
-
 // Novo componente para Solturas em Andamento - CORRIGIDO
 const SolturasAndamentoCard = ({ title, data, height = 400 }) => {
   console.log("SolturasAndamentoCard recebeu dados:", data)
-
   const total = data && Array.isArray(data) ? data.reduce((sum, entry) => sum + entry.value, 0) : 0
 
   const ServiceItem = ({ service, value, color, icon: Icon }) => (
@@ -278,7 +156,6 @@ const SolturasAndamentoCard = ({ title, data, height = 400 }) => {
           </Typography>
         </Box>
       </Box>
-
       <Box sx={{ textAlign: "right" }}>
         <Typography
           variant="h3"
@@ -305,7 +182,6 @@ const SolturasAndamentoCard = ({ title, data, height = 400 }) => {
           Solturas
         </Typography>
       </Box>
-
       <Box
         sx={{
           width: 12,
@@ -389,7 +265,6 @@ const SolturasAndamentoCard = ({ title, data, height = 400 }) => {
               {title}
             </Typography>
           </Box>
-
           <Box
             sx={{
               display: "flex",
@@ -530,157 +405,290 @@ const SolturasAndamentoCard = ({ title, data, height = 400 }) => {
   )
 }
 
-// Componente de Análise de Mão de Obra - CORRIGIDO PARA USAR DADOS REAIS
-const WorkforceAnalysisCard = ({ apiData }) => {
-  console.log("WorkforceAnalysisCard recebeu apiData:", apiData)
-
-  // Dados das metas previstas
+// Novo componente para Detalhamento por Serviço
+const ServiceDetailCard = ({ serviceName, serviceData, apiData, color, icon: Icon }) => {
+  // Dados das metas previstas por serviço
   const targets = {
-    rsu: {
+    RSU: {
       equipamentos: 59,
-      maoDeObra: 237,
-      nome: "RSU",
+      motoristas: 118,
+      coletores: 119,
     },
-    seletiva: {
+    SELETIVA: {
       equipamentos: 18,
-      maoDeObra: 54,
-      nome: "Coleta Seletiva",
+      motoristas: 27,
+      coletores: 27,
+    },
+    REMOÇÃO: {
+      equipamentos: 12,
+      motoristas: 18,
+      coletores: 18,
     },
   }
+
+  const target = targets[serviceName.toUpperCase()] || { equipamentos: 0, motoristas: 0, coletores: 0 }
 
   // Calcular dados atuais baseados nos dados reais da API
   const currentData = {
-    rsu: {
-      equipamentos: 0,
-      maoDeObra: 0,
-    },
-    seletiva: {
-      equipamentos: 0,
-      maoDeObra: 0,
-    },
+    equipamentos: 0,
+    motoristas: 0,
+    coletores: 0,
   }
 
-  // Processar dados da API para calcular totais atuais
+  // Processar dados da API para calcular totais atuais do serviço
   if (apiData?.resultado_por_pa) {
     Object.values(apiData.resultado_por_pa).forEach((pa) => {
-      if (pa.Rsu) {
-        currentData.rsu.equipamentos += pa.Rsu.equipamentos || 0
-        currentData.rsu.maoDeObra += (pa.Rsu.motoristas || 0) + (pa.Rsu.coletores || 0)
-      }
-      if (pa.Seletiva) {
-        currentData.seletiva.equipamentos += pa.Seletiva.equipamentos || 0
-        currentData.seletiva.maoDeObra += (pa.Seletiva.motoristas || 0) + (pa.Seletiva.coletores || 0)
+      const serviceKey = serviceName === "RSU" ? "Rsu" : serviceName === "SELETIVA" ? "Seletiva" : "Remoção"
+      if (pa[serviceKey]) {
+        currentData.equipamentos += pa[serviceKey].equipamentos || 0
+        currentData.motoristas += pa[serviceKey].motoristas || 0
+        currentData.coletores += pa[serviceKey].coletores || 0
       }
     })
   }
 
-  console.log("Dados atuais calculados:", currentData)
+  const equipamentosPercent = Math.min((currentData.equipamentos / target.equipamentos) * 100, 100)
+  const motoristasPercent = Math.min((currentData.motoristas / target.motoristas) * 100, 100)
+  const coletoresPercent = Math.min((currentData.coletores / target.coletores) * 100, 100)
 
-  const ServiceCard = ({ service, target, current, color }) => {
-    const equipamentosPercent = Math.min((current.equipamentos / target.equipamentos) * 100, 100)
-    const maoDeObraPercent = Math.min((current.maoDeObra / target.maoDeObra) * 100, 100)
+  const equipamentosStatus = equipamentosPercent >= 90 ? "success" : equipamentosPercent >= 70 ? "warning" : "danger"
+  const motoristasStatus = motoristasPercent >= 90 ? "success" : motoristasPercent >= 70 ? "warning" : "danger"
+  const coletoresStatus = coletoresPercent >= 90 ? "success" : coletoresPercent >= 70 ? "warning" : "danger"
 
-    const equipamentosStatus = equipamentosPercent >= 90 ? "success" : equipamentosPercent >= 70 ? "warning" : "danger"
-    const maoDeObraStatus = maoDeObraPercent >= 90 ? "success" : maoDeObraPercent >= 70 ? "warning" : "danger"
+  const statusColors = {
+    success: "#22c55e",
+    warning: "#f59e0b",
+    danger: "#ef4444",
+  }
 
-    const statusColors = {
-      success: "#22c55e",
-      warning: "#f59e0b",
-      danger: "#ef4444",
-    }
-
-    return (
-      <Card
-        sx={{
-          background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
-          borderRadius: "20px",
-          border: `2px solid ${alpha(color, 0.1)}`,
-          p: 0,
-          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-          height: "100%",
-          "&:hover": {
-            transform: "translateY(-2px)",
-            boxShadow: `0 12px 32px ${alpha(color, 0.15)}`,
-            border: `2px solid ${alpha(color, 0.2)}`,
-          },
-        }}
-      >
-        <CardContent sx={{ p: 4 }}>
-          <Box sx={{ display: "flex", alignItems: "center", mb: 4 }}>
-            <Box>
-              <Typography
-                variant="h5"
-                sx={{
-                  fontWeight: 700,
-                  color: "#1e293b",
-                  fontSize: "1.4rem",
-                  mb: 0.5,
-                }}
-              >
-                {service}
-              </Typography>
-              <Typography
-                variant="body2"
-                sx={{
-                  color: "#64748b",
-                  fontWeight: 500,
-                }}
-              >
-                Análise Operacional
-              </Typography>
-            </Box>
+  return (
+    <Card
+      sx={{
+        background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+        borderRadius: "24px",
+        border: `2px solid ${alpha(color, 0.1)}`,
+        p: 0,
+        transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
+        position: "relative",
+        overflow: "hidden",
+        height: "100%",
+        "&:hover": {
+          transform: "translateY(-4px)",
+          boxShadow: `0 20px 40px ${alpha(color, 0.2)}`,
+          border: `2px solid ${alpha(color, 0.3)}`,
+        },
+      }}
+    >
+      <CardContent sx={{ p: 4, height: "100%", display: "flex", flexDirection: "column" }}>
+        {/* Header do Serviço */}
+        <Box sx={{ display: "flex", alignItems: "center", mb: 4 }}>
+          <Box
+            sx={{
+              width: 56,
+              height: 56,
+              borderRadius: "16px",
+              background: `linear-gradient(135deg, ${color}, ${alpha(color, 0.8)})`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              mr: 3,
+              boxShadow: `0 8px 20px ${alpha(color, 0.3)}`,
+            }}
+          >
+            <Icon sx={{ fontSize: 28, color: "#ffffff" }} />
           </Box>
+          <Box>
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: 700,
+                color: "#1e293b",
+                fontSize: "1.5rem",
+                mb: 0.5,
+              }}
+            >
+              {serviceName}
+            </Typography>
+            <Typography
+              variant="body2"
+              sx={{
+                color: "#64748b",
+                fontWeight: 500,
+              }}
+            >
+              Análise Operacional Completa
+            </Typography>
+          </Box>
+        </Box>
 
-          {/* Métricas de Equipamentos */}
-          <Box sx={{ mb: 4 }}>
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+        {/* Distribuição Detalhada por PA - DESTAQUE NO TOPO */}
+        <Box sx={{ mb: 4 }}>
+          <Typography
+            variant="caption"
+            sx={{
+              color: "#64748b",
+              fontWeight: 700,
+              fontSize: "0.75rem",
+              textTransform: "uppercase",
+              letterSpacing: "1px",
+              mb: 3,
+              display: "block",
+              textAlign: "center",
+            }}
+          >
+            Distribuição Detalhada por PA
+          </Typography>
+          <Box sx={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 2 }}>
+            {["PA1", "PA2", "PA3", "PA4"].map((pa, index) => {
+              const paData = apiData?.resultado_por_pa?.[pa] || {}
+              const serviceKey = serviceName === "RSU" ? "Rsu" : serviceName === "SELETIVA" ? "Seletiva" : "Remoção"
+              const paServiceData = paData[serviceKey] || {}
+              const equipamentos = paServiceData.veiculos || 0
+              const motoristas = paServiceData.motoristas || 0
+              const coletores = paServiceData.coletores || 0
+
+              return (
+                <Box key={pa} sx={{ textAlign: "center" }}>
+                  <Box
+                    sx={{
+                      p: 2,
+                      borderRadius: "12px",
+                      background: alpha(color, 0.05),
+                      border: `2px solid ${alpha(color, 0.1)}`,
+                      transition: "all 0.3s ease",
+                      minHeight: "120px",
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
+                      "&:hover": {
+                        background: alpha(color, 0.1),
+                        border: `2px solid ${alpha(color, 0.2)}`,
+                        transform: "translateY(-2px)",
+                        boxShadow: `0 4px 12px ${alpha(color, 0.15)}`,
+                      },
+                    }}
+                  >
+                    {/* Header do PA */}
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        fontWeight: 800,
+                        color: color,
+                        fontSize: "1rem",
+                        mb: 1.5,
+                        letterSpacing: "0.5px",
+                      }}
+                    >
+                      {pa}
+                    </Typography>
+
+                    {/* Métricas */}
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.8 }}>
+                      {/* Equipamentos */}
+                      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 1 }}>
+                        <LocalShipping sx={{ fontSize: 16, color: "#3b82f6" }} />
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontWeight: 700,
+                            color: "#3b82f6",
+                            fontSize: "0.9rem",
+                            minWidth: "20px",
+                          }}
+                        >
+                          {equipamentos}
+                        </Typography>
+                      </Box>
+
+                      {/* Motoristas */}
+                      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 1 }}>
+                        <Person sx={{ fontSize: 16, color: "#059669" }} />
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontWeight: 700,
+                            color: "#059669",
+                            fontSize: "0.9rem",
+                            minWidth: "20px",
+                          }}
+                        >
+                          {motoristas}
+                        </Typography>
+                      </Box>
+
+                      {/* Coletores */}
+                      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 1 }}>
+                        <Group sx={{ fontSize: 16, color: "#f59e0b" }} />
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontWeight: 700,
+                            color: "#f59e0b",
+                            fontSize: "0.9rem",
+                            minWidth: "20px",
+                          }}
+                        >
+                          {coletores}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Box>
+                </Box>
+              )
+            })}
+          </Box>
+        </Box>
+
+        {/* Métricas de Performance */}
+        <Box sx={{ mb: 3 }}>
+          {/* Equipamentos */}
+          <Box sx={{ mb: 2 }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
               <Typography
-                variant="h6"
+                variant="subtitle2"
                 sx={{
                   fontWeight: 600,
                   color: "#374151",
-                  fontSize: "1.1rem",
+                  fontSize: "0.9rem",
                   display: "flex",
                   alignItems: "center",
                 }}
               >
                 <Box
                   sx={{
-                    width: 8,
-                    height: 8,
+                    width: 6,
+                    height: 6,
                     borderRadius: "50%",
                     background: statusColors[equipamentosStatus],
-                    mr: 2,
-                    boxShadow: `0 0 0 3px ${alpha(statusColors[equipamentosStatus], 0.2)}`,
+                    mr: 1,
+                    boxShadow: `0 0 0 2px ${alpha(statusColors[equipamentosStatus], 0.2)}`,
                   }}
                 />
                 Equipamentos
               </Typography>
               <Typography
-                variant="h4"
+                variant="body1"
                 sx={{
                   fontWeight: 800,
                   color: statusColors[equipamentosStatus],
-                  fontSize: "1.8rem",
+                  fontSize: "1.1rem",
                 }}
               >
                 {Math.round(equipamentosPercent)}%
               </Typography>
             </Box>
-
-            <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
-              <Typography variant="body2" sx={{ color: "#64748b", fontWeight: 500 }}>
-                Atual: {current.equipamentos}
+            <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+              <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 500, fontSize: "0.75rem" }}>
+                Atual: {currentData.equipamentos}
               </Typography>
-              <Typography variant="body2" sx={{ color: "#64748b", fontWeight: 500 }}>
+              <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 500, fontSize: "0.75rem" }}>
                 Meta: {target.equipamentos}
               </Typography>
             </Box>
-
             <Box
               sx={{
-                height: 12,
-                borderRadius: 6,
+                height: 6,
+                borderRadius: 3,
                 backgroundColor: alpha(statusColors[equipamentosStatus], 0.1),
                 position: "relative",
                 overflow: "hidden",
@@ -691,64 +699,62 @@ const WorkforceAnalysisCard = ({ apiData }) => {
                   height: "100%",
                   width: `${equipamentosPercent}%`,
                   backgroundColor: statusColors[equipamentosStatus],
-                  borderRadius: 6,
+                  borderRadius: 3,
                   transition: "width 1s ease-in-out",
                 }}
               />
             </Box>
           </Box>
 
-          {/* Métricas de Mão de Obra */}
-          <Box>
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+          {/* Motoristas */}
+          <Box sx={{ mb: 2 }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
               <Typography
-                variant="h6"
+                variant="subtitle2"
                 sx={{
                   fontWeight: 600,
                   color: "#374151",
-                  fontSize: "1.1rem",
+                  fontSize: "0.9rem",
                   display: "flex",
                   alignItems: "center",
                 }}
               >
                 <Box
                   sx={{
-                    width: 8,
-                    height: 8,
+                    width: 6,
+                    height: 6,
                     borderRadius: "50%",
-                    background: statusColors[maoDeObraStatus],
-                    mr: 2,
-                    boxShadow: `0 0 0 3px ${alpha(statusColors[maoDeObraStatus], 0.2)}`,
+                    background: statusColors[motoristasStatus],
+                    mr: 1,
+                    boxShadow: `0 0 0 2px ${alpha(statusColors[motoristasStatus], 0.2)}`,
                   }}
                 />
-                Mão de Obra
+                Motoristas
               </Typography>
               <Typography
-                variant="h4"
+                variant="body1"
                 sx={{
                   fontWeight: 800,
-                  color: statusColors[maoDeObraStatus],
-                  fontSize: "1.8rem",
+                  color: statusColors[motoristasStatus],
+                  fontSize: "1.1rem",
                 }}
               >
-                {Math.round(maoDeObraPercent)}%
+                {Math.round(motoristasPercent)}%
               </Typography>
             </Box>
-
-            <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
-              <Typography variant="body2" sx={{ color: "#64748b", fontWeight: 500 }}>
-                Atual: {current.maoDeObra}
+            <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+              <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 500, fontSize: "0.75rem" }}>
+                Atual: {currentData.motoristas}
               </Typography>
-              <Typography variant="body2" sx={{ color: "#64748b", fontWeight: 500 }}>
-                Meta: {target.maoDeObra}
+              <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 500, fontSize: "0.75rem" }}>
+                Meta: {target.motoristas}
               </Typography>
             </Box>
-
             <Box
               sx={{
-                height: 12,
-                borderRadius: 6,
-                backgroundColor: alpha(statusColors[maoDeObraStatus], 0.1),
+                height: 6,
+                borderRadius: 3,
+                backgroundColor: alpha(statusColors[motoristasStatus], 0.1),
                 position: "relative",
                 overflow: "hidden",
               }}
@@ -756,127 +762,79 @@ const WorkforceAnalysisCard = ({ apiData }) => {
               <Box
                 sx={{
                   height: "100%",
-                  width: `${maoDeObraPercent}%`,
-                  backgroundColor: statusColors[maoDeObraStatus],
-                  borderRadius: 6,
+                  width: `${motoristasPercent}%`,
+                  backgroundColor: statusColors[motoristasStatus],
+                  borderRadius: 3,
                   transition: "width 1s ease-in-out",
                 }}
               />
             </Box>
           </Box>
 
-          {/* Status Geral */}
-          <Box
-            sx={{
-              mt: 4,
-              p: 3,
-              borderRadius: "12px",
-              background: alpha(color, 0.05),
-              border: `1px solid ${alpha(color, 0.1)}`,
-            }}
-          >
-            <Typography
-              variant="body2"
+          {/* Coletores */}
+          <Box>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  fontWeight: 600,
+                  color: "#374151",
+                  fontSize: "0.9rem",
+                  display: "flex",
+                  alignItems: "center",
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: "50%",
+                    background: statusColors[coletoresStatus],
+                    mr: 1,
+                    boxShadow: `0 0 0 2px ${alpha(statusColors[coletoresStatus], 0.2)}`,
+                  }}
+                />
+                Coletores
+              </Typography>
+              <Typography
+                variant="body1"
+                sx={{
+                  fontWeight: 800,
+                  color: statusColors[coletoresStatus],
+                  fontSize: "1.1rem",
+                }}
+              >
+                {Math.round(coletoresPercent)}%
+              </Typography>
+            </Box>
+            <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+              <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 500, fontSize: "0.75rem" }}>
+                Atual: {currentData.coletores}
+              </Typography>
+              <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 500, fontSize: "0.75rem" }}>
+                Meta: {target.coletores}
+              </Typography>
+            </Box>
+            <Box
               sx={{
-                color: "#64748b",
-                fontWeight: 600,
-                fontSize: "0.85rem",
-                textAlign: "center",
-                mb: 1,
+                height: 6,
+                borderRadius: 3,
+                backgroundColor: alpha(statusColors[coletoresStatus], 0.1),
+                position: "relative",
+                overflow: "hidden",
               }}
             >
-              Status Operacional
-            </Typography>
-            <Typography
-              variant="h6"
-              sx={{
-                color: color,
-                fontWeight: 700,
-                textAlign: "center",
-                fontSize: "1rem",
-              }}
-            >
-              {(equipamentosPercent + maoDeObraPercent) / 2 >= 90
-                ? "EXCELENTE"
-                : (equipamentosPercent + maoDeObraPercent) / 2 >= 70
-                  ? "BOM"
-                  : "ATENÇÃO NECESSÁRIA"}
-            </Typography>
+              <Box
+                sx={{
+                  height: "100%",
+                  width: `${coletoresPercent}%`,
+                  backgroundColor: statusColors[coletoresStatus],
+                  borderRadius: 3,
+                  transition: "width 1s ease-in-out",
+                }}
+              />
+            </Box>
           </Box>
-        </CardContent>
-      </Card>
-    )
-  }
-
-  return (
-    <Card
-      sx={{
-        height: 520,
-        borderRadius: "24px",
-        boxShadow: "0 8px 24px rgba(0, 0, 0, 0.08)",
-        overflow: "hidden",
-        background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
-        border: "1px solid #e2e8f0",
-      }}
-    >
-      <CardContent sx={{ p: 4, height: "100%" }}>
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            mb: 4,
-            pb: 3,
-            borderBottom: "2px solid #f1f5f9",
-          }}
-        >
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 48,
-              height: 48,
-              borderRadius: "50%",
-              background: "linear-gradient(135deg, #3b82f6, #1d4ed8)",
-              border: `2px solid ${alpha("#3b82f6", 0.3)}`,
-              mr: 2,
-              boxShadow: "0 8px 16px rgba(59, 130, 246, 0.3)",
-            }}
-          >
-            <Assessment sx={{ fontSize: 24, color: "#ffffff" }} />
-          </Box>
-          <Typography
-            variant="h6"
-            sx={{
-              fontWeight: 700,
-              color: "#1e293b",
-              fontSize: {
-                xs: "1.4rem",
-                xl: "1.4rem",
-                "2xl": "1.7rem",
-              },
-            }}
-          >
-            Análise de Mão de Obra
-          </Typography>
-        </Box>
-
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 3,
-            height: "calc(100% - 120px)",
-          }}
-        >
-          <ServiceCard service="RSU" target={targets.rsu} current={currentData.rsu} color="#8b5cf6" />
-          <ServiceCard
-            service="Coleta Seletiva"
-            target={targets.seletiva}
-            current={currentData.seletiva}
-            color="#10b981"
-          />
         </Box>
       </CardContent>
     </Card>
@@ -890,7 +848,6 @@ export default function FleetDashboard() {
   const [error, setError] = useState(null)
   const [lastUpdate, setLastUpdate] = useState(new Date())
   const [resumoData, setResumoData] = useState(null)
-  const [workforceData, setWorkforceData] = useState(null)
   const [solturasData, setSolturasData] = useState(null)
   const [pasData, setPasData] = useState(null)
   const [refreshingSection, setRefreshingSection] = useState(null)
@@ -905,13 +862,10 @@ export default function FleetDashboard() {
       setApiData(apiData)
       const processedData = processApiData(apiData)
       setData(processedData)
-
       // Atualizar todos os dados das seções
       setResumoData(processedData)
-      setWorkforceData(apiData)
       setSolturasData(processedData)
       setPasData(processedData)
-
       setLastUpdate(new Date())
     } catch (err) {
       setError(err.message || "Erro ao carregar dados do dashboard")
@@ -926,13 +880,9 @@ export default function FleetDashboard() {
     try {
       const apiData = await getDashGeral()
       const processedData = processApiData(apiData)
-
       switch (sectionName) {
         case "resumo":
           setResumoData(processedData)
-          break
-        case "workforce":
-          setWorkforceData(apiData)
           break
         case "solturas":
           setSolturasData(processedData)
@@ -941,7 +891,6 @@ export default function FleetDashboard() {
           setPasData(processedData)
           break
       }
-
       // Atualizar dados principais também
       setApiData(apiData)
       setData(processedData)
@@ -956,10 +905,8 @@ export default function FleetDashboard() {
     if (!apiData || !apiData.resultado_por_pa) return null
 
     const processedData = {}
-
     Object.keys(apiData.resultado_por_pa).forEach((pa) => {
       const paData = apiData.resultado_por_pa[pa]
-
       const totalVeiculos =
         (paData.Seletiva?.veiculos || 0) + (paData.Rsu?.veiculos || 0) + (paData.Remoção?.veiculos || 0)
       const totalMotoristas =
@@ -986,20 +933,16 @@ export default function FleetDashboard() {
   useEffect(() => {
     // Carregamento inicial
     fetchAllData()
-
     // Refresh completo a cada 20 minutos
     const fullRefreshInterval = setInterval(fetchAllData, 20 * 60 * 1000)
-
     // Refresh individual das seções em tempos diferentes
     const resumoInterval = setInterval(() => refreshSection("resumo"), 5 * 60 * 1000) // 5 min
-    const workforceInterval = setInterval(() => refreshSection("workforce"), 7 * 60 * 1000) // 7 min
     const solturasInterval = setInterval(() => refreshSection("solturas"), 3 * 60 * 1000) // 3 min
     const pasInterval = setInterval(() => refreshSection("pas"), 6 * 60 * 1000) // 6 min
 
     return () => {
       clearInterval(fullRefreshInterval)
       clearInterval(resumoInterval)
-      clearInterval(workforceInterval)
       clearInterval(solturasInterval)
       clearInterval(pasInterval)
     }
@@ -1077,37 +1020,25 @@ export default function FleetDashboard() {
     )
   }
 
+  if (!data) {
+    return (
+      <Box sx={{ minHeight: "100vh", backgroundColor: "#fdfdfd", p: 4 }}>
+        <Container maxWidth="md">
+          <Alert severity="warning" sx={{ borderRadius: "16px" }}>
+            <Typography variant="h6" sx={{ mb: 1 }}>
+              Nenhum dado disponível
+            </Typography>
+            <Typography variant="body2">Os dados não foram carregados. Verifique a conexão com a API.</Typography>
+            <Button onClick={handleRefresh} startIcon={<Refresh />} sx={{ mt: 2 }}>
+              Tentar Novamente
+            </Button>
+          </Alert>
+        </Container>
+      </Box>
+    )
+  }
+
   console.log("Renderizando dashboard com dados:", data)
-
-  // Calcular totais com os dados da API
-  const totalVeiculos = pasData
-    ? (pasData.pa1?.veiculos || 0) +
-      (pasData.pa2?.veiculos || 0) +
-      (pasData.pa3?.veiculos || 0) +
-      (pasData.pa4?.veiculos || 0)
-    : 0
-
-  const totalMotoristas = pasData
-    ? (pasData.pa1?.motoristas || 0) +
-      (pasData.pa2?.motoristas || 0) +
-      (pasData.pa3?.motoristas || 0) +
-      (pasData.pa4?.motoristas || 0)
-    : 0
-
-  const totalColetores = pasData
-    ? (pasData.pa1?.coletores || 0) +
-      (pasData.pa2?.coletores || 0) +
-      (pasData.pa3?.coletores || 0) +
-      (pasData.pa4?.coletores || 0)
-    : 0
-
-  console.log("Totais calculados:", { totalVeiculos, totalMotoristas, totalColetores })
-
-  // Dados para saídas - usando os dados processados pelo serviço
-  const totalSaidas = resumoData?.statusFrotaTotal?.total || 0
-  const saidasRemocao = resumoData?.statusFrotaTotal?.por_servico?.["Remoção"] || 0
-  const saidasSeletiva = resumoData?.statusFrotaTotal?.por_servico?.["Seletiva"] || 0
-  const saidasDomiciliar = resumoData?.statusFrotaTotal?.por_servico?.["Rsu"] || 0
 
   // Dados para solturas em andamento - CORRIGIDO PARA USAR OS DADOS PROCESSADOS
   const solturasAndamentoData = [
@@ -1126,16 +1057,14 @@ export default function FleetDashboard() {
       <AppBar
         position="sticky"
         sx={{
-          background: "linear-gradient(135deg, ${color}, ${alpha(color, 0.8)})",
-          boxShadow: "0 4px 20px rgba(34, 197, 94, 0.3)",
+          background: "linear-gradient(135deg, #15803d, #166534)",
+          boxShadow: "0 4px 20px rgba(21, 128, 61, 0.4)",
           color: "#ffffff",
           backdropFilter: "blur(10px)",
         }}
       >
         <Toolbar sx={{ py: 2, px: 4 }}>
           <Box sx={{ display: "flex", alignItems: "center", flexGrow: 1 }}>
-           
-
             <Box>
               <Typography
                 variant="h4"
@@ -1171,7 +1100,6 @@ export default function FleetDashboard() {
               </Typography>
             </Box>
           </Box>
-
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             {lastUpdate && (
               <Box
@@ -1235,7 +1163,6 @@ export default function FleetDashboard() {
                 </Box>
               </Box>
             )}
-
             <Button
               onClick={handleRefresh}
               startIcon={<Refresh />}
@@ -1267,7 +1194,6 @@ export default function FleetDashboard() {
         </Toolbar>
       </AppBar>
 
-      {/* Main Content */}
       <Container
         maxWidth={{
           xs: "xl",
@@ -1283,155 +1209,6 @@ export default function FleetDashboard() {
           },
         }}
       >
-        {/* Cards de Resumo Geral */}
-        <Box sx={{ mb: 5 }}>
-          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <Box sx={{ display: "flex", alignItems: "center" }}>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  width: 40,
-                  height: 40,
-                  borderRadius: "50%",
-                  background: alpha(themeColors.success.main, 0.1),
-                  border: `1px solid ${alpha(themeColors.success.main, 0.3)}`,
-                  mr: 2,
-                }}
-              >
-                <Assessment sx={{ color: themeColors.success.main }} />
-              </Box>
-              <Typography
-                variant="h5"
-                sx={{
-                  fontWeight: 600,
-                  color: "#1e293b",
-                  fontSize: {
-                    xs: "1.5rem",
-                    xl: "1.5rem",
-                    "2xl": "2rem",
-                  },
-                }}
-              >
-                Resumo Geral
-              </Typography>
-            </Box>
-            {refreshingSection === "resumo" && (
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <CircularProgress size={16} sx={{ color: themeColors.success.main }} />
-                <Typography variant="caption" sx={{ color: themeColors.success.main, fontWeight: 600 }}>
-                  Atualizando...
-                </Typography>
-              </Box>
-            )}
-          </Box>
-
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: {
-                xs: "repeat(1, 1fr)",
-                sm: "repeat(2, 1fr)",
-                md: "repeat(4, 1fr)",
-              },
-              gap: 3,
-            }}
-          >
-            <StatCard
-              title="Total de Saídas"
-              value={totalSaidas}
-              icon={LocalShipping}
-              color={themeColors.primary.main}
-              subtitle="Até o momento"
-              delay={0}
-            />
-            <StatCard
-              title="Saídas de Remoção"
-              value={saidasRemocao}
-              icon={DeleteSweepOutlined}
-              color={themeColors.warning.main}
-              subtitle="Registradas"
-              delay={100}
-            />
-            <StatCard
-              title="Saídas Seletiva"
-              value={saidasSeletiva}
-              icon={RecyclingOutlined}
-              color={themeColors.success.main}
-              subtitle="Registradas"
-              delay={200}
-            />
-            <StatCard
-              title="Saídas Domiciliar"
-              value={saidasDomiciliar}
-               icon={ HomeOutlined}
-              color={themeColors.info.main}
-              subtitle="Registradas"
-              delay={300}
-            />
-          </Box>
-        </Box>
-
-        {/* Comparativo de Recursos */}
-        <Box sx={{ mb: 5 }}>
-          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <Box sx={{ display: "flex", alignItems: "center" }}>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  width: 40,
-                  height: 40,
-                  borderRadius: "50%",
-                  background: alpha(themeColors.secondary.main, 0.1),
-                  border: `1px solid ${alpha(themeColors.secondary.main, 0.3)}`,
-                  mr: 2,
-                }}
-              >
-                <BarChart sx={{ color: themeColors.secondary.main }} />
-              </Box>
-              <Typography
-                variant="h5"
-                sx={{
-                  fontWeight: 600,
-                  color: "#1e293b",
-                  fontSize: {
-                    xs: "1.5rem",
-                    xl: "1.5rem",
-                    "2xl": "2rem",
-                  },
-                }}
-              >
-                Análise Operacional
-              </Typography>
-            </Box>
-            {(refreshingSection === "workforce" || refreshingSection === "solturas") && (
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <CircularProgress size={16} sx={{ color: themeColors.secondary.main }} />
-                <Typography variant="caption" sx={{ color: themeColors.secondary.main, fontWeight: 600 }}>
-                  Atualizando...
-                </Typography>
-              </Box>
-            )}
-          </Box>
-
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: {
-                xs: "repeat(1, 1fr)",
-                lg: "repeat(2, 1fr)",
-              },
-              gap: 3,
-            }}
-          >
-            <WorkforceAnalysisCard apiData={workforceData} />
-            <SolturasAndamentoCard title="Solturas em Andamento" data={solturasAndamentoData} height={400} />
-          </Box>
-        </Box>
-
         {/* Detalhamento de Serviços */}
         <Box sx={{ mb: 5 }}>
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -1476,424 +1253,85 @@ export default function FleetDashboard() {
             )}
           </Box>
 
-          {/* Cards para cada PA */}
           <Box
             sx={{
               display: "grid",
               gridTemplateColumns: {
                 xs: "repeat(1, 1fr)",
-                sm: "repeat(2, 1fr)",
-                lg: "repeat(4, 1fr)",
-                xl: "repeat(4, 1fr)",
-                "2xl": "repeat(2, 1fr)",
+                lg: "repeat(3, 1fr)",
               },
               gap: 4,
-              mb: 4,
             }}
           >
-            {[
-              { name: "PA1", data: pasData?.pa1, color: "#3b82f6" },
-              { name: "PA2", data: pasData?.pa2, color: "#10b981" },
-              { name: "PA3", data: pasData?.pa3, color: "#f59e0b" },
-              { name: "PA4", data: pasData?.pa4, color: "#8b5cf6" },
-            ].map(({ name, data: paData, color }, index) => {
-              const totalVeiculos = paData?.veiculos || 0
-              const totalMotoristas = paData?.motoristas || 0
-              const totalColetores = paData?.coletores || 0
-
-              const servicosData = pasData?.contagemPorGaragemEServico?.[name] || {}
-
-              const rsuData = servicosData.Rsu || {}
-              const seletivaData = servicosData.Seletiva || {}
-              const remocaoData = servicosData.Remoção || {}
-
-              const rsuTotal = (rsuData.veiculos || 0) + (rsuData.motoristas || 0) + (rsuData.coletores || 0)
-              const seletivaTotal =
-                (seletivaData.veiculos || 0) + (seletivaData.motoristas || 0) + (seletivaData.coletores || 0)
-              const remocaoTotal =
-                (remocaoData.veiculos || 0) + (remocaoData.motoristas || 0) + (remocaoData.coletores || 0)
-
-              return (
-                <Fade in={true} timeout={1000} style={{ transitionDelay: `${index * 100}ms` }} key={name}>
-                  <Card
-                    sx={{
-                      background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
-                      borderRadius: "20px",
-                      border: `2px solid ${alpha(color, 0.1)}`,
-                      p: 0,
-                      transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
-                      position: "relative",
-                      overflow: "hidden",
-                      height: {
-                        xs: "380px",
-                        xl: "380px",
-                        "2xl": "420px",
-                      },
-                      "&:hover": {
-                        transform: "translateY(-4px) scale(1.02)",
-                        boxShadow: `0 20px 40px ${alpha(color, 0.2)}`,
-                        border: `2px solid ${alpha(color, 0.3)}`,
-                      },
-                    }}
-                  >
-                    <CardContent sx={{ p: 3, height: "100%", display: "flex", flexDirection: "column" }}>
-                      {/* Header da PA */}
-                      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "flex-start", mb: 3 }}>
-                        <Box sx={{ display: "flex", alignItems: "center" }}>
-                          <Box
-                            sx={{
-                              width: 48,
-                              height: 48,
-                              borderRadius: "14px",
-                              background: `linear-gradient(135deg, ${color}, ${alpha(color, 0.8)})`,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              mr: 2,
-                              boxShadow: `0 8px 16px ${alpha(color, 0.3)}`,
-                            }}
-                          >
-                            <Typography
-                              variant="h6"
-                              sx={{
-                                fontWeight: 800,
-                                color: "#ffffff",
-                                fontSize: "1rem",
-                                letterSpacing: "0.5px",
-                              }}
-                            >
-                              {name}
-                            </Typography>
-                          </Box>
-                          <Box>
-                            <Typography
-                              variant="h6"
-                              sx={{
-                                fontWeight: 700,
-                                color: "#1e293b",
-                                fontSize: "1.1rem",
-                                lineHeight: 1.2,
-                              }}
-                            >
-                              Posto De Apoio
-                            </Typography>
-                          </Box>
-                        </Box>
-                      </Box>
-
-                      {/* Métricas principais */}
-                      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
-                        <Box sx={{ textAlign: "center", flex: 1 }}>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              width: 40,
-                              height: 40,
-                              borderRadius: "12px",
-                              background: alpha("#3b82f6", 0.1),
-                              mx: "auto",
-                              mb: 1.5,
-                              border: `2px solid ${alpha("#3b82f6", 0.2)}`,
-                            }}
-                          >
-                            <LocalShipping sx={{ fontSize: 18, color: "#3b82f6" }} />
-                          </Box>
-                          <Typography
-                            variant="h4"
-                            sx={{
-                              fontWeight: 800,
-                              color: "#1e293b",
-                              fontSize: {
-                                xs: "1.8rem",
-                                xl: "1.8rem",
-                                "2xl": "2.2rem",
-                              },
-                              lineHeight: 1,
-                              mb: 0.5,
-                            }}
-                          >
-                            {totalVeiculos}
-                          </Typography>
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              color: "#64748b",
-                              fontWeight: 600,
-                              fontSize: "0.7rem",
-                              textTransform: "uppercase",
-                              letterSpacing: "0.5px",
-                            }}
-                          >
-                            Veículos
-                          </Typography>
-                        </Box>
-
-                        <Box
-                          sx={{
-                            width: "1px",
-                            background: "linear-gradient(180deg, transparent, #e2e8f0, transparent)",
-                            mx: 1,
-                          }}
-                        />
-
-                        <Box sx={{ textAlign: "center", flex: 1 }}>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              width: 40,
-                              height: 40,
-                              borderRadius: "12px",
-                              background: alpha("#059669", 0.1),
-                              mx: "auto",
-                              mb: 1.5,
-                              border: `2px solid ${alpha("#059669", 0.2)}`,
-                            }}
-                          >
-                            <Person sx={{ fontSize: 18, color: "#059669" }} />
-                          </Box>
-                          <Typography
-                            variant="h4"
-                            sx={{
-                              fontWeight: 800,
-                              color: "#1e293b",
-                              fontSize: {
-                                xs: "1.8rem",
-                                xl: "1.8rem",
-                                "2xl": "2.2rem",
-                              },
-                              lineHeight: 1,
-                              mb: 0.5,
-                            }}
-                          >
-                            {totalMotoristas}
-                          </Typography>
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              color: "#64748b",
-                              fontWeight: 600,
-                              fontSize: "0.7rem",
-                              textTransform: "uppercase",
-                              letterSpacing: "0.5px",
-                            }}
-                          >
-                            Motoristas
-                          </Typography>
-                        </Box>
-
-                        <Box
-                          sx={{
-                            width: "1px",
-                            background: "linear-gradient(180deg, transparent, #e2e8f0, transparent)",
-                            mx: 1,
-                          }}
-                        />
-
-                        <Box sx={{ textAlign: "center", flex: 1 }}>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              width: 40,
-                              height: 40,
-                              borderRadius: "12px",
-                              background: alpha("#f59e0b", 0.1),
-                              mx: "auto",
-                              mb: 1.5,
-                              border: `2px solid ${alpha("#f59e0b", 0.2)}`,
-                            }}
-                          >
-                            <RecyclingOutlined sx={{ fontSize: 18, color: "#f59e0b" }} />
-                          </Box>
-                          <Typography
-                            variant="h4"
-                            sx={{
-                              fontWeight: 800,
-                              color: "#1e293b",
-                              fontSize: {
-                                xs: "1.8rem",
-                                xl: "1.8rem",
-                                "2xl": "2.2rem",
-                              },
-                              lineHeight: 1,
-                              mb: 0.5,
-                            }}
-                          >
-                            {totalColetores}
-                          </Typography>
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              color: "#64748b",
-                              fontWeight: 600,
-                              fontSize: "0.7rem",
-                              textTransform: "uppercase",
-                              letterSpacing: "0.5px",
-                            }}
-                          >
-                            Coletores
-                          </Typography>
-                        </Box>
-                      </Box>
-
-                      {/* Distribuição por Serviços */}
-                      <Box
-                        sx={{
-                          borderTop: `2px solid ${alpha("#f1f5f9", 0.8)}`,
-                          pt: 2.5,
-                          mt: "auto",
-                        }}
-                      >
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            color: "#64748b",
-                            fontWeight: 700,
-                            fontSize: "0.7rem",
-                            textTransform: "uppercase",
-                            letterSpacing: "1px",
-                            mb: 2,
-                            display: "block",
-                            textAlign: "center",
-                          }}
-                        >
-                          Distribuição por Serviço
-                        </Typography>
-
-                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 1 }}>
-                          <Box sx={{ textAlign: "center", flex: 1, minWidth: "70px" }}>
-                            <Box
-                              sx={{
-                                width: 36,
-                                height: 36,
-                                borderRadius: "8px",
-                                background: alpha("#8b5cf6", 0.1),
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                mx: "auto",
-                                mb: 1,
-                                border: `2px solid ${alpha("#8b5cf6", 0.2)}`,
-                              }}
-                            >
-                              <Typography
-                                variant="caption"
-                                sx={{
-                                  fontWeight: 800,
-                                  color: "#8b5cf6",
-                                  fontSize: "0.95rem",
-                                }}
-                              >
-                                {rsuTotal}
-                              </Typography>
-                            </Box>
-                            <Typography
-                              variant="caption"
-                              sx={{
-                                color: "#8b5cf6",
-                                fontWeight: 700,
-                                fontSize: "0.85rem",
-                                textTransform: "uppercase",
-                                letterSpacing: "0.3px",
-                                lineHeight: 1.2,
-                              }}
-                            >
-                              RSU
-                            </Typography>
-                          </Box>
-
-                          <Box sx={{ textAlign: "center", flex: 1, minWidth: "70px" }}>
-                            <Box
-                              sx={{
-                                width: 36,
-                                height: 36,
-                                borderRadius: "8px",
-                                background: alpha("#10b981", 0.1),
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                mx: "auto",
-                                mb: 1,
-                                border: `2px solid ${alpha("#10b981", 0.2)}`,
-                              }}
-                            >
-                              <Typography
-                                variant="caption"
-                                sx={{
-                                  fontWeight: 800,
-                                  color: "#10b981",
-                                  fontSize: "0.95rem",
-                                }}
-                              >
-                                {seletivaTotal}
-                              </Typography>
-                            </Box>
-                            <Typography
-                              variant="caption"
-                              sx={{
-                                color: "#10b981",
-                                fontWeight: 700,
-                                fontSize: "0.85rem",
-                                textTransform: "uppercase",
-                                letterSpacing: "0.5px",
-                              }}
-                            >
-                              Seletiva
-                            </Typography>
-                          </Box>
-
-                          <Box sx={{ textAlign: "center", flex: 1, minWidth: "70px" }}>
-                            <Box
-                              sx={{
-                                width: 36,
-                                height: 36,
-                                borderRadius: "8px",
-                                background: alpha("#f59e0b", 0.1),
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                mx: "auto",
-                                mb: 1,
-                                border: `2px solid ${alpha("#f59e0b", 0.2)}`,
-                              }}
-                            >
-                              <Typography
-                                variant="caption"
-                                sx={{
-                                  fontWeight: 800,
-                                  color: "#f59e0b",
-                                  fontSize: "0.95rem",
-                                }}
-                              >
-                                {remocaoTotal}
-                              </Typography>
-                            </Box>
-                            <Typography
-                              variant="caption"
-                              sx={{
-                                color: "#f59e0b",
-                                fontWeight: 700,
-                                fontSize: "0.85rem",
-                                textTransform: "uppercase",
-                                letterSpacing: "0.5px",
-                              }}
-                            >
-                              Remoção
-                            </Typography>
-                          </Box>
-                        </Box>
-                      </Box>
-                    </CardContent>
-                  </Card>
-                </Fade>
-              )
-            })}
+            <ServiceDetailCard
+              serviceName="RSU"
+              serviceData={pasData}
+              apiData={apiData}
+              color="#8b5cf6"
+              icon={HomeOutlined}
+            />
+            <ServiceDetailCard
+              serviceName="SELETIVA"
+              serviceData={pasData}
+              apiData={apiData}
+              color="#10b981"
+              icon={RecyclingOutlined}
+            />
+            <ServiceDetailCard
+              serviceName="REMOÇÃO"
+              serviceData={pasData}
+              apiData={apiData}
+              color="#f59e0b"
+              icon={DeleteSweepOutlined}
+            />
           </Box>
+        </Box>
+
+        {/* Solturas em Andamento - Última Seção */}
+        <Box sx={{ mb: 5 }}>
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Box sx={{ display: "flex", alignItems: "center" }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 40,
+                  height: 40,
+                  borderRadius: "50%",
+                  background: alpha(themeColors.secondary.main, 0.1),
+                  border: `1px solid ${alpha(themeColors.secondary.main, 0.3)}`,
+                  mr: 2,
+                }}
+              >
+                <BarChart sx={{ color: themeColors.secondary.main }} />
+              </Box>
+              <Typography
+                variant="h5"
+                sx={{
+                  fontWeight: 600,
+                  color: "#1e293b",
+                  fontSize: {
+                    xs: "1.5rem",
+                    xl: "1.5rem",
+                    "2xl": "2rem",
+                  },
+                }}
+              >
+                Operações em Andamento
+              </Typography>
+            </Box>
+            {refreshingSection === "solturas" && (
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <CircularProgress size={16} sx={{ color: themeColors.secondary.main }} />
+                <Typography variant="caption" sx={{ color: themeColors.secondary.main, fontWeight: 600 }}>
+                  Atualizando...
+                </Typography>
+              </Box>
+            )}
+          </Box>
+
+          <SolturasAndamentoCard title="Solturas em Andamento" data={solturasAndamentoData} height={400} />
         </Box>
       </Container>
     </Box>
